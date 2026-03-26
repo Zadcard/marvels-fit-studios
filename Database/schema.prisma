@@ -1,0 +1,119 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum PaymentType {
+  MONTHLY
+  SESSIONS
+}
+
+// ─── Models ──────────────────────────────────────────────────────────────────
+
+model Admin {
+  id       String @id @default(cuid())
+  email    String @unique
+  password String
+}
+
+model Coach {
+  id       String  @id @default(cuid())
+  fullName String
+  email    String  @unique
+  password String
+  phone    String?
+  isActive Boolean @default(true)
+  groups   Group[]
+  files    File[]
+}
+
+model Client {
+  id               String        @id @default(cuid())
+  fullName         String
+  email            String        @unique
+  password         String
+  phone            String?
+  dateOfBirth      DateTime?
+  membershipType   PaymentType?
+  membershipExpiry DateTime?
+  sessionsLeft     Int           @default(0)
+  isPaid           Boolean       @default(false)
+  isActive         Boolean       @default(true)
+  lastActiveAt     DateTime      @default(now())
+  groupId          String?
+  group            Group?        @relation(fields: [groupId], references: [id])
+  payments         Payment[]
+  sessionLogs      SessionLog[]
+  workoutNotes     WorkoutNote[]
+  files            File[]
+}
+
+model Group {
+  id      String   @id @default(cuid())
+  name    String
+  coachId String
+  coach   Coach    @relation(fields: [coachId], references: [id])
+  clients Client[]
+  files   File[]
+}
+
+model Payment {
+  id            String      @id @default(cuid())
+  clientId      String
+  client        Client      @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  amount        Float
+  currency      String      @default("EGP")
+  type          PaymentType
+  sessionsCount Int?
+  expiresAt     DateTime
+  date          DateTime    @default(now())
+  note          String?
+  sessionLogs   SessionLog[]
+}
+
+model SessionLog {
+  id        String   @id @default(cuid())
+  clientId  String
+  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  paymentId String?
+  payment   Payment? @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+  usedAt    DateTime @default(now())
+  note      String?
+}
+
+model File {
+  id           String   @id @default(cuid())
+  name         String
+  url          String
+  groupId      String
+  group        Group    @relation(fields: [groupId], references: [id])
+  clientId     String?
+  client       Client?  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  uploadedById String
+  uploadedBy   Coach    @relation(fields: [uploadedById], references: [id])
+  createdAt    DateTime @default(now())
+}
+
+model WorkoutNote {
+  id        String   @id @default(cuid())
+  clientId  String
+  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  title     String?
+  content   String
+  date      DateTime @default(now())
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  userType  String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
