@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --red:#E62429;
+  --red-dark:#B91C21;
+  --black:#080808;
+  --black2:#101010;
+  --black3:#181818;
+  --black4:#222222;
+  --white:#F0F0F0;
+  --gray:#666;
+  --gray2:#999;
+  --font-display:'Bebas Neue',sans-serif;
+  --font-condensed:'Barlow Condensed',sans-serif;
+  --font-body:'Barlow',sans-serif;
+}
+html{scroll-behavior:smooth;}
+body{background:var(--black);color:var(--white);font-family:var(--font-body);overflow-x:hidden;}
+
+/* ── NAV ── */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:200;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 3rem;height:68px;
+  background:rgba(8,8,8,0.92);
+  backdrop-filter:blur(16px);
+  border-bottom:1px solid rgba(255,255,255,0.06);
+}
+.nav-logo img{height:36px;filter:invert(1) brightness(2);}
+.nav-links{display:flex;gap:2.5rem;list-style:none;}
+.nav-links a{
+  font-family:var(--font-condensed);font-size:0.95rem;font-weight:600;
+  letter-spacing:0.12em;text-transform:uppercase;
+  color:var(--gray2);text-decoration:none;transition:color 0.2s;
+}
+.nav-links a:hover{color:var(--white);}
+.nav-actions{display:flex;gap:0.75rem;align-items:center;}
+.btn-nav-ghost{
+  font-family:var(--font-condensed);font-size:0.9rem;font-weight:700;
+  letter-spacing:0.1em;text-transform:uppercase;
+  padding:0.45rem 1.3rem;
+  background:transparent;border:1px solid rgba(255,255,255,0.18);
+  color:var(--white);cursor:pointer;transition:all 0.2s;
+}
+.btn-nav-ghost:hover{border-color:var(--white);}
+.btn-nav-red{
+  font-family:var(--font-condensed);font-size:0.9rem;font-weight:700;
+  letter-spacing:0.1em;text-transform:uppercase;
+  padding:0.45rem 1.4rem;
+  background:var(--red);border:1px solid var(--red);
+  color:var(--white);cursor:pointer;transition:all 0.2s;
+}
+.btn-nav-red:hover{background:var(--red-dark);}
+
+/* ── HERO ── */
+.hero{
+  min-height:100vh;
+  display:flex;flex-direction:column;justify-content:center;
+  padding:68px 3rem 0;
+  position:relative;overflow:hidden;
+}
+.hero-noise{
+  position:absolute;inset:0;z-index:0;
+  background:
+    radial-gradient(ellipse 60% 50% at 70% 50%, rgba(230,36,41,0.09) 0%, transparent 70%),
+    radial-gradient(ellipse 40% 60% at 20% 80%, rgba(230,36,41,0.05) 0%, transparent 60%);
+}
+.hero-grid{
+  position:absolute;inset:0;z-index:0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,0.025) 1px, transparent 1px);
+  background-size:48px 48px;
+}
+.hero-inner{
+  position:relative;z-index:2;
+  display:grid;grid-template-columns:1fr 420px;
+  gap:4rem;align-items:center;max-width:1200px;
+}
+.hero-eyebrow{
+  font-family:var(--font-condensed);font-size:0.8rem;font-weight:600;
+  letter-spacing:0.25em;text-transform:uppercase;
+  color:var(--red);margin-bottom:1.2rem;
+  display:flex;align-items:center;gap:0.75rem;
+}
+.hero-eyebrow::before{content:'';display:block;width:28px;height:1px;background:var(--red);}
+.hero-title{
+  font-family:var(--font-display);
+  font-size:clamp(5rem,11vw,9.5rem);
+  line-height:0.88;letter-spacing:0.01em;
+  text-transform:uppercase;margin-bottom:1.5rem;
+}
+.hero-title .accent{color:var(--red);}
+.hero-title .outline{
+  -webkit-text-stroke:1.5px rgba(255,255,255,0.25);
+  color:transparent;
+}
+.hero-sub{
+  font-size:1rem;font-weight:300;
+  color:rgba(240,240,240,0.55);
+  line-height:1.8;max-width:460px;margin-bottom:2.5rem;
+}
+.hero-btns{display:flex;gap:1rem;flex-wrap:wrap;}
+.btn-hero-red{
+  font-family:var(--font-condensed);font-size:1.05rem;font-weight:800;
+  letter-spacing:0.12em;text-transform:uppercase;
+  padding:0.9rem 2.4rem;
+  background:var(--red);border:none;color:var(--white);
+  cursor:pointer;transition:all 0.2s;
+  clip-path:polygon(0 0,calc(100% - 10px) 0,100% 100%,10px 100%);
+}
+.btn-hero-red:hover{background:var(--red-dark);}
+.btn-hero-ghost{
+  font-family:var(--font-condensed);font-size:1.05rem;font-weight:700;
+  letter-spacing:0.12em;text-transform:uppercase;
+  padding:0.9rem 2.4rem;
+  background:transparent;border:1px solid rgba(255,255,255,0.2);
+  color:var(--white);cursor:pointer;transition:all 0.2s;
+}
+.btn-hero-ghost:hover{border-color:var(--white);}
+
+/* hero right card */
+.hero-card{
+  background:var(--black2);
+  border:1px solid rgba(255,255,255,0.07);
+  padding:2rem;position:relative;
+}
+.hero-card::before{
+  content:'';position:absolute;top:-1px;left:1.5rem;right:1.5rem;
+  height:2px;background:var(--red);
+}
+.hero-card-title{
+  font-family:var(--font-condensed);font-size:0.75rem;font-weight:700;
+  letter-spacing:0.2em;text-transform:uppercase;
+  color:var(--gray);margin-bottom:1.5rem;
+}
+.hero-stats{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:rgba(255,255,255,0.05);}
+.hero-stat{background:var(--black2);padding:1.25rem;text-align:center;}
+.hero-stat-num{
+  font-family:var(--font-display);font-size:3rem;
+  color:var(--red);line-height:1;
+}
+.hero-stat-label{
+  font-family:var(--font-condensed);font-size:0.72rem;font-weight:600;
+  letter-spacing:0.15em;text-transform:uppercase;
+  color:var(--gray2);margin-top:0.3rem;
+}
+.hero-logo-center{
+  display:flex;align-items:center;justify-content:center;
+  padding:1.5rem 0;
+}
+.hero-logo-center img{width:90px;opacity:0.85;filter:invert(1);}
+
+/* ── SECTION BASE ── */
+section{padding:6rem 3rem;}
+.eyebrow{
+  font-family:var(--font-condensed);font-size:0.75rem;font-weight:700;
+  letter-spacing:0.22em;text-transform:uppercase;
+  color:var(--red);margin-bottom:0.9rem;
+  display:flex;align-items:center;gap:0.6rem;
+}
+.eyebrow::before{content:'';display:block;width:22px;height:1px;background:var(--red);}
+.sec-title{
+  font-family:var(--font-display);
+  font-size:clamp(2.8rem,6vw,5rem);
+  text-transform:uppercase;line-height:0.9;
+  letter-spacing:0.01em;margin-bottom:1.5rem;
+}
+.sec-title .r{color:var(--red);}
+
+/* ── ABOUT ── */
+.about{background:var(--black2);display:grid;grid-template-columns:1fr 1fr;gap:5rem;align-items:center;}
+.about p{font-size:0.95rem;font-weight:300;color:rgba(240,240,240,0.6);line-height:1.85;margin-bottom:1rem;}
+.about-cards{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:rgba(230,36,41,0.15);margin-top:1.5rem;}
+.about-card{background:var(--black2);padding:1.25rem;transition:background 0.2s;}
+.about-card:hover{background:var(--black3);}
+.about-card-icon{font-size:1.1rem;margin-bottom:0.6rem;}
+.about-card strong{
+  display:block;font-family:var(--font-condensed);font-size:1rem;
+  font-weight:700;letter-spacing:0.05em;text-transform:uppercase;margin-bottom:0.3rem;
+}
+.about-card span{font-size:0.8rem;color:rgba(240,240,240,0.5);line-height:1.5;}
+
+/* ── WHY ── */
+.why{background:var(--black);}
+.why-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:rgba(255,255,255,0.04);margin-top:3rem;}
+.why-card{
+  background:var(--black);padding:2.5rem 2rem;
+  position:relative;overflow:hidden;transition:background 0.25s;
+}
+.why-card:hover{background:var(--black3);}
+.why-card::after{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:2px;
+  background:var(--red);transform:scaleX(0);transition:transform 0.3s;transform-origin:left;
+}
+.why-card:hover::after{transform:scaleX(1);}
+.why-num{
+  font-family:var(--font-display);font-size:6rem;font-weight:400;
+  color:rgba(230,36,41,0.06);line-height:1;
+  position:absolute;top:0.5rem;right:1rem;
+}
+.why-card h3{
+  font-family:var(--font-condensed);font-size:1.35rem;font-weight:800;
+  text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.6rem;margin-top:0.5rem;
+}
+.why-card p{font-size:0.85rem;color:rgba(240,240,240,0.5);line-height:1.7;font-weight:300;}
+.why-dot{
+  width:10px;height:10px;background:var(--red);
+  clip-path:polygon(50% 0%,100% 50%,50% 100%,0% 50%);
+  margin-bottom:1rem;
+}
+
+/* ── TRAINERS ── */
+.trainers{background:var(--black2);}
+.trainers-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:rgba(255,255,255,0.04);margin-top:3rem;}
+.trainer-card{
+  background:var(--black2);overflow:hidden;
+  position:relative;transition:background 0.2s;
+}
+.trainer-card:hover{background:var(--black3);}
+.trainer-photo{
+  height:200px;background:var(--black3);
+  display:flex;align-items:center;justify-content:center;
+  position:relative;border-bottom:1px solid rgba(255,255,255,0.04);
+}
+.trainer-initials{
+  font-family:var(--font-display);font-size:4.5rem;
+  color:rgba(230,36,41,0.12);
+}
+.trainer-bar{
+  position:absolute;bottom:0;left:0;right:0;
+  height:3px;background:var(--red);transform:scaleX(0);
+  transition:transform 0.3s;transform-origin:left;
+}
+.trainer-card:hover .trainer-bar{transform:scaleX(1);}
+.trainer-info{padding:1.4rem 1.5rem;}
+.trainer-name{
+  font-family:var(--font-condensed);font-size:1.25rem;font-weight:800;
+  text-transform:uppercase;letter-spacing:0.04em;
+}
+.trainer-role{
+  font-size:0.72rem;font-weight:600;letter-spacing:0.15em;
+  text-transform:uppercase;color:var(--red);margin-top:0.2rem;
+}
+.trainer-bio{font-size:0.82rem;color:rgba(240,240,240,0.45);line-height:1.6;margin-top:0.6rem;font-weight:300;}
+.trainer-tags{margin-top:0.75rem;display:flex;flex-wrap:wrap;gap:0.4rem;}
+.tag{
+  font-size:0.68rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;
+  padding:0.22rem 0.6rem;
+  background:rgba(230,36,41,0.08);border:1px solid rgba(230,36,41,0.2);color:var(--red);
+}
+
+/* ── REVIEWS ── */
+.reviews{background:var(--black);position:relative;}
+.reviews::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent 0%,var(--red) 50%,transparent 100%);
+}
+.reviews-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem;margin-top:3rem;}
+.review-card{
+  background:var(--black2);border:1px solid rgba(255,255,255,0.05);
+  padding:1.75rem;position:relative;
+}
+.review-stars{color:var(--red);font-size:0.85rem;letter-spacing:0.08em;margin-bottom:1rem;}
+.review-text{
+  font-size:0.88rem;color:rgba(240,240,240,0.6);
+  line-height:1.78;font-weight:300;font-style:italic;margin-bottom:1.5rem;
+}
+.review-author{display:flex;align-items:center;gap:0.75rem;}
+.review-avatar{
+  width:34px;height:34px;flex-shrink:0;
+  background:rgba(230,36,41,0.1);border:1px solid rgba(230,36,41,0.25);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-condensed);font-size:0.85rem;font-weight:800;color:var(--red);
+}
+.review-name{font-family:var(--font-condensed);font-size:1rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;}
+.review-since{font-size:0.72rem;color:var(--gray);}
+
+/* ── CONTACT ── */
+.contact{background:var(--black2);display:grid;grid-template-columns:1fr 1fr;gap:5rem;align-items:start;}
+.contact-info p{font-size:0.95rem;font-weight:300;color:rgba(240,240,240,0.55);line-height:1.85;margin-bottom:2rem;}
+.contact-row{display:flex;align-items:center;gap:1rem;margin-bottom:0.9rem;}
+.contact-icon{
+  width:34px;height:34px;flex-shrink:0;
+  background:rgba(230,36,41,0.08);border:1px solid rgba(230,36,41,0.2);
+  display:flex;align-items:center;justify-content:center;font-size:0.85rem;
+}
+.contact-row-text{font-size:0.88rem;color:rgba(240,240,240,0.65);}
+.contact-form{background:var(--black3);border:1px solid rgba(255,255,255,0.06);padding:2.5rem;position:relative;}
+.contact-form::before{content:'';position:absolute;top:-1px;left:2rem;right:2rem;height:2px;background:var(--red);}
+.form-label{
+  display:block;font-family:var(--font-condensed);font-size:0.72rem;font-weight:700;
+  letter-spacing:0.15em;text-transform:uppercase;color:var(--gray2);margin-bottom:0.45rem;
+}
+.form-group{margin-bottom:1.1rem;}
+.form-input{
+  width:100%;background:var(--black);
+  border:1px solid rgba(255,255,255,0.07);
+  color:var(--white);font-family:var(--font-body);font-size:0.88rem;
+  padding:0.8rem 1rem;outline:none;transition:border-color 0.2s;
+}
+.form-input:focus{border-color:rgba(230,36,41,0.45);}
+.form-input::placeholder{color:rgba(255,255,255,0.18);}
+textarea.form-input{resize:vertical;min-height:95px;}
+.btn-submit{
+  width:100%;margin-top:0.5rem;
+  font-family:var(--font-condensed);font-size:1rem;font-weight:800;
+  letter-spacing:0.15em;text-transform:uppercase;
+  padding:0.9rem;background:var(--red);border:none;
+  color:var(--white);cursor:pointer;transition:background 0.2s;
+}
+.btn-submit:hover{background:var(--red-dark);}
+
+/* ── FOOTER ── */
+footer{
+  background:var(--black);
+  border-top:1px solid rgba(255,255,255,0.05);
+  padding:2rem 3rem;
+  display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:1rem;
+}
+.footer-logo img{height:28px;filter:invert(1) brightness(1.8);}
+.footer-copy{font-size:0.75rem;color:var(--gray);}
+.footer-links{display:flex;gap:1.5rem;}
+.footer-links a{
+  font-family:var(--font-condensed);font-size:0.78rem;font-weight:600;
+  letter-spacing:0.1em;text-transform:uppercase;
+  color:var(--gray);text-decoration:none;transition:color 0.2s;
+}
+.footer-links a:hover{color:var(--white);}
+
+/* ── MODAL ── */
+.overlay{
+  display:none;position:fixed;inset:0;z-index:500;
+  background:rgba(0,0,0,0.88);backdrop-filter:blur(6px);
+  align-items:center;justify-content:center;
+}
+.overlay.open{display:flex;}
+.modal{
+  background:var(--black2);border:1px solid rgba(230,36,41,0.2);
+  padding:2.5rem;max-width:460px;width:90%;position:relative;
+}
+.modal::before{content:'';position:absolute;top:-1px;left:2rem;right:2rem;height:2px;background:var(--red);}
+.modal-close{
+  position:absolute;top:1rem;right:1rem;
+  background:none;border:none;color:var(--gray);
+  font-size:1.1rem;cursor:pointer;line-height:1;
+}
+.modal-close:hover{color:var(--white);}
+.modal-title{font-family:var(--font-display);font-size:2.2rem;text-transform:uppercase;margin-bottom:0.25rem;}
+.modal-sub{font-size:0.85rem;color:var(--gray2);margin-bottom:1.75rem;}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">
+    <img src="/mnt/user-data/uploads/h1.png" alt="Marvel's Studios" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"/>
+    <span style="display:none;font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:0.06em;">MARVEL'S STUDIOS</span>
+  </div>
+  <ul class="nav-links">
+    <li><a href="#about">About</a></li>
+    <li><a href="#why">Why Us</a></li>
+    <li><a href="#trainers">Trainers</a></li>
+    <li><a href="#reviews">Reviews</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ul>
+  <div class="nav-actions">
+    <button class="btn-nav-ghost" onclick="window.location.href='/login'">Login</button>
+    <button class="btn-nav-red" onclick="document.getElementById('joinOverlay').classList.add('open')">Join Now</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-noise"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-inner">
+    <div>
+      <div class="hero-eyebrow">Giza, Egypt — Performance Training</div>
+      <h1 class="hero-title">
+        Forge<br>
+        <span class="accent">Your</span><br>
+        <span class="outline">Legend</span>
+      </h1>
+      <p class="hero-sub">Elite coaching. Relentless standards. Whether you train in a group or one-on-one — every session is built to push your limits and prove your potential.</p>
+      <div class="hero-btns">
+        <button class="btn-hero-red" onclick="document.getElementById('joinOverlay').classList.add('open')">Join Now</button>
+        <button class="btn-hero-ghost" onclick="document.getElementById('about').scrollIntoView({behavior:'smooth'})">Explore</button>
+      </div>
+    </div>
+    <div class="hero-card">
+      <div class="hero-logo-center">
+        <img src="/mnt/user-data/uploads/c2.png" alt="MS" onerror="this.style.opacity='0'"/>
+      </div>
+      <div class="hero-card-title">By the numbers</div>
+      <div class="hero-stats">
+        <div class="hero-stat"><div class="hero-stat-num">6+</div><div class="hero-stat-label">Elite Coaches</div></div>
+        <div class="hero-stat"><div class="hero-stat-num">12</div><div class="hero-stat-label">Sessions / Mo</div></div>
+        <div class="hero-stat"><div class="hero-stat-num">2</div><div class="hero-stat-label">Training Types</div></div>
+        <div class="hero-stat"><div class="hero-stat-num">100%</div><div class="hero-stat-label">Results Focus</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ABOUT -->
+<section class="about" id="about">
+  <div>
+    <div class="eyebrow">About Us</div>
+    <h2 class="sec-title">Built for <span class="r">Serious</span> Athletes</h2>
+    <p>Marvel's Studios was built with one mission — give every member access to world-class coaching in an environment that demands the best from you, every single session.</p>
+    <p>No filler. No fluff. Just structured, tracked, results-driven training — whether you're in a group class or working privately with your coach.</p>
+    <div class="about-cards">
+      <div class="about-card"><div class="about-card-icon">⚡</div><strong>Group Training</strong><span>High-energy classes, up to 10 members per coach</span></div>
+      <div class="about-card"><div class="about-card-icon">🎯</div><strong>Private Sessions</strong><span>1-on-1 coaching fully tailored to your goals</span></div>
+      <div class="about-card"><div class="about-card-icon">📊</div><strong>Session Tracking</strong><span>Every session logged. Progress always visible.</span></div>
+      <div class="about-card"><div class="about-card-icon">📋</div><strong>Training Files</strong><span>Coach sends plans directly to your dashboard</span></div>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;justify-content:center;">
+    <img src="/mnt/user-data/uploads/v1.png" alt="Marvel's Studios" style="width:75%;max-width:320px;filter:invert(1) brightness(1.5);opacity:0.85;" onerror="this.style.display='none'"/>
+  </div>
+</section>
+
+<!-- WHY US -->
+<section class="why" id="why">
+  <div class="eyebrow">Why Us</div>
+  <h2 class="sec-title">The <span class="r">Marvel's</span> Difference</h2>
+  <div class="why-grid">
+    <div class="why-card"><div class="why-num">01</div><div class="why-dot"></div><h3>Elite Coaches</h3><p>Every coach is hand-picked. No shortcuts, no compromise. Your results are their reputation.</p></div>
+    <div class="why-card"><div class="why-num">02</div><div class="why-dot"></div><h3>12 Sessions Guaranteed</h3><p>Monthly membership = 12 sessions. Miss one? Contact us and we compensate it. No losses.</p></div>
+    <div class="why-card"><div class="why-num">03</div><div class="why-dot"></div><h3>Personal Attention</h3><p>Even in group classes, your coach knows your name, your goals, and exactly how to push you.</p></div>
+    <div class="why-card"><div class="why-num">04</div><div class="why-dot"></div><h3>Progress Dashboard</h3><p>Your own portal tracks sessions, training files, and workout notes — see exactly how far you've come.</p></div>
+    <div class="why-card"><div class="why-num">05</div><div class="why-dot"></div><h3>Real Community</h3><p>Train alongside people who are as serious as you. The energy in the room is unlike anything else.</p></div>
+    <div class="why-card"><div class="why-num">06</div><div class="why-dot"></div><h3>Flexible Options</h3><p>Group or private — choose what fits your lifestyle. Both delivered at the same elite standard.</p></div>
+  </div>
+</section>
+
+<!-- TRAINERS -->
+<section class="trainers" id="trainers">
+  <div class="eyebrow">Our Trainers</div>
+  <h2 class="sec-title">Meet the <span class="r">Team</span></h2>
+  <div class="trainers-grid">
+    <div class="trainer-card"><div class="trainer-photo"><div class="trainer-initials">T1</div><div class="trainer-bar"></div></div><div class="trainer-info"><div class="trainer-name">Coach Name</div><div class="trainer-role">Head Coach</div><div class="trainer-bio">Real bio and photo coming soon.</div><div class="trainer-tags"><span class="tag">Strength</span><span class="tag">Conditioning</span></div></div></div>
+    <div class="trainer-card"><div class="trainer-photo"><div class="trainer-initials">T2</div><div class="trainer-bar"></div></div><div class="trainer-info"><div class="trainer-name">Coach Name</div><div class="trainer-role">Private Coach</div><div class="trainer-bio">Real bio and photo coming soon.</div><div class="trainer-tags"><span class="tag">Nutrition</span><span class="tag">Fat Loss</span></div></div></div>
+    <div class="trainer-card"><div class="trainer-photo"><div class="trainer-initials">T3</div><div class="trainer-bar"></div></div><div class="trainer-info"><div class="trainer-name">Coach Name</div><div class="trainer-role">Group Coach</div><div class="trainer-bio">Real bio and photo coming soon.</div><div class="trainer-tags"><span class="tag">HIIT</span><span class="tag">Cardio</span></div></div></div>
+    <div class="trainer-card"><div class="trainer-photo"><div class="trainer-initials">T4</div><div class="trainer-bar"></div></div><div class="trainer-info"><div class="trainer-name">Coach Name</div><div class="trainer-role">Group Coach</div><div class="trainer-bio">Real bio and photo coming soon.</div><div class="trainer-tags"><span class="tag">Powerlifting</span><span class="tag">Mobility</span></div></div></div>
+    <div class="trainer-card"><div class="trainer-photo"><div class="trainer-initials">T5</div><div class="trainer-bar"></div></div><div class="trainer-info"><div class="trainer-name">Coach Name</div><div class="trainer-role">Private Coach</div><div class="trainer-bio">Real bio and photo coming soon.</div><div class="trainer-tags"><span class="tag">Muscle Gain</span><span class="tag">Form</span></div></div></div>
+    <div class="trainer-card"><div class="trainer-photo"><div class="trainer-initials">T6</div><div class="trainer-bar"></div></div><div class="trainer-info"><div class="trainer-name">Coach Name</div><div class="trainer-role">Group Coach</div><div class="trainer-bio">Real bio and photo coming soon.</div><div class="trainer-tags"><span class="tag">Endurance</span><span class="tag">Core</span></div></div></div>
+  </div>
+</section>
+
+<!-- REVIEWS -->
+<section class="reviews" id="reviews">
+  <div class="eyebrow">Reviews</div>
+  <h2 class="sec-title">What Members <span class="r">Say</span></h2>
+  <div class="reviews-grid">
+    <div class="review-card"><div class="review-stars">★★★★★</div><p class="review-text">"The coaches here don't let you settle. I've tried three other gyms — nothing comes close to the level of attention and push you get at Marvel's."</p><div class="review-author"><div class="review-avatar">AK</div><div><div class="review-name">Ahmed K.</div><div class="review-since">Member since 2024</div></div></div></div>
+    <div class="review-card"><div class="review-stars">★★★★★</div><p class="review-text">"Private sessions changed everything for me. My coach tracks every rep, every kilo. The progress dashboard keeps me honest and consistent."</p><div class="review-author"><div class="review-avatar">SM</div><div><div class="review-name">Sara M.</div><div class="review-since">Member since 2024</div></div></div></div>
+    <div class="review-card"><div class="review-stars">★★★★★</div><p class="review-text">"Group classes here are on another level. The energy, the structure, the coaches — I've never been this consistent in my life. Highly recommend."</p><div class="review-author"><div class="review-avatar">MH</div><div><div class="review-name">Mohamed H.</div><div class="review-since">Member since 2025</div></div></div></div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section class="contact" id="contact">
+  <div class="contact-info">
+    <div class="eyebrow">Contact</div>
+    <h2 class="sec-title">Get in <span class="r">Touch</span></h2>
+    <p>Ready to start? Fill out the form and our team will reach out within 24 hours to get you set up.</p>
+    <div class="contact-row"><div class="contact-icon">📍</div><div class="contact-row-text">Giza, Egypt — exact address coming soon</div></div>
+    <div class="contact-row"><div class="contact-icon">📞</div><div class="contact-row-text">+20 XXX XXX XXXX</div></div>
+    <div class="contact-row"><div class="contact-icon">✉️</div><div class="contact-row-text">info@marvelsstudios.com</div></div>
+  </div>
+  <div class="contact-form">
+    <div class="form-group"><label class="form-label">Full Name</label><input class="form-input" type="text" placeholder="Your full name"/></div>
+    <div class="form-group"><label class="form-label">Phone Number</label><input class="form-input" type="tel" placeholder="+20 XXX XXX XXXX"/></div>
+    <div class="form-group"><label class="form-label">Message</label><textarea class="form-input" placeholder="Tell us your goals or ask anything..."></textarea></div>
+    <button class="btn-submit">Send Message</button>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">
+    <img src="/mnt/user-data/uploads/h1.png" alt="Marvel's Studios" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"/>
+    <span style="display:none;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:0.06em;">MARVEL'S STUDIOS</span>
+  </div>
+  <div class="footer-copy">© 2025 Marvel's Studios — Performance Training. All rights reserved.</div>
+  <div class="footer-links">
+    <a href="#about">About</a>
+    <a href="#trainers">Trainers</a>
+    <a href="#contact">Contact</a>
+    <a href="/login">Login</a>
+  </div>
+</footer>
+
+<!-- JOIN MODAL -->
+<div class="overlay" id="joinOverlay" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal">
+    <button class="modal-close" onclick="document.getElementById('joinOverlay').classList.remove('open')">✕</button>
+    <div class="modal-title">Join Now</div>
+    <div class="modal-sub">Fill in your details — we'll contact you within 24 hours.</div>
+    <div class="form-group"><label class="form-label">Full Name</label><input class="form-input" type="text" placeholder="Your full name"/></div>
+    <div class="form-group"><label class="form-label">Phone Number</label><input class="form-input" type="tel" placeholder="+20 XXX XXX XXXX"/></div>
+    <div class="form-group"><label class="form-label">Message (optional)</label><textarea class="form-input" placeholder="Goals, questions, anything..."></textarea></div>
+    <button class="btn-submit">Send Request</button>
+  </div>
+</div>
+
+</body>
+</html>
