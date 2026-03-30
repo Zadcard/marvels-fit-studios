@@ -1,375 +1,730 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="no-js">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>Marvel's Studios — Performance Training | Giza, Egypt</title>
-<meta name="description" content="Marvel's Studios is an elite performance training gym in Giza, Egypt. Group classes and private 1-on-1 coaching with 6 expert coaches. Join today."/>
-<meta property="og:title" content="Marvel's Studios — Performance Training"/>
-<meta property="og:description" content="Elite group and private training in Giza, Egypt. 6 expert coaches. 12 sessions per month. Results guaranteed."/>
-<meta property="og:type" content="website"/>
-<meta name="twitter:card" content="summary_large_image"/>
-<meta name="twitter:title" content="Marvel's Studios — Performance Training"/>
-<meta name="twitter:description" content="Elite group and private training in Giza, Egypt."/>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet"/>
-<style>
-*{margin:0;padding:0;box-sizing:border-box;}
-:root{
-  --red:#E62429;--red-dark:#B91C21;--red-soft:rgba(230,36,41,0.12);
-  --black:#080808;--black2:#101010;--black3:#181818;--black4:#202020;
-  --white:#F0F0F0;--gray:#666;--gray2:#999;--gray3:#bbb;
-  --font-d:'Bebas Neue',sans-serif;
-  --font-c:'Barlow Condensed',sans-serif;
-  --font-b:'Barlow',sans-serif;
-  --radius:2px;
-}
-html{scroll-behavior:smooth;}
-body{background:var(--black);color:var(--white);font-family:var(--font-b);overflow-x:hidden;-webkit-font-smoothing:antialiased;}
-a{color:inherit;text-decoration:none;}
-img{display:block;max-width:100%;}
-.skip-link{position:absolute;top:-40px;left:1rem;background:var(--red);color:#fff;padding:0.5rem 1rem;z-index:9999;font-size:0.85rem;transition:top 0.2s;}
-.skip-link:focus{top:0.5rem;}
-nav{position:fixed;top:0;left:0;right:0;z-index:300;height:66px;display:flex;align-items:center;justify-content:space-between;padding:0 4rem;background:rgba(8,8,8,0.93);backdrop-filter:blur(14px);border-bottom:1px solid rgba(255,255,255,0.055);}
-.nav-logo{display:flex;align-items:center;gap:0.75rem;font-family:var(--font-d);font-size:1.35rem;letter-spacing:0.06em;color:var(--white);}
-.nav-logo img{height:32px;filter:invert(1) brightness(2);}
-.nav-links{display:flex;gap:2rem;list-style:none;}
-.nav-links a{font-family:var(--font-c);font-size:0.9rem;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:var(--gray2);transition:color 0.2s;}
-.nav-links a:hover,.nav-links a:focus{color:var(--white);outline:none;}
-.nav-actions{display:flex;gap:0.7rem;align-items:center;}
-.btn-ghost{font-family:var(--font-c);font-size:0.88rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:0.45rem 1.25rem;background:transparent;border:1px solid rgba(255,255,255,0.18);color:var(--white);cursor:pointer;transition:border-color 0.2s;border-radius:var(--radius);}
-.btn-ghost:hover,.btn-ghost:focus{border-color:var(--white);outline:2px solid var(--white);outline-offset:2px;}
-.btn-red{font-family:var(--font-c);font-size:0.88rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:0.45rem 1.35rem;background:var(--red);border:1px solid var(--red);color:#fff;cursor:pointer;transition:background 0.2s;border-radius:var(--radius);}
-.btn-red:hover,.btn-red:focus{background:var(--red-dark);outline:2px solid var(--red);outline-offset:2px;}
-.nav-hamburger{display:none;background:none;border:none;color:var(--white);font-size:1.4rem;cursor:pointer;padding:0.5rem;}
-.hero{min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:calc(66px + 4rem) 4rem 4rem;position:relative;overflow:hidden;}
-.hero-bg{position:absolute;inset:0;background:radial-gradient(ellipse 65% 55% at 72% 50%,rgba(230,36,41,0.08) 0%,transparent 65%),radial-gradient(ellipse 40% 50% at 15% 85%,rgba(230,36,41,0.04) 0%,transparent 55%);}
-.hero-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,0.022) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.022) 1px,transparent 1px);background-size:52px 52px;}
-.hero-inner{position:relative;z-index:2;display:grid;grid-template-columns:1fr 380px;gap:4rem;align-items:center;max-width:1200px;}
-.hero-eyebrow{font-family:var(--font-c);font-size:0.78rem;font-weight:700;letter-spacing:0.25em;text-transform:uppercase;color:var(--red);margin-bottom:1.2rem;display:flex;align-items:center;gap:0.65rem;}
-.hero-eyebrow::before{content:'';display:block;width:26px;height:1px;background:var(--red);}
-h1.hero-title{font-family:var(--font-d);font-size:clamp(5rem,11vw,9rem);line-height:0.88;letter-spacing:0.015em;text-transform:uppercase;margin-bottom:1.4rem;}
-h1.hero-title .r{color:var(--red);}
-h1.hero-title .o{-webkit-text-stroke:1.5px rgba(255,255,255,0.22);color:transparent;}
-.hero-sub{font-size:1rem;font-weight:300;color:rgba(240,240,240,0.55);line-height:1.85;max-width:460px;margin-bottom:2.5rem;}
-.hero-btns{display:flex;gap:1rem;flex-wrap:wrap;}
-.btn-hero-r{font-family:var(--font-c);font-size:1rem;font-weight:800;letter-spacing:0.12em;text-transform:uppercase;padding:0.9rem 2.4rem;background:var(--red);border:2px solid var(--red);color:#fff;cursor:pointer;transition:background 0.2s;clip-path:polygon(0 0,calc(100% - 10px) 0,100% 100%,10px 100%);}
-.btn-hero-r:hover,.btn-hero-r:focus{background:var(--red-dark);border-color:var(--red-dark);outline:none;}
-.btn-hero-g{font-family:var(--font-c);font-size:1rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;padding:0.9rem 2.4rem;background:transparent;border:1px solid rgba(255,255,255,0.2);color:var(--white);cursor:pointer;transition:border-color 0.2s;}
-.btn-hero-g:hover,.btn-hero-g:focus{border-color:var(--white);}
-.hero-card{background:var(--black2);border:1px solid rgba(255,255,255,0.07);position:relative;}
-.hero-card::before{content:'';position:absolute;top:-1px;left:1.5rem;right:1.5rem;height:2px;background:var(--red);}
-.hero-card-logo{display:flex;align-items:center;justify-content:center;padding:1.75rem;border-bottom:1px solid rgba(255,255,255,0.05);}
-.hero-card-logo img{width:80px;filter:invert(1) brightness(2);opacity:0.8;}
-.stats-grid{display:grid;grid-template-columns:1fr 1fr;}
-.stat-box{padding:1.4rem 1.2rem;text-align:center;border-right:1px solid rgba(255,255,255,0.04);border-bottom:1px solid rgba(255,255,255,0.04);}
-.stat-box:nth-child(2n){border-right:none;}
-.stat-box:nth-child(3),.stat-box:nth-child(4){border-bottom:none;}
-.stat-num{font-family:var(--font-d);font-size:2.8rem;color:var(--red);line-height:1;}
-.stat-lbl{font-family:var(--font-c);font-size:0.68rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--gray2);margin-top:0.25rem;}
-section{padding:6rem 4rem;}
-.eyebrow{font-family:var(--font-c);font-size:0.72rem;font-weight:700;letter-spacing:0.22em;text-transform:uppercase;color:var(--red);margin-bottom:0.85rem;display:flex;align-items:center;gap:0.6rem;}
-.eyebrow::before{content:'';display:block;width:20px;height:1px;background:var(--red);}
-.sec-title{font-family:var(--font-d);font-size:clamp(2.8rem,5.5vw,4.8rem);text-transform:uppercase;line-height:0.92;letter-spacing:0.01em;margin-bottom:1.5rem;}
-.sec-title .r{color:var(--red);}
-.about{background:var(--black2);display:grid;grid-template-columns:1fr 1fr;gap:5rem;align-items:center;}
-.about-text p{font-size:0.95rem;font-weight:300;color:rgba(240,240,240,0.58);line-height:1.88;margin-bottom:1rem;}
-.about-logo{display:flex;align-items:center;justify-content:center;}
-.about-logo img{width:70%;max-width:280px;filter:invert(1) brightness(1.6);opacity:0.75;}
-.about-cards{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:rgba(230,36,41,0.12);margin-top:1.75rem;}
-.ac{background:var(--black2);padding:1.2rem;transition:background 0.2s;}
-.ac:hover{background:var(--black3);}
-.ac-icon{font-size:1rem;margin-bottom:0.5rem;}
-.ac strong{display:block;font-family:var(--font-c);font-size:0.95rem;font-weight:800;letter-spacing:0.05em;text-transform:uppercase;margin-bottom:0.2rem;}
-.ac span{font-size:0.8rem;color:rgba(240,240,240,0.48);line-height:1.5;}
-.why{background:var(--black);}
-.why-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:rgba(255,255,255,0.035);margin-top:3rem;}
-.wc{background:var(--black);padding:2.25rem 1.75rem;position:relative;overflow:hidden;transition:background 0.25s;}
-.wc:hover{background:var(--black3);}
-.wc::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--red);transform:scaleX(0);transition:transform 0.3s;transform-origin:left;}
-.wc:hover::after{transform:scaleX(1);}
-.wc-num{font-family:var(--font-d);font-size:5.5rem;color:rgba(230,36,41,0.055);position:absolute;top:0;right:0.75rem;line-height:1;}
-.wc-dot{width:9px;height:9px;background:var(--red);clip-path:polygon(50% 0%,100% 50%,50% 100%,0% 50%);margin-bottom:1rem;}
-.wc h3{font-family:var(--font-c);font-size:1.28rem;font-weight:800;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.55rem;}
-.wc p{font-size:0.84rem;color:rgba(240,240,240,0.5);line-height:1.72;font-weight:300;}
-.trainers{background:var(--black2);}
-.trainers-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:rgba(255,255,255,0.035);margin-top:3rem;}
-.tc{background:var(--black2);overflow:hidden;transition:background 0.2s;}
-.tc:hover{background:var(--black3);}
-.tc-photo{height:180px;background:var(--black3);display:flex;align-items:center;justify-content:center;position:relative;border-bottom:1px solid rgba(255,255,255,0.04);}
-.tc-initials{font-family:var(--font-d);font-size:4rem;color:rgba(230,36,41,0.1);}
-.tc-bar{position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--red);transform:scaleX(0);transition:transform 0.35s;transform-origin:left;}
-.tc:hover .tc-bar{transform:scaleX(1);}
-.tc-info{padding:1.3rem 1.4rem;}
-.tc-name{font-family:var(--font-c);font-size:1.2rem;font-weight:800;text-transform:uppercase;letter-spacing:0.04em;}
-.tc-role{font-size:0.7rem;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:var(--red);margin-top:0.2rem;}
-.tc-tags{display:flex;flex-wrap:wrap;gap:0.35rem;margin-top:0.75rem;}
-.tag{font-size:0.67rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:0.2rem 0.55rem;background:var(--red-soft);border:1px solid rgba(230,36,41,0.2);color:var(--red);}
-.reviews{background:var(--black);position:relative;}
-.reviews::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--red),transparent);}
-.reviews-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem;margin-top:3rem;}
-.rc{background:var(--black2);border:1px solid rgba(255,255,255,0.05);padding:1.75rem;}
-.rc-stars{color:var(--red);font-size:0.82rem;letter-spacing:0.08em;margin-bottom:0.9rem;}
-.rc-text{font-size:0.875rem;color:rgba(240,240,240,0.58);line-height:1.8;font-weight:300;font-style:italic;margin-bottom:1.4rem;}
-.rc-author{display:flex;align-items:center;gap:0.7rem;}
-.rc-avatar{width:32px;height:32px;flex-shrink:0;background:var(--red-soft);border:1px solid rgba(230,36,41,0.22);display:flex;align-items:center;justify-content:center;font-family:var(--font-c);font-size:0.82rem;font-weight:800;color:var(--red);}
-.rc-name{font-family:var(--font-c);font-size:0.95rem;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;}
-.rc-since{font-size:0.7rem;color:var(--gray);}
-.contact{background:var(--black2);display:grid;grid-template-columns:1fr 1fr;gap:5rem;align-items:start;}
-.contact-info p{font-size:0.92rem;font-weight:300;color:rgba(240,240,240,0.55);line-height:1.88;margin-bottom:2rem;}
-.contact-row{display:flex;align-items:flex-start;gap:0.9rem;margin-bottom:0.85rem;}
-.contact-icon{width:32px;height:32px;flex-shrink:0;background:var(--red-soft);border:1px solid rgba(230,36,41,0.18);display:flex;align-items:center;justify-content:center;font-size:0.82rem;margin-top:1px;}
-.contact-row-text{font-size:0.875rem;color:rgba(240,240,240,0.62);line-height:1.6;}
-.contact-row-text a{color:rgba(240,240,240,0.62);transition:color 0.2s;}
-.contact-row-text a:hover{color:var(--white);}
-.social-row{display:flex;gap:0.75rem;margin-top:1.5rem;flex-wrap:wrap;}
-.social-btn{display:flex;align-items:center;gap:0.5rem;font-family:var(--font-c);font-size:0.78rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:0.5rem 1rem;background:var(--black3);border:1px solid rgba(255,255,255,0.08);color:var(--gray3);transition:all 0.2s;cursor:pointer;}
-.social-btn:hover,.social-btn:focus{border-color:var(--red);color:var(--white);background:var(--black4);}
-.whatsapp-btn{display:inline-flex;align-items:center;gap:0.6rem;font-family:var(--font-c);font-size:0.88rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:0.65rem 1.4rem;background:rgba(37,211,102,0.1);border:1px solid rgba(37,211,102,0.25);color:#25D366;margin-top:1rem;transition:all 0.2s;}
-.whatsapp-btn:hover,.whatsapp-btn:focus{background:rgba(37,211,102,0.18);border-color:rgba(37,211,102,0.5);}
-.cf{background:var(--black3);border:1px solid rgba(255,255,255,0.06);padding:2.5rem;position:relative;}
-.cf::before{content:'';position:absolute;top:-1px;left:2rem;right:2rem;height:2px;background:var(--red);}
-.form-lbl{display:block;font-family:var(--font-c);font-size:0.7rem;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:var(--gray2);margin-bottom:0.4rem;}
-.fg{margin-bottom:1.1rem;}
-.fi{width:100%;background:var(--black);border:1px solid rgba(255,255,255,0.07);color:var(--white);font-family:var(--font-b);font-size:0.875rem;padding:0.78rem 1rem;outline:none;transition:border-color 0.2s;border-radius:var(--radius);}
-.fi:focus{border-color:rgba(230,36,41,0.5);box-shadow:0 0 0 2px rgba(230,36,41,0.15);}
-.fi::placeholder{color:rgba(255,255,255,0.18);}
-textarea.fi{resize:vertical;min-height:90px;}
-.btn-submit{width:100%;margin-top:0.5rem;font-family:var(--font-c);font-size:0.95rem;font-weight:800;letter-spacing:0.14em;text-transform:uppercase;padding:0.88rem;background:var(--red);border:none;color:#fff;cursor:pointer;transition:background 0.2s;}
-.btn-submit:hover,.btn-submit:focus{background:var(--red-dark);outline:2px solid var(--red);outline-offset:2px;}
-.btn-submit:disabled{background:var(--gray);cursor:not-allowed;}
-.form-success{display:none;background:rgba(37,211,102,0.08);border:1px solid rgba(37,211,102,0.2);padding:1.25rem;margin-top:1rem;font-size:0.9rem;color:#25D366;text-align:center;}
-.form-success.show{display:block;}
-.faq{background:var(--black);}
-.faq-list{margin-top:2.5rem;display:flex;flex-direction:column;gap:1px;background:rgba(255,255,255,0.04);}
-.faq-item{background:var(--black);}
-.faq-q{width:100%;background:none;border:none;color:var(--white);font-family:var(--font-c);font-size:1.05rem;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;padding:1.2rem 1.5rem;display:flex;justify-content:space-between;align-items:center;cursor:pointer;transition:background 0.2s;text-align:left;}
-.faq-q:hover,.faq-q:focus{background:var(--black3);outline:none;}
-.faq-q-icon{font-size:1.1rem;color:var(--red);transition:transform 0.3s;flex-shrink:0;margin-left:1rem;}
-.faq-q[aria-expanded="true"] .faq-q-icon{transform:rotate(45deg);}
-.faq-a{display:none;padding:0 1.5rem 1.25rem;font-size:0.9rem;font-weight:300;color:rgba(240,240,240,0.58);line-height:1.8;}
-.faq-a.open{display:block;}
-.hours-strip{background:var(--black3);border-top:1px solid rgba(255,255,255,0.05);border-bottom:1px solid rgba(255,255,255,0.05);padding:2rem 4rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1.5rem;}
-.hours-title{font-family:var(--font-c);font-size:0.72rem;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:var(--red);}
-.hours-grid{display:flex;gap:2.5rem;flex-wrap:wrap;}
-.hours-item{text-align:center;}
-.hours-day{font-family:var(--font-c);font-size:0.72rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--gray2);}
-.hours-time{font-family:var(--font-c);font-size:1rem;font-weight:700;color:var(--white);margin-top:0.2rem;}
-footer{background:var(--black);border-top:1px solid rgba(255,255,255,0.05);padding:2.5rem 4rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1.25rem;}
-.footer-logo{display:flex;align-items:center;gap:0.7rem;font-family:var(--font-d);font-size:1.15rem;letter-spacing:0.06em;}
-.footer-logo img{height:26px;filter:invert(1) brightness(1.8);}
-.footer-copy{font-size:0.75rem;color:var(--gray);}
-.footer-privacy{font-size:0.72rem;color:var(--gray);margin-top:0.2rem;}
-.footer-links{display:flex;gap:1.5rem;}
-.footer-links a{font-family:var(--font-c);font-size:0.76rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--gray);transition:color 0.2s;}
-.footer-links a:hover,.footer-links a:focus{color:var(--white);}
-.overlay{display:none;position:fixed;inset:0;z-index:600;background:rgba(0,0,0,0.9);backdrop-filter:blur(6px);align-items:center;justify-content:center;}
-.overlay.open{display:flex;}
-.modal{background:var(--black2);border:1px solid rgba(230,36,41,0.2);padding:2.5rem;max-width:460px;width:90%;position:relative;max-height:90vh;overflow-y:auto;}
-.modal::before{content:'';position:absolute;top:-1px;left:2rem;right:2rem;height:2px;background:var(--red);}
-.modal-close{position:absolute;top:1rem;right:1rem;background:none;border:none;color:var(--gray);font-size:1.05rem;cursor:pointer;padding:0.25rem 0.5rem;transition:color 0.2s;}
-.modal-close:hover,.modal-close:focus{color:var(--white);outline:2px solid var(--white);outline-offset:2px;}
-.modal-title{font-family:var(--font-d);font-size:2.2rem;text-transform:uppercase;letter-spacing:0.02em;margin-bottom:0.25rem;}
-.modal-sub{font-size:0.85rem;color:var(--gray2);margin-bottom:1.75rem;line-height:1.6;}
-.modal-privacy{font-size:0.75rem;color:var(--gray);margin-top:0.75rem;line-height:1.6;}
-@media(max-width:1024px){nav{padding:0 2rem;}section{padding:5rem 2rem;}
-.hero{padding:calc(66px + 3rem) 2rem 3rem;}.hero-inner{grid-template-columns:1fr;gap:2.5rem;}.hero-card{max-width:400px;}
-.about{grid-template-columns:1fr;gap:3rem;}.about-logo{display:none;}.contact{grid-template-columns:1fr;gap:3rem;}.hours-strip{padding:2rem;}footer{padding:2rem;}}
-@media(max-width:768px){nav{padding:0 1.25rem;}.nav-links{display:none;}.nav-hamburger{display:block;}
-.nav-links.open{display:flex;flex-direction:column;gap:0;position:fixed;top:66px;left:0;right:0;background:rgba(8,8,8,0.97);padding:1rem 0;border-bottom:1px solid rgba(255,255,255,0.07);}
-.nav-links.open li a{display:block;padding:0.85rem 1.5rem;font-size:1rem;}section{padding:4rem 1.25rem;}
-.hero{padding:calc(66px + 2.5rem) 1.25rem 2.5rem;}.why-grid{grid-template-columns:1fr 1fr;}.trainers-grid{grid-template-columns:1fr 1fr;}
-.reviews-grid{grid-template-columns:1fr;}.hours-grid{gap:1.25rem;}footer{flex-direction:column;align-items:flex-start;padding:1.75rem 1.25rem;}}
-@media(max-width:480px){h1.hero-title{font-size:4.2rem;}.why-grid{grid-template-columns:1fr;}.trainers-grid{grid-template-columns:1fr;}
-.about-cards{grid-template-columns:1fr;}.stats-grid{grid-template-columns:1fr 1fr;}.hours-strip{padding:1.5rem 1.25rem;}.hero-btns{flex-direction:column;align-items:flex-start;}}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Marvel's Studios | Premium Performance Training in Giza</title>
+  <meta
+    name="description"
+    content="Marvel's Studios is a premium performance training studio in Giza, Egypt with group training, private coaching, expert trainers, and a structured membership experience."
+  />
+  <meta property="og:title" content="Marvel's Studios | Premium Performance Training in Giza" />
+  <meta
+    property="og:description"
+    content="Join a structured, premium training experience with expert coaches, private support, and measurable progress."
+  />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Marvel's Studios | Premium Performance Training in Giza" />
+  <meta
+    name="twitter:description"
+    content="Group training, private coaching, and a premium membership experience designed for real progress."
+  />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="modern-styles.css?v=20260330-4" />
 </head>
 <body>
-<a href="#main" class="skip-link">Skip to main content</a>
-<nav role="navigation" aria-label="Main navigation">
-  <div class="nav-logo">
-    <img src="img/Logo-2.png" alt="Marvel's Studios" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"/>
-  </div>
-  <ul class="nav-links" id="navLinks" role="list">
-    <li><a href="#about">About</a></li>
-    <li><a href="#why">Why Us</a></li>
-    <li><a href="#trainers">Trainers</a></li>
-    <li><a href="#reviews">Reviews</a></li>
-    <li><a href="#faq">FAQ</a></li>
-    <li><a href="#contact">Contact</a></li>
-  </ul>
-  <div class="nav-actions">
-    <button class="nav-hamburger" aria-label="Toggle menu" aria-expanded="false" aria-controls="navLinks" onclick="toggleNav(this)">&#9776;</button>
-    <button class="btn-ghost" onclick="window.location.href='/login'" aria-label="Login to your account">Login</button>
-    <button class="btn-red" onclick="openModal()" aria-haspopup="dialog">Join Now</button>
-  </div>
-</nav>
-<main id="main">
-<section class="hero" aria-label="Hero">
-  <div class="hero-bg" aria-hidden="true"></div>
-  <div class="hero-grid" aria-hidden="true"></div>
-  <div class="hero-inner">
-    <div>
-      <div class="hero-eyebrow" aria-hidden="true">Giza, Egypt — Performance Training</div>
-      <h1 class="hero-title">Forge<br><span class="r">Your</span><br><span class="o">Legend</span></h1>
-      <p class="hero-sub">Elite coaching. Uncompromising standards. Whether you train in a group or one-on-one — every session at Marvel's Studios is built to push your limits and prove your potential.</p>
-      <div class="hero-btns">
-        <button class="btn-hero-r" onclick="openModal()">Join Now — It's Free to Inquire</button>
-        <button class="btn-hero-g" onclick="document.getElementById('about').scrollIntoView({behavior:'smooth'})">Learn More</button>
+  <a href="#main" class="skip-link">Skip to main content</a>
+  <div class="site-shell">
+    <!-- Site Header -->
+    <header class="site-header">
+      <nav class="site-nav" aria-label="Primary navigation">
+        <a href="#main" class="brand" aria-label="Marvel's Studios home">
+          <img src="img/Logo-2.png" alt="Marvel's Studios logo" />
+          <span>Marvel's Studios</span>
+        </a>
+
+        <button
+          class="nav-toggle"
+          id="navToggle"
+          type="button"
+          aria-expanded="false"
+          aria-controls="navLinks"
+          aria-label="Toggle navigation"
+        >
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+
+        <div class="nav-links-wrap" id="navLinks">
+          <a href="#about">About</a>
+          <a href="#services">Services</a>
+          <a href="#coaches">Coaches</a>
+          <a href="#reviews">Reviews</a>
+          <a href="#faq">FAQ</a>
+          <a href="#contact">Contact</a>
+        </div>
+
+        <div class="nav-actions">
+          <button class="btn btn-secondary" id="btnLogin" type="button">Login</button>
+          <button class="btn btn-primary" id="btnJoinNav" type="button" aria-haspopup="dialog">
+            Join Now
+          </button>
+        </div>
+      </nav>
+    </header>
+
+    <main id="main">
+      <!-- Hero -->
+      <section class="hero section-shell" aria-labelledby="hero-title">
+        <div class="hero-copy panel panel-soft">
+          <div class="eyebrow">Premium performance training</div>
+          <div class="hero-badges" aria-label="Studio highlights">
+            <span>Giza, Egypt</span>
+            <span>6 expert coaches</span>
+            <span>Group and private</span>
+          </div>
+          <h1 id="hero-title">Train with more structure, better coaching, and clearer progress.</h1>
+          <p class="hero-text">
+            Marvel's Studios gives serious beginners and committed athletes a premium training
+            experience that feels personal, organized, and built for measurable results.
+          </p>
+          <div class="hero-actions">
+            <button class="btn btn-primary btn-large" id="btnJoinHero" type="button">Start Membership</button>
+            <button class="btn btn-secondary btn-large" id="btnLearnMore" type="button">Explore the Studio</button>
+          </div>
+          <div class="hero-note">
+            <strong>Registration focus:</strong>
+            <span>Join Now opens a membership registration flow, not a generic contact form.</span>
+          </div>
+        </div>
+
+        <div class="hero-stack">
+          <section class="hero-summary panel panel-strong" aria-labelledby="summary-title">
+            <div class="summary-head">
+              <div>
+                <p class="mini-label">Studio snapshot</p>
+                <h2 id="summary-title">A cleaner path to consistency.</h2>
+              </div>
+              <span class="status-pill">Results-led</span>
+            </div>
+
+            <div class="summary-grid" role="list" aria-label="Membership highlights">
+              <article class="summary-card" role="listitem">
+                <span class="summary-value">12</span>
+                <span class="summary-label">Sessions each month</span>
+              </article>
+              <article class="summary-card" role="listitem">
+                <span class="summary-value">2</span>
+                <span class="summary-label">Training paths</span>
+              </article>
+              <article class="summary-card" role="listitem">
+                <span class="summary-value">1</span>
+                <span class="summary-label">Personal dashboard</span>
+              </article>
+            </div>
+
+            <div class="insight-card">
+              <div>
+                <p class="mini-label">Included with membership</p>
+                <h3>Every member gets a clearer support system.</h3>
+              </div>
+              <ul class="insight-list">
+                <li>Structured coaching and session guidance</li>
+                <li>Progress visibility through your dashboard</li>
+                <li>Clearer accountability inside every training block</li>
+              </ul>
+            </div>
+          </section>
+
+          <section class="hero-proof panel" aria-labelledby="proof-title">
+            <div class="proof-copy">
+              <p class="mini-label">Why people stay</p>
+              <h2 id="proof-title">A premium studio feel without the guesswork.</h2>
+              <p>
+                Members stay because the environment is organized, the coaching is attentive, and
+                the system makes it easier to show up consistently.
+              </p>
+            </div>
+            <div class="proof-stats" role="list" aria-label="Studio proof points">
+              <article role="listitem">
+                <strong>6</strong>
+                <span>Dedicated coaches</span>
+              </article>
+              <article role="listitem">
+                <strong>3k+</strong>
+                <span>Sessions supported</span>
+              </article>
+              <article role="listitem">
+                <strong>24h</strong>
+                <span>Typical response time</span>
+              </article>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <!-- About -->
+      <section class="section-shell section-grid" id="about" aria-labelledby="about-title">
+        <div class="section-heading">
+          <div class="eyebrow">About the studio</div>
+          <h2 id="about-title">A modern membership experience built around coaching quality.</h2>
+          <p>
+            Marvel's Studios was created to give every member a better training environment:
+            premium in feel, disciplined in structure, and clear in how progress is supported.
+          </p>
+        </div>
+
+        <div class="about-layout">
+          <article class="panel">
+            <p>
+              We combine hands-on coaching, a more organized member journey, and a strong standard
+              for every session. That means less confusion, less inconsistency, and more clarity
+              around what your training is actually doing.
+            </p>
+            <p>
+              Whether you choose group sessions or private coaching, the goal is the same: make
+              your routine easier to trust, easier to follow, and easier to improve.
+            </p>
+          </article>
+
+          <aside class="panel logo-panel" aria-label="Marvel's Studios mark">
+            <img src="img/Logo-3.png" alt="Marvel's Studios brand mark" />
+          </aside>
+        </div>
+      </section>
+
+      <!-- Services -->
+      <section class="section-shell section-grid" id="services" aria-labelledby="services-title">
+        <div class="section-heading split-heading">
+          <div>
+            <div class="eyebrow">What you get</div>
+            <h2 id="services-title">Services designed to feel premium, clear, and easy to use.</h2>
+          </div>
+          <p>
+            Instead of stacking too much information vertically, the key membership benefits are
+            organized as swipeable service cards that stay easy to browse on every screen size.
+          </p>
+        </div>
+
+        <div class="carousel-shell" data-carousel>
+          <div class="carousel-header">
+            <div>
+              <p class="carousel-label">Membership features</p>
+              <p class="carousel-hint">Swipe on mobile or browse with the controls on desktop.</p>
+            </div>
+            <div class="carousel-controls">
+              <button class="carousel-btn" type="button" data-carousel-prev aria-label="Show previous service cards">&larr;</button>
+              <span class="carousel-status" data-carousel-status aria-live="polite"></span>
+              <button class="carousel-btn" type="button" data-carousel-next aria-label="Show next service cards">&rarr;</button>
+            </div>
+          </div>
+
+          <div class="carousel-track service-track" tabindex="0" aria-label="Membership feature cards">
+            <article class="service-card panel">
+              <span class="service-icon">01</span>
+              <h3>Group training</h3>
+              <p>High-energy sessions with coach attention, clear structure, and a stronger sense of accountability.</p>
+            </article>
+            <article class="service-card panel">
+              <span class="service-icon">02</span>
+              <h3>Private coaching</h3>
+              <p>One-to-one coaching for members who want a more tailored path, more detailed feedback, and tighter support.</p>
+            </article>
+            <article class="service-card panel">
+              <span class="service-icon">03</span>
+              <h3>Progress tracking</h3>
+              <p>Your membership is backed by a dashboard that helps keep sessions, notes, and training visibility organized.</p>
+            </article>
+            <article class="service-card panel">
+              <span class="service-icon">04</span>
+              <h3>Training files</h3>
+              <p>Coaches can share plans, guidance, and useful training material in a format that feels much easier to follow.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- Why Us -->
+      <section class="section-shell section-grid" aria-labelledby="why-title">
+        <div class="section-heading split-heading">
+          <div>
+            <div class="eyebrow">Why members prefer it</div>
+            <h2 id="why-title">A calmer, more organized studio experience with higher standards.</h2>
+          </div>
+          <p>
+            The reference direction leans on strong spacing, calm hierarchy, and confident
+            grouping. This section translates that same discipline into the studio story.
+          </p>
+        </div>
+
+        <div class="benefit-grid" role="list" aria-label="Studio benefits">
+          <article class="benefit-card panel" role="listitem">
+            <strong>3k+</strong>
+            <h3>Sessions supported</h3>
+            <p>Members train inside a system that is built to keep routines visible and easier to sustain.</p>
+          </article>
+          <article class="benefit-card panel" role="listitem">
+            <strong>12</strong>
+            <h3>Sessions every month</h3>
+            <p>A clearer monthly structure gives the membership real rhythm instead of vague attendance promises.</p>
+          </article>
+          <article class="benefit-card panel panel-accent" role="listitem">
+            <strong>2</strong>
+            <h3>Ways to train</h3>
+            <p>Choose between premium group sessions and private coaching without losing the same quality standard.</p>
+          </article>
+          <article class="benefit-card panel" role="listitem">
+            <strong>24h</strong>
+            <h3>Registration follow-up</h3>
+            <p>New registrations are treated as onboarding, with a faster, clearer next step after you apply.</p>
+          </article>
+        </div>
+      </section>
+
+      <!-- Dark Feature Band -->
+      <section class="impact-band">
+        <div class="impact-shell">
+          <div class="impact-copy">
+            <div class="eyebrow eyebrow-dark">Membership value</div>
+            <h2>More structure for your training. More confidence in your progress.</h2>
+            <p>
+              The studio experience is designed to feel premium from the first click to the first
+              session: clearer onboarding, stronger session rhythm, and better support along the way.
+            </p>
+          </div>
+          <div class="impact-grid" role="list" aria-label="Membership value cards">
+            <article class="impact-card" role="listitem">
+              <h3>Clear onboarding</h3>
+              <p>Join Now now behaves like a real registration path with stronger wording and cleaner next steps.</p>
+            </article>
+            <article class="impact-card" role="listitem">
+              <h3>Smarter layout</h3>
+              <p>The site is reorganized to reduce fatigue, improve scanning, and keep each section easier to absorb.</p>
+            </article>
+            <article class="impact-card" role="listitem">
+              <h3>Smoother browsing</h3>
+              <p>Touch-friendly carousels and lighter interactions keep the experience calmer on mobile and desktop.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- Membership Plans -->
+      <section class="section-shell section-grid" aria-labelledby="plans-title">
+        <div class="section-heading split-heading">
+          <div>
+            <div class="eyebrow">Membership paths</div>
+            <h2 id="plans-title">Choose the format that matches how you want to train.</h2>
+          </div>
+          <p>
+            The plans are intentionally simple. The goal is clarity, not clutter: one clear group
+            path and one premium private path.
+          </p>
+        </div>
+
+        <div class="plan-grid">
+          <article class="plan-card panel">
+            <div class="plan-top">
+              <span class="plan-tag">Group membership</span>
+              <h3>Train with energy and consistency.</h3>
+            </div>
+            <ul class="plan-list">
+              <li>12 structured sessions per month</li>
+              <li>Coach support in every class</li>
+              <li>High-accountability training environment</li>
+            </ul>
+            <button class="btn btn-secondary btn-plan" type="button" data-open-join>Register for Group Training</button>
+          </article>
+
+          <article class="plan-card panel panel-accent">
+            <div class="plan-top">
+              <span class="plan-tag">Private coaching</span>
+              <h3>Choose a more tailored coaching experience.</h3>
+            </div>
+            <ul class="plan-list">
+              <li>One-to-one sessions built around your goals</li>
+              <li>More focused progression and feedback</li>
+              <li>Premium support for members who want extra guidance</li>
+            </ul>
+            <button class="btn btn-primary btn-plan" type="button" data-open-join>Register for Private Coaching</button>
+          </article>
+        </div>
+      </section>
+
+      <!-- Coaches -->
+      <section class="section-shell section-grid" id="coaches" aria-labelledby="coaches-title">
+        <div class="section-heading split-heading">
+          <div>
+            <div class="eyebrow">Meet the coaches</div>
+            <h2 id="coaches-title">Experienced trainers behind the studio standard.</h2>
+          </div>
+          <p>
+            Team members are presented in a swipeable row so the section feels easier to browse and
+            less tiring than a long vertical stack.
+          </p>
+        </div>
+
+        <div class="carousel-shell" data-carousel>
+          <div class="carousel-header">
+            <div>
+              <p class="carousel-label">Coaching team</p>
+              <p class="carousel-hint">Swipe or drag to browse the team cards smoothly.</p>
+            </div>
+            <div class="carousel-controls">
+              <button class="carousel-btn" type="button" data-carousel-prev aria-label="Show previous coaches">&larr;</button>
+              <span class="carousel-status" data-carousel-status aria-live="polite"></span>
+              <button class="carousel-btn" type="button" data-carousel-next aria-label="Show next coaches">&rarr;</button>
+            </div>
+          </div>
+
+          <div class="carousel-track coach-track" tabindex="0" aria-label="Coach cards">
+            <article class="coach-card panel">
+              <div class="coach-mark">H</div>
+              <h3>Ahmed Waheed (Heda)</h3>
+              <p class="coach-role">Head Coach</p>
+              <div class="coach-tags"><span>Strength</span><span>Conditioning</span></div>
+            </article>
+            <article class="coach-card panel">
+              <div class="coach-mark">H</div>
+              <h3>Hisham Mostafa</h3>
+              <p class="coach-role">Performance Coach</p>
+              <div class="coach-tags"><span>Muscle Gain</span><span>Powerlifting</span></div>
+            </article>
+            <article class="coach-card panel">
+              <div class="coach-mark">F</div>
+              <h3>Ahmed Farouk</h3>
+              <p class="coach-role">Group Coach</p>
+              <div class="coach-tags"><span>HIIT</span><span>Fat Loss</span></div>
+            </article>
+            <article class="coach-card panel">
+              <div class="coach-mark">Y</div>
+              <h3>Youssef Abdelatif</h3>
+              <p class="coach-role">Private Coach</p>
+              <div class="coach-tags"><span>Mobility</span><span>Endurance</span></div>
+            </article>
+            <article class="coach-card panel">
+              <div class="coach-mark">Z</div>
+              <h3>Abdullah Zaki</h3>
+              <p class="coach-role">Group Coach</p>
+              <div class="coach-tags"><span>Cardio</span><span>Core</span></div>
+            </article>
+            <article class="coach-card panel">
+              <div class="coach-mark">R</div>
+              <h3>Reham Badawy</h3>
+              <p class="coach-role">Private Coach</p>
+              <div class="coach-tags"><span>Nutrition</span><span>Technique</span></div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- Reviews -->
+      <section class="section-shell section-grid" id="reviews" aria-labelledby="reviews-title">
+        <div class="section-heading split-heading">
+          <div>
+            <div class="eyebrow">Member feedback</div>
+            <h2 id="reviews-title">What members notice once they train inside a better system.</h2>
+          </div>
+          <p>
+            Reviews are also moved into a horizontal browsing pattern so mobile users can swipe and
+            desktop users can navigate without a long wall of testimonial cards.
+          </p>
+        </div>
+
+        <div class="carousel-shell" data-carousel>
+          <div class="carousel-header">
+            <div>
+              <p class="carousel-label">Testimonials</p>
+              <p class="carousel-hint">Use the arrows, keyboard, or touch swipe to move through the stories.</p>
+            </div>
+            <div class="carousel-controls">
+              <button class="carousel-btn" type="button" data-carousel-prev aria-label="Show previous reviews">&larr;</button>
+              <span class="carousel-status" data-carousel-status aria-live="polite"></span>
+              <button class="carousel-btn" type="button" data-carousel-next aria-label="Show next reviews">&rarr;</button>
+            </div>
+          </div>
+
+          <div class="carousel-track review-track" tabindex="0" aria-label="Review cards">
+            <article class="review-card panel">
+              <div class="review-stars" aria-label="5 out of 5 stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+              <p>
+                "The coaches here do not let you drift. The whole experience feels more serious,
+                more organized, and much easier to stay consistent with."
+              </p>
+              <div class="review-person">
+                <strong>Ahmed K.</strong>
+                <span>Member since 2024</span>
+              </div>
+            </article>
+            <article class="review-card panel">
+              <div class="review-stars" aria-label="5 out of 5 stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+              <p>
+                "Private coaching gave me much more clarity. My sessions feel intentional now, and
+                I always know what I am working toward."
+              </p>
+              <div class="review-person">
+                <strong>Sara M.</strong>
+                <span>Member since 2024</span>
+              </div>
+            </article>
+            <article class="review-card panel">
+              <div class="review-stars" aria-label="5 out of 5 stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+              <p>
+                "Group training here has real structure. The energy is strong, but the coaching is
+                what makes it feel genuinely high quality."
+              </p>
+              <div class="review-person">
+                <strong>Mohamed H.</strong>
+                <span>Member since 2025</span>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- FAQ and Contact -->
+      <section class="section-shell section-grid" id="faq" aria-labelledby="faq-title">
+        <div class="section-heading split-heading">
+          <div>
+            <div class="eyebrow">Questions and contact</div>
+            <h2 id="faq-title">Everything important, made clearer.</h2>
+          </div>
+          <p>
+            This area keeps the answers simple while giving the contact and social section a more
+            polished premium presentation.
+          </p>
+        </div>
+
+        <div class="support-layout">
+          <div class="faq-list">
+            <article class="faq-item panel">
+              <button class="faq-question" type="button" aria-expanded="false" aria-controls="faq-1">
+                How does the monthly membership work?
+                <span class="faq-icon" aria-hidden="true">+</span>
+              </button>
+              <div class="faq-answer" id="faq-1">
+                One membership covers 12 sessions each month. The structure is designed to feel
+                simple and predictable, with your training activity easier to follow.
+              </div>
+            </article>
+            <article class="faq-item panel">
+              <button class="faq-question" type="button" aria-expanded="false" aria-controls="faq-2">
+                What happens if I miss a session?
+                <span class="faq-icon" aria-hidden="true">+</span>
+              </button>
+              <div class="faq-answer" id="faq-2">
+                If you miss a session for a valid reason, the team can review it and help restore
+                the right balance to your membership where appropriate.
+              </div>
+            </article>
+            <article class="faq-item panel">
+              <button class="faq-question" type="button" aria-expanded="false" aria-controls="faq-3">
+                Is the studio right for beginners?
+                <span class="faq-icon" aria-hidden="true">+</span>
+              </button>
+              <div class="faq-answer" id="faq-3">
+                Yes. The environment is structured for both ambitious beginners and experienced
+                members, with coaching that meets you at the right level.
+              </div>
+            </article>
+            <article class="faq-item panel">
+              <button class="faq-question" type="button" aria-expanded="false" aria-controls="faq-4">
+                How do I join?
+                <span class="faq-icon" aria-hidden="true">+</span>
+              </button>
+              <div class="faq-answer" id="faq-4">
+                Choose Join Now, complete the short registration form, and the studio team will
+                contact you within 24 hours to confirm the next step.
+              </div>
+            </article>
+          </div>
+
+          <aside class="contact-panel panel panel-strong" id="contact" aria-labelledby="contact-title">
+            <div class="eyebrow">Contact the studio</div>
+            <h2 id="contact-title">Ready to register or ask a question first?</h2>
+            <p>
+              Use the registration flow if you are ready to join, or use the contact form here if
+              you want help choosing the right training path.
+            </p>
+
+            <div class="contact-list" role="list" aria-label="Contact details">
+              <div class="contact-row" role="listitem">
+                <span class="contact-badge">Map</span>
+                <a href="https://maps.app.goo.gl/iNgTgoWc1qBnxoVN8" target="_blank" rel="noopener noreferrer">
+                  Giza, Egypt - View on Google Maps
+                </a>
+              </div>
+              <div class="contact-row" role="listitem">
+                <span class="contact-badge">Call</span>
+                <a href="tel:+201033724777">+20 103 372 4777</a>
+              </div>
+            </div>
+
+            <a
+              href="https://wa.me/201033724777"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="whatsapp-btn"
+              aria-label="Message Marvel's Studios on WhatsApp"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+              </svg>
+              <span>WhatsApp the studio</span>
+            </a>
+
+            <div class="social-row" aria-label="Studio social media">
+              <a
+                href="https://www.instagram.com/marvelsfitstudios?igsh=aTZkZTRvNHE0azJj"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="social-btn social-btn-instagram"
+                aria-label="Follow Marvel's Studios on Instagram"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M7.75 2h8.5A5.75 5.75 0 0 1 22 7.75v8.5A5.75 5.75 0 0 1 16.25 22h-8.5A5.75 5.75 0 0 1 2 16.25v-8.5A5.75 5.75 0 0 1 7.75 2m0 1.8A3.95 3.95 0 0 0 3.8 7.75v8.5A3.95 3.95 0 0 0 7.75 20.2h8.5a3.95 3.95 0 0 0 3.95-3.95v-8.5a3.95 3.95 0 0 0-3.95-3.95h-8.5M17.7 5.35a.95.95 0 1 1 0 1.9.95.95 0 0 1 0-1.9M12 6.85A5.15 5.15 0 1 1 6.85 12 5.16 5.16 0 0 1 12 6.85m0 1.8A3.35 3.35 0 1 0 15.35 12 3.35 3.35 0 0 0 12 8.65" />
+                </svg>
+                <span>Instagram</span>
+              </a>
+              <a
+                href="https://www.tiktok.com/@marvelsfitstudios"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="social-btn social-btn-tiktok"
+                aria-label="Follow Marvel's Studios on TikTok"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M14.5 3c.42 1.64 1.38 2.95 2.88 3.93 1.08.7 2.23 1.07 3.45 1.11v3.12a9.42 9.42 0 0 1-3.7-.74v5.86c0 1.56-.55 2.89-1.66 4-1.1 1.09-2.43 1.64-3.98 1.64s-2.88-.55-3.99-1.64A5.43 5.43 0 0 1 5.85 16.3c0-1.56.55-2.9 1.65-4 .99-.98 2.17-1.53 3.55-1.63v3.22a2.33 2.33 0 0 0-1.2.67c-.47.46-.7 1.03-.7 1.72 0 .69.23 1.26.7 1.73.47.47 1.05.7 1.74.7.68 0 1.26-.23 1.72-.7.47-.47.7-1.04.7-1.73V3h3.19Z" />
+                </svg>
+                <span>TikTok</span>
+              </a>
+              <a
+                href="https://www.facebook.com/share/1CP9fjSoF8/"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="social-btn social-btn-facebook"
+                aria-label="Follow Marvel's Studios on Facebook"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M13.25 22v-8.03h2.7l.4-3.13h-3.1V8.84c0-.9.25-1.52 1.55-1.52h1.66V4.51c-.29-.04-1.27-.11-2.41-.11-2.39 0-4.03 1.46-4.03 4.14v2.3H7.3v3.13h2.72V22h3.23Z" />
+                </svg>
+                <span>Facebook</span>
+              </a>
+            </div>
+
+            <form id="contactForm" class="contact-form" novalidate>
+              <div class="field-grid">
+                <label>
+                  <span>Full name</span>
+                  <input class="field" id="cf-name" name="name" type="text" placeholder="Enter your full name" autocomplete="name" required />
+                </label>
+                <label>
+                  <span>Phone number</span>
+                  <input class="field" id="cf-phone" name="phone" type="tel" placeholder="+20 1XX XXX XXXX" autocomplete="tel" required />
+                </label>
+              </div>
+              <label>
+                <span>Your question</span>
+                <textarea class="field field-area" id="cf-msg" name="message" placeholder="Tell us what you want help with"></textarea>
+              </label>
+              <label class="consent-row" for="cf-privacy">
+                <input id="cf-privacy" name="privacy" type="checkbox" required />
+                <span>I agree that Marvel's Studios may contact me regarding my question.</span>
+              </label>
+              <button class="btn btn-primary btn-submit" id="cf-submit" type="submit">Request a Callback</button>
+              <p class="form-success" id="cf-success" role="alert" aria-live="polite">
+                Your request has been sent. The studio team will contact you soon.
+              </p>
+            </form>
+          </aside>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+      <div class="footer-brand">
+        <img src="img/Logo-1.png" alt="Marvel's Studios logo" />
+        <div>
+          <strong>Marvel's Studios</strong>
+          <p>Premium performance training in Giza, Egypt.</p>
+        </div>
       </div>
+      <div class="footer-links">
+        <a href="#about">About</a>
+        <a href="#services">Services</a>
+        <a href="#coaches">Coaches</a>
+        <a href="#contact">Contact</a>
+        <a href="/login">Login</a>
+        <button class="btn btn-primary footer-join-btn" type="button" data-open-join>Join Now</button>
+      </div>
+      <p class="footer-copy">&copy; 2026 Marvel's Studios. We respect your privacy and do not share your personal information.</p>
+    </footer>
+  </div>
+
+  <!-- Membership Registration Modal -->
+  <div class="modal-overlay" id="joinOverlay" role="dialog" aria-modal="true" aria-labelledby="join-title">
+    <div class="join-modal panel panel-strong">
+      <button class="modal-close" id="modalClose" type="button" aria-label="Close registration form">&times;</button>
+      <div class="eyebrow">Start your membership</div>
+      <h2 id="join-title">Complete your registration request.</h2>
+      <p class="modal-copy">
+        Fill out your details and the studio team will contact you within 24 hours to confirm your
+        membership path, answer final questions, and help you get started.
+      </p>
+
+      <form id="joinForm" class="join-form" novalidate>
+        <div class="field-grid">
+          <label>
+            <span>Full name</span>
+            <input class="field" id="jf-name" name="name" type="text" placeholder="Enter your full name" autocomplete="name" required />
+          </label>
+          <label>
+            <span>Phone number</span>
+            <input class="field" id="jf-phone" name="phone" type="tel" placeholder="+20 1XX XXX XXXX" autocomplete="tel" required />
+          </label>
+        </div>
+
+        <div class="field-grid">
+          <label>
+            <span>Training preference</span>
+            <select class="field" id="jf-interest" name="interest">
+              <option value="">Choose a training path</option>
+              <option value="group">Group training</option>
+              <option value="private">Private coaching</option>
+              <option value="unsure">I want help deciding</option>
+            </select>
+          </label>
+          <label>
+            <span>Preferred schedule</span>
+            <select class="field" id="jf-schedule" name="schedule">
+              <option value="">Choose a schedule</option>
+              <option value="morning">Morning</option>
+              <option value="evening">Evening</option>
+              <option value="flexible">Flexible</option>
+            </select>
+          </label>
+        </div>
+
+        <label>
+          <span>Goals or notes</span>
+          <textarea
+            class="field field-area"
+            id="jf-msg"
+            name="message"
+            placeholder="Tell us about your goals, experience level, or the kind of support you want"
+          ></textarea>
+        </label>
+
+        <label class="consent-row" for="jf-privacy">
+          <input id="jf-privacy" name="privacy" type="checkbox" required />
+          <span>I agree that Marvel's Studios may contact me to complete my membership registration.</span>
+        </label>
+
+        <button class="btn btn-primary btn-submit" id="jf-submit" type="submit">Submit Registration</button>
+        <p class="form-success" id="jf-success" role="alert" aria-live="polite">
+          Your registration request has been received. The studio team will contact you within 24 hours.
+        </p>
+      </form>
     </div>
-    <div class="hero-card" role="complementary" aria-label="Studio stats">
-      <div class="hero-card-logo">
-      <div class="stats-grid">
-        <div class="stat-box"><div class="stat-num">6</div><div class="stat-lbl">Elite Coaches</div></div>
-        <div class="stat-box"><div class="stat-num">12</div><div class="stat-lbl">Sessions / Mo</div></div>
-        <div class="stat-box"><div class="stat-num">2</div><div class="stat-lbl">Training Types</div></div>
-        <div class="stat-box"><div class="stat-num">1</div><div class="stat-lbl">Goal: Results</div></div>
-      </div>
-    </div>
   </div>
-</section>
-<section class="about" id="about" aria-labelledby="about-title">
-  <div class="about-text">
-    <div class="eyebrow">About Us</div>
-    <h2 class="sec-title" id="about-title">Built for <span class="r">Serious</span> Athletes</h2>
-    <p>Marvel's Studios was founded with one mission — give every member access to world-class coaching in an environment that demands excellence every single session.</p>
-    <p>No filler. No fluff. Just structured, tracked, results-driven training. Whether you're new to fitness or a seasoned athlete, our coaches meet you exactly where you are and take you further.</p>
-    <div class="about-cards">
-      <div class="ac"><div class="ac-icon">&#9889;</div><strong>Group Training</strong><span>High-energy classes with full coach attention every session</span></div>
-      <div class="ac"><div class="ac-icon">&#127919;</div><strong>Private Sessions</strong><span>1-on-1 coaching fully tailored to your personal goals</span></div>
-      <div class="ac"><div class="ac-icon">&#128202;</div><strong>Session Tracking</strong><span>Every session logged. Progress always visible.</span></div>
-      <div class="ac"><div class="ac-icon">&#128203;</div><strong>Training Files</strong><span>Coach sends programs directly to your dashboard</span></div>
-    </div>
-  </div>
-  <div class="about-logo">
-   <img src="img/Logo-3.png" alt="Marvel's Studios" style="width:75%;max-width:320px;filter:invert(1) brightness(1.5);opacity:0.85;" onerror="this.style.display='none'"/>
-</section>
-<section class="why" id="why" aria-labelledby="why-title">
-  <div class="eyebrow">Why Us</div>
-  <h2 class="sec-title" id="why-title">The <span class="r">Marvel's</span> Difference</h2>
-  <div class="why-grid">
-    <div class="wc"><div class="wc-num">01</div><div class="wc-dot"></div><h3>Hand-Picked Coaches</h3><p>Every coach is selected for expertise and commitment. Your results are their reputation.</p></div>
-    <div class="wc"><div class="wc-num">02</div><div class="wc-dot"></div><h3>12 Sessions Guaranteed</h3><p>One monthly payment, 12 guaranteed sessions. Miss one with a valid reason? We compensate it.</p></div>
-    <div class="wc"><div class="wc-num">03</div><div class="wc-dot"></div><h3>Personal Attention</h3><p>Even in group classes, your coach knows your name, your goals, and where to push you harder.</p></div>
-    <div class="wc"><div class="wc-num">04</div><div class="wc-dot"></div><h3>Your Own Dashboard</h3><p>Track sessions, download training files, and log workout notes — all in your personal portal.</p></div>
-    <div class="wc"><div class="wc-num">05</div><div class="wc-dot"></div><h3>Real Community</h3><p>Train with people as serious as you. The energy, accountability, and results are contagious.</p></div>
-    <div class="wc"><div class="wc-num">06</div><div class="wc-dot"></div><h3>Group or Private</h3><p>Choose what fits your lifestyle. Both delivered at the same uncompromising standard.</p></div>
-  </div>
-</section>
-<section class="trainers" id="trainers" aria-labelledby="trainers-title">
-  <div class="eyebrow">Our Trainers</div>
-  <h2 class="sec-title" id="trainers-title">Meet the <span class="r">Team</span></h2>
-  <div class="trainers-grid">
-    <div class="tc"><div class="tc-photo"><div class="tc-initials">H</div><div class="tc-bar"></div></div><div class="tc-info"><div class="tc-name">Ahmed Waheed (Heda)</div><div class="tc-role">Head Coach</div><div class="tc-tags"><span class="tag">Strength</span><span class="tag">Conditioning</span></div></div></div>
-    <div class="tc"><div class="tc-photo"><div class="tc-initials">H</div><div class="tc-bar"></div></div><div class="tc-info"><div class="tc-name">Hisham Mostafa</div><div class="tc-role">Performance Coach</div><div class="tc-tags"><span class="tag">Muscle Gain</span><span class="tag">Powerlifting</span></div></div></div>
-    <div class="tc"><div class="tc-photo"><div class="tc-initials">F</div><div class="tc-bar"></div></div><div class="tc-info"><div class="tc-name">Ahmed Farouk</div><div class="tc-role">Group Coach</div><div class="tc-tags"><span class="tag">HIIT</span><span class="tag">Fat Loss</span></div></div></div>
-    <div class="tc"><div class="tc-photo"><div class="tc-initials">Y</div><div class="tc-bar"></div></div><div class="tc-info"><div class="tc-name">Youssef Abdelatif</div><div class="tc-role">Private Coach</div><div class="tc-tags"><span class="tag">Mobility</span><span class="tag">Endurance</span></div></div></div>
-    <div class="tc"><div class="tc-photo"><div class="tc-initials">Z</div><div class="tc-bar"></div></div><div class="tc-info"><div class="tc-name">Abdullah Zaki</div><div class="tc-role">Group Coach</div><div class="tc-tags"><span class="tag">Cardio</span><span class="tag">Core</span></div></div></div>
-    <div class="tc"><div class="tc-photo"><div class="tc-initials">R</div><div class="tc-bar"></div></div><div class="tc-info"><div class="tc-name">Reham Badawy</div><div class="tc-role">Private Coach</div><div class="tc-tags"><span class="tag">Nutrition</span><span class="tag">Form</span></div></div></div>
-  </div>
-</section>
-<section class="reviews" id="reviews" aria-labelledby="reviews-title">
-  <div class="eyebrow">Member Reviews</div>
-  <h2 class="sec-title" id="reviews-title">What Members <span class="r">Say</span></h2>
-  <div class="reviews-grid">
-    <div class="rc"><div class="rc-stars" aria-label="5 out of 5 stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div><p class="rc-text">"The coaches at Marvel's don't let you settle. I've trained at three other gyms — nothing compares to the level of attention and drive you get here."</p><div class="rc-author"><div class="rc-avatar" aria-hidden="true">AK</div><div><div class="rc-name">Ahmed K.</div><div class="rc-since">Member since 2024</div></div></div></div>
-    <div class="rc"><div class="rc-stars" aria-label="5 out of 5 stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div><p class="rc-text">"Private sessions changed everything. My coach tracks every rep, every kilo. The progress dashboard keeps me honest and consistent every week."</p><div class="rc-author"><div class="rc-avatar" aria-hidden="true">SM</div><div><div class="rc-name">Sara M.</div><div class="rc-since">Member since 2024</div></div></div></div>
-    <div class="rc"><div class="rc-stars" aria-label="5 out of 5 stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div><p class="rc-text">"The group classes here are on a completely different level. The structure, the energy, the coaches — I've never been this motivated in any gym."</p><div class="rc-author"><div class="rc-avatar" aria-hidden="true">MH</div><div><div class="rc-name">Mohamed H.</div><div class="rc-since">Member since 2025</div></div></div></div>
-  </div>
-</section>
-<section class="faq" id="faq" aria-labelledby="faq-title">
-  <div class="eyebrow">FAQ</div>
-  <h2 class="sec-title" id="faq-title">Common <span class="r">Questions</span></h2>
-  <div class="faq-list">
-    <div class="faq-item"><button class="faq-q" aria-expanded="false" aria-controls="faq1" onclick="toggleFaq(this)">How does the monthly membership work?<span class="faq-q-icon" aria-hidden="true">+</span></button><div class="faq-a" id="faq1" role="region">One monthly payment gives you 12 training sessions. Sessions are tracked in your personal dashboard. Payment is in EGP and handled through the studio directly.</div></div>
-    <div class="faq-item"><button class="faq-q" aria-expanded="false" aria-controls="faq2" onclick="toggleFaq(this)">What if I miss a session?<span class="faq-q-icon" aria-hidden="true">+</span></button><div class="faq-a" id="faq2" role="region">If you miss a session due to a valid reason, contact the administration and we will review your case. Approved compensations are logged and your session balance is restored.</div></div>
-    <div class="faq-item"><button class="faq-q" aria-expanded="false" aria-controls="faq3" onclick="toggleFaq(this)">What is the difference between group and private training?<span class="faq-q-icon" aria-hidden="true">+</span></button><div class="faq-a" id="faq3" role="region">Group training is a class-style session with multiple members and one coach. Private training is a 1-on-1 session fully tailored to your individual goals, pace, and program.</div></div>
-    <div class="faq-item"><button class="faq-q" aria-expanded="false" aria-controls="faq4" onclick="toggleFaq(this)">Am I a beginner — is Marvel's Studios right for me?<span class="faq-q-icon" aria-hidden="true">+</span></button><div class="faq-a" id="faq4" role="region">Absolutely. Our coaches work with members of all levels. Whether you are just starting out or training for a specific goal, we build a program around you.</div></div>
-    <div class="faq-item"><button class="faq-q" aria-expanded="false" aria-controls="faq5" onclick="toggleFaq(this)">How do I get started?<span class="faq-q-icon" aria-hidden="true">+</span></button><div class="faq-a" id="faq5" role="region">Click Join Now, fill in your name and phone number, and our team will contact you within 24 hours. No commitment required to inquire.</div></div>
-  </div>
-</section>
-<section class="contact" id="contact" aria-labelledby="contact-title">
-  <div class="contact-info">
-    <div class="eyebrow">Contact Us</div>
-    <h2 class="sec-title" id="contact-title">Get in <span class="r">Touch</span></h2>
-    <p>Ready to start your journey? Fill out the form and our team will reach out within 24 hours. No commitment required.</p>
-    <div class="contact-row"><div class="contact-icon" aria-hidden="true">&#128205;</div><div class="contact-row-text"><a href="https://maps.app.goo.gl/iNgTgoWc1qBnxoVN8" target="_blank" rel="noopener noreferrer">Giza, Egypt &mdash; View on Google Maps</a></div></div>
-    <div class="contact-row"><div class="contact-icon" aria-hidden="true">&#128222;</div><div class="contact-row-text"><a href="tel:+201033724777">+20 103 372 4777</a></div></div>
-    <a href="https://wa.me/201033724777" target="_blank" rel="noopener noreferrer" class="whatsapp-btn" aria-label="Message us on WhatsApp">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="#25D366" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-      WhatsApp Us
-    </a>
-    <div class="social-row" aria-label="Follow us on social media">
-      <a href="https://www.instagram.com/marvelsfitstudios?igsh=aTZkZTRvNHE0azJj" target="_blank" rel="noopener noreferrer" class="social-btn" aria-label="Instagram"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>Instagram</a>
-      <a href="https://www.tiktok.com/@marvelsfitstudios" target="_blank" rel="noopener noreferrer" class="social-btn" aria-label="TikTok"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.97a8.16 8.16 0 004.77 1.52V7.04a4.85 4.85 0 01-1-.35z"/></svg>TikTok</a>
-      <a href="https://www.facebook.com/share/1CP9fjSoF8/" target="_blank" rel="noopener noreferrer" class="social-btn" aria-label="Facebook"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>Facebook</a>
-    </div>
-  </div>
-  <div class="cf" role="form">
-    <form id="contactForm" novalidate>
-      <div class="fg"><label class="form-lbl" for="cf-name">Full Name <span style="color:var(--red)">*</span></label><input class="fi" type="text" id="cf-name" name="name" placeholder="Your full name" required autocomplete="name"/></div>
-      <div class="fg"><label class="form-lbl" for="cf-phone">Phone Number <span style="color:var(--red)">*</span></label><input class="fi" type="tel" id="cf-phone" name="phone" placeholder="+20 1XX XXX XXXX" required autocomplete="tel"/></div>
-      <div class="fg"><label class="form-lbl" for="cf-msg">Message</label><textarea class="fi" id="cf-msg" name="message" placeholder="Tell us your goals, ask any question..."></textarea></div>
-      <div class="fg" style="display:flex;align-items:flex-start;gap:0.6rem;margin-top:0.25rem;">
-        <input type="checkbox" id="cf-privacy" name="privacy" required style="margin-top:3px;accent-color:var(--red);width:14px;height:14px;flex-shrink:0;"/>
-        <label for="cf-privacy" style="font-size:0.78rem;color:var(--gray2);line-height:1.5;cursor:pointer;">I agree that Marvel's Studios may contact me regarding my inquiry. Your information will not be shared.</label>
-      </div>
-      <button type="submit" class="btn-submit" id="cf-submit">Send Message</button>
-      <div class="form-success" id="cf-success" role="alert" aria-live="polite">&#10003; Message sent! We'll contact you within 24 hours.</div>
-    </form>
-  </div>
-</section>
-</main>
-<footer role="contentinfo">
-  <div class="footer-logo">
-    <img src="img/Logo-1.png" alt="Marvel's Studios" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"/>
-    <span>MARVEL'S STUDIOS</span>
-  </div>
-  <div>
-    <div class="footer-copy">&copy; 2025 Marvel's Studios &mdash; Performance Training. Giza, Egypt.</div>
-    <div class="footer-privacy">Your privacy matters. We do not sell or share your personal information.</div>
-  </div>
-  <div class="footer-links">
-    <a href="#about">About</a>
-    <a href="#trainers">Trainers</a>
-    <a href="#faq">FAQ</a>
-    <a href="#contact">Contact</a>
-    <a href="/login">Login</a>
-  </div>
-</footer>
-<div class="overlay" id="joinOverlay" role="dialog" aria-modal="true" aria-labelledby="modal-title" onclick="if(event.target===this)closeModal()">
-  <div class="modal">
-    <button class="modal-close" onclick="closeModal()" aria-label="Close dialog">&#10005;</button>
-    <div class="modal-title" id="modal-title">Join Now</div>
-    <div class="modal-sub">No commitment needed. Fill in your details and we'll reach out within 24 hours.</div>
-    <form id="joinForm" novalidate>
-      <div class="fg"><label class="form-lbl" for="jf-name">Full Name <span style="color:var(--red)">*</span></label><input class="fi" type="text" id="jf-name" name="name" placeholder="Your full name" required autocomplete="name"/></div>
-      <div class="fg"><label class="form-lbl" for="jf-phone">Phone Number <span style="color:var(--red)">*</span></label><input class="fi" type="tel" id="jf-phone" name="phone" placeholder="+20 1XX XXX XXXX" required autocomplete="tel"/></div>
-      <div class="fg"><label class="form-lbl" for="jf-interest">I'm interested in</label>
-        <select class="fi" id="jf-interest" name="interest"><option value="">Select training type...</option><option value="group">Group Training</option><option value="private">Private Sessions</option><option value="unsure">Not sure yet</option></select>
-      </div>
-      <div class="fg"><label class="form-lbl" for="jf-msg">Message (optional)</label><textarea class="fi" id="jf-msg" name="message" placeholder="Goals, questions, anything..." style="min-height:70px;"></textarea></div>
-      <div class="fg" style="display:flex;align-items:flex-start;gap:0.6rem;">
-        <input type="checkbox" id="jf-privacy" name="privacy" required style="margin-top:3px;accent-color:var(--red);width:14px;height:14px;flex-shrink:0;"/>
-        <label for="jf-privacy" style="font-size:0.78rem;color:var(--gray2);line-height:1.5;cursor:pointer;">I agree that Marvel's Studios may contact me regarding my inquiry.</label>
-      </div>
-      <button type="submit" class="btn-submit" id="jf-submit">Send My Request</button>
-      <div class="form-success" id="jf-success" role="alert" aria-live="polite">&#10003; Request received! We'll contact you within 24 hours.</div>
-    </form>
-    <div class="modal-privacy">By submitting, you agree to be contacted by Marvel's Studios. We respect your privacy.</div>
-  </div>
-</div>
-<script>
-function toggleNav(btn){const links=document.getElementById('navLinks');const open=links.classList.toggle('open');btn.setAttribute('aria-expanded',open);btn.textContent=open?'✕':'☰';}
-document.querySelectorAll('.nav-links a').forEach(a=>a.addEventListener('click',()=>{document.getElementById('navLinks').classList.remove('open');const btn=document.querySelector('.nav-hamburger');btn.setAttribute('aria-expanded','false');btn.textContent='☰';}));
-let lastFocused=null;
-function openModal(){lastFocused=document.activeElement;const overlay=document.getElementById('joinOverlay');overlay.classList.add('open');setTimeout(()=>{const f=overlay.querySelector('input,button');if(f)f.focus();},50);document.body.style.overflow='hidden';}
-function closeModal(){document.getElementById('joinOverlay').classList.remove('open');document.body.style.overflow='';if(lastFocused)lastFocused.focus();}
-document.getElementById('joinOverlay').addEventListener('keydown',function(e){if(e.key==='Escape'){closeModal();return;}if(e.key!=='Tab')return;const focusable=this.querySelectorAll('button,input,select,textarea');const first=focusable[0],last=focusable[focusable.length-1];if(e.shiftKey){if(document.activeElement===first){e.preventDefault();last.focus();}}else{if(document.activeElement===last){e.preventDefault();first.focus();}}} );
-function toggleFaq(btn){const expanded=btn.getAttribute('aria-expanded')==='true';document.querySelectorAll('.faq-q').forEach(b=>{b.setAttribute('aria-expanded','false');document.getElementById(b.getAttribute('aria-controls')).classList.remove('open');});if(!expanded){btn.setAttribute('aria-expanded','true');document.getElementById(btn.getAttribute('aria-controls')).classList.add('open');}}
-function handleForm(formId,btnId,successId){const form=document.getElementById(formId);const btn=document.getElementById(btnId);const success=document.getElementById(successId);form.addEventListener('submit',function(e){e.preventDefault();const name=form.querySelector('[name="name"]');const phone=form.querySelector('[name="phone"]');const privacy=form.querySelector('[name="privacy"]');if(!name.value.trim()){name.style.borderColor='var(--red)';name.focus();return;}name.style.borderColor='';if(!phone.value.trim()){phone.style.borderColor='var(--red)';phone.focus();return;}phone.style.borderColor='';if(!privacy.checked){alert('Please agree to be contacted before submitting.');return;}btn.disabled=true;btn.textContent='Sending...';setTimeout(()=>{success.classList.add('show');btn.style.display='none';form.querySelectorAll('input,textarea,select').forEach(el=>el.disabled=true);},600);});}
-handleForm('contactForm','cf-submit','cf-success');
-handleForm('joinForm','jf-submit','jf-success');
-</script>
+  <script src="modern-script.js?v=20260330-4"></script>
 </body>
 </html>
