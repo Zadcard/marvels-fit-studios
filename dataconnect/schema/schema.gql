@@ -1,0 +1,59 @@
+type Studio @table {
+  name: String!
+  address: String!
+  contactEmail: String!
+  phoneNumber: String
+  websiteURL: String
+}
+
+type User @table {
+  displayName: String!
+  email: String!
+  role: String!
+  createdAt: Timestamp!
+  phoneNumber: String
+  photoUrl: String
+  passwordHash: String
+}
+
+type MembershipType @table {
+  name: String!
+  description: String!
+  price: Float!
+  durationInDays: Int!
+  numberOfClassesIncluded: Int
+  accessLevel: String
+}
+
+type Membership @table {
+  user: User!
+  membershipType: MembershipType!
+  startDate: Date!
+  endDate: Date!
+  status: String!
+  createdAt: Timestamp!
+}
+
+type ClassType @table {
+  name: String!
+  description: String!
+  durationInMinutes: Int!
+  difficultyLevel: String
+  capacity: Int
+}
+
+type ClassSession @table {
+  studio: Studio!
+  classType: ClassType!
+  instructor: User
+  scheduledDateTime: Timestamp!
+  location: String!
+  status: String!
+}
+
+type Booking @table {
+  member: User!
+  classSession: ClassSession!
+  bookedAt: Timestamp!
+  status: String!
+}

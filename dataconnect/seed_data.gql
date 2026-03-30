@@ -1,0 +1,65 @@
+mutation SeedData @transaction @auth(level: USER, insecureReason: "Seed data mutation, no user specific data being created") {
+  user1: user_insert(data: {
+    id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+    displayName: "Alice Smith",
+    email: "alice.smith@example.com",
+    role: "Member",
+    createdAt: "2023-01-01T10:00:00Z"
+  })
+  user2: user_insert(data: {
+    id: "b1f1a0e1-1b0a-4c1e-9a1b-0c2d3e4f5a6b",
+    displayName: "Bob Johnson",
+    email: "bob.johnson@example.com",
+    role: "Instructor",
+    createdAt: "2023-01-02T11:00:00Z",
+    phoneNumber: "555-123-4567"
+  })
+  studio1: studio_insert(data: {
+    id: "c2d2b1f2-2c1b-4d2f-9b2c-1d3e4f5a6b7c",
+    name: "Downtown Fitness",
+    address: "123 Main St, Anytown, USA",
+    contactEmail: "info@downtownfitness.com"
+  })
+  classType1: classType_insert(data: {
+    id: "d3e3c2d3-3d2c-4e3a-9c3d-2e4f5a6b7c8d",
+    name: "Yoga Flow",
+    description: "Vinyasa flow for all levels.",
+    durationInMinutes: 60,
+    difficultyLevel: "Intermediate",
+    capacity: 20
+  })
+  classSession1: classSession_insert(data: {
+    id: "e4f4d3e4-4e3d-4f4b-9d4e-3f5a6b7c8d9e",
+    studioId: "c2d2b1f2-2c1b-4d2f-9b2c-1d3e4f5a6b7c",
+    classTypeId: "d3e3c2d3-3d2c-4e3a-9c3d-2e4f5a6b7c8d",
+    instructorId: "b1f1a0e1-1b0a-4c1e-9a1b-0c2d3e4f5a6b",
+    scheduledDateTime: "2024-03-10T09:00:00Z",
+    location: "Studio A",
+    status: "Scheduled"
+  })
+  membershipType1: membershipType_insert(data: {
+    id: "f5a5e4f5-5f4e-4a5c-9e5f-4a6b7c8d9e0f",
+    name: "Monthly Unlimited",
+    description: "Unlimited classes for one month.",
+    price: 99.99,
+    durationInDays: 30,
+    numberOfClassesIncluded: null,
+    accessLevel: "Premium"
+  })
+  membership1: membership_insert(data: {
+    id: "16b6f5a6-6a5f-4b6d-9f6a-5b7c8d9e0f12",
+    userId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+    membershipTypeId: "f5a5e4f5-5f4e-4a5c-9e5f-4a6b7c8d9e0f",
+    startDate: "2024-03-01",
+    endDate: "2024-03-31",
+    status: "Active",
+    createdAt: "2024-03-01T00:00:00Z"
+  })
+  booking1: booking_insert(data: {
+    id: "27c716b7-7b61-4c7e-917b-6c8d9e0f1234",
+    memberId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+    classSessionId: "e4f4d3e4-4e3d-4f4b-9d4e-3f5a6b7c8d9e",
+    bookedAt: "2024-03-05T15:30:00Z",
+    status: "Confirmed"
+  })
+}

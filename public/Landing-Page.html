@@ -357,6 +357,9 @@ footer{
 .modal-sub{font-size:0.85rem;color:var(--gray2);margin-bottom:1.75rem;}
 </style>
 </head>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics.js"></script>
 <body>
 
 <!-- NAV -->
@@ -398,7 +401,7 @@ footer{
     </div>
     <div class="hero-card">
       <div class="hero-logo-center">
-        <img src="img/c2.png" alt="MS" onerror="this.style.opacity='0'"/>
+        <img src="img/Logo-1.png" alt="MS" onerror="this.style.opacity='0'"/>
       </div>
       <div class="hero-card-title">By the numbers</div>
       <div class="hero-stats">
@@ -516,4 +519,19 @@ footer{
 </div>
 
 </body>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyBFUa1CNU0zodsSmbMSzNo8Axi-fJt5h1I",
+    authDomain: "marvel-fit-studios.firebaseapp.com",
+    projectId: "marvel-fit-studios",
+    storageBucket: "marvel-fit-studios.firebasestorage.app",
+    messagingSenderId: "437755561107",
+    appId: "1:437755561107:web:7f609fa0a39731e3d8f966",
+    measurementId: "G-2M4S5GBJBK"
+  };
+
+  // Initialize Firebase
+  const app = firebase.initializeApp(firebaseConfig);
+  const analytics = firebase.analytics();
+</script>
 </html>
