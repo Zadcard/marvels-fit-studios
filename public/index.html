@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#111214" />
   <title>Marvel's Studios | Premium Performance Training in Giza</title>
   <meta
     name="description"
@@ -26,7 +27,7 @@
     href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap"
     rel="stylesheet"
   />
-  <link rel="stylesheet" href="modern-styles.css?v=20260330-4" />
+  <link rel="stylesheet" href="modern-styles.css?v=20260330-7" />
 </head>
 <body>
   <a href="#main" class="skip-link">Skip to main content</a>
@@ -35,7 +36,15 @@
     <header class="site-header">
       <nav class="site-nav" aria-label="Primary navigation">
         <a href="#main" class="brand" aria-label="Marvel's Studios home">
-          <img src="img/Logo-2.png" alt="Marvel's Studios logo" />
+          <img
+            src="img/Logo-2.png"
+            alt="Marvel's Studios logo"
+            width="2000"
+            height="748"
+            sizes="(max-width: 640px) 42px, (max-width: 1024px) 52px, 58px"
+            decoding="async"
+            fetchpriority="high"
+          />
           <span>Marvel's Studios</span>
         </a>
 
@@ -59,10 +68,17 @@
           <a href="#reviews">Reviews</a>
           <a href="#faq">FAQ</a>
           <a href="#contact">Contact</a>
+          <a href="/login" class="nav-login-link">Login</a>
+          <button class="btn btn-primary nav-join-mobile" type="button" data-open-join>Join Now</button>
         </div>
 
         <div class="nav-actions">
-          <button class="btn btn-secondary" id="btnLogin" type="button">Login</button>
+          <div class="nav-phone_block" aria-label="Studio phone number">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+            </svg>
+            <a href="tel:+201033724777">+20 103 372 4777</a>
+          </div>
           <button class="btn btn-primary" id="btnJoinNav" type="button" aria-haspopup="dialog">
             Join Now
           </button>
@@ -89,74 +105,6 @@
             <button class="btn btn-primary btn-large" id="btnJoinHero" type="button">Start Membership</button>
             <button class="btn btn-secondary btn-large" id="btnLearnMore" type="button">Explore the Studio</button>
           </div>
-          <div class="hero-note">
-            <strong>Registration focus:</strong>
-            <span>Join Now opens a membership registration flow, not a generic contact form.</span>
-          </div>
-        </div>
-
-        <div class="hero-stack">
-          <section class="hero-summary panel panel-strong" aria-labelledby="summary-title">
-            <div class="summary-head">
-              <div>
-                <p class="mini-label">Studio snapshot</p>
-                <h2 id="summary-title">A cleaner path to consistency.</h2>
-              </div>
-              <span class="status-pill">Results-led</span>
-            </div>
-
-            <div class="summary-grid" role="list" aria-label="Membership highlights">
-              <article class="summary-card" role="listitem">
-                <span class="summary-value">12</span>
-                <span class="summary-label">Sessions each month</span>
-              </article>
-              <article class="summary-card" role="listitem">
-                <span class="summary-value">2</span>
-                <span class="summary-label">Training paths</span>
-              </article>
-              <article class="summary-card" role="listitem">
-                <span class="summary-value">1</span>
-                <span class="summary-label">Personal dashboard</span>
-              </article>
-            </div>
-
-            <div class="insight-card">
-              <div>
-                <p class="mini-label">Included with membership</p>
-                <h3>Every member gets a clearer support system.</h3>
-              </div>
-              <ul class="insight-list">
-                <li>Structured coaching and session guidance</li>
-                <li>Progress visibility through your dashboard</li>
-                <li>Clearer accountability inside every training block</li>
-              </ul>
-            </div>
-          </section>
-
-          <section class="hero-proof panel" aria-labelledby="proof-title">
-            <div class="proof-copy">
-              <p class="mini-label">Why people stay</p>
-              <h2 id="proof-title">A premium studio feel without the guesswork.</h2>
-              <p>
-                Members stay because the environment is organized, the coaching is attentive, and
-                the system makes it easier to show up consistently.
-              </p>
-            </div>
-            <div class="proof-stats" role="list" aria-label="Studio proof points">
-              <article role="listitem">
-                <strong>6</strong>
-                <span>Dedicated coaches</span>
-              </article>
-              <article role="listitem">
-                <strong>3k+</strong>
-                <span>Sessions supported</span>
-              </article>
-              <article role="listitem">
-                <strong>24h</strong>
-                <span>Typical response time</span>
-              </article>
-            </div>
-          </section>
         </div>
       </section>
 
@@ -185,7 +133,15 @@
           </article>
 
           <aside class="panel logo-panel" aria-label="Marvel's Studios mark">
-            <img src="img/Logo-3.png" alt="Marvel's Studios brand mark" />
+            <img
+              src="img/Logo-3.png"
+              alt="Marvel's Studios brand mark"
+              width="2000"
+              height="985"
+              sizes="(max-width: 640px) 180px, (max-width: 1024px) 220px, 260px"
+              loading="lazy"
+              decoding="async"
+            />
           </aside>
         </div>
       </section>
@@ -197,17 +153,12 @@
             <div class="eyebrow">What you get</div>
             <h2 id="services-title">Services designed to feel premium, clear, and easy to use.</h2>
           </div>
-          <p>
-            Instead of stacking too much information vertically, the key membership benefits are
-            organized as swipeable service cards that stay easy to browse on every screen size.
-          </p>
         </div>
 
         <div class="carousel-shell" data-carousel>
           <div class="carousel-header">
             <div>
               <p class="carousel-label">Membership features</p>
-              <p class="carousel-hint">Swipe on mobile or browse with the controls on desktop.</p>
             </div>
             <div class="carousel-controls">
               <button class="carousel-btn" type="button" data-carousel-prev aria-label="Show previous service cards">&larr;</button>
@@ -248,33 +199,42 @@
             <div class="eyebrow">Why members prefer it</div>
             <h2 id="why-title">A calmer, more organized studio experience with higher standards.</h2>
           </div>
-          <p>
-            The reference direction leans on strong spacing, calm hierarchy, and confident
-            grouping. This section translates that same discipline into the studio story.
-          </p>
         </div>
 
-        <div class="benefit-grid" role="list" aria-label="Studio benefits">
-          <article class="benefit-card panel" role="listitem">
-            <strong>3k+</strong>
-            <h3>Sessions supported</h3>
-            <p>Members train inside a system that is built to keep routines visible and easier to sustain.</p>
-          </article>
-          <article class="benefit-card panel" role="listitem">
-            <strong>12</strong>
-            <h3>Sessions every month</h3>
-            <p>A clearer monthly structure gives the membership real rhythm instead of vague attendance promises.</p>
-          </article>
-          <article class="benefit-card panel panel-accent" role="listitem">
-            <strong>2</strong>
-            <h3>Ways to train</h3>
-            <p>Choose between premium group sessions and private coaching without losing the same quality standard.</p>
-          </article>
-          <article class="benefit-card panel" role="listitem">
-            <strong>24h</strong>
-            <h3>Registration follow-up</h3>
-            <p>New registrations are treated as onboarding, with a faster, clearer next step after you apply.</p>
-          </article>
+        <div class="carousel-shell" data-carousel>
+          <div class="carousel-header">
+            <div>
+              <p class="carousel-label">Studio benefits</p>
+            </div>
+            <div class="carousel-controls">
+              <button class="carousel-btn" type="button" data-carousel-prev aria-label="Show previous benefits">&larr;</button>
+              <span class="carousel-status" data-carousel-status aria-live="polite"></span>
+              <button class="carousel-btn" type="button" data-carousel-next aria-label="Show next benefits">&rarr;</button>
+            </div>
+          </div>
+
+          <div class="carousel-track benefit-track" tabindex="0" role="list" aria-label="Studio benefits">
+            <article class="benefit-card panel" role="listitem">
+              <strong>3k+</strong>
+              <h3>Sessions supported</h3>
+              <p>Members train inside a system that is built to keep routines visible and easier to sustain.</p>
+            </article>
+            <article class="benefit-card panel" role="listitem">
+              <strong>12</strong>
+              <h3>Sessions every month</h3>
+              <p>A clearer monthly structure gives the membership real rhythm instead of vague attendance promises.</p>
+            </article>
+            <article class="benefit-card panel panel-accent" role="listitem">
+              <strong>2</strong>
+              <h3>Ways to train</h3>
+              <p>Choose between premium group sessions and private coaching without losing the same quality standard.</p>
+            </article>
+            <article class="benefit-card panel" role="listitem">
+              <strong>24h</strong>
+              <h3>Registration follow-up</h3>
+              <p>New registrations are treated as onboarding, with a faster, clearer next step after you apply.</p>
+            </article>
+          </div>
         </div>
       </section>
 
@@ -292,15 +252,15 @@
           <div class="impact-grid" role="list" aria-label="Membership value cards">
             <article class="impact-card" role="listitem">
               <h3>Clear onboarding</h3>
-              <p>Join Now now behaves like a real registration path with stronger wording and cleaner next steps.</p>
+              <p>A smoother path to start your actual training, with stronger guidance and cleaner next steps.</p>
             </article>
             <article class="impact-card" role="listitem">
-              <h3>Smarter layout</h3>
-              <p>The site is reorganized to reduce fatigue, improve scanning, and keep each section easier to absorb.</p>
+              <h3>Smarter training</h3>
+              <p>Programs designed to reduce fatigue, improve consistency, and keep every session easier to sustain.</p>
             </article>
             <article class="impact-card" role="listitem">
-              <h3>Smoother browsing</h3>
-              <p>Touch-friendly carousels and lighter interactions keep the experience calmer on mobile and desktop.</p>
+              <h3>Smoother progress</h3>
+              <p>Clearer coaching interactions keep the experience calmer and more focused on your results.</p>
             </article>
           </div>
         </div>
@@ -313,38 +273,47 @@
             <div class="eyebrow">Membership paths</div>
             <h2 id="plans-title">Choose the format that matches how you want to train.</h2>
           </div>
-          <p>
-            The plans are intentionally simple. The goal is clarity, not clutter: one clear group
-            path and one premium private path.
-          </p>
         </div>
 
-        <div class="plan-grid">
-          <article class="plan-card panel">
-            <div class="plan-top">
-              <span class="plan-tag">Group membership</span>
-              <h3>Train with energy and consistency.</h3>
+        <div class="carousel-shell" data-carousel>
+          <div class="carousel-header">
+            <div>
+              <p class="carousel-label">Membership options</p>
             </div>
-            <ul class="plan-list">
-              <li>12 structured sessions per month</li>
-              <li>Coach support in every class</li>
-              <li>High-accountability training environment</li>
-            </ul>
-            <button class="btn btn-secondary btn-plan" type="button" data-open-join>Register for Group Training</button>
-          </article>
+            <div class="carousel-controls">
+              <button class="carousel-btn" type="button" data-carousel-prev aria-label="Show previous plans">&larr;</button>
+              <span class="carousel-status" data-carousel-status aria-live="polite"></span>
+              <button class="carousel-btn" type="button" data-carousel-next aria-label="Show next plans">&rarr;</button>
+            </div>
+          </div>
 
-          <article class="plan-card panel panel-accent">
-            <div class="plan-top">
-              <span class="plan-tag">Private coaching</span>
-              <h3>Choose a more tailored coaching experience.</h3>
-            </div>
-            <ul class="plan-list">
-              <li>One-to-one sessions built around your goals</li>
-              <li>More focused progression and feedback</li>
-              <li>Premium support for members who want extra guidance</li>
-            </ul>
-            <button class="btn btn-primary btn-plan" type="button" data-open-join>Register for Private Coaching</button>
-          </article>
+          <div class="carousel-track plan-track" tabindex="0" aria-label="Membership plans">
+            <article class="plan-card panel">
+              <div class="plan-top">
+                <span class="plan-tag">Group membership</span>
+                <h3>Train with energy and consistency.</h3>
+              </div>
+              <ul class="plan-list">
+                <li>12 structured sessions per month</li>
+                <li>Coach support in every class</li>
+                <li>High-accountability training environment</li>
+              </ul>
+              <button class="btn btn-secondary btn-plan" type="button" data-open-join>Register for Group Training</button>
+            </article>
+
+            <article class="plan-card panel panel-accent">
+              <div class="plan-top">
+                <span class="plan-tag">Private coaching</span>
+                <h3>Choose a more tailored coaching experience.</h3>
+              </div>
+              <ul class="plan-list">
+                <li>One-to-one sessions built around your goals</li>
+                <li>More focused progression and feedback</li>
+                <li>Premium support for members who want extra guidance</li>
+              </ul>
+              <button class="btn btn-primary btn-plan" type="button" data-open-join>Register for Private Coaching</button>
+            </article>
+          </div>
         </div>
       </section>
 
@@ -355,17 +324,12 @@
             <div class="eyebrow">Meet the coaches</div>
             <h2 id="coaches-title">Experienced trainers behind the studio standard.</h2>
           </div>
-          <p>
-            Team members are presented in a swipeable row so the section feels easier to browse and
-            less tiring than a long vertical stack.
-          </p>
         </div>
 
         <div class="carousel-shell" data-carousel>
           <div class="carousel-header">
             <div>
               <p class="carousel-label">Coaching team</p>
-              <p class="carousel-hint">Swipe or drag to browse the team cards smoothly.</p>
             </div>
             <div class="carousel-controls">
               <button class="carousel-btn" type="button" data-carousel-prev aria-label="Show previous coaches">&larr;</button>
@@ -422,17 +386,12 @@
             <div class="eyebrow">Member feedback</div>
             <h2 id="reviews-title">What members notice once they train inside a better system.</h2>
           </div>
-          <p>
-            Reviews are also moved into a horizontal browsing pattern so mobile users can swipe and
-            desktop users can navigate without a long wall of testimonial cards.
-          </p>
         </div>
 
         <div class="carousel-shell" data-carousel>
           <div class="carousel-header">
             <div>
               <p class="carousel-label">Testimonials</p>
-              <p class="carousel-hint">Use the arrows, keyboard, or touch swipe to move through the stories.</p>
             </div>
             <div class="carousel-controls">
               <button class="carousel-btn" type="button" data-carousel-prev aria-label="Show previous reviews">&larr;</button>
@@ -486,10 +445,6 @@
             <div class="eyebrow">Questions and contact</div>
             <h2 id="faq-title">Everything important, made clearer.</h2>
           </div>
-          <p>
-            This area keeps the answers simple while giving the contact and social section a more
-            polished premium presentation.
-          </p>
         </div>
 
         <div class="support-layout">
@@ -537,102 +492,106 @@
           </div>
 
           <aside class="contact-panel panel panel-strong" id="contact" aria-labelledby="contact-title">
-            <div class="eyebrow">Contact the studio</div>
-            <h2 id="contact-title">Ready to register or ask a question first?</h2>
-            <p>
-              Use the registration flow if you are ready to join, or use the contact form here if
-              you want help choosing the right training path.
-            </p>
+            <div class="contact-split">
+              <div class="contact-info">
+                <div class="eyebrow">Contact the studio</div>
+                <h2 id="contact-title">Ready to register or ask a question first?</h2>
+                <p>
+                  Use the registration flow if you are ready to join, or use the contact form here if
+                  you want help choosing the right training path.
+                </p>
 
-            <div class="contact-list" role="list" aria-label="Contact details">
-              <div class="contact-row" role="listitem">
-                <span class="contact-badge">Map</span>
-                <a href="https://maps.app.goo.gl/iNgTgoWc1qBnxoVN8" target="_blank" rel="noopener noreferrer">
-                  Giza, Egypt - View on Google Maps
-                </a>
+                <div class="contact-list" role="list" aria-label="Contact details">
+                  <div class="contact-row" role="listitem">
+                    <span class="contact-badge">Map</span>
+                    <a href="https://maps.app.goo.gl/iNgTgoWc1qBnxoVN8" target="_blank" rel="noopener noreferrer">
+                      Giza, Egypt - View on Google Maps
+                    </a>
+                  </div>
+                  <div class="contact-row" role="listitem">
+                    <span class="contact-badge">Call</span>
+                    <a href="tel:+201033724777">+20 103 372 4777</a>
+                  </div>
+                </div>
               </div>
-              <div class="contact-row" role="listitem">
-                <span class="contact-badge">Call</span>
-                <a href="tel:+201033724777">+20 103 372 4777</a>
-              </div>
-            </div>
 
-            <a
-              href="https://wa.me/201033724777"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="whatsapp-btn"
-              aria-label="Message Marvel's Studios on WhatsApp"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-              </svg>
-              <span>WhatsApp the studio</span>
-            </a>
-
-            <div class="social-row" aria-label="Studio social media">
-              <a
-                href="https://www.instagram.com/marvelsfitstudios?igsh=aTZkZTRvNHE0azJj"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="social-btn social-btn-instagram"
-                aria-label="Follow Marvel's Studios on Instagram"
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                  <path d="M7.75 2h8.5A5.75 5.75 0 0 1 22 7.75v8.5A5.75 5.75 0 0 1 16.25 22h-8.5A5.75 5.75 0 0 1 2 16.25v-8.5A5.75 5.75 0 0 1 7.75 2m0 1.8A3.95 3.95 0 0 0 3.8 7.75v8.5A3.95 3.95 0 0 0 7.75 20.2h8.5a3.95 3.95 0 0 0 3.95-3.95v-8.5a3.95 3.95 0 0 0-3.95-3.95h-8.5M17.7 5.35a.95.95 0 1 1 0 1.9.95.95 0 0 1 0-1.9M12 6.85A5.15 5.15 0 1 1 6.85 12 5.16 5.16 0 0 1 12 6.85m0 1.8A3.35 3.35 0 1 0 15.35 12 3.35 3.35 0 0 0 12 8.65" />
-                </svg>
-                <span>Instagram</span>
-              </a>
-              <a
-                href="https://www.tiktok.com/@marvelsfitstudios"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="social-btn social-btn-tiktok"
-                aria-label="Follow Marvel's Studios on TikTok"
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                  <path d="M14.5 3c.42 1.64 1.38 2.95 2.88 3.93 1.08.7 2.23 1.07 3.45 1.11v3.12a9.42 9.42 0 0 1-3.7-.74v5.86c0 1.56-.55 2.89-1.66 4-1.1 1.09-2.43 1.64-3.98 1.64s-2.88-.55-3.99-1.64A5.43 5.43 0 0 1 5.85 16.3c0-1.56.55-2.9 1.65-4 .99-.98 2.17-1.53 3.55-1.63v3.22a2.33 2.33 0 0 0-1.2.67c-.47.46-.7 1.03-.7 1.72 0 .69.23 1.26.7 1.73.47.47 1.05.7 1.74.7.68 0 1.26-.23 1.72-.7.47-.47.7-1.04.7-1.73V3h3.19Z" />
-                </svg>
-                <span>TikTok</span>
-              </a>
-              <a
-                href="https://www.facebook.com/share/1CP9fjSoF8/"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="social-btn social-btn-facebook"
-                aria-label="Follow Marvel's Studios on Facebook"
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                  <path d="M13.25 22v-8.03h2.7l.4-3.13h-3.1V8.84c0-.9.25-1.52 1.55-1.52h1.66V4.51c-.29-.04-1.27-.11-2.41-.11-2.39 0-4.03 1.46-4.03 4.14v2.3H7.3v3.13h2.72V22h3.23Z" />
-                </svg>
-                <span>Facebook</span>
-              </a>
-            </div>
-
-            <form id="contactForm" class="contact-form" novalidate>
-              <div class="field-grid">
+              <form id="contactForm" class="contact-form" novalidate>
+                <div class="field-grid">
+                  <label>
+                    <span>Full name</span>
+                    <input class="field" id="cf-name" name="name" type="text" placeholder="Enter your full name" autocomplete="name" required />
+                  </label>
+                  <label>
+                    <span>Phone number</span>
+                    <input class="field" id="cf-phone" name="phone" type="tel" placeholder="+20 1XX XXX XXXX" autocomplete="tel" inputmode="tel" enterkeyhint="next" required />
+                  </label>
+                </div>
                 <label>
-                  <span>Full name</span>
-                  <input class="field" id="cf-name" name="name" type="text" placeholder="Enter your full name" autocomplete="name" required />
+                  <span>Your question</span>
+                  <textarea class="field field-area" id="cf-msg" name="message" placeholder="Tell us what you want help with" enterkeyhint="send"></textarea>
                 </label>
-                <label>
-                  <span>Phone number</span>
-                  <input class="field" id="cf-phone" name="phone" type="tel" placeholder="+20 1XX XXX XXXX" autocomplete="tel" required />
+                <label class="consent-row" for="cf-privacy">
+                  <input id="cf-privacy" name="privacy" type="checkbox" required />
+                  <span>I agree that Marvel's Studios may contact me regarding my question.</span>
                 </label>
-              </div>
-              <label>
-                <span>Your question</span>
-                <textarea class="field field-area" id="cf-msg" name="message" placeholder="Tell us what you want help with"></textarea>
-              </label>
-              <label class="consent-row" for="cf-privacy">
-                <input id="cf-privacy" name="privacy" type="checkbox" required />
-                <span>I agree that Marvel's Studios may contact me regarding my question.</span>
-              </label>
-              <button class="btn btn-primary btn-submit" id="cf-submit" type="submit">Request a Callback</button>
-              <p class="form-success" id="cf-success" role="alert" aria-live="polite">
-                Your request has been sent. The studio team will contact you soon.
-              </p>
-            </form>
+                <button class="btn btn-primary btn-submit" id="cf-submit" type="submit">Request a Callback</button>
+                <p class="form-success" id="cf-success" role="alert" aria-live="polite">
+                  Your request has been sent. The studio team will contact you soon.
+                </p>
+
+                <div class="form-footer-social" aria-label="Studio social media">
+                  <a
+                    href="https://wa.me/201033724777"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="whatsapp-btn"
+                    aria-label="Message Marvel's Studios on WhatsApp"
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                    </svg>
+                    <span>WhatsApp</span>
+                  </a>
+
+                  <a
+                    href="https://www.instagram.com/marvelsfitstudios?igsh=aTZkZTRvNHE0azJj"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="social-btn social-btn-instagram"
+                    aria-label="Follow Marvel's Studios on Instagram"
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                      <path d="M7.75 2h8.5A5.75 5.75 0 0 1 22 7.75v8.5A5.75 5.75 0 0 1 16.25 22h-8.5A5.75 5.75 0 0 1 2 16.25v-8.5A5.75 5.75 0 0 1 7.75 2m0 1.8A3.95 3.95 0 0 0 3.8 7.75v8.5A3.95 3.95 0 0 0 7.75 20.2h8.5a3.95 3.95 0 0 0 3.95-3.95v-8.5a3.95 3.95 0 0 0-3.95-3.95h-8.5M17.7 5.35a.95.95 0 1 1 0 1.9.95.95 0 0 1 0-1.9M12 6.85A5.15 5.15 0 1 1 6.85 12 5.16 5.16 0 0 1 12 6.85m0 1.8A3.35 3.35 0 1 0 15.35 12 3.35 3.35 0 0 0 12 8.65" />
+                    </svg>
+                    <span>Instagram</span>
+                  </a>
+                  <a
+                    href="https://www.tiktok.com/@marvelsfitstudios"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="social-btn social-btn-tiktok"
+                    aria-label="Follow Marvel's Studios on TikTok"
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                      <path d="M14.5 3c.42 1.64 1.38 2.95 2.88 3.93 1.08.7 2.23 1.07 3.45 1.11v3.12a9.42 9.42 0 0 1-3.7-.74v5.86c0 1.56-.55 2.89-1.66 4-1.1 1.09-2.43 1.64-3.98 1.64s-2.88-.55-3.99-1.64A5.43 5.43 0 0 1 5.85 16.3c0-1.56.55-2.9 1.65-4 .99-.98 2.17-1.53 3.55-1.63v3.22a2.33 2.33 0 0 0-1.2.67c-.47.46-.7 1.03-.7 1.72 0 .69.23 1.26.7 1.73.47.47 1.05.7 1.74.7.68 0 1.26-.23 1.72-.7.47-.47.7-1.04.7-1.73V3h3.19Z" />
+                    </svg>
+                    <span>TikTok</span>
+                  </a>
+                  <a
+                    href="https://www.facebook.com/share/1CP9fjSoF8/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="social-btn social-btn-facebook"
+                    aria-label="Follow Marvel's Studios on Facebook"
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                      <path d="M13.25 22v-8.03h2.7l.4-3.13h-3.1V8.84c0-.9.25-1.52 1.55-1.52h1.66V4.51c-.29-.04-1.27-.11-2.41-.11-2.39 0-4.03 1.46-4.03 4.14v2.3H7.3v3.13h2.72V22h3.23Z" />
+                    </svg>
+                    <span>Facebook</span>
+                  </a>
+                </div>
+              </form>
+            </div>
           </aside>
         </div>
       </section>
@@ -640,27 +599,80 @@
 
     <!-- Footer -->
     <footer class="site-footer">
-      <div class="footer-brand">
-        <img src="img/Logo-1.png" alt="Marvel's Studios logo" />
-        <div>
-          <strong>Marvel's Studios</strong>
-          <p>Premium performance training in Giza, Egypt.</p>
+      <div class="footer-grid">
+        
+        <!-- Brand & Details -->
+        <div class="footer-col footer-col-brand">
+          <img src="img/Logo-1.png" alt="Marvel's Studios logo" class="footer-logo" width="160" loading="lazy" />
+          <p>We believe that training is a journey we share with our members to achieve ideal performance and get the best from physical systems, to regain health and enjoy life.</p>
+        </div>
+
+        <!-- Contact Us -->
+        <div class="footer-col">
+          <strong class="footer-heading">Contact Us</strong>
+          <div class="footer-nav">
+            <a href="tel:+201033724777">+20 103 372 4777</a>
+            <a href="mailto:info@marvelsfit.com">Email us</a>
+          </div>
+          <button class="btn btn-primary footer-cta" type="button" data-open-join>BOOK A VISIT</button>
+        </div>
+
+        <!-- Quick Links -->
+        <div class="footer-col">
+          <strong class="footer-heading">Quick Links</strong>
+          <nav class="footer-nav">
+            <a href="#about">About the Studio</a>
+            <a href="#services">Membership Services</a>
+            <a href="#coaches">Meet the Coaches</a>
+            <a href="/login">Member Login</a>
+          </nav>
+        </div>
+
+        <!-- Find Us -->
+        <div class="footer-col">
+          <strong class="footer-heading">Find Us</strong>
+          <div class="footer-location-list">
+            <div class="footer-loc-item">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+              </svg>
+              <span>Giza, Egypt</span>
+            </div>
+            <div class="footer-loc-item">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/>
+              </svg>
+              <span>Daily from 9 am to 10 pm</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="footer-bottom">
+        <div class="footer-copyright">
+          Marvel's Studios &copy; 2026 - All Rights Reserved
+        </div>
+        <div class="footer-social-circ">
+          <a href="https://facebook.com/share/1CP9fjSoF8/" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M13.25 22v-8.03h2.7l.4-3.13h-3.1V8.84c0-.9.25-1.52 1.55-1.52h1.66V4.51c-.29-.04-1.27-.11-2.41-.11-2.39 0-4.03 1.46-4.03 4.14v2.3H7.3v3.13h2.72V22h3.23Z"/></svg>
+          </a>
+          <a href="https://instagram.com/marvelsfitstudios" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M7.75 2h8.5A5.75 5.75 0 0 1 22 7.75v8.5A5.75 5.75 0 0 1 16.25 22h-8.5A5.75 5.75 0 0 1 2 16.25v-8.5A5.75 5.75 0 0 1 7.75 2m0 1.8A3.95 3.95 0 0 0 3.8 7.75v8.5A3.95 3.95 0 0 0 7.75 20.2h8.5a3.95 3.95 0 0 0 3.95-3.95v-8.5a3.95 3.95 0 0 0-3.95-3.95h-8.5M17.7 5.35a.95.95 0 1 1 0 1.9.95.95 0 0 1 0-1.9M12 6.85A5.15 5.15 0 1 1 6.85 12 5.16 5.16 0 0 1 12 6.85m0 1.8A3.35 3.35 0 1 0 15.35 12 3.35 3.35 0 0 0 12 8.65"/></svg>
+          </a>
+          <a href="https://tiktok.com/@marvelsfitstudios" target="_blank" rel="noopener noreferrer" aria-label="TikTok">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M14.5 3c.42 1.64 1.38 2.95 2.88 3.93 1.08.7 2.23 1.07 3.45 1.11v3.12a9.42 9.42 0 0 1-3.7-.74v5.86c0 1.56-.55 2.89-1.66 4-1.1 1.09-2.43 1.64-3.98 1.64s-2.88-.55-3.99-1.64A5.43 5.43 0 0 1 5.85 16.3c0-1.56.55-2.9 1.65-4 .99-.98 2.17-1.53 3.55-1.63v3.22a2.33 2.33 0 0 0-1.2.67c-.47.46-.7 1.03-.7 1.72 0 .69.23 1.26.7 1.73.47.47 1.05.7 1.74.7.68 0 1.26-.23 1.72-.7.47-.47.7-1.04.7-1.73V3h3.19Z"/></svg>
+          </a>
+          <a href="https://wa.me/201033724777" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          </a>
         </div>
       </div>
-      <div class="footer-links">
-        <a href="#about">About</a>
-        <a href="#services">Services</a>
-        <a href="#coaches">Coaches</a>
-        <a href="#contact">Contact</a>
-        <a href="/login">Login</a>
-        <button class="btn btn-primary footer-join-btn" type="button" data-open-join>Join Now</button>
-      </div>
-      <p class="footer-copy">&copy; 2026 Marvel's Studios. We respect your privacy and do not share your personal information.</p>
     </footer>
   </div>
 
   <!-- Membership Registration Modal -->
-  <div class="modal-overlay" id="joinOverlay" role="dialog" aria-modal="true" aria-labelledby="join-title">
+  <div class="modal-overlay" id="joinOverlay" role="dialog" aria-modal="true" aria-labelledby="join-title" aria-hidden="true">
     <div class="join-modal panel panel-strong">
       <button class="modal-close" id="modalClose" type="button" aria-label="Close registration form">&times;</button>
       <div class="eyebrow">Start your membership</div>
@@ -678,7 +690,7 @@
           </label>
           <label>
             <span>Phone number</span>
-            <input class="field" id="jf-phone" name="phone" type="tel" placeholder="+20 1XX XXX XXXX" autocomplete="tel" required />
+            <input class="field" id="jf-phone" name="phone" type="tel" placeholder="+20 1XX XXX XXXX" autocomplete="tel" inputmode="tel" enterkeyhint="next" required />
           </label>
         </div>
 
@@ -710,6 +722,7 @@
             id="jf-msg"
             name="message"
             placeholder="Tell us about your goals, experience level, or the kind of support you want"
+            enterkeyhint="send"
           ></textarea>
         </label>
 
@@ -725,6 +738,6 @@
       </form>
     </div>
   </div>
-  <script src="modern-script.js?v=20260330-4"></script>
+  <script src="modern-script.js?v=20260330-7" defer></script>
 </body>
 </html>

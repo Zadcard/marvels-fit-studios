@@ -2,6 +2,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Core document references
   const root = document.documentElement;
   const body = document.body;
+  const siteShell = document.querySelector(".site-shell");
   const navToggle = document.getElementById("navToggle");
   const navLinks = document.getElementById("navLinks");
   const overlay = document.getElementById("joinOverlay");
@@ -19,6 +20,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let lastFocused = null;
   let resizeTimer = null;
+  const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
   root.classList.remove("no-js");
 
@@ -29,6 +31,10 @@ document.addEventListener("DOMContentLoaded", () => {
     ).filter((element) => !element.hasAttribute("disabled"));
   }
 
+  function setScrollLock(isLocked, className) {
+    body.classList.toggle(className, isLocked);
+  }
+
   function closeNav() {
     if (!navLinks || !navToggle) {
       return;
@@ -36,6 +42,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     navLinks.classList.remove("open");
     navToggle.setAttribute("aria-expanded", "false");
+    setScrollLock(false, "nav-open");
   }
 
   // Mobile navigation
@@ -43,10 +50,23 @@ document.addEventListener("DOMContentLoaded", () => {
     navToggle.addEventListener("click", () => {
       const isOpen = navLinks.classList.toggle("open");
       navToggle.setAttribute("aria-expanded", String(isOpen));
+      setScrollLock(isOpen, "nav-open");
     });
 
     navLinks.querySelectorAll("a").forEach((link) => {
       link.addEventListener("click", closeNav);
+    });
+
+    document.addEventListener("click", (event) => {
+      if (!navLinks.classList.contains("open")) {
+        return;
+      }
+
+      if (navLinks.contains(event.target) || navToggle.contains(event.target)) {
+        return;
+      }
+
+      closeNav();
     });
   }
 
@@ -59,7 +79,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (btnLearnMore && aboutSection) {
     btnLearnMore.addEventListener("click", () => {
-      aboutSection.scrollIntoView({ behavior: "smooth", block: "start" });
+      aboutSection.scrollIntoView({
+        behavior: prefersReducedMotion.matches ? "auto" : "smooth",
+        block: "start",
+      });
     });
   }
 
@@ -69,9 +92,15 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    closeNav();
     lastFocused = document.activeElement;
     overlay.classList.add("open");
-    body.style.overflow = "hidden";
+    overlay.setAttribute("aria-hidden", "false");
+    setScrollLock(true, "modal-open");
+
+    if (siteShell && "inert" in siteShell) {
+      siteShell.inert = true;
+    }
 
     window.requestAnimationFrame(() => {
       const [firstFocusable] = getFocusableElements(overlay);
@@ -87,7 +116,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     overlay.classList.remove("open");
-    body.style.overflow = "";
+    overlay.setAttribute("aria-hidden", "true");
+    setScrollLock(false, "modal-open");
+
+    if (siteShell && "inert" in siteShell) {
+      siteShell.inert = false;
+    }
 
     if (lastFocused && typeof lastFocused.focus === "function") {
       lastFocused.focus();
@@ -136,6 +170,12 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
   }
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      closeNav();
+    }
+  });
 
   // FAQ accordion
   function closeAllFaq() {
@@ -235,7 +275,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const boundedIndex = Math.max(0, Math.min(index, slides.length - 1));
       track.scrollTo({
         left: slides[boundedIndex].offsetLeft,
-        behavior: "smooth",
+        behavior: prefersReducedMotion.matches ? "auto" : "smooth",
       });
     }
 
@@ -296,7 +336,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (event && typeof track.releasePointerCapture === "function") {
         try {
           track.releasePointerCapture(event.pointerId);
-        } catch (error) {
+        } catch {
           // Ignore pointer capture release errors for browsers that already released it.
         }
       }
@@ -329,6 +369,21 @@ document.addEventListener("DOMContentLoaded", () => {
     const nameInput = form.querySelector('[name="name"]');
     const phoneInput = form.querySelector('[name="phone"]');
     const privacyInput = form.querySelector('[name="privacy"]');
+    const trackedInputs = [nameInput, phoneInput].filter(Boolean);
+
+    function setInvalidState(input, isInvalid) {
+      if (!input) {
+        return;
+      }
+
+      input.setAttribute("aria-invalid", String(isInvalid));
+    }
+
+    trackedInputs.forEach((input) => {
+      input.addEventListener("input", () => {
+        setInvalidState(input, false);
+      });
+    });
 
     form.addEventListener("submit", (event) => {
       event.preventDefault();
@@ -337,36 +392,36 @@ document.addEventListener("DOMContentLoaded", () => {
       const phoneValue = phoneInput ? phoneInput.value.trim() : "";
       const hasConsent = privacyInput ? privacyInput.checked : false;
 
-      [nameInput, phoneInput].forEach((input) => {
-        if (input) {
-          input.style.borderColor = "";
-        }
-      });
+      trackedInputs.forEach((input) => setInvalidState(input, false));
 
       if (nameInput && !nameValue) {
-        nameInput.style.borderColor = "#d15b5b";
+        setInvalidState(nameInput, true);
         nameInput.focus();
+        nameInput.reportValidity();
         return;
       }
 
       if (phoneInput && !phoneValue) {
-        phoneInput.style.borderColor = "#d15b5b";
+        setInvalidState(phoneInput, true);
         phoneInput.focus();
+        phoneInput.reportValidity();
         return;
       }
 
       if (!hasConsent) {
-        window.alert("Please confirm consent before submitting.");
+        privacyInput.reportValidity();
         return;
       }
 
       submitButton.disabled = true;
+      submitButton.setAttribute("aria-busy", "true");
       submitButton.textContent = loadingText;
 
       window.setTimeout(() => {
         form.querySelectorAll("input, select, textarea, button").forEach((field) => {
           field.disabled = true;
         });
+        submitButton.setAttribute("aria-busy", "false");
         successMessage.classList.add("show");
       }, 350);
     });
