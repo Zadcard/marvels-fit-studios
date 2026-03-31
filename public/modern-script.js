@@ -5,32 +5,21 @@ document.addEventListener("DOMContentLoaded", () => {
   const siteShell = document.querySelector(".site-shell");
   const navToggle = document.getElementById("navToggle");
   const navLinks = document.getElementById("navLinks");
-  const overlay = document.getElementById("joinOverlay");
-  const modalClose = document.getElementById("modalClose");
-  const joinButtons = [
-    document.getElementById("btnJoinNav"),
-    document.getElementById("btnJoinHero"),
-    ...Array.from(document.querySelectorAll("[data-open-join]")),
-  ].filter(Boolean);
   const btnLogin = document.getElementById("btnLogin");
+  const btnJoinNav = document.getElementById("btnJoinNav");
+  const btnJoinHero = document.getElementById("btnJoinHero");
   const btnLearnMore = document.getElementById("btnLearnMore");
+  const contactSection = document.getElementById("contact");
   const aboutSection = document.getElementById("about");
   const faqButtons = Array.from(document.querySelectorAll(".faq-question"));
   const carousels = Array.from(document.querySelectorAll("[data-carousel]"));
 
-  let lastFocused = null;
   let resizeTimer = null;
   const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
   root.classList.remove("no-js");
 
   // Shared helpers
-  function getFocusableElements(container) {
-    return Array.from(
-      container.querySelectorAll('button, a[href], input, select, textarea, [tabindex]:not([tabindex="-1"])')
-    ).filter((element) => !element.hasAttribute("disabled"));
-  }
-
   function setScrollLock(isLocked, className) {
     body.classList.toggle(className, isLocked);
   }
@@ -44,6 +33,48 @@ document.addEventListener("DOMContentLoaded", () => {
     navToggle.setAttribute("aria-expanded", "false");
     setScrollLock(false, "nav-open");
   }
+
+  function scrollToEl(el) {
+    if (!el) return;
+    const headerHeight = document.querySelector(".site-header")?.offsetHeight || 80;
+    const targetTop = el.getBoundingClientRect().top + window.pageYOffset - headerHeight - 10;
+
+    // Use a robust scroll method that bypasses the reduced-motion check for these specific manual calls
+    // since the user explicitly requested visible smooth scrolling.
+    window.scrollTo({
+      top: targetTop,
+      behavior: "smooth",
+    });
+  }
+
+  // Global scroll handler for anchors and data-scroll-to elements
+  document.addEventListener("click", (event) => {
+    const targetLink = event.target.closest('a[href^="#"]');
+    const scrollButton = event.target.closest("[data-scroll-to]");
+
+    if (targetLink) {
+      const targetId = targetLink.getAttribute("href");
+      if (targetId === "#") return;
+      const targetEl = document.querySelector(targetId);
+      if (targetEl) {
+        event.preventDefault();
+        
+        // Sequence: Start scroll, then close nav if it was open
+        // This prevents the layout shift from the closing menu from breaking the scroll target calculation
+        scrollToEl(targetEl);
+        
+        if (navLinks.classList.contains("open")) {
+          setTimeout(closeNav, 10);
+        }
+      }
+    } else if (scrollButton) {
+      const targetId = scrollButton.getAttribute("data-scroll-to");
+      const targetEl = document.querySelector(targetId);
+      if (targetEl) {
+        scrollToEl(targetEl);
+      }
+    }
+  });
 
   // Mobile navigation
   if (navToggle && navLinks) {
@@ -77,97 +108,22 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  if (btnJoinNav) {
+    btnJoinNav.addEventListener("click", () => {
+      closeNav();
+      scrollToEl(contactSection);
+    });
+  }
+
+  if (btnJoinHero) {
+    btnJoinHero.addEventListener("click", () => {
+      scrollToEl(contactSection);
+    });
+  }
+
   if (btnLearnMore && aboutSection) {
     btnLearnMore.addEventListener("click", () => {
-      aboutSection.scrollIntoView({
-        behavior: prefersReducedMotion.matches ? "auto" : "smooth",
-        block: "start",
-      });
-    });
-  }
-
-  // Registration modal
-  function openModal() {
-    if (!overlay) {
-      return;
-    }
-
-    closeNav();
-    lastFocused = document.activeElement;
-    overlay.classList.add("open");
-    overlay.setAttribute("aria-hidden", "false");
-    setScrollLock(true, "modal-open");
-
-    if (siteShell && "inert" in siteShell) {
-      siteShell.inert = true;
-    }
-
-    window.requestAnimationFrame(() => {
-      const [firstFocusable] = getFocusableElements(overlay);
-      if (firstFocusable) {
-        firstFocusable.focus();
-      }
-    });
-  }
-
-  function closeModal() {
-    if (!overlay) {
-      return;
-    }
-
-    overlay.classList.remove("open");
-    overlay.setAttribute("aria-hidden", "true");
-    setScrollLock(false, "modal-open");
-
-    if (siteShell && "inert" in siteShell) {
-      siteShell.inert = false;
-    }
-
-    if (lastFocused && typeof lastFocused.focus === "function") {
-      lastFocused.focus();
-    }
-  }
-
-  joinButtons.forEach((button) => {
-    button.addEventListener("click", openModal);
-  });
-
-  if (modalClose) {
-    modalClose.addEventListener("click", closeModal);
-  }
-
-  if (overlay) {
-    overlay.addEventListener("click", (event) => {
-      if (event.target === overlay) {
-        closeModal();
-      }
-    });
-
-    overlay.addEventListener("keydown", (event) => {
-      if (event.key === "Escape") {
-        closeModal();
-        return;
-      }
-
-      if (event.key !== "Tab") {
-        return;
-      }
-
-      const focusable = getFocusableElements(overlay);
-      if (!focusable.length) {
-        return;
-      }
-
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
+      scrollToEl(aboutSection);
     });
   }
 
@@ -428,7 +384,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   handleForm("contactForm", "cf-submit", "cf-success", "Sending request...");
-  handleForm("joinForm", "jf-submit", "jf-success", "Submitting registration...");
 
   // Global resize handling
   window.addEventListener("resize", () => {

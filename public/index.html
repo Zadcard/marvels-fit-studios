@@ -68,18 +68,13 @@
           <a href="#reviews">Reviews</a>
           <a href="#faq">FAQ</a>
           <a href="#contact">Contact</a>
-          <a href="/login" class="nav-login-link">Login</a>
-          <button class="btn btn-primary nav-join-mobile" type="button" data-open-join>Join Now</button>
+
+          <button class="btn btn-primary nav-join-mobile" type="button" data-scroll-to="#contact">Join Now</button>
         </div>
 
         <div class="nav-actions">
-          <div class="nav-phone_block" aria-label="Studio phone number">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
-            </svg>
-            <a href="tel:+201033724777">+20 103 372 4777</a>
-          </div>
-          <button class="btn btn-primary" id="btnJoinNav" type="button" aria-haspopup="dialog">
+          <a href="/login" class="btn btn-outline" id="btnLogin">Login</a>
+          <button class="btn btn-primary" id="btnJoinNav" type="button" data-scroll-to="#contact">
             Join Now
           </button>
         </div>
@@ -102,7 +97,7 @@
             experience that feels personal, organized, and built for measurable results.
           </p>
           <div class="hero-actions">
-            <button class="btn btn-primary btn-large" id="btnJoinHero" type="button">Start Membership</button>
+            <button class="btn btn-primary btn-large" id="btnJoinHero" type="button" data-scroll-to="#contact">Start Membership</button>
             <button class="btn btn-secondary btn-large" id="btnLearnMore" type="button">Explore the Studio</button>
           </div>
         </div>
@@ -298,7 +293,7 @@
                 <li>Coach support in every class</li>
                 <li>High-accountability training environment</li>
               </ul>
-              <button class="btn btn-secondary btn-plan" type="button" data-open-join>Register for Group Training</button>
+              <button class="btn btn-secondary btn-plan" type="button" data-scroll-to="#contact">Register for Group Training</button>
             </article>
 
             <article class="plan-card panel panel-accent">
@@ -311,7 +306,7 @@
                 <li>More focused progression and feedback</li>
                 <li>Premium support for members who want extra guidance</li>
               </ul>
-              <button class="btn btn-primary btn-plan" type="button" data-open-join>Register for Private Coaching</button>
+              <button class="btn btn-primary btn-plan" type="button" data-scroll-to="#contact">Register for Private Coaching</button>
             </article>
           </div>
         </div>
@@ -490,7 +485,7 @@
                 </button>
                 <div class="faq-answer" id="faq-4">
                   <p>Choose Join Now, complete the short registration form, and the studio team will contact you within 24 hours to confirm the next step.</p>
-                  <button class="btn btn-primary" style="margin-top: 15px; min-height: 40px; padding: 0 20px; font-size: 0.75rem;" type="button" data-open-join>Join Now</button>
+                  <button class="btn btn-primary" style="margin-top: 15px; min-height: 40px; padding: 0 20px; font-size: 0.75rem;" type="button" data-scroll-to="#contact">Join Now</button>
                 </div>
               </article>
             </div>
@@ -539,7 +534,7 @@
                   <input id="cf-privacy" name="privacy" type="checkbox" required />
                   <span>I agree that Marvel's Studios may contact me regarding my question.</span>
                 </label>
-                <button class="btn btn-primary btn-submit" id="cf-submit" type="submit">Request a Callback</button>
+                <button class="btn btn-primary btn-submit" id="cf-submit" type="submit">Submit</button>
                 <p class="form-success" id="cf-success" role="alert" aria-live="polite">
                   Your request has been sent. The studio team will contact you soon.
                 </p>
@@ -619,7 +614,7 @@
             <a href="tel:+201033724777">+20 103 372 4777</a>
             <a href="mailto:info@marvelsfit.com">Email us</a>
           </div>
-          <button class="btn btn-primary footer-cta" type="button" data-open-join>BOOK A VISIT</button>
+          <button class="btn btn-primary footer-cta" type="button" data-scroll-to="#contact">BOOK A VISIT</button>
         </div>
 
         <!-- Quick Links -->
@@ -676,72 +671,6 @@
     </footer>
   </div>
 
-  <!-- Membership Registration Modal -->
-  <div class="modal-overlay" id="joinOverlay" role="dialog" aria-modal="true" aria-labelledby="join-title" aria-hidden="true">
-    <div class="join-modal panel panel-strong">
-      <button class="modal-close" id="modalClose" type="button" aria-label="Close registration form">&times;</button>
-      <div class="eyebrow">Start your membership</div>
-      <h2 id="join-title">Complete your registration request.</h2>
-      <p class="modal-copy">
-        Fill out your details and the studio team will contact you within 24 hours to confirm your
-        membership path, answer final questions, and help you get started.
-      </p>
-
-      <form id="joinForm" class="join-form" novalidate>
-        <div class="field-grid">
-          <label>
-            <span>Full name</span>
-            <input class="field" id="jf-name" name="name" type="text" placeholder="Enter your full name" autocomplete="name" required />
-          </label>
-          <label>
-            <span>Phone number</span>
-            <input class="field" id="jf-phone" name="phone" type="tel" placeholder="+20 1XX XXX XXXX" autocomplete="tel" inputmode="tel" enterkeyhint="next" required />
-          </label>
-        </div>
-
-        <div class="field-grid">
-          <label>
-            <span>Training preference</span>
-            <select class="field" id="jf-interest" name="interest">
-              <option value="">Choose a training path</option>
-              <option value="group">Group training</option>
-              <option value="private">Private coaching</option>
-              <option value="unsure">I want help deciding</option>
-            </select>
-          </label>
-          <label>
-            <span>Preferred schedule</span>
-            <select class="field" id="jf-schedule" name="schedule">
-              <option value="">Choose a schedule</option>
-              <option value="morning">Morning</option>
-              <option value="evening">Evening</option>
-              <option value="flexible">Flexible</option>
-            </select>
-          </label>
-        </div>
-
-        <label>
-          <span>Goals or notes</span>
-          <textarea
-            class="field field-area"
-            id="jf-msg"
-            name="message"
-            placeholder="Tell us about your goals, experience level, or the kind of support you want"
-            enterkeyhint="send"
-          ></textarea>
-        </label>
-
-        <label class="consent-row" for="jf-privacy">
-          <input id="jf-privacy" name="privacy" type="checkbox" required />
-          <span>I agree that Marvel's Studios may contact me to complete my membership registration.</span>
-        </label>
-
-        <button class="btn btn-primary btn-submit" id="jf-submit" type="submit">Submit Registration</button>
-        <p class="form-success" id="jf-success" role="alert" aria-live="polite">
-          Your registration request has been received. The studio team will contact you within 24 hours.
-        </p>
-      </form>
-    </div>
   </div>
   <script src="modern-script.js?v=20260330-7" defer></script>
 </body>
