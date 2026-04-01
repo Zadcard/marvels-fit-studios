@@ -4,6 +4,7 @@ import { useDeferredValue, useState } from "react";
 import { CalendarPlus, Layers3 } from "lucide-react";
 
 import { DashboardManagementToolbar } from "@/components/dashboard/dashboard-management-toolbar";
+import { DashboardEmptyState } from "@/components/dashboard/dashboard-empty-state";
 import { DashboardModal } from "@/components/dashboard/dashboard-modal";
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
 import { DashboardStatusBadge } from "@/components/dashboard/dashboard-status-badge";
@@ -282,6 +283,13 @@ export function AdminSessionsWorkspace() {
 function SessionGroupTable({ records }: { records: AdminGroupSessionRecord[] }) {
   return (
     <div className="dashboard-data-region">
+      {records.length === 0 ? (
+        <DashboardEmptyState
+          title="No group sessions match this view"
+          description="Try clearing the search term or changing the status filter to see more sessions."
+        />
+      ) : (
+        <>
       <div className="dashboard-table-wrap">
         <table className="dashboard-table">
           <thead>
@@ -357,6 +365,8 @@ function SessionGroupTable({ records }: { records: AdminGroupSessionRecord[] }) 
           </article>
         ))}
       </div>
+        </>
+      )}
     </div>
   );
 }
@@ -368,6 +378,13 @@ function SessionPrivateTable({
 }) {
   return (
     <div className="dashboard-data-region">
+      {records.length === 0 ? (
+        <DashboardEmptyState
+          title="No private sessions match this view"
+          description="Try clearing the search term or changing the status filter to see more sessions."
+        />
+      ) : (
+        <>
       <div className="dashboard-table-wrap">
         <table className="dashboard-table">
           <thead>
@@ -430,6 +447,8 @@ function SessionPrivateTable({
           </article>
         ))}
       </div>
+        </>
+      )}
     </div>
   );
 }

@@ -1,0 +1,177 @@
+import type { LucideIcon } from "lucide-react";
+import {
+  BadgeDollarSign,
+  CircleDollarSign,
+  RefreshCcw,
+  ShieldCheck,
+} from "lucide-react";
+
+export type AdminSubscriptionStatus =
+  | "Active"
+  | "Pending renewal"
+  | "Paused"
+  | "Trial";
+export type AdminPaymentStatus = "Paid" | "Due soon" | "Overdue" | "Manual review";
+export type AdminPlanType =
+  | "Group Membership"
+  | "Private Coaching"
+  | "Hybrid Elite"
+  | "Starter Reset";
+
+export type AdminSubscriptionStat = {
+  id: string;
+  label: string;
+  value: string;
+  change: string;
+  detail: string;
+  note: string;
+  icon: LucideIcon;
+  tone: "accent" | "success" | "warning" | "neutral";
+};
+
+export type AdminSubscriptionRecord = {
+  id: string;
+  memberName: string;
+  planName: AdminPlanType;
+  subscriptionStatus: AdminSubscriptionStatus;
+  paymentStatus: AdminPaymentStatus;
+  assignedCoach: string;
+  renewalDate: string;
+  amountLabel: string;
+  billingCycle: string;
+  note: string;
+};
+
+export const adminSubscriptionStatusFilters: Array<
+  "All statuses" | AdminSubscriptionStatus
+> = ["All statuses", "Active", "Pending renewal", "Paused", "Trial"];
+
+export const adminPaymentStatusFilters: Array<
+  "All payments" | AdminPaymentStatus
+> = ["All payments", "Paid", "Due soon", "Overdue", "Manual review"];
+
+export const adminPlanFilters: Array<"All plans" | AdminPlanType> = [
+  "All plans",
+  "Group Membership",
+  "Private Coaching",
+  "Hybrid Elite",
+  "Starter Reset",
+];
+
+export const adminSubscriptionStats: AdminSubscriptionStat[] = [
+  {
+    id: "active-plans",
+    label: "Active plans",
+    value: "214",
+    change: "12 trial upgrades",
+    detail: "Current mix across recurring group, private, and hybrid memberships.",
+    note: "Mock subscriptions",
+    icon: ShieldCheck,
+    tone: "accent",
+  },
+  {
+    id: "renewals",
+    label: "Renewals this week",
+    value: "31",
+    change: "7 need outreach",
+    detail: "A manageable renewal wave with a few high-touch accounts to watch.",
+    note: "Mock retention",
+    icon: RefreshCcw,
+    tone: "warning",
+  },
+  {
+    id: "collected",
+    label: "Collected this cycle",
+    value: "EGP 96k",
+    change: "On pace",
+    detail: "Frontend placeholder for the future billing and finance integration.",
+    note: "Mock finance",
+    icon: CircleDollarSign,
+    tone: "success",
+  },
+  {
+    id: "at-risk",
+    label: "At-risk accounts",
+    value: "09",
+    change: "2 overdue",
+    detail: "A small set of accounts need follow-up before churn becomes likely.",
+    note: "Mock alert",
+    icon: BadgeDollarSign,
+    tone: "neutral",
+  },
+];
+
+export const adminSubscriptionRecords: AdminSubscriptionRecord[] = [
+  {
+    id: "subscription-1",
+    memberName: "Nour Hassan",
+    planName: "Hybrid Elite",
+    subscriptionStatus: "Active",
+    paymentStatus: "Paid",
+    assignedCoach: "Ahmed Waheed",
+    renewalDate: "Apr 12, 2026",
+    amountLabel: "EGP 3,400",
+    billingCycle: "Monthly",
+    note: "High-engagement member with both group and private attendance.",
+  },
+  {
+    id: "subscription-2",
+    memberName: "Sara Nabil",
+    planName: "Private Coaching",
+    subscriptionStatus: "Pending renewal",
+    paymentStatus: "Due soon",
+    assignedCoach: "Reham Badawy",
+    renewalDate: "Apr 08, 2026",
+    amountLabel: "EGP 4,200",
+    billingCycle: "Monthly",
+    note: "Renewal conversation should happen after Wednesday progress review.",
+  },
+  {
+    id: "subscription-3",
+    memberName: "Mona Adel",
+    planName: "Group Membership",
+    subscriptionStatus: "Active",
+    paymentStatus: "Paid",
+    assignedCoach: "Karim Adel",
+    renewalDate: "Apr 28, 2026",
+    amountLabel: "EGP 1,850",
+    billingCycle: "Monthly",
+    note: "Consistent attendance and low support burden.",
+  },
+  {
+    id: "subscription-4",
+    memberName: "Dina Ragab",
+    planName: "Starter Reset",
+    subscriptionStatus: "Trial",
+    paymentStatus: "Manual review",
+    assignedCoach: "Hisham Mostafa",
+    renewalDate: "Apr 06, 2026",
+    amountLabel: "EGP 950",
+    billingCycle: "Two weeks",
+    note: "Trial extension is waiting for intake clarification.",
+  },
+  {
+    id: "subscription-5",
+    memberName: "Yara Mostafa",
+    planName: "Private Coaching",
+    subscriptionStatus: "Paused",
+    paymentStatus: "Overdue",
+    assignedCoach: "Youssef Abdelatif",
+    renewalDate: "Mar 31, 2026",
+    amountLabel: "EGP 4,000",
+    billingCycle: "Monthly",
+    note: "Paused after travel; payment follow-up should stay gentle.",
+  },
+  {
+    id: "subscription-6",
+    memberName: "Tamer Adel",
+    planName: "Group Membership",
+    subscriptionStatus: "Pending renewal",
+    paymentStatus: "Due soon",
+    assignedCoach: "Ahmed Farouk",
+    renewalDate: "Apr 10, 2026",
+    amountLabel: "EGP 1,850",
+    billingCycle: "Monthly",
+    note: "Likely renewal if evening slot preference is preserved.",
+  },
+];

@@ -24,7 +24,11 @@ export type DashboardNavItem = {
   exact?: boolean;
 };
 
-const comingSoon = "Soon";
+type DashboardProfileMeta = {
+  name: string;
+  subtitle: string;
+  initials: string;
+};
 
 const dashboardNavConfig: Record<DashboardRole, DashboardNavItem[]> = {
   admin: [
@@ -67,8 +71,7 @@ const dashboardNavConfig: Record<DashboardRole, DashboardNavItem[]> = {
       icon: CalendarRange,
       description: "Calendar and occupancy planning",
       section: "primary",
-      available: false,
-      badge: comingSoon,
+      available: true,
     },
     {
       label: "Subscriptions",
@@ -76,8 +79,7 @@ const dashboardNavConfig: Record<DashboardRole, DashboardNavItem[]> = {
       icon: CreditCard,
       description: "Plans, renewals, and payment state",
       section: "primary",
-      available: false,
-      badge: comingSoon,
+      available: true,
     },
     {
       label: "Settings",
@@ -85,8 +87,7 @@ const dashboardNavConfig: Record<DashboardRole, DashboardNavItem[]> = {
       icon: Settings,
       description: "Studio defaults and operational controls",
       section: "secondary",
-      available: false,
-      badge: comingSoon,
+      available: true,
     },
     {
       label: "Profile",
@@ -94,8 +95,7 @@ const dashboardNavConfig: Record<DashboardRole, DashboardNavItem[]> = {
       icon: UserRound,
       description: "Admin profile and account preferences",
       section: "secondary",
-      available: false,
-      badge: comingSoon,
+      available: true,
     },
   ],
   coach: [
@@ -103,10 +103,9 @@ const dashboardNavConfig: Record<DashboardRole, DashboardNavItem[]> = {
       label: "Dashboard",
       href: "/coach",
       icon: LayoutDashboard,
-      description: "Coaching overview and today’s workload",
+      description: "Coaching overview and today's workload",
       section: "primary",
-      available: false,
-      badge: comingSoon,
+      available: true,
       exact: true,
     },
     {
@@ -115,8 +114,7 @@ const dashboardNavConfig: Record<DashboardRole, DashboardNavItem[]> = {
       icon: Dumbbell,
       description: "Assigned sessions and updates",
       section: "primary",
-      available: false,
-      badge: comingSoon,
+      available: true,
     },
     {
       label: "Clients",
@@ -124,8 +122,7 @@ const dashboardNavConfig: Record<DashboardRole, DashboardNavItem[]> = {
       icon: Users,
       description: "Your roster and client follow-up",
       section: "primary",
-      available: false,
-      badge: comingSoon,
+      available: true,
     },
     {
       label: "Schedule",
@@ -133,8 +130,7 @@ const dashboardNavConfig: Record<DashboardRole, DashboardNavItem[]> = {
       icon: CalendarRange,
       description: "Weekly rhythm and coaching calendar",
       section: "primary",
-      available: false,
-      badge: comingSoon,
+      available: true,
     },
     {
       label: "Settings",
@@ -142,8 +138,7 @@ const dashboardNavConfig: Record<DashboardRole, DashboardNavItem[]> = {
       icon: Settings,
       description: "Preferences and profile settings",
       section: "secondary",
-      available: false,
-      badge: comingSoon,
+      available: true,
     },
   ],
   client: [
@@ -153,8 +148,7 @@ const dashboardNavConfig: Record<DashboardRole, DashboardNavItem[]> = {
       icon: LayoutDashboard,
       description: "Training overview and current plan",
       section: "primary",
-      available: false,
-      badge: comingSoon,
+      available: true,
       exact: true,
     },
     {
@@ -163,8 +157,7 @@ const dashboardNavConfig: Record<DashboardRole, DashboardNavItem[]> = {
       icon: Dumbbell,
       description: "Upcoming bookings and attendance",
       section: "primary",
-      available: false,
-      badge: comingSoon,
+      available: true,
     },
     {
       label: "Coach",
@@ -172,8 +165,7 @@ const dashboardNavConfig: Record<DashboardRole, DashboardNavItem[]> = {
       icon: ShieldUser,
       description: "Assigned coach and communication",
       section: "primary",
-      available: false,
-      badge: comingSoon,
+      available: true,
     },
     {
       label: "Subscription",
@@ -181,8 +173,7 @@ const dashboardNavConfig: Record<DashboardRole, DashboardNavItem[]> = {
       icon: CreditCard,
       description: "Plan details and membership state",
       section: "primary",
-      available: false,
-      badge: comingSoon,
+      available: true,
     },
     {
       label: "Settings",
@@ -190,8 +181,7 @@ const dashboardNavConfig: Record<DashboardRole, DashboardNavItem[]> = {
       icon: Settings,
       description: "Personal preferences and profile",
       section: "secondary",
-      available: false,
-      badge: comingSoon,
+      available: true,
     },
   ],
 };
@@ -216,6 +206,51 @@ export function getDashboardRoleLabel(role: DashboardRole) {
       return "Client workspace";
     default:
       return "Admin workspace";
+  }
+}
+
+export function getDashboardProfileMeta(role: DashboardRole): DashboardProfileMeta {
+  switch (role) {
+    case "coach":
+      return {
+        name: "Ahmed Waheed",
+        subtitle: "Strength coach",
+        initials: "AW",
+      };
+    case "client":
+      return {
+        name: "Nour Hassan",
+        subtitle: "Hybrid elite",
+        initials: "NH",
+      };
+    default:
+      return {
+        name: "Layla Mourad",
+        subtitle: "Studio director",
+        initials: "LM",
+      };
+  }
+}
+
+export function getDashboardSearchPrompt(role: DashboardRole) {
+  switch (role) {
+    case "coach":
+      return "Search preview: sessions, clients, or notes";
+    case "client":
+      return "Search preview: sessions, plan details, or coach notes";
+    default:
+      return "Search preview: members, sessions, or coaches";
+  }
+}
+
+export function getDashboardProfileHref(role: DashboardRole) {
+  switch (role) {
+    case "coach":
+      return "/coach/settings";
+    case "client":
+      return "/client/settings";
+    default:
+      return "/admin/profile";
   }
 }
 

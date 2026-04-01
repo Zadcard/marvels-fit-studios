@@ -3,20 +3,20 @@
 import { useState, useCallback, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+
 import "./login.css";
 
 export default function LoginPage() {
   const router = useRouter();
 
-  // Form state
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  // UI state
   const [isLoading, setIsLoading] = useState(false);
   const [formError, setFormError] = useState("");
+  const [helperMessage, setHelperMessage] = useState("");
   const [fieldErrors, setFieldErrors] = useState<{
     email?: string;
     password?: string;
@@ -48,9 +48,10 @@ export default function LoginPage() {
   }, [email, password]);
 
   const handleSubmit = useCallback(
-    async (e: FormEvent) => {
-      e.preventDefault();
+    async (event: FormEvent) => {
+      event.preventDefault();
       setFormError("");
+      setHelperMessage("");
 
       if (!validateFields()) {
         triggerShake();
@@ -59,18 +60,16 @@ export default function LoginPage() {
 
       setIsLoading(true);
 
-      // Mock login — simulate network delay then redirect
       await new Promise((resolve) => setTimeout(resolve, 1200));
 
-      // Mock: accept any valid-looking credentials
-      // In backend phase, this will call a server action
       if (email && password) {
-        router.push("/admin");
-      } else {
-        setFormError("Invalid email or password. Please try again.");
-        setIsLoading(false);
-        triggerShake();
+        router.push("/client");
+        return;
       }
+
+      setFormError("Invalid email or password. Please try again.");
+      setIsLoading(false);
+      triggerShake();
     },
     [email, password, validateFields, triggerShake, router]
   );
@@ -81,17 +80,20 @@ export default function LoginPage() {
       delete next[field];
       return next;
     });
-    if (formError) setFormError("");
+
+    if (formError) {
+      setFormError("");
+    }
+
+    if (helperMessage) {
+      setHelperMessage("");
+    }
   };
 
   return (
     <div className="login-page">
-      <div
-        className={`login-container ${shakeForm ? "animate-shake" : ""}`}
-      >
-        {/* ─── Brand Panel ─── */}
+      <div className={`login-container ${shakeForm ? "animate-shake" : ""}`}>
         <div className="login-brand">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/img/Logo-2.png"
             alt="Marvel's Studios"
@@ -108,7 +110,7 @@ export default function LoginPage() {
 
           <p className="login-brand-description">
             Access your personalized dashboard to manage sessions, track your
-            training, and stay connected with your coaches.
+            training, and stay connected with your coach.
           </p>
 
           <div className="login-brand-badge">
@@ -117,7 +119,6 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* ─── Form Panel ─── */}
         <div className="login-form-panel">
           <div className="login-form-header">
             <div className="mv-eyebrow">Member Access</div>
@@ -127,8 +128,7 @@ export default function LoginPage() {
             </p>
           </div>
 
-          {/* Form-level error */}
-          {formError && (
+          {formError ? (
             <div className="login-error" role="alert">
               <svg
                 className="login-error-icon"
@@ -144,14 +144,9 @@ export default function LoginPage() {
               </svg>
               {formError}
             </div>
-          )}
+          ) : null}
 
-          <form
-            className="login-form"
-            onSubmit={handleSubmit}
-            noValidate
-          >
-            {/* Email */}
+          <form className="login-form" onSubmit={handleSubmit} noValidate>
             <div className="login-field-group">
               <label className="login-field-label" htmlFor="login-email">
                 Email address
@@ -161,8 +156,8 @@ export default function LoginPage() {
                 type="email"
                 className={`mv-field ${fieldErrors.email ? "field-error" : ""}`}
                 value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value);
+                onChange={(event) => {
+                  setEmail(event.target.value);
                   clearFieldError("email");
                 }}
                 placeholder="name@example.com"
@@ -174,7 +169,7 @@ export default function LoginPage() {
                 }
                 disabled={isLoading}
               />
-              {fieldErrors.email && (
+              {fieldErrors.email ? (
                 <div
                   id="login-email-error"
                   className="login-field-error"
@@ -182,10 +177,9 @@ export default function LoginPage() {
                 >
                   {fieldErrors.email}
                 </div>
-              )}
+              ) : null}
             </div>
 
-            {/* Password */}
             <div className="login-field-group">
               <label className="login-field-label" htmlFor="login-password">
                 Password
@@ -196,8 +190,8 @@ export default function LoginPage() {
                   type={showPassword ? "text" : "password"}
                   className={`mv-field ${fieldErrors.password ? "field-error" : ""}`}
                   value={password}
-                  onChange={(e) => {
-                    setPassword(e.target.value);
+                  onChange={(event) => {
+                    setPassword(event.target.value);
                     clearFieldError("password");
                   }}
                   placeholder="Enter your password"
@@ -211,12 +205,10 @@ export default function LoginPage() {
                 <button
                   type="button"
                   className="login-password-toggle"
-                  onClick={() => setShowPassword((p) => !p)}
+                  onClick={() => setShowPassword((value) => !value)}
                   aria-label={showPassword ? "Hide password" : "Show password"}
-                  tabIndex={-1}
                 >
                   {showPassword ? (
-                    /* Eye-off icon */
                     <svg
                       width="20"
                       height="20"
@@ -233,7 +225,6 @@ export default function LoginPage() {
                       <line x1="1" y1="1" x2="23" y2="23" />
                     </svg>
                   ) : (
-                    /* Eye icon */
                     <svg
                       width="20"
                       height="20"
@@ -250,7 +241,7 @@ export default function LoginPage() {
                   )}
                 </button>
               </div>
-              {fieldErrors.password && (
+              {fieldErrors.password ? (
                 <div
                   id="login-password-error"
                   className="login-field-error"
@@ -258,16 +249,15 @@ export default function LoginPage() {
                 >
                   {fieldErrors.password}
                 </div>
-              )}
+              ) : null}
             </div>
 
-            {/* Options row */}
             <div className="login-options">
               <label className="login-remember">
                 <input
                   type="checkbox"
                   checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
+                  onChange={(event) => setRememberMe(event.target.checked)}
                   disabled={isLoading}
                 />
                 Remember me
@@ -275,15 +265,22 @@ export default function LoginPage() {
               <button
                 type="button"
                 className="login-forgot"
-                onClick={() => {
-                  /* Placeholder — will be wired in backend phase */
-                }}
+                onClick={() =>
+                  setHelperMessage(
+                    "Password recovery will be added in the backend phase."
+                  )
+                }
               >
                 Forgot password?
               </button>
             </div>
 
-            {/* Submit */}
+            {helperMessage ? (
+              <div className="login-helper-note" role="status" aria-live="polite">
+                {helperMessage}
+              </div>
+            ) : null}
+
             <button
               type="submit"
               className="mv-btn mv-btn-primary login-submit"
@@ -291,13 +288,12 @@ export default function LoginPage() {
               aria-busy={isLoading}
             >
               <span className="login-submit-content">
-                {isLoading && <span className="login-spinner" />}
+                {isLoading ? <span className="login-spinner" /> : null}
                 {isLoading ? "Signing in..." : "Sign In"}
               </span>
             </button>
           </form>
 
-          {/* Back to website */}
           <Link href="/" className="login-back">
             <svg
               width="16"

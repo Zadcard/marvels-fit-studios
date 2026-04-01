@@ -46,6 +46,7 @@ export type AdminQuickAction = {
   label: string;
   description: string;
   ctaLabel: string;
+  href: string;
   icon: LucideIcon;
   emphasis: "primary" | "secondary";
 };
@@ -180,6 +181,7 @@ export const adminOverviewData: {
       label: "Add new client",
       description: "Stage the member-creation flow for the upcoming clients page.",
       ctaLabel: "Open mock",
+      href: "/admin/clients",
       icon: UserPlus,
       emphasis: "primary",
     },
@@ -188,6 +190,7 @@ export const adminOverviewData: {
       label: "Create session",
       description: "Reserve the create-session entry point used by admin scheduling.",
       ctaLabel: "Launch",
+      href: "/admin/sessions",
       icon: CalendarPlus2,
       emphasis: "secondary",
     },
@@ -196,6 +199,7 @@ export const adminOverviewData: {
       label: "Assign coach",
       description: "Prepare quick staff assignment moves for future ops pages.",
       ctaLabel: "Review",
+      href: "/admin/coaches",
       icon: ShieldUser,
       emphasis: "secondary",
     },
@@ -204,6 +208,7 @@ export const adminOverviewData: {
       label: "Capture note",
       description: "Hold space for session notes, flags, and front-desk handoff items.",
       ctaLabel: "Stage",
+      href: "/admin/schedule",
       icon: ClipboardPlus,
       emphasis: "secondary",
     },

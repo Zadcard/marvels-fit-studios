@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {
   ArrowRight,
   CalendarClock,
@@ -24,14 +25,14 @@ export default function AdminOverviewPage() {
         description="Monitor studio momentum, review what needs attention this week, and stage the next operational moves without leaving the portal."
         actions={
           <>
-            <button type="button" className="mv-btn mv-btn-secondary">
+            <Link href="/admin/sessions" className="mv-btn mv-btn-secondary">
               <CirclePlus size={16} />
               Create Session
-            </button>
-            <button type="button" className="mv-btn mv-btn-primary">
+            </Link>
+            <Link href="/admin/clients" className="mv-btn mv-btn-primary">
               <UserPlus size={16} />
               Add Client
-            </button>
+            </Link>
           </>
         }
       />
@@ -42,7 +43,10 @@ export default function AdminOverviewPage() {
         ))}
       </section>
 
-      <section className="dashboard-overview-grid" aria-label="Upcoming sessions and recent activity">
+      <section
+        className="dashboard-overview-grid"
+        aria-label="Upcoming sessions and recent activity"
+      >
         <article className="dashboard-panel dashboard-panel--accent">
           <div className="dashboard-panel__header">
             <div>
@@ -71,13 +75,13 @@ export default function AdminOverviewPage() {
                       {session.sessionType}
                     </span>
                     <span className="dashboard-session-card__time">
-                      {session.dayLabel} · {session.timeLabel}
+                      {session.dayLabel} - {session.timeLabel}
                     </span>
                   </div>
 
                   <h3 className="dashboard-session-card__name">{session.name}</h3>
                   <p className="dashboard-session-card__detail">
-                    Coach {session.coachName} · {session.location}
+                    Coach {session.coachName} - {session.location}
                   </p>
 
                   <div className="dashboard-session-card__footer">
@@ -102,7 +106,7 @@ export default function AdminOverviewPage() {
         <article className="dashboard-panel">
           <div className="dashboard-panel__header">
             <div>
-              <div className="mv-eyebrow">Today’s movement</div>
+              <div className="mv-eyebrow">Today's movement</div>
               <h2>Recent activity</h2>
               <p>
                 Member, coach, and schedule updates that help the admin team
@@ -116,7 +120,10 @@ export default function AdminOverviewPage() {
         </article>
       </section>
 
-      <section className="dashboard-secondary-grid" aria-label="Quick actions and studio status">
+      <section
+        className="dashboard-secondary-grid"
+        aria-label="Quick actions and studio status"
+      >
         <article className="dashboard-panel">
           <div className="dashboard-panel__header">
             <div>
@@ -143,8 +150,8 @@ export default function AdminOverviewPage() {
                     <strong>{action.label}</strong>
                     <p>{action.description}</p>
                   </div>
-                  <button
-                    type="button"
+                  <Link
+                    href={action.href}
                     className={
                       action.emphasis === "primary"
                         ? "mv-btn mv-btn-primary"
@@ -153,7 +160,7 @@ export default function AdminOverviewPage() {
                   >
                     {action.ctaLabel}
                     <ArrowRight size={16} />
-                  </button>
+                  </Link>
                 </div>
               );
             })}

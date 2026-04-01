@@ -1,11 +1,14 @@
 "use client";
 
+import Link from "next/link";
 import { Bell, Menu, Search } from "lucide-react";
 import { usePathname } from "next/navigation";
 
 import {
-  getDashboardRoleLabel,
+  getDashboardProfileMeta,
+  getDashboardProfileHref,
   getDashboardRouteMeta,
+  getDashboardSearchPrompt,
   type DashboardRole,
 } from "@/lib/navigation/dashboard-nav";
 
@@ -20,6 +23,7 @@ export function DashboardTopbar({
 }: DashboardTopbarProps) {
   const pathname = usePathname();
   const routeMeta = getDashboardRouteMeta(pathname, role);
+  const profileMeta = getDashboardProfileMeta(role);
 
   return (
     <header className="dashboard-topbar">
@@ -41,20 +45,20 @@ export function DashboardTopbar({
       </div>
 
       <div className="dashboard-topbar__right">
-        <button type="button" className="dashboard-topbar__search">
+        <div className="dashboard-topbar__search" role="note" aria-label="Search preview">
           <Search size={16} />
-          <span>Search members, sessions, or coaches</span>
-        </button>
+          <span>{getDashboardSearchPrompt(role)}</span>
+        </div>
 
-        <button type="button" className="dashboard-topbar__profile">
-          <span className="dashboard-topbar__avatar">MS</span>
+        <Link href={getDashboardProfileHref(role)} className="dashboard-topbar__profile">
+          <span className="dashboard-topbar__avatar">{profileMeta.initials}</span>
           <span className="dashboard-topbar__profile-copy">
-            <strong>{getDashboardRoleLabel(role)}</strong>
+            <strong>{profileMeta.name}</strong>
             <small>
-              Mock mode <Bell size={12} style={{ marginLeft: 6 }} />
+              {profileMeta.subtitle} <Bell size={12} style={{ marginLeft: 6 }} />
             </small>
           </span>
-        </button>
+        </Link>
       </div>
     </header>
   );

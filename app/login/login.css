@@ -255,6 +255,16 @@
   color: var(--mv-primary);
 }
 
+.login-helper-note {
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--mv-muted-strong);
+  font-size: 0.84rem;
+  line-height: 1.6;
+}
+
 /* ─── Error Alert ─── */
 .login-error {
   display: flex;

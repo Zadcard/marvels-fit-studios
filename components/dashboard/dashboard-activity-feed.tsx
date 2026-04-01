@@ -1,8 +1,15 @@
 import { cn } from "@/lib/utils";
-import type { AdminRecentActivityItem } from "@/lib/mocks/admin-overview";
+
+export type DashboardActivityFeedItem = {
+  id: string;
+  title: string;
+  description: string;
+  timeLabel: string;
+  tone: "success" | "warning" | "neutral";
+};
 
 type DashboardActivityFeedProps = {
-  items: AdminRecentActivityItem[];
+  items: DashboardActivityFeedItem[];
 };
 
 export function DashboardActivityFeed({

@@ -38,8 +38,8 @@ export default function Home() {
         Marvel&apos;s Studios
       </h1>
       <p style={{ color: "#a0a0a0", maxWidth: "40ch" }}>
-        The main website is served from the landing page. Use the links below to
-        navigate.
+        The public landing page is still served separately. This local bridge is
+        here to preview the finished portal frontend routes during the current phase.
       </p>
       <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", justifyContent: "center" }}>
         <Link
@@ -61,7 +61,70 @@ export default function Home() {
             boxShadow: "0 16px 30px rgba(230, 36, 41, 0.22)",
           }}
         >
-          Member Login
+          Login
+        </Link>
+        <Link
+          href="/client"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            minHeight: "48px",
+            padding: "0 24px",
+            borderRadius: "999px",
+            border: "1px solid rgba(255,255,255,0.1)",
+            background: "rgba(255,255,255,0.04)",
+            color: "#fff",
+            fontSize: "0.82rem",
+            fontWeight: 800,
+            letterSpacing: "0.075em",
+            textTransform: "uppercase",
+            textDecoration: "none",
+          }}
+        >
+          Client
+        </Link>
+        <Link
+          href="/coach"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            minHeight: "48px",
+            padding: "0 24px",
+            borderRadius: "999px",
+            border: "1px solid rgba(255,255,255,0.1)",
+            background: "rgba(255,255,255,0.04)",
+            color: "#fff",
+            fontSize: "0.82rem",
+            fontWeight: 800,
+            letterSpacing: "0.075em",
+            textTransform: "uppercase",
+            textDecoration: "none",
+          }}
+        >
+          Coach
+        </Link>
+        <Link
+          href="/admin"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            minHeight: "48px",
+            padding: "0 24px",
+            borderRadius: "999px",
+            border: "1px solid rgba(255,255,255,0.1)",
+            background: "rgba(255,255,255,0.04)",
+            color: "#fff",
+            fontSize: "0.82rem",
+            fontWeight: 800,
+            letterSpacing: "0.075em",
+            textTransform: "uppercase",
+            textDecoration: "none",
+          }}
+        >
+          Admin
         </Link>
       </div>
     </div>

@@ -4,6 +4,7 @@ import { useDeferredValue, useState } from "react";
 import { Plus, SlidersHorizontal } from "lucide-react";
 
 import { DashboardManagementToolbar } from "@/components/dashboard/dashboard-management-toolbar";
+import { DashboardEmptyState } from "@/components/dashboard/dashboard-empty-state";
 import { DashboardModal } from "@/components/dashboard/dashboard-modal";
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
 import { DashboardStatusBadge } from "@/components/dashboard/dashboard-status-badge";
@@ -157,7 +158,9 @@ export function AdminClientsWorkspace() {
           }
         />
 
-        <div className="dashboard-data-region">
+          <div className="dashboard-data-region">
+          {filteredClients.length > 0 ? (
+            <>
           <div className="dashboard-table-wrap">
             <table className="dashboard-table">
               <thead>
@@ -243,8 +246,15 @@ export function AdminClientsWorkspace() {
                   </button>
                 </div>
               </article>
-            ))}
+              ))}
           </div>
+            </>
+          ) : (
+            <DashboardEmptyState
+              title="No clients match these filters"
+              description="Try changing the search term, status, or membership filter to bring records back into view."
+            />
+          )}
         </div>
       </section>
 

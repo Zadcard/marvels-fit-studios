@@ -4,6 +4,7 @@ import { useDeferredValue, useState } from "react";
 import { Pencil, Plus, UserRoundSearch } from "lucide-react";
 
 import { DashboardManagementToolbar } from "@/components/dashboard/dashboard-management-toolbar";
+import { DashboardEmptyState } from "@/components/dashboard/dashboard-empty-state";
 import { DashboardModal } from "@/components/dashboard/dashboard-modal";
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
 import { DashboardStatusBadge } from "@/components/dashboard/dashboard-status-badge";
@@ -81,8 +82,7 @@ export function AdminCoachesWorkspace() {
 
   const selectedCoach =
     filteredCoaches.find((coach) => coach.id === selectedCoachId) ??
-    filteredCoaches[0] ??
-    adminCoachRecords[0];
+    filteredCoaches[0];
 
   const openAddModal = () => {
     setEditingCoachId(null);
@@ -164,6 +164,8 @@ export function AdminCoachesWorkspace() {
           />
 
           <div className="dashboard-data-region">
+            {filteredCoaches.length > 0 ? (
+              <>
             <div className="dashboard-table-wrap">
               <table className="dashboard-table">
                 <thead>
@@ -256,10 +258,19 @@ export function AdminCoachesWorkspace() {
                 </article>
               ))}
             </div>
+              </>
+            ) : (
+              <DashboardEmptyState
+                title="No coaches match these filters"
+                description="Adjust the search, status, or specialization filters to see coach records again."
+              />
+            )}
           </div>
         </article>
 
         <aside className="dashboard-panel dashboard-detail-panel">
+          {selectedCoach ? (
+            <>
           <div className="dashboard-panel__header">
             <div>
               <div className="mv-eyebrow">Coach detail</div>
@@ -302,6 +313,13 @@ export function AdminCoachesWorkspace() {
             <Pencil size={16} />
             Edit Coach
           </button>
+            </>
+          ) : (
+            <DashboardEmptyState
+              title="Coach detail unavailable"
+              description="Select a coach from the list once your filters return at least one record."
+            />
+          )}
         </aside>
       </section>
 
