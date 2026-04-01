@@ -104,7 +104,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // Header actions
   if (btnLogin) {
     btnLogin.addEventListener("click", () => {
-      window.location.href = "/login";
+      closeNav();
+      scrollToEl(contactSection);
     });
   }
 
