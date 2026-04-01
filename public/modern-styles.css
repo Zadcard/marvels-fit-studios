@@ -338,8 +338,11 @@ p {
 }
 
 .brand img {
-  background: #ffffff;
+background: rgba(0, 0, 0, 1);
+ filter: brightness(2);
+ 
 }
+
 
 .footer-logo {
   display: block;
@@ -682,7 +685,7 @@ p {
   overflow: hidden;
   background:
     radial-gradient(circle at top right, rgba(230, 36, 41, 0.1), transparent 30%),
-    #ffffff;
+    #000000;
 }
 
 .logo-panel::after {
@@ -697,6 +700,8 @@ p {
   width: min(74%, 240px);
   max-height: 210px;
   object-fit: contain;
+  background: rgba(0, 0, 0, 1);
+ filter: brightness(3);
 }
 
 .carousel-shell {
@@ -1209,6 +1214,8 @@ p {
   text-align: left;
 }
 
+
+
 .footer-col-brand p {
   font-size: 0.95rem;
   line-height: 1.6;
@@ -1374,7 +1381,7 @@ p {
   
   .footer-logo {
     display: block;
-    margin-top: -12px; /* Pull it slightly up for better alignment with column headings */
+    margin-top: -100px; /* Pull it slightly up for better alignment with column headings */
     margin-left: -8px;
   }
 
