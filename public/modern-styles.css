@@ -1040,6 +1040,7 @@ background: rgba(0, 0, 0, 1);
 
 .contact-list {
   margin-top: var(--space-sm);
+ 
 }
 
 .contact-row {
@@ -1076,10 +1077,11 @@ background: rgba(0, 0, 0, 1);
 }
 
 .whatsapp-btn {
-  margin-top: 8px;
+  margin-top: 0px;
   color: #128c7e;
   background: #eaffee;
   border-color: #25d366;
+  min-width: 135px;
 }
 
 .social-row {
@@ -1093,18 +1095,21 @@ background: rgba(0, 0, 0, 1);
   color: #c13584;
   background: #fff5f8;
   border-color: #fd1d1d;
+min-width: 135px;
 }
 
 .social-btn-tiktok {
   color: #000000;
   background: #ffffff;
   border-color: #ee1d52;
+  min-width: 135px;
 }
 
 .social-btn-facebook {
   color: #1877f2;
   background: #f0f7ff;
   border-color: #1877f2;
+  min-width: 135px;
 }
 
 .field-grid {
@@ -1209,9 +1214,10 @@ background: rgba(0, 0, 0, 1);
 .footer-col {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 4px;
   align-items: flex-start;
   text-align: left;
+
 }
 
 
@@ -1221,6 +1227,7 @@ background: rgba(0, 0, 0, 1);
   line-height: 1.6;
   color: var(--muted-strong);
   margin-top: 8px;
+
 }
 
 .footer-heading {
