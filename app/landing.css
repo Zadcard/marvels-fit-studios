@@ -1196,6 +1196,22 @@ min-width: 135px;
   display: block;
 }
 
+.form-error {
+  padding: 14px 16px;
+  border: 1px solid rgba(230, 36, 41, 0.4);
+  border-radius: 14px;
+  background: rgba(230, 36, 41, 0.12);
+  color: #ffb7b7;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.field-error-text {
+  color: #ff9b9b;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
 .form-footer-social {
   display: flex;
   flex-wrap: wrap;
