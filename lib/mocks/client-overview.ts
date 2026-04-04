@@ -3,7 +3,6 @@ import {
   CalendarCheck2,
   CreditCard,
   ShieldUser,
-  Sparkles,
   Target,
   TrendingUp,
 } from "lucide-react";

@@ -11,7 +11,6 @@ import {
   coachSessionRecords,
   coachSessionStatusFilters,
   coachSessionTypeFilters,
-  type CoachSessionRecord,
   type CoachSessionStatus,
   type CoachSessionType,
 } from "@/lib/mocks/coach-sessions";

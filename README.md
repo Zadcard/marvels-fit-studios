@@ -8,6 +8,8 @@ This project is now aligned to one deployment path only:
 
 Firebase Hosting, Firebase Functions, Firestore, and Firebase Data Connect are not part of the active deployment path anymore.
 
+Legacy static-site files and database reference snapshots are preserved under `archive/` and are not part of the active runtime.
+
 ## Required Environment Variables
 
 Set these in Vercel for Production, Preview, and Development as needed:

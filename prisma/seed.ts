@@ -20,7 +20,7 @@ async function main() {
   console.log("🌱 Seeding database...");
 
   // 1. Admin
-  const admin = await prisma.user.upsert({
+  await prisma.user.upsert({
     where: { email: "admin@test.com" },
     update: {
       password: hashedPassword,

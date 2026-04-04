@@ -1,8 +1,0 @@
-⨯ Another next dev server is already running.
-
-- Local:        http://localhost:3000
-- PID:          3568
-- Dir:          C:\Users\zadca\OneDrive\Documents\GitHub\marvels-fit-studios
-- Log:          .next\dev\logs\next-development.log
-
-Run taskkill /PID 3568 /F to stop it.
