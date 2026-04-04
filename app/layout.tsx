@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Analytics } from "@vercel/analytics/react";
 
 import { AuthProvider } from "@/components/providers/session-provider";
 
@@ -31,6 +32,7 @@ export default function RootLayout({
     >
       <body>
         <AuthProvider>{children}</AuthProvider>
+        <Analytics />
       </body>
     </html>
   );
