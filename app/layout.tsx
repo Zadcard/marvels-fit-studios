@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
 
+import { Analytics } from "@vercel/analytics/next";
+
 import { AuthProvider } from "@/components/providers/session-provider";
 
 import { manrope, spaceGrotesk } from "./fonts";
@@ -31,6 +33,7 @@ export default function RootLayout({
     >
       <body>
         <AuthProvider>{children}</AuthProvider>
+        <Analytics />
       </body>
     </html>
   );
