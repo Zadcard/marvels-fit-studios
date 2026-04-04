@@ -58,8 +58,6 @@ export function AdminClientsWorkspace() {
     <div className="dashboard-stack">
       <DashboardPageHeader
         eyebrow="Admin clients"
-        title="Clients Management"
-        description="Shape the active member roster, keep onboarding visible, and prepare the future CRUD flow with clean frontend-only patterns."
         actions={
           <button
             type="button"
@@ -202,7 +200,7 @@ export function AdminClientsWorkspace() {
           ) : (
             <DashboardEmptyState
               title="No clients match these filters"
-              description="Try changing the search term, status, or membership filter to bring records back into view."
+              description="Try a different search or reset the filters."
             />
           )}
         </div>
@@ -212,7 +210,7 @@ export function AdminClientsWorkspace() {
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         title={editingRecordId ? "Edit client" : "Add client"}
-        description="This modal is frontend-only for now. It preserves the future form shape without wiring backend actions yet."
+        description="Client details"
         footer={
           <>
             <button
@@ -227,7 +225,7 @@ export function AdminClientsWorkspace() {
               className="mv-btn mv-btn-primary"
               onClick={() => setIsModalOpen(false)}
             >
-              {editingRecordId ? "Save mock changes" : "Create mock client"}
+              {editingRecordId ? "Save client" : "Create client"}
             </button>
           </>
         }

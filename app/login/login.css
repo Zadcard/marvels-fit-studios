@@ -1,9 +1,7 @@
 /* ===================================================================
-   LOGIN PAGE — Marvel Fitness Studio
-   Branded split-layout login matching the landing page theme.
+   LOGIN PAGE - Marvel Fitness Studio
    =================================================================== */
 
-/* ─── Page Shell ─── */
 .login-page {
   min-height: 100vh;
   display: flex;
@@ -18,7 +16,7 @@
 
 .login-container {
   width: 100%;
-  max-width: 1040px;
+  max-width: 980px;
   display: grid;
   grid-template-columns: 1fr;
   border: 1px solid var(--mv-line);
@@ -34,20 +32,20 @@
     opacity: 0;
     transform: scale(0.98) translateY(12px);
   }
+
   to {
     opacity: 1;
     transform: scale(1) translateY(0);
   }
 }
 
-/* ─── Brand Panel (left / top on mobile) ─── */
 .login-brand {
   position: relative;
-  padding: clamp(32px, 6vw, 48px) clamp(28px, 5vw, 48px);
+  padding: clamp(28px, 5vw, 40px) clamp(24px, 4vw, 40px);
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 24px;
+  gap: 18px;
   overflow: hidden;
   background:
     radial-gradient(circle at 20% 20%, rgba(230, 36, 41, 0.18), transparent 50%),
@@ -55,11 +53,10 @@
     #080808;
 }
 
-/* Dashed inner border frame — matching logo-panel style from landing */
 .login-brand::after {
   content: "";
   position: absolute;
-  inset: 14px;
+  inset: 12px;
   border: 1px dashed rgba(230, 36, 41, 0.22);
   border-radius: 18px;
   pointer-events: none;
@@ -83,7 +80,7 @@
 
 .login-brand-name {
   font-family: var(--font-display), "Space Grotesk", sans-serif;
-  font-size: 1.15rem;
+  font-size: 1.05rem;
   font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--mv-text);
@@ -91,7 +88,7 @@
 
 .login-brand-tagline {
   font-family: var(--font-display), "Space Grotesk", sans-serif;
-  font-size: clamp(1.4rem, 4vw, 1.8rem);
+  font-size: clamp(1.28rem, 3.5vw, 1.6rem);
   font-weight: 700;
   letter-spacing: -0.03em;
   line-height: 1.08;
@@ -101,17 +98,17 @@
 
 .login-brand-description {
   color: var(--mv-muted);
-  font-size: 0.92rem;
-  line-height: 1.7;
-  max-width: 36ch;
+  font-size: 0.86rem;
+  line-height: 1.55;
+  max-width: 30ch;
 }
 
 .login-brand-badge {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  margin-top: 8px;
-  padding: 8px 16px;
+  margin-top: 4px;
+  padding: 7px 14px;
   border-radius: 999px;
   border: 1px solid rgba(230, 36, 41, 0.2);
   background: rgba(230, 36, 41, 0.08);
@@ -127,13 +124,12 @@
   font-size: 0.92rem;
 }
 
-/* ─── Form Panel (right / bottom on mobile) ─── */
 .login-form-panel {
-  padding: clamp(32px, 6vw, 56px) clamp(28px, 5vw, 56px);
+  padding: clamp(28px, 5vw, 44px) clamp(24px, 4vw, 44px);
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 32px;
+  gap: 18px;
   border-left: none;
   border-top: 1px solid var(--mv-line);
 }
@@ -141,12 +137,12 @@
 .login-form-header {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
 .login-form-title {
   font-family: var(--font-display), "Space Grotesk", sans-serif;
-  font-size: clamp(1.6rem, 5vw, 2.2rem);
+  font-size: clamp(1.4rem, 4.2vw, 1.9rem);
   font-weight: 700;
   letter-spacing: -0.03em;
   line-height: 1.05;
@@ -154,17 +150,16 @@
 }
 
 .login-form-subtitle {
-  font-size: 0.92rem;
+  font-size: 0.86rem;
   color: var(--mv-muted);
-  line-height: 1.6;
-  max-width: 40ch;
+  line-height: 1.5;
+  max-width: 30ch;
 }
 
-/* ─── Form ─── */
 .login-form {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
 }
 
 .login-field-group {
@@ -184,7 +179,7 @@
 }
 
 .login-field-wrap .mv-field {
-  padding-right: 52px; /* space for toggle button */
+  padding-right: 52px;
 }
 
 .login-password-toggle {
@@ -220,34 +215,23 @@
   opacity: 0.6;
 }
 
-/* ─── Inline options (remember + forgot) ─── */
-.login-options {
+.login-help-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 10px;
   flex-wrap: wrap;
 }
 
-.login-remember {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  cursor: pointer;
-  font-size: 0.88rem;
+.login-trust-note {
   color: var(--mv-muted-strong);
-  font-weight: 500;
-}
-
-.login-remember input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
-  accent-color: var(--mv-primary);
-  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.5;
 }
 
 .login-forgot {
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   color: var(--mv-muted);
   font-weight: 600;
   transition: color 0.18s ease;
@@ -274,27 +258,34 @@
   opacity: 0.6;
 }
 
-.login-helper-note {
-  padding: 12px 14px;
+.login-helper-note,
+.login-callout,
+.login-inline-note {
+  padding: 10px 12px;
   border-radius: 14px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(255, 255, 255, 0.03);
   color: var(--mv-muted-strong);
-  font-size: 0.84rem;
-  line-height: 1.6;
+  font-size: 0.8rem;
+  line-height: 1.5;
 }
 
-/* ─── Error Alert ─── */
+.login-callout,
+.login-inline-note {
+  border-color: rgba(230, 36, 41, 0.16);
+  background: rgba(230, 36, 41, 0.08);
+}
+
 .login-error {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 14px 18px;
+  padding: 12px 14px;
   border-radius: 14px;
   border: 1px solid rgba(239, 68, 68, 0.3);
   background: rgba(239, 68, 68, 0.08);
   color: #fca5a5;
-  font-size: 0.88rem;
+  font-size: 0.84rem;
   font-weight: 600;
   animation: fadeInUp 0.25s ease both;
 }
@@ -305,7 +296,6 @@
   height: 20px;
 }
 
-/* ─── Field Error ─── */
 .login-field-error {
   font-size: 0.8rem;
   color: var(--mv-danger);
@@ -314,10 +304,9 @@
   animation: fadeInUp 0.2s ease both;
 }
 
-/* ─── Submit Button ─── */
 .login-submit {
   width: 100%;
-  min-height: 56px;
+  min-height: 52px;
   position: relative;
 }
 
@@ -341,7 +330,6 @@
   animation: spin 0.7s linear infinite;
 }
 
-/* ─── Back Link ─── */
 .login-back {
   display: inline-flex;
   align-items: center;
@@ -377,11 +365,50 @@
   letter-spacing: 0.04em;
 }
 
-/* ─── Desktop: Side-by-side split ─── */
+.login-state-panel {
+  width: min(520px, 100%);
+  padding: clamp(32px, 6vw, 48px);
+  display: grid;
+  gap: 18px;
+  border: 1px solid var(--mv-line);
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at top right, rgba(230, 36, 41, 0.14), transparent 34%),
+    linear-gradient(180deg, rgba(20, 20, 20, 0.76), rgba(8, 8, 8, 0.92));
+  box-shadow: var(--mv-shadow-md);
+}
+
+.login-state-panel h1 {
+  font-family: var(--font-display), "Space Grotesk", sans-serif;
+  font-size: clamp(1.8rem, 5vw, 2.4rem);
+  line-height: 1.02;
+}
+
+.login-state-panel p {
+  max-width: 46ch;
+}
+
+.login-state-panel__icon {
+  width: 52px;
+  height: 52px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  background: rgba(230, 36, 41, 0.12);
+  color: var(--mv-primary);
+}
+
+.login-state-panel__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
 @media (min-width: 860px) {
   .login-container {
     grid-template-columns: 0.42fr 0.58fr;
-    min-height: 560px;
+    min-height: 520px;
   }
 
   .login-form-panel {
@@ -390,30 +417,28 @@
   }
 
   .login-brand {
-    padding: 56px 48px;
+    padding: 48px 40px;
   }
 
   .login-form-panel {
-    padding: 56px;
+    padding: 48px 40px;
   }
 }
 
-/* ─── Large desktop ─── */
 @media (min-width: 1100px) {
   .login-container {
-    min-height: 620px;
+    min-height: 560px;
   }
 
   .login-brand {
-    padding: 64px 56px;
+    padding: 54px 48px;
   }
 
   .login-form-panel {
-    padding: 64px;
+    padding: 54px 48px;
   }
 }
 
-/* ─── Tiny mobile ─── */
 @media (max-width: 390px) {
   .login-page {
     padding: 10px;
@@ -429,5 +454,9 @@
 
   .login-form-panel {
     padding: 28px 22px;
+  }
+
+  .login-state-panel__actions > * {
+    width: 100%;
   }
 }

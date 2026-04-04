@@ -23,9 +23,7 @@ export function AdminProfileWorkspace() {
   const [profile, setProfile] = useState<AdminProfileRecord>(initialProfile);
   const [preferences, setPreferences] =
     useState<AdminProfilePreferences>(initialPreferences);
-  const [saveMessage, setSaveMessage] = useState(
-    "Profile changes are mock-only in this frontend phase."
-  );
+  const [saveMessage, setSaveMessage] = useState("Preview mode.");
 
   const updateProfile = <Key extends keyof AdminProfileRecord>(
     field: Key,
@@ -51,13 +49,11 @@ export function AdminProfileWorkspace() {
     <div className="dashboard-stack">
       <DashboardPageHeader
         eyebrow="Admin profile"
-        title="Personal Profile"
-        description="Keep the admin identity, communication preferences, and credential placeholders organized without crossing into real auth work yet."
         actions={
           <button
             type="button"
             className="mv-btn mv-btn-primary"
-            onClick={() => setSaveMessage("Mock profile changes saved locally.")}
+            onClick={() => setSaveMessage("Preview updated.")}
           >
             <Save size={16} />
             Save Profile
@@ -100,7 +96,7 @@ export function AdminProfileWorkspace() {
           <DashboardFormSection
             eyebrow="Identity"
             title="Personal details"
-            description="Editable admin-facing profile fields for the future account layer."
+            description="Admin profile details."
           >
             <div className="dashboard-form-columns">
               <label className="dashboard-form-field">
@@ -151,7 +147,7 @@ export function AdminProfileWorkspace() {
           <DashboardFormSection
             eyebrow="Preferences"
             title="Communication preferences"
-            description="Mock controls for how this admin account would like to receive future updates."
+            description="Update preferences."
           >
             <div className="dashboard-stack">
               <DashboardSwitch
@@ -160,7 +156,7 @@ export function AdminProfileWorkspace() {
                   updatePreference("emailUpdates", checked)
                 }
                 label="Email updates"
-                description="Receive weekly summaries and studio changes by email."
+                description="Weekly summaries by email."
               />
               <DashboardSwitch
                 checked={preferences.mobileAlerts}
@@ -168,7 +164,7 @@ export function AdminProfileWorkspace() {
                   updatePreference("mobileAlerts", checked)
                 }
                 label="Mobile alerts"
-                description="Keep time-sensitive schedule and staffing notes visible on mobile later."
+                description="Time-sensitive schedule alerts."
               />
               <DashboardSwitch
                 checked={preferences.renewalEscalations}
@@ -176,7 +172,7 @@ export function AdminProfileWorkspace() {
                   updatePreference("renewalEscalations", checked)
                 }
                 label="Renewal escalations"
-                description="Prioritize at-risk membership alerts for this account."
+                description="At-risk membership alerts."
               />
             </div>
           </DashboardFormSection>
@@ -188,7 +184,7 @@ export function AdminProfileWorkspace() {
               <div>
                 <span className="mv-eyebrow">Security</span>
                 <h2>Credentials placeholder</h2>
-                <p>{profile.credentialsNote}</p>
+                <p>Credential settings preview.</p>
               </div>
               <KeyRound size={20} color="#ff8b8f" />
             </div>

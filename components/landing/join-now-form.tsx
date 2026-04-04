@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect, useRef } from "react";
 import { useFormStatus } from "react-dom";
 
 import {
@@ -37,13 +37,26 @@ function FieldError({ errors }: FieldErrorProps) {
 }
 
 export function JoinNowForm() {
+  const formRef = useRef<HTMLFormElement>(null);
   const [state, formAction] = useActionState(
     submitJoinNowLead,
     initialJoinNowState
   );
 
+  useEffect(() => {
+    if (state.status === "success") {
+      formRef.current?.reset();
+    }
+  }, [state.status]);
+
   return (
-    <form id="joinNowForm" className="contact-form" action={formAction} noValidate>
+    <form
+      ref={formRef}
+      id="joinNowForm"
+      className="contact-form"
+      action={formAction}
+      noValidate
+    >
       <div className="field-grid">
         <label>
           <span>Full name</span>
@@ -137,6 +150,14 @@ export function JoinNowForm() {
         </span>
       </label>
       <FieldError errors={state.fieldErrors?.privacy} />
+
+      <div className="contact-form-note" role="note" aria-label="Registration next steps">
+        <strong>What happens next</strong>
+        <p>
+          Send your registration request and the studio team will review it,
+          contact you, and confirm the right membership path before anything else moves forward.
+        </p>
+      </div>
 
       <SubmitButton />
 

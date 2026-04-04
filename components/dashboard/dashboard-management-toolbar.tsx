@@ -3,6 +3,9 @@ type DashboardManagementToolbarProps = {
   searchPlaceholder: string;
   onSearchChange: (value: string) => void;
   summary: string;
+  searchLabel?: string;
+  isFiltered?: boolean;
+  onReset?: () => void;
   filters?: React.ReactNode;
   actions?: React.ReactNode;
 };
@@ -12,6 +15,9 @@ export function DashboardManagementToolbar({
   searchPlaceholder,
   onSearchChange,
   summary,
+  searchLabel = "Search",
+  isFiltered = false,
+  onReset,
   filters,
   actions,
 }: DashboardManagementToolbarProps) {
@@ -19,7 +25,7 @@ export function DashboardManagementToolbar({
     <div className="dashboard-toolbar">
       <div className="dashboard-toolbar__main">
         <label className="dashboard-search-field">
-          <span className="dashboard-search-field__label">Search</span>
+          <span className="dashboard-search-field__label">{searchLabel}</span>
           <input
             type="search"
             name="dashboard-search"
@@ -35,7 +41,20 @@ export function DashboardManagementToolbar({
 
       <div className="dashboard-toolbar__side">
         <p className="dashboard-toolbar__summary">{summary}</p>
-        {actions ? <div className="dashboard-toolbar__actions">{actions}</div> : null}
+        {actions || (isFiltered && onReset) ? (
+          <div className="dashboard-toolbar__actions">
+            {isFiltered && onReset ? (
+              <button
+                type="button"
+                className="dashboard-inline-button"
+                onClick={onReset}
+              >
+                Reset
+              </button>
+            ) : null}
+            {actions}
+          </div>
+        ) : null}
       </div>
     </div>
   );

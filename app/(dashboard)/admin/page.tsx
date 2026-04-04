@@ -21,8 +21,6 @@ export default function AdminOverviewPage() {
     <div className="dashboard-stack">
       <DashboardPageHeader
         eyebrow="Studio command center"
-        title="Admin Dashboard"
-        description="Monitor studio momentum, review what needs attention this week, and stage the next operational moves without leaving the portal."
         actions={
           <>
             <Link href="/admin/sessions" className="mv-btn mv-btn-secondary">
@@ -52,14 +50,9 @@ export default function AdminOverviewPage() {
             <div>
               <div className="mv-eyebrow">Next 48 hours</div>
               <h2>Upcoming sessions</h2>
-              <p>
-                A quick pulse on the training floor, with occupancy and coach
-                coverage already framed for decisions.
-              </p>
+              <p>Upcoming sessions with coach and occupancy context.</p>
             </div>
-            <span className="dashboard-badge dashboard-badge--accent">
-              Mock schedule
-            </span>
+            <span className="dashboard-badge dashboard-badge--accent">Preview</span>
           </div>
 
           <div className="dashboard-session-list">
@@ -108,10 +101,7 @@ export default function AdminOverviewPage() {
             <div>
               <div className="mv-eyebrow">Today&apos;s movement</div>
               <h2>Recent activity</h2>
-              <p>
-                Member, coach, and schedule updates that help the admin team
-                keep the studio rhythm tight.
-              </p>
+              <p>Key member, coach, and schedule updates.</p>
             </div>
             <CalendarClock size={20} color="#ff8b8f" />
           </div>
@@ -129,10 +119,7 @@ export default function AdminOverviewPage() {
             <div>
               <div className="mv-eyebrow">Operational shortcuts</div>
               <h2>Quick actions</h2>
-              <p>
-                Common front-desk and scheduling moves laid out as a fast-launch
-                grid for the next implementation phases.
-              </p>
+              <p>Common front-desk and scheduling actions.</p>
             </div>
             <ClipboardList size={20} color="#ff8b8f" />
           </div>
@@ -172,10 +159,7 @@ export default function AdminOverviewPage() {
             <div>
               <div className="mv-eyebrow">Studio snapshot</div>
               <h2>Health of the week</h2>
-              <p>
-                Compact signals that keep the admin view grounded in attendance,
-                onboarding, and plan demand.
-              </p>
+              <p>Attendance, onboarding, and plan demand at a glance.</p>
             </div>
             <CirclePlus size={20} color="#ff8b8f" />
           </div>

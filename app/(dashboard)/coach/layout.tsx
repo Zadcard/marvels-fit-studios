@@ -20,5 +20,9 @@ export default async function CoachDashboardLayout({
     redirect(getDashboardHomeForUserRole(session.user.role));
   }
 
-  return <DashboardRoleShell role="coach">{children}</DashboardRoleShell>;
+  return (
+    <DashboardRoleShell role="coach">
+      {children}
+    </DashboardRoleShell>
+  );
 }

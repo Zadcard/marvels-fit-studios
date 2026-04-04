@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Bell, Menu, Search } from "lucide-react";
+import { Menu, Search } from "lucide-react";
 import { usePathname } from "next/navigation";
 
 import {
@@ -56,7 +56,6 @@ export function DashboardTopbar({
             <strong>{profileMeta.name}</strong>
             <small className="dashboard-topbar__profile-status">
               <span>{profileMeta.subtitle}</span>
-              <Bell size={12} aria-hidden="true" />
             </small>
           </span>
         </Link>

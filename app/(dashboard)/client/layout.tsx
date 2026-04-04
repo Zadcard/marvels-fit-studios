@@ -20,5 +20,9 @@ export default async function ClientDashboardLayout({
     redirect(getDashboardHomeForUserRole(session.user.role));
   }
 
-  return <DashboardRoleShell role="client">{children}</DashboardRoleShell>;
+  return (
+    <DashboardRoleShell role="client">
+      {children}
+    </DashboardRoleShell>
+  );
 }

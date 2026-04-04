@@ -5,6 +5,7 @@ import { Save } from "lucide-react";
 
 import { DashboardFormSection } from "@/components/dashboard/dashboard-form-section";
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
+import { DashboardSurfaceNote } from "@/components/dashboard/dashboard-surface-note";
 import { DashboardSwitch } from "@/components/dashboard/dashboard-switch";
 import {
   coachSettingsOptions,
@@ -16,9 +17,13 @@ const initialSettings: CoachSettingsRecord = { ...coachSettingsRecord };
 
 export function CoachSettingsWorkspace() {
   const [settings, setSettings] = useState<CoachSettingsRecord>(initialSettings);
-  const [saveMessage, setSaveMessage] = useState(
-    "Coach settings are mock-only in this frontend phase."
-  );
+  const [saveMessage, setSaveMessage] = useState("Preview mode.");
+  const hasChanges = JSON.stringify(settings) !== JSON.stringify(initialSettings);
+  const enabledAlerts = [
+    settings.mobileAlerts,
+    settings.clientCheckIns,
+    settings.waitlistFlags,
+  ].filter(Boolean).length;
 
   const updateField = <Key extends keyof CoachSettingsRecord>(
     field: Key,
@@ -34,26 +39,55 @@ export function CoachSettingsWorkspace() {
     <div className="dashboard-stack">
       <DashboardPageHeader
         eyebrow="Coach settings"
-        title="Coach Settings"
-        description="Keep coaching preferences, profile information, and notification habits organized without drifting into admin-only controls."
         actions={
           <button
             type="button"
             className="mv-btn mv-btn-primary"
-            onClick={() => setSaveMessage("Mock coach settings saved locally.")}
+            disabled={!hasChanges}
+            onClick={() =>
+              setSaveMessage("Preview updated.")
+            }
           >
             <Save size={16} />
-            Save Settings
+            Save changes
           </button>
         }
       />
+
+      <DashboardSurfaceNote
+        eyebrow="Settings"
+        title="Profile details and workflow alerts are grouped separately."
+        description="Update coach details, preferences, and alerts here."
+        items={[
+          `${enabledAlerts}/3 alerts enabled.`,
+          hasChanges ? "Unsaved changes pending." : "No pending changes.",
+        ]}
+      />
+
+      <section className="dashboard-mini-grid" aria-label="Coach settings highlights">
+        <article className="dashboard-mini-stat">
+          <span className="dashboard-mini-stat__label">Preferred landing view</span>
+          <strong>{settings.preferredView}</strong>
+          <p>Preferred landing view.</p>
+        </article>
+        <article className="dashboard-mini-stat">
+          <span className="dashboard-mini-stat__label">Alerts on</span>
+          <strong>{enabledAlerts}/3</strong>
+          <p>Active alerts.</p>
+        </article>
+        <article className="dashboard-mini-stat">
+          <span className="dashboard-mini-stat__label">Changes pending</span>
+          <strong>{hasChanges ? "Yes" : "No"}</strong>
+          <p>Pending edits.</p>
+        </article>
+      </section>
 
       <section className="dashboard-detail-layout">
         <div className="dashboard-stack">
           <DashboardFormSection
             eyebrow="Profile"
             title="Coach profile"
-            description="The basics that shape how this coach appears across the portal later."
+            description="Coach profile details."
           >
             <div className="dashboard-form-columns">
               <label className="dashboard-form-field">
@@ -104,7 +138,7 @@ export function CoachSettingsWorkspace() {
           <DashboardFormSection
             eyebrow="Workflow"
             title="Coaching preferences"
-            description="A lighter, role-appropriate settings surface centered on daily workflow."
+            description="Daily workflow preferences."
           >
             <div className="dashboard-form-columns">
               <label className="dashboard-form-field">
@@ -167,26 +201,26 @@ export function CoachSettingsWorkspace() {
           <DashboardFormSection
             eyebrow="Notifications"
             title="Coach alerts"
-            description="Choose which updates should stay visible while you're moving through the day."
+            description="Choose which alerts stay visible."
           >
             <div className="dashboard-stack">
               <DashboardSwitch
                 checked={settings.mobileAlerts}
                 onCheckedChange={(checked) => updateField("mobileAlerts", checked)}
                 label="Mobile alerts"
-                description="Keep upcoming session reminders and urgent changes visible."
+                description="Upcoming session reminders and urgent changes."
               />
               <DashboardSwitch
                 checked={settings.clientCheckIns}
                 onCheckedChange={(checked) => updateField("clientCheckIns", checked)}
                 label="Client check-ins"
-                description="Highlight clients who need a note or supportive follow-up."
+                description="Clients who need follow-up."
               />
               <DashboardSwitch
                 checked={settings.waitlistFlags}
                 onCheckedChange={(checked) => updateField("waitlistFlags", checked)}
                 label="Waitlist flags"
-                description="Surface demand spikes on your assigned group classes."
+                description="Demand spikes on group classes."
               />
             </div>
           </DashboardFormSection>
@@ -217,6 +251,10 @@ export function CoachSettingsWorkspace() {
             <div className="dashboard-summary-row">
               <strong>Availability</strong>
               <span>{settings.availabilityNote}</span>
+            </div>
+            <div className="dashboard-summary-row">
+              <strong>Save state</strong>
+              <span>{hasChanges ? "Edits pending" : "Up to date"}</span>
             </div>
           </div>
         </aside>

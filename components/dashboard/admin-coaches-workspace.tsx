@@ -106,8 +106,6 @@ export function AdminCoachesWorkspace() {
     <div className="dashboard-stack">
       <DashboardPageHeader
         eyebrow="Admin coaches"
-        title="Coaches Management"
-        description="Track staff availability, client load, and schedule density with a layout that can grow into a richer coach operations surface later."
         actions={
           <button type="button" className="mv-btn mv-btn-primary" onClick={openAddModal}>
             <Plus size={16} />
@@ -262,7 +260,7 @@ export function AdminCoachesWorkspace() {
             ) : (
               <DashboardEmptyState
                 title="No coaches match these filters"
-                description="Adjust the search, status, or specialization filters to see coach records again."
+                description="Try a different search or reset the filters."
               />
             )}
           </div>
@@ -273,9 +271,9 @@ export function AdminCoachesWorkspace() {
             <>
           <div className="dashboard-panel__header">
             <div>
-              <div className="mv-eyebrow">Coach detail</div>
-              <h2>{selectedCoach.fullName}</h2>
-              <p>{selectedCoach.summary}</p>
+                  <div className="mv-eyebrow">Coach detail</div>
+                  <h2>{selectedCoach.fullName}</h2>
+                  <p>{selectedCoach.specialization}</p>
             </div>
             <UserRoundSearch size={20} color="#ff8b8f" />
           </div>
@@ -317,7 +315,7 @@ export function AdminCoachesWorkspace() {
           ) : (
             <DashboardEmptyState
               title="Coach detail unavailable"
-              description="Select a coach from the list once your filters return at least one record."
+              description="Select a coach to review details."
             />
           )}
         </aside>
@@ -327,14 +325,14 @@ export function AdminCoachesWorkspace() {
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         title={editingCoachId ? "Edit coach" : "Add coach"}
-        description="A frontend-only coach form that preserves the operational structure we will wire later."
+        description="Coach details"
         footer={
           <>
             <button type="button" className="mv-btn mv-btn-outline" onClick={() => setIsModalOpen(false)}>
               Cancel
             </button>
             <button type="button" className="mv-btn mv-btn-primary" onClick={() => setIsModalOpen(false)}>
-              {editingCoachId ? "Save mock changes" : "Create mock coach"}
+              {editingCoachId ? "Save coach" : "Create coach"}
             </button>
           </>
         }

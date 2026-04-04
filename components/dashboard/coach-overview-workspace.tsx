@@ -4,6 +4,7 @@ import { ArrowRight, Clock3, NotebookPen } from "lucide-react";
 import { DashboardActivityFeed } from "@/components/dashboard/dashboard-activity-feed";
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
 import { DashboardStatCard } from "@/components/dashboard/dashboard-stat-card";
+import { DashboardSurfaceNote } from "@/components/dashboard/dashboard-surface-note";
 import { coachOverviewData } from "@/lib/mocks/coach-overview";
 
 function getCoachSessionTone(status: "Ready" | "Waitlist" | "Prep") {
@@ -18,12 +19,17 @@ function getCoachSessionTone(status: "Ready" | "Waitlist" | "Prep") {
 }
 
 export function CoachOverviewWorkspace() {
+  const readySessions = coachOverviewData.upcomingSessions.filter(
+    (session) => session.status === "Ready"
+  ).length;
+  const attentionClients = coachOverviewData.clientSpotlights.filter(
+    (client) => client.momentum === "Needs check-in"
+  ).length;
+
   return (
     <div className="dashboard-stack">
       <DashboardPageHeader
         eyebrow="Coach focus"
-        title="Coach Overview"
-        description="See today's coaching rhythm at a glance, keep your roster in view, and stay ahead of the sessions and notes that matter most."
         actions={
           <>
             <Link href="/coach/clients" className="mv-btn mv-btn-secondary">
@@ -38,6 +44,34 @@ export function CoachOverviewWorkspace() {
         }
       />
 
+      <DashboardSurfaceNote
+        eyebrow="Overview"
+        title="Your next sessions, roster, and today&apos;s actions stay in one place."
+        description="Use this page as a quick read before you open deeper views."
+        items={[
+          `${readySessions} ready sessions.`,
+          `${attentionClients} client needs attention.`,
+        ]}
+      />
+
+      <section className="dashboard-mini-grid" aria-label="Coach overview highlights">
+        <article className="dashboard-mini-stat">
+          <span className="dashboard-mini-stat__label">Ready sessions</span>
+          <strong>{readySessions}</strong>
+          <p>Ready to run.</p>
+        </article>
+        <article className="dashboard-mini-stat">
+          <span className="dashboard-mini-stat__label">Clients needing attention</span>
+          <strong>{attentionClients}</strong>
+          <p>Need follow-up.</p>
+        </article>
+        <article className="dashboard-mini-stat">
+          <span className="dashboard-mini-stat__label">Today&apos;s plan</span>
+          <strong>{coachOverviewData.todaysPlan.length} steps</strong>
+          <p>Today&apos;s plan.</p>
+        </article>
+      </section>
+
       <section className="dashboard-kpi-grid" aria-label="Coach overview stats">
         {coachOverviewData.stats.map((stat) => (
           <DashboardStatCard key={stat.id} {...stat} />
@@ -50,10 +84,7 @@ export function CoachOverviewWorkspace() {
             <div>
               <div className="mv-eyebrow">Up next</div>
               <h2>Your upcoming sessions</h2>
-              <p>
-                A lighter coaching view focused on what you need to run next, not
-                the whole studio floor.
-              </p>
+              <p>Your next sessions only.</p>
             </div>
           </div>
 
@@ -93,10 +124,7 @@ export function CoachOverviewWorkspace() {
             <div>
               <div className="mv-eyebrow">Today&apos;s movement</div>
               <h2>Recent activity</h2>
-              <p>
-                The updates most likely to affect your next block, your notes, or
-                a client follow-up.
-              </p>
+              <p>Updates that affect the day.</p>
             </div>
           </div>
           <DashboardActivityFeed items={coachOverviewData.recentActivity} />
@@ -109,10 +137,7 @@ export function CoachOverviewWorkspace() {
             <div>
               <div className="mv-eyebrow">Assigned clients</div>
               <h2>Roster snapshot</h2>
-              <p>
-                The members most likely to need your attention in the next few
-                days.
-              </p>
+              <p>Clients most likely to need attention.</p>
             </div>
           </div>
 
@@ -133,10 +158,7 @@ export function CoachOverviewWorkspace() {
             <div>
               <div className="mv-eyebrow">Coach shortcuts</div>
               <h2>Quick actions and today&apos;s plan</h2>
-              <p>
-                Keep the page useful for daily work with just enough launch points
-                and structure.
-              </p>
+              <p>Quick actions and plan for today.</p>
             </div>
           </div>
 
@@ -171,6 +193,11 @@ export function CoachOverviewWorkspace() {
                 <span>{item.note}</span>
               </div>
             ))}
+          </div>
+
+          <div className="dashboard-info-strip">
+            <strong>Daily workflow</strong>
+            <p>Assigned workload and notes appear here.</p>
           </div>
         </article>
       </section>

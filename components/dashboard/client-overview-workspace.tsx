@@ -4,6 +4,7 @@ import { ArrowRight, CreditCard, ShieldUser, Sparkles } from "lucide-react";
 import { DashboardActivityFeed } from "@/components/dashboard/dashboard-activity-feed";
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
 import { DashboardStatCard } from "@/components/dashboard/dashboard-stat-card";
+import { DashboardSurfaceNote } from "@/components/dashboard/dashboard-surface-note";
 import { clientOverviewData } from "@/lib/mocks/client-overview";
 
 function getSessionBadgeClass(status: "Booked" | "Check-in ready" | "Waitlist") {
@@ -19,12 +20,15 @@ function getSessionBadgeClass(status: "Booked" | "Check-in ready" | "Waitlist") 
 }
 
 export function ClientOverviewWorkspace() {
+  const bookedThisWeek = clientOverviewData.upcomingSessions.length;
+  const readyNow = clientOverviewData.upcomingSessions.filter(
+    (session) => session.status === "Check-in ready"
+  ).length;
+
   return (
     <div className="dashboard-stack">
       <DashboardPageHeader
         eyebrow="Member overview"
-        title="Client Dashboard"
-        description="A simple personal view of your next sessions, your current plan, and the coach support around your training."
         actions={
           <Link href="/client/sessions" className="mv-btn mv-btn-primary">
             <Sparkles size={16} />
@@ -32,6 +36,34 @@ export function ClientOverviewWorkspace() {
           </Link>
         }
       />
+
+      <DashboardSurfaceNote
+        eyebrow="Overview"
+        title="Your next sessions, coach updates, and plan status stay in one place."
+        description="Use this page as a quick read before you open details."
+        items={[
+          `${bookedThisWeek} upcoming sessions in view.`,
+          `${readyNow} ready for check-in.`,
+        ]}
+      />
+
+      <section className="dashboard-mini-grid" aria-label="Client overview highlights">
+        <article className="dashboard-mini-stat">
+          <span className="dashboard-mini-stat__label">Next touchpoint</span>
+          <strong>{clientOverviewData.coachSnapshot.nextTouchpoint}</strong>
+          <p>Next coach touchpoint.</p>
+        </article>
+        <article className="dashboard-mini-stat">
+          <span className="dashboard-mini-stat__label">Membership state</span>
+          <strong>{clientOverviewData.subscriptionSnapshot.paymentStatus}</strong>
+          <p>{clientOverviewData.subscriptionSnapshot.renewalLabel}</p>
+        </article>
+        <article className="dashboard-mini-stat">
+          <span className="dashboard-mini-stat__label">Weekly view</span>
+          <strong>{bookedThisWeek} sessions</strong>
+          <p>Booked this week.</p>
+        </article>
+      </section>
 
       <section className="dashboard-kpi-grid" aria-label="Client overview stats">
         {clientOverviewData.stats.map((stat) => (
@@ -77,7 +109,7 @@ export function ClientOverviewWorkspace() {
             <div>
               <div className="mv-eyebrow">Progress pulse</div>
               <h2>Recent updates</h2>
-              <p>Small, relevant changes so your dashboard feels helpful, not crowded.</p>
+              <p>Relevant changes only.</p>
             </div>
           </div>
 
@@ -91,7 +123,7 @@ export function ClientOverviewWorkspace() {
             <div>
               <div className="mv-eyebrow">Your coach</div>
               <h2>Coach snapshot</h2>
-              <p>A fast view of who is guiding the current phase of your plan.</p>
+              <p>Your current coach and focus.</p>
             </div>
             <ShieldUser size={20} color="#ff8b8f" />
           </div>
@@ -121,7 +153,7 @@ export function ClientOverviewWorkspace() {
             <div>
               <div className="mv-eyebrow">Membership</div>
               <h2>Subscription snapshot</h2>
-              <p>Your current plan and renewal state, kept readable without billing complexity.</p>
+              <p>Your current plan and renewal state.</p>
             </div>
             <CreditCard size={20} color="#ff8b8f" />
           </div>
@@ -161,6 +193,11 @@ export function ClientOverviewWorkspace() {
                 </div>
               );
             })}
+          </div>
+
+          <div className="dashboard-info-strip">
+            <strong>Billing summary</strong>
+            <p>Renewal and balance details appear here.</p>
           </div>
         </article>
       </section>

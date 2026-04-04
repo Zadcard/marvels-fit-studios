@@ -21,5 +21,5 @@ export const clientSubscriptionRecord: ClientSubscriptionRecord = {
     "One private progress review each week",
     "Coach follow-up notes across the current training cycle",
   ],
-  note: "This is a frontend-only membership snapshot and payment state is still mock data.",
+  note: "Current membership summary and billing state.",
 };

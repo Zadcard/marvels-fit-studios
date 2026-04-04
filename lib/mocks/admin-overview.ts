@@ -100,8 +100,8 @@ export const adminOverviewData: {
       id: "revenue",
       label: "Revenue this month",
       value: "EGP 148k",
-      change: "Finance placeholder",
-      detail: "Included intentionally as a mock planning card for admin phase.",
+      change: "Under review",
+      detail: "Monthly revenue trend for the current billing cycle.",
       note: "Mock metric",
       icon: CircleDollarSign,
       tone: "warning",
@@ -156,7 +156,7 @@ export const adminOverviewData: {
     {
       id: "activity-2",
       title: "Capacity alert on Conditioning Lab",
-      description: "Tomorrow’s 5:00 PM session is full and may need overflow handling.",
+      description: "Tomorrow's 5:00 PM session is full and may need overflow handling.",
       timeLabel: "38 min ago",
       tone: "warning",
     },
@@ -179,8 +179,8 @@ export const adminOverviewData: {
     {
       id: "action-1",
       label: "Add new client",
-      description: "Stage the member-creation flow for the upcoming clients page.",
-      ctaLabel: "Open mock",
+      description: "Open the roster and start a new client record.",
+      ctaLabel: "Open",
       href: "/admin/clients",
       icon: UserPlus,
       emphasis: "primary",
@@ -188,7 +188,7 @@ export const adminOverviewData: {
     {
       id: "action-2",
       label: "Create session",
-      description: "Reserve the create-session entry point used by admin scheduling.",
+      description: "Open the session workspace and set the next class.",
       ctaLabel: "Launch",
       href: "/admin/sessions",
       icon: CalendarPlus2,
@@ -197,7 +197,7 @@ export const adminOverviewData: {
     {
       id: "action-3",
       label: "Assign coach",
-      description: "Prepare quick staff assignment moves for future ops pages.",
+      description: "Review coach capacity and assign the right lead.",
       ctaLabel: "Review",
       href: "/admin/coaches",
       icon: ShieldUser,
@@ -206,8 +206,8 @@ export const adminOverviewData: {
     {
       id: "action-4",
       label: "Capture note",
-      description: "Hold space for session notes, flags, and front-desk handoff items.",
-      ctaLabel: "Stage",
+      description: "Track schedule notes, flags, and handoff items.",
+      ctaLabel: "Open",
       href: "/admin/schedule",
       icon: ClipboardPlus,
       emphasis: "secondary",
@@ -236,7 +236,7 @@ export const adminOverviewData: {
       id: "snapshot-4",
       label: "Focus next",
       value: "Clients",
-      description: "The next implementation slice should unlock admin client management.",
+      description: "Client management remains the busiest operational surface this week.",
     },
   ],
 };

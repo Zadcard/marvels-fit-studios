@@ -118,8 +118,6 @@ export function AdminScheduleWorkspace() {
     <div className="dashboard-stack">
       <DashboardPageHeader
         eyebrow="Admin schedule"
-        title="Schedule Control"
-        description="Shape the studio rhythm week by week, keep group and private demand visible, and leave room for the richer calendar layer we will wire later."
         actions={
           <button
             type="button"
@@ -146,10 +144,7 @@ export function AdminScheduleWorkspace() {
           <div>
             <span className="mv-eyebrow">Weekly board</span>
             <h2>Session rhythm by day</h2>
-            <p>
-              A clean admin-facing board for staffing, occupancy, and timing decisions
-              before we move into a full calendar experience.
-            </p>
+            <p>Staffing, occupancy, and timing by day.</p>
           </div>
 
           <div className="dashboard-segmented">
@@ -329,9 +324,7 @@ export function AdminScheduleWorkspace() {
                   ) : (
                     <div className="dashboard-empty-state">
                       <strong>No sessions in this slice</strong>
-                      <p>
-                        Adjust the day or status filters to bring the board back into view.
-                      </p>
+                      <p>Adjust the filters to bring sessions back into view.</p>
                     </div>
                   )}
                 </div>
@@ -382,7 +375,7 @@ export function AdminScheduleWorkspace() {
             <div>
               <span className="mv-eyebrow">Planning cues</span>
               <h2>What to watch next</h2>
-              <p>Short operational notes to keep the schedule page practical instead of decorative.</p>
+              <p>Short operational notes for the next schedule decisions.</p>
             </div>
           </div>
 
@@ -407,7 +400,7 @@ export function AdminScheduleWorkspace() {
         open={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         title="Create schedule block"
-        description="This is a frontend-only scheduling form. It prepares the structure for a later calendar-connected workflow."
+        description="Schedule block details"
         footer={
           <>
             <button
@@ -422,7 +415,7 @@ export function AdminScheduleWorkspace() {
               className="mv-btn mv-btn-primary"
               onClick={() => setIsCreateModalOpen(false)}
             >
-              Save mock block
+              Save block
             </button>
           </>
         }

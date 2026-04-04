@@ -52,46 +52,46 @@ Avoid shared files too unless absolutely necessary:
 
 ## Phase 1 Tasks: Product Surface Stabilization
 
-- Improve login UX.
-- Add logout UX in the dashboard surface.
-- Improve loading and error states in user-facing flows.
-- Review landing page clarity and structure.
+- [x] Improve login UX.
+- [x] Add logout UX in the dashboard surface.
+- [x] Improve loading and error states in user-facing flows.
+- [x] Review landing page clarity and structure.
 - Keep the public-facing experience polished while backend work happens separately.
 
 ## Phase 2 Tasks: Landing and Login
 
-- Finalize landing page structure and polish.
-- Prepare the contact/join flow UI for later backend integration.
-- Finalize login form experience.
-- Improve login validation messages and UX if needed.
+- [x] Prepare the contact/join flow UI for later backend integration.
+- [x] Finalize login form experience.
+- [x] Improve login validation messages and UX if needed.
+- [x] Finalize landing page structure and polish.
 - Keep login page ready to consume the final auth behavior from Developer 1.
 
 ## Phase 3 Tasks: Client Portal UI
 
-- Refine client dashboard layout.
-- Refine client sessions page UI.
-- Refine client coach page UI.
-- Refine client settings page UI.
-- Refine client subscription page UI.
-- Prepare client screens to consume real backend data later.
-- Remove UI assumptions that depend too heavily on mocks.
+- [x] Refine client dashboard layout.
+- [x] Refine client sessions page UI.
+- [x] Refine client coach page UI.
+- [x] Refine client settings page UI.
+- [x] Refine client subscription page UI.
+- [x] Prepare client screens to consume real backend data later.
+- [x] Remove UI assumptions that depend too heavily on mocks.
 
 ## Phase 4 Tasks: Coach Portal UI
 
-- Refine coach dashboard layout.
-- Refine coach clients page UI.
-- Refine coach schedule page UI.
-- Refine coach sessions page UI.
-- Refine coach settings page UI.
-- Prepare coach screens to consume real backend data later.
+- [x] Refine coach dashboard layout.
+- [x] Refine coach clients page UI.
+- [x] Refine coach schedule page UI.
+- [x] Refine coach sessions page UI.
+- [x] Refine coach settings page UI.
+- [x] Prepare coach screens to consume real backend data later.
 
 ## Phase 5 Tasks: Shared Dashboard Surface
 
-- Improve dashboard shell UX if needed.
+- [x] Improve dashboard shell UX if needed.
 - Improve modal UX.
-- Improve toolbar/filter UX.
-- Improve empty/loading/error states.
-- Improve responsive behavior for client and coach portals.
+- [x] Improve toolbar/filter UX.
+- [x] Improve empty/loading/error states.
+- [x] Improve responsive behavior for client and coach portals.
 
 Important:
 
@@ -107,18 +107,18 @@ Important:
 
 ## Phase 7 Tasks: Contact, Notes, and Files UX
 
-- Connect landing page contact form UI to the future backend contract.
+- [x] Connect landing page contact form UI to the future backend contract.
 - Add user-friendly UX for notes and files once backend endpoints exist.
-- Add clear user-facing messages for submission success/failure.
+- [x] Add clear user-facing messages for submission success/failure.
 
 ## Phase 8 Tasks: QA and Product Polish
 
-- Test client flows locally.
-- Test coach flows locally.
+- [x] Test client flows locally.
+- [x] Test coach flows locally.
 - Test dashboard responsiveness.
 - Test loading/error/empty states.
-- Fix visual inconsistencies.
-- Fix interaction issues.
+- [x] Fix visual inconsistencies.
+- [x] Fix interaction issues.
 - Run role-by-role manual product checks.
 
 ## End Goal for Developer 2

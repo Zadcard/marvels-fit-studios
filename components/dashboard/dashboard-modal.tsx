@@ -3,7 +3,7 @@ import { useEffect, useId, useRef } from "react";
 type DashboardModalProps = {
   open: boolean;
   title: string;
-  description: string;
+  description?: string;
   onClose: () => void;
   children: React.ReactNode;
   footer?: React.ReactNode;
@@ -54,7 +54,7 @@ export function DashboardModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby={titleId}
-      aria-describedby={descriptionId}
+      aria-describedby={description ? descriptionId : undefined}
     >
       <button
         type="button"
@@ -69,9 +69,8 @@ export function DashboardModal({
       >
         <div className="dashboard-modal__header">
           <div>
-            <span className="mv-eyebrow">Admin workspace</span>
             <h2 id={titleId}>{title}</h2>
-            <p id={descriptionId}>{description}</p>
+            {description ? <p id={descriptionId}>{description}</p> : null}
           </div>
           <button
             type="button"

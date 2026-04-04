@@ -16,9 +16,7 @@ const initialSettings: AdminStudioSettings = { ...adminStudioSettings };
 
 export function AdminSettingsWorkspace() {
   const [settings, setSettings] = useState<AdminStudioSettings>(initialSettings);
-  const [saveMessage, setSaveMessage] = useState(
-    "Settings are mock-only in this phase."
-  );
+  const [saveMessage, setSaveMessage] = useState("Preview mode.");
 
   const updateField = <Key extends keyof AdminStudioSettings>(
     field: Key,
@@ -32,28 +30,26 @@ export function AdminSettingsWorkspace() {
 
   const resetSettings = () => {
     setSettings(initialSettings);
-    setSaveMessage("Defaults restored to the current mock studio setup.");
+    setSaveMessage("Defaults restored.");
   };
 
   const saveSettings = () => {
-    setSaveMessage("Mock settings saved locally for frontend review.");
+    setSaveMessage("Preview updated.");
   };
 
   return (
     <div className="dashboard-stack">
       <DashboardPageHeader
         eyebrow="Admin settings"
-        title="Studio Settings"
-        description="Organize the operational defaults now so future scheduling, notifications, and billing wiring have a clean home later."
         actions={
           <>
             <button type="button" className="mv-btn mv-btn-outline" onClick={resetSettings}>
               <RefreshCcw size={16} />
-              Reset Mock
+              Reset
             </button>
             <button type="button" className="mv-btn mv-btn-primary" onClick={saveSettings}>
               <Save size={16} />
-              Save Settings
+              Save
             </button>
           </>
         }
@@ -64,7 +60,7 @@ export function AdminSettingsWorkspace() {
           <DashboardFormSection
             eyebrow="Identity"
             title="Studio identity"
-            description="Core studio details that keep the admin workspace aligned with the Marvel Fitness brand."
+            description="Core studio details."
           >
             <div className="dashboard-form-columns">
               <label className="dashboard-form-field">
@@ -113,7 +109,7 @@ export function AdminSettingsWorkspace() {
           <DashboardFormSection
             eyebrow="Operations"
             title="Operations rhythm"
-            description="Defaults that shape how the studio moves through classes, private sessions, and onboarding."
+            description="Defaults for sessions and onboarding."
           >
             <div className="dashboard-form-columns">
               <label className="dashboard-form-field">
@@ -186,7 +182,7 @@ export function AdminSettingsWorkspace() {
           <DashboardFormSection
             eyebrow="Notifications"
             title="Notification defaults"
-            description="Mock toggles for the reminders and digest flows we will wire later."
+            description="Reminder and digest defaults."
           >
             <div className="dashboard-stack">
               <DashboardSwitch
@@ -195,7 +191,7 @@ export function AdminSettingsWorkspace() {
                   updateField("coachAutoReminders", checked)
                 }
                 label="Coach auto-reminders"
-                description="Prepare day-of reminders for coaches before live messaging exists."
+                description="Day-of reminders for coaches."
               />
               <DashboardSwitch
                 checked={settings.memberCheckInAlerts}
@@ -203,7 +199,7 @@ export function AdminSettingsWorkspace() {
                   updateField("memberCheckInAlerts", checked)
                 }
                 label="Member check-in alerts"
-                description="Flag missed arrivals and manual follow-up moments for the front desk."
+                description="Flag missed arrivals for follow-up."
               />
               <DashboardSwitch
                 checked={settings.renewalDigest}
@@ -211,7 +207,7 @@ export function AdminSettingsWorkspace() {
                   updateField("renewalDigest", checked)
                 }
                 label="Renewal digest"
-                description="Keep a weekly renewal summary ready for the future subscription workflow."
+                description="Weekly renewal summary."
               />
             </div>
           </DashboardFormSection>
@@ -219,7 +215,7 @@ export function AdminSettingsWorkspace() {
           <DashboardFormSection
             eyebrow="Booking"
             title="Booking controls"
-            description="High-level rules that will later connect to the schedule and session creation flow."
+            description="High-level booking rules."
           >
             <div className="dashboard-form-columns">
               <label className="dashboard-form-field">
@@ -244,7 +240,7 @@ export function AdminSettingsWorkspace() {
               checked={settings.overbookWaitlist}
               onCheckedChange={(checked) => updateField("overbookWaitlist", checked)}
               label="Allow waitlist pressure mode"
-              description="Keep an admin-only toggle ready for classes that need managed overflow."
+              description="Allow managed overflow when needed."
             />
           </DashboardFormSection>
         </div>

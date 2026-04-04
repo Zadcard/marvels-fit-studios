@@ -8,22 +8,22 @@ type CoachCard = { id: string; mark: string; name: string; role: string; tags: s
 type ReviewCard = { id: string; quote: string; name: string; memberSince: string };
 
 const serviceCards: ServiceCard[] = [
-  { id: "group-training", icon: "01", title: "Group training", description: "High-energy sessions with coach attention, clear structure, and a stronger sense of accountability." },
-  { id: "private-coaching", icon: "02", title: "Private coaching", description: "One-to-one coaching for members who want a more tailored path, more detailed feedback, and tighter support." },
-  { id: "progress-tracking", icon: "03", title: "Progress tracking", description: "Your membership is backed by a dashboard that helps keep sessions, notes, and training visibility organized." },
-  { id: "training-files", icon: "04", title: "Training files", description: "Coaches can share plans, guidance, and useful training material in a format that feels much easier to follow." },
+  { id: "group-training", icon: "01", title: "Group training", description: "High-energy sessions with coach attention and clear structure." },
+  { id: "private-coaching", icon: "02", title: "Private coaching", description: "One-to-one coaching with more tailored support and feedback." },
+  { id: "progress-tracking", icon: "03", title: "Progress tracking", description: "A member dashboard that keeps sessions and progress visible." },
+  { id: "training-files", icon: "04", title: "Training files", description: "Plans and guidance shared in an easier format to follow." },
 ];
 
 const benefitCards: BenefitCard[] = [
-  { id: "sessions-supported", value: "3k+", title: "Sessions supported", description: "Members train inside a system that is built to keep routines visible and easier to sustain." },
-  { id: "sessions-per-month", value: "12", title: "Sessions every month", description: "A clearer monthly structure gives the membership real rhythm instead of vague attendance promises." },
-  { id: "training-paths", value: "2", title: "Ways to train", description: "Choose between premium group sessions and private coaching without losing the same quality standard.", accent: true },
-  { id: "follow-up", value: "24h", title: "Registration follow-up", description: "New registrations are treated as onboarding, with a faster, clearer next step after you apply." },
+  { id: "sessions-supported", value: "3k+", title: "Sessions supported", description: "A system designed to keep routines visible and consistent." },
+  { id: "sessions-per-month", value: "12", title: "Sessions every month", description: "A clear monthly rhythm built into the membership." },
+  { id: "training-paths", value: "2", title: "Ways to train", description: "Choose group sessions or private coaching with the same quality standard.", accent: true },
+  { id: "follow-up", value: "24h", title: "Registration follow-up", description: "A fast, clear next step after you apply." },
 ];
 
 const planCards: PlanCard[] = [
-  { id: "group-membership", tag: "Group membership", title: "Train with energy and consistency.", features: ["12 structured sessions per month", "Coach support in every class", "High-accountability training environment"], ctaLabel: "Register for Group Training", buttonClassName: "btn btn-secondary btn-plan" },
-  { id: "private-coaching", tag: "Private coaching", title: "Choose a more tailored coaching experience.", features: ["One-to-one sessions built around your goals", "More focused progression and feedback", "Premium support for members who want extra guidance"], ctaLabel: "Register for Private Coaching", buttonClassName: "btn btn-primary btn-plan", accent: true },
+  { id: "group-membership", tag: "Group membership", title: "Train with energy and consistency.", features: ["12 sessions each month", "Coach support in every class", "High-accountability environment"], ctaLabel: "Register for Group Training", buttonClassName: "btn btn-secondary btn-plan" },
+  { id: "private-coaching", tag: "Private coaching", title: "Choose a more tailored coaching experience.", features: ["One-to-one sessions built around your goals", "More focused feedback", "Premium support with extra guidance"], ctaLabel: "Register for Private Coaching", buttonClassName: "btn btn-primary btn-plan", accent: true },
 ];
 
 const coachCards: CoachCard[] = [
@@ -36,9 +36,9 @@ const coachCards: CoachCard[] = [
 ];
 
 const reviewCards: ReviewCard[] = [
-  { id: "ahmed-review", quote: '"The coaches here do not let you drift. The whole experience feels more serious, more organized, and much easier to stay consistent with."', name: "Ahmed K.", memberSince: "Member since 2024" },
-  { id: "sara-review", quote: '"Private coaching gave me much more clarity. My sessions feel intentional now, and I always know what I am working toward."', name: "Sara M.", memberSince: "Member since 2024" },
-  { id: "mohamed-review", quote: '"Group training here has real structure. The energy is strong, but the coaching is what makes it feel genuinely high quality."', name: "Mohamed H.", memberSince: "Member since 2025" },
+  { id: "ahmed-review", quote: '"The coaches keep you focused. The whole experience feels more organized and easier to stay consistent with."', name: "Ahmed K.", memberSince: "Member since 2024" },
+  { id: "sara-review", quote: '"Private coaching gave me clarity. My sessions feel intentional now."', name: "Sara M.", memberSince: "Member since 2024" },
+  { id: "mohamed-review", quote: '"Group training has real structure. The coaching is what makes it feel high quality."', name: "Mohamed H.", memberSince: "Member since 2025" },
 ];
 
 type LandingCarouselSectionProps = {
@@ -143,7 +143,7 @@ export function LandingHeader() {
 
 export function LandingServicesSection() {
   return (
-    <LandingCarouselSection id="services" titleId="services-title" eyebrow="What you get" title="Services designed to feel premium, clear, and easy to use." label="Membership features" trackClassName="carousel-track service-track" trackAriaLabel="Membership feature cards" prevAriaLabel="Show previous service cards" nextAriaLabel="Show next service cards">
+    <LandingCarouselSection id="services" titleId="services-title" eyebrow="What you get" title="Services built to feel clear and premium." label="Membership features" trackClassName="carousel-track service-track" trackAriaLabel="Membership feature cards" prevAriaLabel="Show previous service cards" nextAriaLabel="Show next service cards">
       {serviceCards.map((service) => (
         <article key={service.id} className="service-card panel">
           <span className="service-icon">{service.icon}</span>
@@ -157,7 +157,7 @@ export function LandingServicesSection() {
 
 export function LandingBenefitsSection() {
   return (
-    <LandingCarouselSection titleId="why-title" eyebrow="Why members prefer it" title="A calmer, more organized studio experience with higher standards." label="Studio benefits" trackClassName="carousel-track benefit-track" trackAriaLabel="Studio benefits" prevAriaLabel="Show previous benefits" nextAriaLabel="Show next benefits">
+    <LandingCarouselSection titleId="why-title" eyebrow="Why members prefer it" title="A calmer studio experience with higher standards." label="Studio benefits" trackClassName="carousel-track benefit-track" trackAriaLabel="Studio benefits" prevAriaLabel="Show previous benefits" nextAriaLabel="Show next benefits">
       {benefitCards.map((benefit) => (
         <article key={benefit.id} className={benefit.accent ? "benefit-card panel panel-accent" : "benefit-card panel"} role="listitem">
           <strong>{benefit.value}</strong>
@@ -213,7 +213,7 @@ export function LandingCoachesSection() {
 
 export function LandingReviewsSection() {
   return (
-    <LandingCarouselSection id="reviews" titleId="reviews-title" eyebrow="Member feedback" title="What members notice once they train inside a better system." label="Testimonials" trackClassName="carousel-track review-track" trackAriaLabel="Review cards" prevAriaLabel="Show previous reviews" nextAriaLabel="Show next reviews">
+    <LandingCarouselSection id="reviews" titleId="reviews-title" eyebrow="Member feedback" title="What members notice once the system gets better." label="Testimonials" trackClassName="carousel-track review-track" trackAriaLabel="Review cards" prevAriaLabel="Show previous reviews" nextAriaLabel="Show next reviews">
       {reviewCards.map((review) => (
         <article key={review.id} className="review-card panel">
           <div className="review-stars" aria-label="5 out of 5 stars">
@@ -236,7 +236,7 @@ export function LandingFooter() {
       <div className="footer-grid">
         <div className="footer-col footer-col-brand">
           <img src="/img/Logo-1.png" alt="Marvel's Studios logo" className="footer-logo" width="160" loading="lazy" />
-          <p>We believe that training is a journey we share with our members to achieve ideal performance and get the best from physical systems, to regain health and enjoy life.</p>
+          <p>We help members train with structure, progress, and a better daily experience.</p>
         </div>
 
         <div className="footer-col">
@@ -253,8 +253,8 @@ export function LandingFooter() {
         <div className="footer-col">
           <strong className="footer-heading">Quick Links</strong>
           <nav className="footer-nav">
-            <a href="#about">About the Studio</a>
-            <a href="#services">Membership Services</a>
+            <a href="#about">About</a>
+            <a href="#services">Services</a>
             <a href="#coaches">Meet the Coaches</a>
             <Link href="/login">Member Portal</Link>
           </nav>
@@ -293,7 +293,7 @@ export function LandingFooter() {
 
       <div className="footer-bottom">
         <div className="footer-copyright">
-          Marvel&apos;s Studios &copy; 2020 - All Rights Reserved
+          Marvel&apos;s Studios &copy; 2020. All rights reserved.
         </div>
         <div className="footer-social-circ">
           <a

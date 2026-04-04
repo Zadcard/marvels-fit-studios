@@ -142,8 +142,6 @@ export function AdminSubscriptionsWorkspace() {
     <div className="dashboard-stack">
       <DashboardPageHeader
         eyebrow="Admin subscriptions"
-        title="Subscriptions Management"
-        description="Keep plan state, billing posture, and renewal pressure visible in one polished surface before any real billing integration begins."
         actions={
           <button
             type="button"
@@ -172,7 +170,7 @@ export function AdminSubscriptionsWorkspace() {
             searchValue={searchTerm}
             onSearchChange={setSearchTerm}
             searchPlaceholder="Search by member, plan, coach, or note"
-            summary={`${filteredSubscriptions.length} subscriptions matching the current filters`}
+            summary={`${filteredSubscriptions.length} subscriptions in view`}
             filters={
               <>
                 <label className="dashboard-filter-field">
@@ -358,7 +356,7 @@ export function AdminSubscriptionsWorkspace() {
             <div>
               <span className="mv-eyebrow">Selected membership</span>
               <h2>{selectedSubscription.memberName}</h2>
-              <p>{selectedSubscription.note}</p>
+              <p>{selectedSubscription.planName}</p>
             </div>
           </div>
 
@@ -384,7 +382,7 @@ export function AdminSubscriptionsWorkspace() {
           <DashboardFormSection
             eyebrow="Plan mix"
             title="Visible plan split"
-            description="A fast read on which membership tiers dominate the filtered list."
+            description="Current plan split in this view."
           >
             <div className="dashboard-summary-list">
               {planSummary.map((item) => (
@@ -402,7 +400,7 @@ export function AdminSubscriptionsWorkspace() {
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         title={editingSubscriptionId ? "Edit subscription" : "Add subscription"}
-        description="This billing form is intentionally mock-only and gives the admin frontend a realistic management shape without real payment wiring."
+        description="Subscription details"
         footer={
           <>
             <button
@@ -418,8 +416,8 @@ export function AdminSubscriptionsWorkspace() {
               onClick={() => setIsModalOpen(false)}
             >
               {editingSubscriptionId
-                ? "Save mock changes"
-                : "Create mock subscription"}
+                ? "Save subscription"
+                : "Create subscription"}
             </button>
           </>
         }

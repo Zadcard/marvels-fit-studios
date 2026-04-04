@@ -7,6 +7,7 @@ import { DashboardEmptyState } from "@/components/dashboard/dashboard-empty-stat
 import { DashboardManagementToolbar } from "@/components/dashboard/dashboard-management-toolbar";
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
 import { DashboardStatusBadge } from "@/components/dashboard/dashboard-status-badge";
+import { DashboardSurfaceNote } from "@/components/dashboard/dashboard-surface-note";
 import {
   coachScheduleDayFilters,
   coachScheduleRecords,
@@ -57,30 +58,61 @@ export function CoachScheduleWorkspace() {
 
   const focusedDay =
     dayFilter === "All days" ? scheduleDays[0] ?? "Monday" : dayFilter;
-
   const visibleDays =
     view === "week"
       ? scheduleDays.filter((day) => (dayFilter === "All days" ? true : day === focusedDay))
       : [focusedDay];
+  const hasActiveFilters =
+    searchTerm.trim().length > 0 || dayFilter !== "All days" || statusFilter !== "All";
+  const readyBlocks = filteredSchedule.filter((session) => session.status === "Ready").length;
+  const prepBlocks = filteredSchedule.filter((session) => session.status === "Prep").length;
+
+  const resetFilters = () => {
+    setSearchTerm("");
+    setDayFilter("All days");
+    setStatusFilter("All");
+    setView("week");
+  };
 
   return (
     <div className="dashboard-stack">
-      <DashboardPageHeader
-        eyebrow="Coach schedule"
-        title="My Schedule"
-        description="A week-first coaching board built around the blocks you own, with just enough structure for future calendar integration."
+      <DashboardPageHeader eyebrow="Coach schedule" />
+
+      <DashboardSurfaceNote
+        eyebrow="Schedule"
+        title="Review your week or focus on one day."
+        description="Filter the board, then scan the blocks you own."
+        items={[
+          `${readyBlocks} ready blocks.`,
+          `${prepBlocks} in prep.`,
+        ]}
       />
+
+      <section className="dashboard-mini-grid" aria-label="Coach schedule highlights">
+        <article className="dashboard-mini-stat">
+          <span className="dashboard-mini-stat__label">Blocks in view</span>
+          <strong>{filteredSchedule.length}</strong>
+          <p>Current workload.</p>
+        </article>
+        <article className="dashboard-mini-stat">
+          <span className="dashboard-mini-stat__label">Ready</span>
+          <strong>{readyBlocks}</strong>
+          <p>Ready to run.</p>
+        </article>
+        <article className="dashboard-mini-stat">
+          <span className="dashboard-mini-stat__label">Focus mode</span>
+          <strong>{view === "week" ? "Week" : "Day"}</strong>
+          <p>Current view.</p>
+        </article>
+      </section>
 
       <section className="dashboard-panel dashboard-panel--accent">
         <div className="dashboard-panel__header">
-          <div>
-            <div className="mv-eyebrow">Schedule rhythm</div>
-            <h2>Week and day views</h2>
-            <p>
-              Focus on your own flow across classes, private blocks, and prep
-              moments without inheriting the full admin calendar.
-            </p>
-          </div>
+            <div>
+              <div className="mv-eyebrow">Schedule rhythm</div>
+              <h2>Week and day views</h2>
+              <p>Your classes, private blocks, and prep.</p>
+            </div>
           <div className="dashboard-segmented">
             <button
               type="button"
@@ -114,6 +146,8 @@ export function CoachScheduleWorkspace() {
           onSearchChange={setSearchTerm}
           searchPlaceholder="Search by session, note, or location"
           summary={`${filteredSchedule.length} schedule blocks in view`}
+          isFiltered={hasActiveFilters}
+          onReset={resetFilters}
           filters={
             <>
               <label className="dashboard-filter-field">
@@ -229,7 +263,18 @@ export function CoachScheduleWorkspace() {
                   ) : (
                     <DashboardEmptyState
                       title="No schedule blocks here"
-                      description="Try another day or status filter to bring your coaching board back into view."
+                      description="Try a different day or reset the filters."
+                      action={
+                        hasActiveFilters ? (
+                          <button
+                            type="button"
+                            className="dashboard-inline-button"
+                            onClick={resetFilters}
+                          >
+                            Clear filters
+                          </button>
+                        ) : null
+                      }
                     />
                   )}
                 </div>

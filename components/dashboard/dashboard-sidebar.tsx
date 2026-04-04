@@ -2,12 +2,15 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { X } from "lucide-react";
+import { LoaderCircle, LogOut, X } from "lucide-react";
 import type { ComponentType } from "react";
+import { useState } from "react";
 import { usePathname } from "next/navigation";
+import { signOut, useSession } from "next-auth/react";
 
 import {
   getDashboardNav,
+  getDashboardProfileMeta,
   isDashboardNavItemActive,
 } from "@/lib/navigation/dashboard-nav";
 import type { DashboardRole } from "@/lib/auth/authorization-policy";
@@ -30,11 +33,32 @@ export function DashboardSidebar({
   onClose,
 }: DashboardSidebarProps) {
   const pathname = usePathname();
+  const { data: session } = useSession();
   const navItems = getDashboardNav(role);
+  const profileMeta = getDashboardProfileMeta(role);
   const groupedItems = {
     primary: navItems.filter((item) => item.section === "primary"),
     secondary: navItems.filter((item) => item.section === "secondary"),
   };
+  const [isSigningOut, setIsSigningOut] = useState(false);
+  const [signOutError, setSignOutError] = useState("");
+
+  const displayName =
+    session?.user?.name?.trim() ||
+    session?.user?.email?.trim() ||
+    profileMeta.name;
+
+  async function handleSignOut() {
+    setSignOutError("");
+    setIsSigningOut(true);
+
+    try {
+      await signOut({ redirectTo: "/login" });
+    } catch {
+      setSignOutError("Sign out failed. Try again.");
+      setIsSigningOut(false);
+    }
+  }
 
   return (
     <aside
@@ -55,7 +79,7 @@ export function DashboardSidebar({
         </span>
 
         <div className="dashboard-sidebar__brand-copy">
-          <p>Marvel Fitness Studio</p>
+          <p>Marvel&apos;s Studios</p>
           <strong>{role} portal</strong>
         </div>
 
@@ -128,15 +152,32 @@ export function DashboardSidebar({
         </div>
       ))}
 
-      <div className="dashboard-sidebar__footnote">
-        <span className="dashboard-badge dashboard-badge--accent">
-          Frontend phase
-        </span>
-        <strong>Mock data, real structure.</strong>
-        <p>
-          This shell is ready for the admin, coach, and client workspaces while
-          backend logic remains intentionally postponed.
-        </p>
+      <div className="dashboard-sidebar__account">
+        <div className="dashboard-sidebar__account-copy">
+          <span className="dashboard-badge">Account</span>
+          <strong>{displayName}</strong>
+          <p>{profileMeta.subtitle}</p>
+        </div>
+
+        <button
+          type="button"
+          className="dashboard-sidebar__logout"
+          onClick={handleSignOut}
+          disabled={isSigningOut}
+        >
+          {isSigningOut ? (
+            <LoaderCircle size={16} className="animate-spin-slow" />
+          ) : (
+            <LogOut size={16} />
+          )}
+          {isSigningOut ? "Signing out" : "Log out"}
+        </button>
+
+        {signOutError ? (
+          <p className="dashboard-sidebar__account-error" role="alert">
+            {signOutError}
+          </p>
+        ) : null}
       </div>
     </aside>
   );

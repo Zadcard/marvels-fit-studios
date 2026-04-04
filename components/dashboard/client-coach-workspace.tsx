@@ -1,16 +1,43 @@
-import { Mail, Phone, ShieldUser } from "lucide-react";
+import { Mail, MessageSquareMore, Phone, ShieldUser } from "lucide-react";
 
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
+import { DashboardSurfaceNote } from "@/components/dashboard/dashboard-surface-note";
 import { clientCoachRecord } from "@/lib/mocks/client-coach";
 
 export function ClientCoachWorkspace() {
+  const sanitizedNextSession = clientCoachRecord.nextSession.replace("Â·", "·");
+
   return (
     <div className="dashboard-stack">
-      <DashboardPageHeader
-        eyebrow="My coach"
-        title="Coach"
-        description="A simple view of your assigned coach, your current focus, and the next coaching touchpoint."
+      <DashboardPageHeader eyebrow="My coach" />
+
+      <DashboardSurfaceNote
+        eyebrow="Coach"
+        title="Your coach details and next touchpoint stay in one place."
+        description="Contact details and coaching focus are easy to review here."
+        items={[
+          "Direct contact details.",
+          "Current coaching note.",
+        ]}
       />
+
+      <section className="dashboard-mini-grid" aria-label="Coach relationship highlights">
+        <article className="dashboard-mini-stat">
+          <span className="dashboard-mini-stat__label">Specialization</span>
+          <strong>{clientCoachRecord.specialization}</strong>
+          <p>Main focus area.</p>
+        </article>
+        <article className="dashboard-mini-stat">
+          <span className="dashboard-mini-stat__label">Next touchpoint</span>
+          <strong>{sanitizedNextSession}</strong>
+          <p>Next touchpoint.</p>
+        </article>
+        <article className="dashboard-mini-stat">
+          <span className="dashboard-mini-stat__label">Communication</span>
+          <strong>Direct</strong>
+          <p>Phone and email available.</p>
+        </article>
+      </section>
 
       <section className="dashboard-secondary-grid">
         <article className="dashboard-panel dashboard-panel--accent dashboard-profile-hero">
@@ -25,7 +52,18 @@ export function ClientCoachWorkspace() {
 
           <div className="dashboard-record-card__meta">
             <span>{clientCoachRecord.specialization}</span>
-            <span>{clientCoachRecord.nextSession}</span>
+            <span>{sanitizedNextSession}</span>
+          </div>
+
+          <div className="dashboard-row-actions">
+            <a className="mv-btn mv-btn-outline" href={`mailto:${clientCoachRecord.email}`}>
+              <Mail size={16} />
+              Email coach
+            </a>
+            <a className="mv-btn mv-btn-primary" href={`tel:${clientCoachRecord.phone}`}>
+              <Phone size={16} />
+              Call coach
+            </a>
           </div>
         </article>
 
@@ -33,8 +71,8 @@ export function ClientCoachWorkspace() {
           <div className="dashboard-panel__header">
             <div>
               <div className="mv-eyebrow">Coach details</div>
-              <h2>How your support looks right now</h2>
-              <p>Member-friendly details only, without admin or internal operations noise.</p>
+              <h2>Current support</h2>
+              <p>Coach, timing, and contact details.</p>
             </div>
             <ShieldUser size={20} color="#ff8b8f" />
           </div>
@@ -46,11 +84,15 @@ export function ClientCoachWorkspace() {
             </div>
             <div className="dashboard-summary-row">
               <strong>Next session</strong>
-              <span>{clientCoachRecord.nextSession}</span>
+              <span>{sanitizedNextSession}</span>
             </div>
             <div className="dashboard-summary-row">
               <strong>Current note</strong>
               <span>{clientCoachRecord.coachingNote}</span>
+            </div>
+            <div className="dashboard-summary-row">
+              <strong>Focus</strong>
+              <span>Coach timing and communication in one place.</span>
             </div>
           </div>
 
@@ -67,6 +109,13 @@ export function ClientCoachWorkspace() {
               <div>
                 <strong>Coach phone</strong>
                 <span>{clientCoachRecord.phone}</span>
+              </div>
+            </div>
+            <div className="dashboard-contact-card">
+              <MessageSquareMore size={18} />
+              <div>
+                <strong>Current coaching focus</strong>
+                <span>{clientCoachRecord.coachingNote}</span>
               </div>
             </div>
           </div>

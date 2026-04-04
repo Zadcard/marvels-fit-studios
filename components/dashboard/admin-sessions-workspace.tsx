@@ -94,8 +94,6 @@ export function AdminSessionsWorkspace() {
     <div className="dashboard-stack">
       <DashboardPageHeader
         eyebrow="Admin sessions"
-        title="Sessions Management"
-        description="Control group and private sessions with a structure that will later connect naturally to the schedule and calendar views."
         actions={
           <button
             type="button"
@@ -175,14 +173,14 @@ export function AdminSessionsWorkspace() {
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         title="Create session"
-        description="Mock session form only. This keeps the frontend flow ready for later scheduling logic."
+        description="Session details"
         footer={
           <>
             <button type="button" className="mv-btn mv-btn-outline" onClick={() => setIsModalOpen(false)}>
               Cancel
             </button>
             <button type="button" className="mv-btn mv-btn-primary" onClick={() => setIsModalOpen(false)}>
-              Save mock session
+              Save session
             </button>
           </>
         }
@@ -286,7 +284,7 @@ function SessionGroupTable({ records }: { records: AdminGroupSessionRecord[] }) 
       {records.length === 0 ? (
         <DashboardEmptyState
           title="No group sessions match this view"
-          description="Try clearing the search term or changing the status filter to see more sessions."
+          description="Try a different search or reset the filters."
         />
       ) : (
         <>
@@ -381,7 +379,7 @@ function SessionPrivateTable({
       {records.length === 0 ? (
         <DashboardEmptyState
           title="No private sessions match this view"
-          description="Try clearing the search term or changing the status filter to see more sessions."
+          description="Try a different search or reset the filters."
         />
       ) : (
         <>
