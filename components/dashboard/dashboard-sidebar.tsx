@@ -9,8 +9,8 @@ import { usePathname } from "next/navigation";
 import {
   getDashboardNav,
   isDashboardNavItemActive,
-  type DashboardRole,
 } from "@/lib/navigation/dashboard-nav";
+import type { DashboardRole } from "@/lib/auth/authorization-policy";
 import { cn } from "@/lib/utils";
 
 type DashboardSidebarProps = {

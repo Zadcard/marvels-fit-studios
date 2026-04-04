@@ -4,6 +4,7 @@ import { useState, useCallback, useRef, type FormEvent, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { signIn, getSession } from "next-auth/react";
+import { getDashboardHomeForUserRole } from "@/lib/auth/authorization-policy";
 import "./login.css";
 
 function LoginForm() {
@@ -90,7 +91,8 @@ function LoginForm() {
           const userRole = session?.user?.role;
 
           if (userRole) {
-            const destination = callbackUrl || `/${userRole.toLowerCase()}`;
+            const destination =
+              callbackUrl || getDashboardHomeForUserRole(userRole);
             router.push(destination);
             router.refresh();
           } else {
@@ -98,7 +100,7 @@ function LoginForm() {
             setIsLoading(false);
           }
         }
-      } catch (error) {
+      } catch {
         setFormError("An unexpected error occurred.");
         triggerShake();
         setIsLoading(false);

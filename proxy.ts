@@ -1,49 +1,34 @@
 import NextAuth from "next-auth";
 import authConfig from "./auth.config";
 import { NextResponse } from "next/server";
-
-// We define UserRole locally or as a string to avoid importing from @prisma/client in the Proxy
-type UserRole = "ADMIN" | "COACH" | "CLIENT";
+import {
+  getAuthorizationPolicy,
+  getDashboardHomeForUserRole,
+  isAuthorizedForArea,
+} from "@/lib/auth/authorization-policy";
 
 const { auth } = NextAuth(authConfig);
 
 const proxyFunc = auth((req) => {
   const { nextUrl } = req;
   const isLoggedIn = !!req.auth;
-  const userRole = req.auth?.user?.role as UserRole | undefined;
+  const userRole = req.auth?.user?.role;
+  const policy = getAuthorizationPolicy(nextUrl.pathname);
 
-  const isApiAuthRoute = nextUrl.pathname.startsWith("/api/auth");
-  const isAuthRoute = nextUrl.pathname === "/login";
-
-  // 1. Allow API Auth routes always
-  if (isApiAuthRoute) return NextResponse.next();
-
-  // 2. Always allow the login page so users can choose which account to enter.
-  if (isAuthRoute) {
+  if (policy.area === "api-auth" || policy.area === "login") {
     return NextResponse.next();
   }
 
-  // 3. Protect dashboard routes
-  const isDashboardRoute =
-    nextUrl.pathname.startsWith("/admin") ||
-    nextUrl.pathname.startsWith("/coach") ||
-    nextUrl.pathname.startsWith("/client");
+  if (policy.requiresAuth && !isLoggedIn) {
+    return NextResponse.redirect(new URL("/login", nextUrl));
+  }
 
-  if (isDashboardRoute) {
-    if (!isLoggedIn) {
-      return NextResponse.redirect(new URL("/login", nextUrl));
-    }
+  if (!isAuthorizedForArea(nextUrl.pathname, userRole)) {
+    const redirectTarget = userRole
+      ? getDashboardHomeForUserRole(userRole)
+      : "/login";
 
-    // Role-based protection: check if the user is in the correct area
-    const parts = nextUrl.pathname.split("/");
-    const pathRole = parts[1].toUpperCase() as UserRole;
-
-    if (userRole && userRole !== pathRole) {
-      // User is in the wrong portal, redirect them to THEIR portal
-      return NextResponse.redirect(
-        new URL(`/${userRole.toLowerCase()}`, nextUrl)
-      );
-    }
+    return NextResponse.redirect(new URL(redirectTarget, nextUrl));
   }
 
   return NextResponse.next();

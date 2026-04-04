@@ -4,17 +4,38 @@ import { PrismaClient } from "@prisma/client";
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
+  prismaAdapter: PrismaPg | undefined;
+  prismaPool: Pool | undefined;
 };
 
-const connectionString = process.env.DATABASE_URL;
+function getConnectionString() {
+  const connectionString = process.env.DATABASE_URL;
 
-if (!connectionString) {
-  throw new Error("DATABASE_URL is missing from environment");
+  if (!connectionString) {
+    throw new Error("DATABASE_URL is missing from environment");
+  }
+
+  return connectionString;
 }
 
-const pool = new Pool({ connectionString });
-const adapter = new PrismaPg(pool);
-export const prisma =
-  globalForPrisma.prisma ?? new PrismaClient({ adapter });
+function getPrismaAdapter() {
+  if (!globalForPrisma.prismaPool) {
+    globalForPrisma.prismaPool = new Pool({
+      connectionString: getConnectionString(),
+    });
+  }
 
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
+  if (!globalForPrisma.prismaAdapter) {
+    globalForPrisma.prismaAdapter = new PrismaPg(globalForPrisma.prismaPool);
+  }
+
+  return globalForPrisma.prismaAdapter;
+}
+
+export function getPrisma() {
+  if (!globalForPrisma.prisma) {
+    globalForPrisma.prisma = new PrismaClient({ adapter: getPrismaAdapter() });
+  }
+
+  return globalForPrisma.prisma;
+}

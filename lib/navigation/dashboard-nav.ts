@@ -9,8 +9,7 @@ import {
   UserRound,
   Users,
 } from "lucide-react";
-
-export type DashboardRole = "admin" | "coach" | "client";
+import type { DashboardRole } from "@/lib/auth/authorization-policy";
 export type DashboardNavSection = "primary" | "secondary";
 
 export type DashboardNavItem = {
@@ -28,6 +27,16 @@ type DashboardProfileMeta = {
   name: string;
   subtitle: string;
   initials: string;
+};
+
+type DashboardRoleUiMeta = {
+  label: string;
+  defaultTitle: string;
+  defaultSubtitle: string;
+  eyebrow: string;
+  profile: DashboardProfileMeta;
+  searchPrompt: string;
+  profileHref: string;
 };
 
 const dashboardNavConfig: Record<DashboardRole, DashboardNavItem[]> = {
@@ -186,72 +195,65 @@ const dashboardNavConfig: Record<DashboardRole, DashboardNavItem[]> = {
   ],
 };
 
-export function getDashboardRoleFromPath(pathname: string): DashboardRole {
-  if (pathname.startsWith("/coach")) {
-    return "coach";
-  }
-
-  if (pathname.startsWith("/client")) {
-    return "client";
-  }
-
-  return "admin";
-}
+const dashboardRoleUiConfig: Record<DashboardRole, DashboardRoleUiMeta> = {
+  admin: {
+    label: "Admin workspace",
+    defaultTitle: "Admin Dashboard",
+    defaultSubtitle:
+      "Keep the studio schedule, member flow, and coaching operations aligned.",
+    eyebrow: "Admin command deck",
+    profile: {
+      name: "Layla Mourad",
+      subtitle: "Studio director",
+      initials: "LM",
+    },
+    searchPrompt: "Search preview: members, sessions, or coaches",
+    profileHref: "/admin/profile",
+  },
+  coach: {
+    label: "Coach workspace",
+    defaultTitle: "Coach Dashboard",
+    defaultSubtitle:
+      "Coordinate sessions, client follow-up, and the week ahead.",
+    eyebrow: "Coach workspace",
+    profile: {
+      name: "Ahmed Waheed",
+      subtitle: "Strength coach",
+      initials: "AW",
+    },
+    searchPrompt: "Search preview: sessions, clients, or notes",
+    profileHref: "/coach/settings",
+  },
+  client: {
+    label: "Client workspace",
+    defaultTitle: "Client Dashboard",
+    defaultSubtitle:
+      "Track sessions, progress, and the next membership touchpoints.",
+    eyebrow: "Client workspace",
+    profile: {
+      name: "Nour Hassan",
+      subtitle: "Hybrid elite",
+      initials: "NH",
+    },
+    searchPrompt: "Search preview: sessions, plan details, or coach notes",
+    profileHref: "/client/settings",
+  },
+};
 
 export function getDashboardRoleLabel(role: DashboardRole) {
-  switch (role) {
-    case "coach":
-      return "Coach workspace";
-    case "client":
-      return "Client workspace";
-    default:
-      return "Admin workspace";
-  }
+  return dashboardRoleUiConfig[role].label;
 }
 
 export function getDashboardProfileMeta(role: DashboardRole): DashboardProfileMeta {
-  switch (role) {
-    case "coach":
-      return {
-        name: "Ahmed Waheed",
-        subtitle: "Strength coach",
-        initials: "AW",
-      };
-    case "client":
-      return {
-        name: "Nour Hassan",
-        subtitle: "Hybrid elite",
-        initials: "NH",
-      };
-    default:
-      return {
-        name: "Layla Mourad",
-        subtitle: "Studio director",
-        initials: "LM",
-      };
-  }
+  return dashboardRoleUiConfig[role].profile;
 }
 
 export function getDashboardSearchPrompt(role: DashboardRole) {
-  switch (role) {
-    case "coach":
-      return "Search preview: sessions, clients, or notes";
-    case "client":
-      return "Search preview: sessions, plan details, or coach notes";
-    default:
-      return "Search preview: members, sessions, or coaches";
-  }
+  return dashboardRoleUiConfig[role].searchPrompt;
 }
 
 export function getDashboardProfileHref(role: DashboardRole) {
-  switch (role) {
-    case "coach":
-      return "/coach/settings";
-    case "client":
-      return "/client/settings";
-    default:
-      return "/admin/profile";
-  }
+  return dashboardRoleUiConfig[role].profileHref;
 }
 
 export function getDashboardNav(role: DashboardRole) {
@@ -277,32 +279,11 @@ export function getDashboardRouteMeta(pathname: string, role: DashboardRole) {
   const matchedItem = getDashboardNav(role)
     .filter((item) => item.available)
     .find((item) => isDashboardNavItemActive(item, pathname));
-
-  if (role === "coach") {
-    return {
-      eyebrow: "Coach workspace",
-      title: matchedItem?.label ?? "Coach Dashboard",
-      subtitle:
-        matchedItem?.description ??
-        "Coordinate sessions, client follow-up, and the week ahead.",
-    };
-  }
-
-  if (role === "client") {
-    return {
-      eyebrow: "Client workspace",
-      title: matchedItem?.label ?? "Client Dashboard",
-      subtitle:
-        matchedItem?.description ??
-        "Track sessions, progress, and the next membership touchpoints.",
-    };
-  }
+  const uiMeta = dashboardRoleUiConfig[role];
 
   return {
-    eyebrow: "Admin command deck",
-    title: matchedItem?.label ?? "Admin Dashboard",
-    subtitle:
-      matchedItem?.description ??
-      "Keep the studio schedule, member flow, and coaching operations aligned.",
+    eyebrow: uiMeta.eyebrow,
+    title: matchedItem?.label ?? uiMeta.defaultTitle,
+    subtitle: matchedItem?.description ?? uiMeta.defaultSubtitle,
   };
 }

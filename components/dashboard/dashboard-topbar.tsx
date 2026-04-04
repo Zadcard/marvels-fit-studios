@@ -9,8 +9,8 @@ import {
   getDashboardProfileHref,
   getDashboardRouteMeta,
   getDashboardSearchPrompt,
-  type DashboardRole,
 } from "@/lib/navigation/dashboard-nav";
+import type { DashboardRole } from "@/lib/auth/authorization-policy";
 
 type DashboardTopbarProps = {
   role: DashboardRole;
