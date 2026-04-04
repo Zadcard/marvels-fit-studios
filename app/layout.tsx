@@ -1,10 +1,11 @@
 import type { Metadata, Viewport } from "next";
-import { Analytics } from "@vercel/analytics/react";
 
 import { AuthProvider } from "@/components/providers/session-provider";
 
 import { manrope, spaceGrotesk } from "./fonts";
 import "./globals.css";
+
+const appUrl = process.env.APP_URL ?? "http://localhost:3000";
 
 export const metadata: Metadata = {
   title: {
@@ -12,7 +13,7 @@ export const metadata: Metadata = {
     template: "%s | Marvel's Studios",
   },
   description: "Marvel's Studios website and member portals.",
-  metadataBase: new URL("https://marvelsfit.com"),
+  metadataBase: new URL(appUrl),
 };
 
 export const viewport: Viewport = {
@@ -32,7 +33,6 @@ export default function RootLayout({
     >
       <body>
         <AuthProvider>{children}</AuthProvider>
-        <Analytics />
       </body>
     </html>
   );

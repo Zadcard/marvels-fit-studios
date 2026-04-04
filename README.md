@@ -1,29 +1,28 @@
 # Marvel Fit Studios
 
-This project is now aligned to one deployment path only:
+This project is currently set up for local development only.
 
-- Hosting: Vercel
 - Database: Neon Postgres
 - App stack: Next.js + NextAuth/Auth.js + Prisma
-
-Firebase Hosting, Firebase Functions, Firestore, and Firebase Data Connect are not part of the active deployment path anymore.
 
 Legacy static-site files and database reference snapshots are preserved under `archive/` and are not part of the active runtime.
 
 ## Required Environment Variables
 
-Set these in Vercel for Production, Preview, and Development as needed:
+Set these in your local `.env`:
 
 ```bash
 DATABASE_URL="postgresql://..."
 AUTH_SECRET="replace-with-a-long-random-secret"
+APP_URL="http://localhost:3000"
 ```
 
 Notes:
 
 - `DATABASE_URL` should be your Neon connection string.
 - `AUTH_SECRET` is required for Auth.js session security.
-- `AUTH_URL` or `NEXTAUTH_URL` is not required by default on Vercel for this app because host detection is handled through Auth.js with `trustHost: true`.
+- `APP_URL` is used as the metadata base URL locally. If omitted, the app falls back to `http://localhost:3000`.
+- `AUTH_URL` or `NEXTAUTH_URL` is not required by default because host detection is handled through Auth.js with `trustHost: true`.
 
 ## Local Setup
 
@@ -60,13 +59,9 @@ Password for all seeded demo users:
 password123
 ```
 
-## Vercel Deployment
+## Database Workflow
 
-1. Create a Neon database and copy its connection string.
-2. Add `DATABASE_URL` and `AUTH_SECRET` in the Vercel project settings.
-3. Import this repository into Vercel.
-4. Deploy.
-5. After schema changes, run:
+After schema changes, run:
 
 ```bash
 npx prisma migrate deploy
@@ -88,5 +83,3 @@ Then verify the login flow and role redirects for:
 - admin -> `/admin`
 - coach -> `/coach`
 - client -> `/client`
-
-This keeps the current auth and dashboard structure intact while deploying on the free Vercel + Neon path.
