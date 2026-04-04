@@ -37,7 +37,11 @@ export function DashboardSidebar({
   };
 
   return (
-    <aside className="dashboard-sidebar" data-open={isOpen}>
+    <aside
+      className="dashboard-sidebar"
+      data-open={isOpen}
+      aria-label={`${role} portal navigation`}
+    >
       <div className="dashboard-sidebar__brand">
         <span className="dashboard-sidebar__brand-mark">
           <Image
@@ -46,6 +50,7 @@ export function DashboardSidebar({
             width={36}
             height={36}
             priority
+            className="dashboard-sidebar__brand-image"
           />
         </span>
 

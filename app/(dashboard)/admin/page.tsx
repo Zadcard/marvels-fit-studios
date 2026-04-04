@@ -106,7 +106,7 @@ export default function AdminOverviewPage() {
         <article className="dashboard-panel">
           <div className="dashboard-panel__header">
             <div>
-              <div className="mv-eyebrow">Today's movement</div>
+              <div className="mv-eyebrow">Today&apos;s movement</div>
               <h2>Recent activity</h2>
               <p>
                 Member, coach, and schedule updates that help the admin team

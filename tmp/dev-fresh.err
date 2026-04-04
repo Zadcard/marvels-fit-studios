@@ -1,0 +1,97 @@
+(node:14524) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[31m[auth][error][0m JWTSessionError: Read more at https://errors.authjs.dev#jwtsessionerror
+[31m[auth][cause][0m: PrismaClientKnownRequestError: 
+Invalid `__TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$prisma$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["prisma"].user.findUnique()` invocation in
+C:\Users\zadca\OneDrive\Documents\GitHub\marvels-fit-studios\.next\dev\server\chunks\[root-of-the-server]__0s5hlfp._.js:192:159
+
+  189 },
+  190 async jwt ({ token }) {
+  191     if (!token.sub) return token;
+→ 192     const user = await __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$prisma$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["prisma"].user.findUnique(
+
+    at Gr.handleRequestError (C:\Users\zadca\OneDrive\Documents\GitHub\marvels-fit-studios\node_modules\@prisma\client\runtime\client.js:65:8286)
+    at Gr.handleAndLogRequestError (C:\Users\zadca\OneDrive\Documents\GitHub\marvels-fit-studios\node_modules\@prisma\client\runtime\client.js:65:7581)
+    at Gr.request (C:\Users\zadca\OneDrive\Documents\GitHub\marvels-fit-studios\node_modules\@prisma\client\runtime\client.js:65:7288)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async a (C:\Users\zadca\OneDrive\Documents\GitHub\marvels-fit-studios\node_modules\@prisma\client\runtime\client.js:75:6730)
+    at async Object.jwt (C:\Users\zadca\OneDrive\Documents\GitHub\marvels-fit-studios\.next\dev\server\chunks\[root-of-the-server]__0s5hlfp._.js:192:26)
+    at async Module.session (C:\Users\zadca\OneDrive\Documents\GitHub\marvels-fit-studios\.next\dev\server\chunks\0p~b_@auth_core_06e2gry._.js:4553:27)
+    at async AuthInternal (C:\Users\zadca\OneDrive\Documents\GitHub\marvels-fit-studios\.next\dev\server\chunks\0p~b_@auth_core_06e2gry._.js:5131:24)
+    at async Auth (C:\Users\zadca\OneDrive\Documents\GitHub\marvels-fit-studios\.next\dev\server\chunks\0p~b_@auth_core_06e2gry._.js:5370:34)
+    at async AppRouteRouteModule.do (C:\Users\zadca\OneDrive\Documents\GitHub\marvels-fit-studios\node_modules\next\dist\compiled\next-server\app-route-turbo.runtime.dev.js:5:40732)
+    at async AppRouteRouteModule.handle (C:\Users\zadca\OneDrive\Documents\GitHub\marvels-fit-studios\node_modules\next\dist\compiled\next-server\app-route-turbo.runtime.dev.js:5:47861)
+    at async responseGenerator (C:\Users\zadca\OneDrive\Documents\GitHub\marvels-fit-studios\.next\dev\server\chunks\node_modules_next_05fqyxl._.js:18295:38)
+    at async AppRouteRouteModule.handleResponse (C:\Users\zadca\OneDrive\Documents\GitHub\marvels-fit-studios\node_modules\next\dist\compiled\next-server\app-route-turbo.runtime.dev.js:1:227216)
+    at async handleResponse (C:\Users\zadca\OneDrive\Documents\GitHub\marvels-fit-studios\.next\dev\server\chunks\node_modules_next_05fqyxl._.js:18358:32)
+    at async Module.handler (C:\Users\zadca\OneDrive\Documents\GitHub\marvels-fit-studios\.next\dev\server\chunks\node_modules_next_05fqyxl._.js:18412:13)
+    at async DevServer.renderToResponseWithComponentsImpl (C:\Users\zadca\OneDrive\Documents\GitHub\marvels-fit-studios\node_modules\next\dist\server\base-server.js:1454:9)
+    at async DevServer.renderPageComponent (C:\Users\zadca\OneDrive\Documents\GitHub\marvels-fit-studios\node_modules\next\dist\server\base-server.js:1506:24)
+    at async DevServer.renderToResponseImpl (C:\Users\zadca\OneDrive\Documents\GitHub\marvels-fit-studios\node_modules\next\dist\server\base-server.js:1556:32)
+    at async DevServer.pipeImpl (C:\Users\zadca\OneDrive\Documents\GitHub\marvels-fit-studios\node_modules\next\dist\server\base-server.js:1043:25)
+    at async NextNodeServer.handleCatchallRenderRequest (C:\Users\zadca\OneDrive\Documents\GitHub\marvels-fit-studios\node_modules\next\dist\server\next-server.js:338:17)
+    at async DevServer.handleRequestImpl (C:\Users\zadca\OneDrive\Documents\GitHub\marvels-fit-studios\node_modules\next\dist\server\base-server.js:934:17)
+    at async C:\Users\zadca\OneDrive\Documents\GitHub\marvels-fit-studios\node_modules\next\dist\server\dev\next-dev-server.js:394:20
+    at async Span.traceAsyncFn (C:\Users\zadca\OneDrive\Documents\GitHub\marvels-fit-studios\node_modules\next\dist\trace\trace.js:164:20)
+    at async DevServer.handleRequest (C:\Users\zadca\OneDrive\Documents\GitHub\marvels-fit-studios\node_modules\next\dist\server\dev\next-dev-server.js:390:24)
+    at async invokeRender (C:\Users\zadca\OneDrive\Documents\GitHub\marvels-fit-studios\node_modules\next\dist\server\lib\router-server.js:253:21)
+    at async handleRequest (C:\Users\zadca\OneDrive\Documents\GitHub\marvels-fit-studios\node_modules\next\dist\server\lib\router-server.js:452:24)
+    at async requestHandlerImpl (C:\Users\zadca\OneDrive\Documents\GitHub\marvels-fit-studios\node_modules\next\dist\server\lib\router-server.js:501:13)
+    at async Server.requestListener (C:\Users\zadca\OneDrive\Documents\GitHub\marvels-fit-studios\node_modules\next\dist\server\lib\start-server.js:225:13)
+[31m[auth][details][0m: {}
+[31m[auth][error][0m CallbackRouteError: Read more at https://errors.authjs.dev#callbackrouteerror
+[31m[auth][cause][0m: PrismaClientKnownRequestError: 
+Invalid `__TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$prisma$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["prisma"].user.findUnique()` invocation in
+C:\Users\zadca\OneDrive\Documents\GitHub\marvels-fit-studios\.next\dev\server\chunks\[root-of-the-server]__0s5hlfp._.js:165:167
+
+  162 }).safeParse(credentials);
+  163 if (parsedCredentials.success) {
+  164     const { email, password } = parsedCredentials.data;
+→ 165     const user = await __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$prisma$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["prisma"].user.findUnique(
+
+    at Gr.handleRequestError (C:\Users\zadca\OneDrive\Documents\GitHub\marvels-fit-studios\node_modules\@prisma\client\runtime\client.js:65:8286)
+    at Gr.handleAndLogRequestError (C:\Users\zadca\OneDrive\Documents\GitHub\marvels-fit-studios\node_modules\@prisma\client\runtime\client.js:65:7581)
+    at Gr.request (C:\Users\zadca\OneDrive\Documents\GitHub\marvels-fit-studios\node_modules\@prisma\client\runtime\client.js:65:7288)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async a (C:\Users\zadca\OneDrive\Documents\GitHub\marvels-fit-studios\node_modules\@prisma\client\runtime\client.js:75:6730)
+    at async Object.authorize (C:\Users\zadca\OneDrive\Documents\GitHub\marvels-fit-studios\.next\dev\server\chunks\[root-of-the-server]__0s5hlfp._.js:165:34)
+    at async Module.callback (C:\Users\zadca\OneDrive\Documents\GitHub\marvels-fit-studios\.next\dev\server\chunks\0p~b_@auth_core_06e2gry._.js:4307:39)
+    at async AuthInternal (C:\Users\zadca\OneDrive\Documents\GitHub\marvels-fit-studios\.next\dev\server\chunks\0p~b_@auth_core_06e2gry._.js:5148:24)
+    at async Auth (C:\Users\zadca\OneDrive\Documents\GitHub\marvels-fit-studios\.next\dev\server\chunks\0p~b_@auth_core_06e2gry._.js:5370:34)
+    at async AppRouteRouteModule.do (C:\Users\zadca\OneDrive\Documents\GitHub\marvels-fit-studios\node_modules\next\dist\compiled\next-server\app-route-turbo.runtime.dev.js:5:40732)
+    at async AppRouteRouteModule.handle (C:\Users\zadca\OneDrive\Documents\GitHub\marvels-fit-studios\node_modules\next\dist\compiled\next-server\app-route-turbo.runtime.dev.js:5:47861)
+    at async responseGenerator (C:\Users\zadca\OneDrive\Documents\GitHub\marvels-fit-studios\.next\dev\server\chunks\node_modules_next_05fqyxl._.js:18295:38)
+    at async AppRouteRouteModule.handleResponse (C:\Users\zadca\OneDrive\Documents\GitHub\marvels-fit-studios\node_modules\next\dist\compiled\next-server\app-route-turbo.runtime.dev.js:1:227216)
+    at async handleResponse (C:\Users\zadca\OneDrive\Documents\GitHub\marvels-fit-studios\.next\dev\server\chunks\node_modules_next_05fqyxl._.js:18358:32)
+    at async Module.handler (C:\Users\zadca\OneDrive\Documents\GitHub\marvels-fit-studios\.next\dev\server\chunks\node_modules_next_05fqyxl._.js:18412:13)
+    at async DevServer.renderToResponseWithComponentsImpl (C:\Users\zadca\OneDrive\Documents\GitHub\marvels-fit-studios\node_modules\next\dist\server\base-server.js:1454:9)
+    at async DevServer.renderPageComponent (C:\Users\zadca\OneDrive\Documents\GitHub\marvels-fit-studios\node_modules\next\dist\server\base-server.js:1506:24)
+    at async DevServer.renderToResponseImpl (C:\Users\zadca\OneDrive\Documents\GitHub\marvels-fit-studios\node_modules\next\dist\server\base-server.js:1556:32)
+    at async DevServer.pipeImpl (C:\Users\zadca\OneDrive\Documents\GitHub\marvels-fit-studios\node_modules\next\dist\server\base-server.js:1043:25)
+    at async NextNodeServer.handleCatchallRenderRequest (C:\Users\zadca\OneDrive\Documents\GitHub\marvels-fit-studios\node_modules\next\dist\server\next-server.js:338:17)
+    at async DevServer.handleRequestImpl (C:\Users\zadca\OneDrive\Documents\GitHub\marvels-fit-studios\node_modules\next\dist\server\base-server.js:934:17)
+    at async C:\Users\zadca\OneDrive\Documents\GitHub\marvels-fit-studios\node_modules\next\dist\server\dev\next-dev-server.js:394:20
+    at async Span.traceAsyncFn (C:\Users\zadca\OneDrive\Documents\GitHub\marvels-fit-studios\node_modules\next\dist\trace\trace.js:164:20)
+    at async DevServer.handleRequest (C:\Users\zadca\OneDrive\Documents\GitHub\marvels-fit-studios\node_modules\next\dist\server\dev\next-dev-server.js:390:24)
+    at async invokeRender (C:\Users\zadca\OneDrive\Documents\GitHub\marvels-fit-studios\node_modules\next\dist\server\lib\router-server.js:253:21)
+    at async handleRequest (C:\Users\zadca\OneDrive\Documents\GitHub\marvels-fit-studios\node_modules\next\dist\server\lib\router-server.js:452:24)
+    at async requestHandlerImpl (C:\Users\zadca\OneDrive\Documents\GitHub\marvels-fit-studios\node_modules\next\dist\server\lib\router-server.js:501:13)
+    at async Server.requestListener (C:\Users\zadca\OneDrive\Documents\GitHub\marvels-fit-studios\node_modules\next\dist\server\lib\start-server.js:225:13)
+[31m[auth][details][0m: {
+  "provider": "credentials"
+}
+[browser] Image with src "/img/Logo-2.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[browser] Image with src "/img/Logo-2.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[browser] Image with src "/img/Logo-2.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[browser] Image with src "/img/Logo-2.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[browser] Image with src "/img/Logo-2.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[browser] Image with src "/img/Logo-2.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[browser] Image with src "/img/Logo-2.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+^C^C

@@ -282,7 +282,7 @@
     transition: border-color 0.18s ease, box-shadow 0.18s ease;
   }
 
-  .mv-field:focus {
+  .mv-field:focus-visible {
     outline: none;
     border-color: var(--mv-primary);
     box-shadow: 0 0 0 3px rgba(230, 36, 41, 0.15);

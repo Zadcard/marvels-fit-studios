@@ -12,7 +12,7 @@ export function DashboardSwitch({
   description,
 }: DashboardSwitchProps) {
   return (
-    <label className="dashboard-switch">
+    <div className="dashboard-switch">
       <div className="dashboard-switch__copy">
         <strong>{label}</strong>
         <p>{description}</p>
@@ -21,11 +21,12 @@ export function DashboardSwitch({
         type="button"
         role="switch"
         aria-checked={checked}
+        aria-label={`${checked ? "Disable" : "Enable"} ${label}`}
         className={checked ? "dashboard-switch__control dashboard-switch__control--on" : "dashboard-switch__control"}
         onClick={() => onCheckedChange(!checked)}
       >
         <span className="dashboard-switch__thumb" />
       </button>
-    </label>
+    </div>
   );
 }

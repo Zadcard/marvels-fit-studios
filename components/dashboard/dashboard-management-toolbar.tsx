@@ -21,6 +21,9 @@ export function DashboardManagementToolbar({
         <label className="dashboard-search-field">
           <span className="dashboard-search-field__label">Search</span>
           <input
+            type="search"
+            name="dashboard-search"
+            autoComplete="off"
             value={searchValue}
             onChange={(event) => onSearchChange(event.target.value)}
             placeholder={searchPlaceholder}

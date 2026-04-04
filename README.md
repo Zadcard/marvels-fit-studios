@@ -1,36 +1,90 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Marvel Fit Studios
 
-## Getting Started
+This project is now aligned to one deployment path only:
 
-First, run the development server:
+- Hosting: Vercel
+- Database: Neon Postgres
+- App stack: Next.js + NextAuth/Auth.js + Prisma
+
+Firebase Hosting, Firebase Functions, Firestore, and Firebase Data Connect are not part of the active deployment path anymore.
+
+## Required Environment Variables
+
+Set these in Vercel for Production, Preview, and Development as needed:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+DATABASE_URL="postgresql://..."
+AUTH_SECRET="replace-with-a-long-random-secret"
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Notes:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- `DATABASE_URL` should be your Neon connection string.
+- `AUTH_SECRET` is required for Auth.js session security.
+- `AUTH_URL` or `NEXTAUTH_URL` is not required by default on Vercel for this app because host detection is handled through Auth.js with `trustHost: true`.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Local Setup
 
-## Learn More
+Use Node `22` from [`.nvmrc`](./.nvmrc).
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+nvm use
+npm install
+npx prisma generate
+npx prisma migrate deploy
+npm run build
+npm run dev
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Open `http://localhost:3000`.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Optional Seed Data
 
-## Deploy on Vercel
+If you want demo users in your database:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+npx prisma db seed
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Seeded demo accounts:
+
+- `admin@test.com`
+- `coach@test.com`
+- `client@test.com`
+
+Password for all seeded demo users:
+
+```bash
+password123
+```
+
+## Vercel Deployment
+
+1. Create a Neon database and copy its connection string.
+2. Add `DATABASE_URL` and `AUTH_SECRET` in the Vercel project settings.
+3. Import this repository into Vercel.
+4. Deploy.
+5. After schema changes, run:
+
+```bash
+npx prisma migrate deploy
+```
+
+The project build already runs `prisma generate` automatically through `prebuild`.
+
+## Verification Checklist
+
+Run these before pushing a deployment change:
+
+```bash
+npx prisma generate
+npm run build
+```
+
+Then verify the login flow and role redirects for:
+
+- admin -> `/admin`
+- coach -> `/coach`
+- client -> `/client`
+
+This keeps the current auth and dashboard structure intact while deploying on the free Vercel + Neon path.

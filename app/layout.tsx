@@ -1,15 +1,21 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
+
+import { AuthProvider } from "@/components/providers/session-provider";
+
 import { manrope, spaceGrotesk } from "./fonts";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: {
-    default: "Marvel's Studios | Member Portal",
+    default: "Marvel's Studios",
     template: "%s | Marvel's Studios",
   },
-  description:
-    "Access your Marvel's Studios dashboard — manage sessions, track progress, and stay connected with your coaches.",
+  description: "Marvel's Studios website and member portals.",
   metadataBase: new URL("https://marvelsfit.com"),
+};
+
+export const viewport: Viewport = {
+  themeColor: "#111214",
 };
 
 export default function RootLayout({
@@ -20,9 +26,12 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      data-scroll-behavior="smooth"
       className={`${manrope.variable} ${spaceGrotesk.variable}`}
     >
-      <body>{children}</body>
+      <body>
+        <AuthProvider>{children}</AuthProvider>
+      </body>
     </html>
   );
 }

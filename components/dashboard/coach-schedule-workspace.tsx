@@ -3,6 +3,7 @@
 import { useDeferredValue, useState } from "react";
 import { LayoutGrid, Rows3 } from "lucide-react";
 
+import { DashboardEmptyState } from "@/components/dashboard/dashboard-empty-state";
 import { DashboardManagementToolbar } from "@/components/dashboard/dashboard-management-toolbar";
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
 import { DashboardStatusBadge } from "@/components/dashboard/dashboard-status-badge";
@@ -201,29 +202,36 @@ export function CoachScheduleWorkspace() {
                 </header>
 
                 <div className="dashboard-schedule-day__list">
-                  {daySessions.map((session) => (
-                    <article key={session.id} className="dashboard-schedule-session">
-                      <div className="dashboard-schedule-session__badges">
-                        <DashboardStatusBadge
-                          label={session.sessionType}
-                          tone={session.sessionType === "Group" ? "accent" : "neutral"}
-                        />
-                        <DashboardStatusBadge
-                          label={session.status}
-                          tone={getCoachScheduleTone(session.status)}
-                        />
-                      </div>
-                      <div className="dashboard-schedule-session__topline">
-                        <strong>{session.title}</strong>
-                        <span>{session.timeRange}</span>
-                      </div>
-                      <p>{session.note}</p>
-                      <div className="dashboard-schedule-session__meta">
-                        <span>{session.location}</span>
-                        <span>{session.rosterLabel}</span>
-                      </div>
-                    </article>
-                  ))}
+                  {daySessions.length > 0 ? (
+                    daySessions.map((session) => (
+                      <article key={session.id} className="dashboard-schedule-session">
+                        <div className="dashboard-schedule-session__badges">
+                          <DashboardStatusBadge
+                            label={session.sessionType}
+                            tone={session.sessionType === "Group" ? "accent" : "neutral"}
+                          />
+                          <DashboardStatusBadge
+                            label={session.status}
+                            tone={getCoachScheduleTone(session.status)}
+                          />
+                        </div>
+                        <div className="dashboard-schedule-session__topline">
+                          <strong>{session.title}</strong>
+                          <span>{session.timeRange}</span>
+                        </div>
+                        <p>{session.note}</p>
+                        <div className="dashboard-schedule-session__meta">
+                          <span>{session.location}</span>
+                          <span>{session.rosterLabel}</span>
+                        </div>
+                      </article>
+                    ))
+                  ) : (
+                    <DashboardEmptyState
+                      title="No schedule blocks here"
+                      description="Try another day or status filter to bring your coaching board back into view."
+                    />
+                  )}
                 </div>
               </section>
             );

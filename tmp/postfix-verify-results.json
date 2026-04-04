@@ -1,0 +1,114 @@
+{
+  "landing": {
+    "desktop": {
+      "title": "Marvel's Studios | Premium Performance Training in Giza",
+      "scriptTagCount": 0,
+      "listenerSummary": {
+        "documentClick": 4,
+        "documentKeydown": 3,
+        "windowResize": 1,
+        "faqClicks": 4
+      },
+      "bodyFont": "Manrope, \"Manrope Fallback\", Manrope, sans-serif",
+      "headingFont": "\"Space Grotesk\", \"Space Grotesk Fallback\", \"Space Grotesk\", sans-serif",
+      "desktopCarousel": {
+        "controlsDisplay": "none",
+        "gridAutoFlow": "row",
+        "overflowX": "visible"
+      },
+      "faqFirstOpen": {
+        "expanded": "true",
+        "open": true
+      },
+      "faqClose": {
+        "expanded": "false",
+        "open": false
+      },
+      "smoothScroll": {
+        "expected": 5919.703125,
+        "actual": 5544,
+        "delta": 375.703125
+      },
+      "formState": {
+        "successVisible": true,
+        "submitDisabled": true,
+        "fieldsDisabled": true
+      }
+    },
+    "loginFlow": {
+      "finalUrl": "http://127.0.0.1:3000/login"
+    },
+    "consoleMessages": [],
+    "pageErrors": []
+  },
+  "mobile": {
+    "mobile": {
+      "mobileStyles": {
+        "controlsDisplay": "none",
+        "gridAutoFlow": "column",
+        "overflowX": "auto"
+      },
+      "navOpen": {
+        "openClass": true,
+        "bodyLocked": true,
+        "expanded": "true"
+      },
+      "navAfterAnchor": {
+        "openClass": false,
+        "bodyLocked": false,
+        "expanded": "false",
+        "scrollY": 5690
+      },
+      "mobileCarousel": {
+        "before": {
+          "scrollLeft": 0
+        },
+        "after": {
+          "scrollLeft": 356
+        }
+      }
+    },
+    "consoleMessages": [],
+    "pageErrors": []
+  },
+  "loginPageLoad": {
+    "url": "http://127.0.0.1:3000/login",
+    "title": "Marvel's Studios",
+    "heading": "Train with more structure, better coaching, and clearer progress."
+  },
+  "roleLogins": {
+    "admin": {
+      "email": "admin@test.com",
+      "expectedPath": "/admin",
+      "success": true,
+      "finalUrl": "http://127.0.0.1:3000/admin",
+      "reloginRedirectUrl": "http://127.0.0.1:3000/admin",
+      "loginError": null,
+      "typeAfterToggle": "text",
+      "consoleMessages": [],
+      "pageErrors": []
+    },
+    "coach": {
+      "email": "coach@test.com",
+      "expectedPath": "/coach",
+      "success": true,
+      "finalUrl": "http://127.0.0.1:3000/coach",
+      "reloginRedirectUrl": "http://127.0.0.1:3000/coach",
+      "loginError": null,
+      "typeAfterToggle": "text",
+      "consoleMessages": [],
+      "pageErrors": []
+    },
+    "client": {
+      "email": "client@test.com",
+      "expectedPath": "/client",
+      "success": true,
+      "finalUrl": "http://127.0.0.1:3000/client",
+      "reloginRedirectUrl": "http://127.0.0.1:3000/client",
+      "loginError": null,
+      "typeAfterToggle": "text",
+      "consoleMessages": [],
+      "pageErrors": []
+    }
+  }
+}

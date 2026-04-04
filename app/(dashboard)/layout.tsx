@@ -17,22 +17,34 @@ export default function DashboardLayout({
 }>) {
   const pathname = usePathname();
   const role = getDashboardRoleFromPath(pathname);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [sidebarState, setSidebarState] = useState({
+    isOpen: false,
+    pathname,
+  });
+  const isSidebarOpen =
+    sidebarState.pathname === pathname ? sidebarState.isOpen : false;
 
-  useEffect(() => {
-    setIsSidebarOpen(false);
-  }, [pathname]);
+  const closeSidebar = () => {
+    setSidebarState({ isOpen: false, pathname });
+  };
+
+  const toggleSidebar = () => {
+    setSidebarState((current) => ({
+      pathname,
+      isOpen: current.pathname === pathname ? !current.isOpen : true,
+    }));
+  };
 
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        setIsSidebarOpen(false);
+        setSidebarState({ isOpen: false, pathname });
       }
     };
 
     window.addEventListener("keydown", handleEscape);
     return () => window.removeEventListener("keydown", handleEscape);
-  }, []);
+  }, [pathname]);
 
   useEffect(() => {
     document.body.classList.toggle("dashboard-nav-open", isSidebarOpen);
@@ -48,20 +60,20 @@ export default function DashboardLayout({
           "dashboard-sidebar-backdrop",
           isSidebarOpen && "dashboard-sidebar-backdrop--visible"
         )}
-        onClick={() => setIsSidebarOpen(false)}
+        onClick={closeSidebar}
       />
 
       <div className="dashboard-grid">
         <DashboardSidebar
           role={role}
           isOpen={isSidebarOpen}
-          onClose={() => setIsSidebarOpen(false)}
+          onClose={closeSidebar}
         />
 
         <div className="dashboard-main">
           <DashboardTopbar
             role={role}
-            onMenuToggle={() => setIsSidebarOpen((open) => !open)}
+            onMenuToggle={toggleSidebar}
           />
           <main className="dashboard-content">{children}</main>
         </div>

@@ -1,10 +1,8 @@
 // prisma/schema.prisma
-// ════════════════════════════════════════════════════════════
-// Marvel's Fit Studios — Database Schema
-// Version: 2.0
-// Architecture rule: Every model is self-contained and clearly
-// commented. Adding new features should never break existing ones.
-// ════════════════════════════════════════════════════════════
+// ---------------------------------------------
+// Marvel Fitness Studios - Database Schema
+// Version: 3.0 (Auth.js + Unified User)
+// ---------------------------------------------
 
 generator client {
   provider = "prisma-client-js"
@@ -14,35 +12,86 @@ datasource db {
   provider = "postgresql"
 }
 
-// ─────────────────────────────────────────────
-// SUPER ADMIN
-// The hero. Full access to everything in the system.
-// Can add, remove, and update any record.
-// There will typically be one Super Admin account.
-// ─────────────────────────────────────────────
-model SuperAdmin {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  password  String   // Always stored as a bcrypt hash, never plain text
+// ---------------------------------------------
+// USER & AUTH (Auth.js Standard)
+// ---------------------------------------------
 
-  createdAt DateTime @default(now())
-
-  // Super Admin approves all session compensations
-  compensations SessionCompensation[]
+enum UserRole {
+  ADMIN
+  COACH
+  CLIENT
 }
 
-// ─────────────────────────────────────────────
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?   // Hashed with bcrypt
+  role          UserRole  @default(CLIENT)
+
+  // Auth.js Relations
+  accounts      Account[]
+  sessions      Session[]
+
+  // Profile Relations (1-to-1)
+  coachProfile  Coach?
+  clientProfile Client?
+
+  // Admin Actions
+  approvedCompensations SessionCompensation[]
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Account {
+  id                 String  @id @default(cuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?  @db.Text
+  access_token       String?  @db.Text
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?  @db.Text
+  session_state      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ---------------------------------------------
 // COACH
-// Assigned to one or more groups.
-// Can upload training files and view their clients.
-// Cannot see payments or clients outside their groups.
-// ─────────────────────────────────────────────
+// ---------------------------------------------
 model Coach {
   id        String   @id @default(cuid())
   fullName  String
-  email     String   @unique
-  password  String
   phone     String?
+
+  // Linked to global User account
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
 
@@ -50,54 +99,43 @@ model Coach {
   groups    Group[]
 }
 
-// ─────────────────────────────────────────────
+// ---------------------------------------------
 // CLIENT
-// The studio member. Belongs to a group,
-// has a session balance, payment status, and personal notes.
-// ─────────────────────────────────────────────
+// ---------------------------------------------
 model Client {
   id             String   @id @default(cuid())
   fullName       String
-  email          String   @unique
-  password       String
   phone          String?
   dateOfBirth    DateTime?
 
-  // Membership is always "monthly" for now (12 sessions)
-  // This field is kept flexible in case new types are added later
+  // Linked to global User account
+  userId         String   @unique
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Membership & Sessions
   membershipType String   @default("monthly")
-
-  // Session balance — starts at 12 when a monthly payment is recorded
   sessionsLeft   Int      @default(0)
-
-  // Payment status — toggled by Super Admin each month
   isPaid         Boolean  @default(false)
 
   createdAt      DateTime @default(now())
 
-  // Which group this client belongs to (optional until assigned)
+  // Which group this client belongs to
   groupId        String?
   group          Group?   @relation(fields: [groupId], references: [id])
 
-  // All related records for this client
+  // Relations
   payments       Payment[]
   files          File[]
   workoutNotes   WorkoutNote[]
   compensations  SessionCompensation[]
 }
 
-// ─────────────────────────────────────────────
+// ---------------------------------------------
 // GROUP
-// Links a coach to a set of clients.
-// type = "group"   → 1 coach, many clients (standard class)
-// type = "private" → 1 coach, 1 client (personal training)
-// The type is a label only — the Super Admin controls assignments.
-// ─────────────────────────────────────────────
+// ---------------------------------------------
 model Group {
   id        String    @id @default(cuid())
   name      String
-
-  // "group" or "private" — enforced by the UI/admin, not the database
   type      GroupType @default(GROUP)
 
   createdAt DateTime  @default(now())
@@ -111,27 +149,19 @@ model Group {
   files     File[]
 }
 
-// Enum = a fixed list of allowed values for the "type" field
-// This is safer than a plain String — prevents typos like "gropu"
 enum GroupType {
-  GROUP    // Standard group class (1 coach, many clients)
-  PRIVATE  // Personal training (1 coach, 1 client)
+  GROUP    // Standard group class
+  PRIVATE  // Personal training
 }
 
-// ─────────────────────────────────────────────
+// ---------------------------------------------
 // PAYMENT
-// One payment = one monthly cycle = 12 sessions granted.
-// When a payment is recorded, sessionsLeft on the Client
-// should be set to 12 (handled in the backend logic, not here).
-// Currency is always EGP.
-// ─────────────────────────────────────────────
+// ---------------------------------------------
 model Payment {
   id        String   @id @default(cuid())
   amount    Float
   currency  String   @default("EGP")
   date      DateTime @default(now())
-
-  // Optional note from the Super Admin, e.g. "Paid in cash"
   note      String?
 
   createdAt DateTime @default(now())
@@ -141,19 +171,12 @@ model Payment {
   client    Client   @relation(fields: [clientId], references: [id])
 }
 
-// ─────────────────────────────────────────────
+// ---------------------------------------------
 // SESSION COMPENSATION
-// When a client misses a session and contacts the admin,
-// the admin can restore that session. Every restoration is logged here.
-// This creates a full audit trail — who got compensated, when, and why.
-// ─────────────────────────────────────────────
+// ---------------------------------------------
 model SessionCompensation {
   id          String   @id @default(cuid())
-
-  // How many sessions were restored (usually 1, but flexible)
   sessions    Int      @default(1)
-
-  // Why was this compensation approved? e.g. "Client had a family emergency"
   reason      String
 
   createdAt   DateTime @default(now())
@@ -162,58 +185,39 @@ model SessionCompensation {
   clientId    String
   client      Client   @relation(fields: [clientId], references: [id])
 
-  // Which Super Admin approved it
+  // Which Admin approved it
   approvedById String
-  approvedBy   SuperAdmin @relation(fields: [approvedById], references: [id])
+  approvedBy   User     @relation(fields: [approvedById], references: [id])
 }
 
-// ─────────────────────────────────────────────
+// ---------------------------------------------
 // FILE
-// Training files uploaded by coaches and stored locally.
-// Files are linked to a group so all clients in the group can see them.
-// Can also be linked directly to one specific client (optional).
-// Local path stored instead of a cloud URL.
-// ─────────────────────────────────────────────
+// ---------------------------------------------
 model File {
   id          String   @id @default(cuid())
-  name        String   // Display name, e.g. "Week 3 Plan.pdf"
-
-  // Path relative to the /public folder, e.g. "/uploads/week3-plan.pdf"
-  // Accessible in the browser at: http://localhost:3000/uploads/week3-plan.pdf
+  name        String
   path        String
-
-  // MIME type for display purposes, e.g. "application/pdf"
   mimeType    String?
 
   createdAt   DateTime @default(now())
 
-  // File belongs to a group (visible to all clients in that group)
   groupId     String?
   group       Group?   @relation(fields: [groupId], references: [id])
 
-  // Optionally also pinned to a specific client
   clientId    String?
   client      Client?  @relation(fields: [clientId], references: [id])
 }
 
-// ─────────────────────────────────────────────
+// ---------------------------------------------
 // WORKOUT NOTE
-// Written by the client to log their sessions.
-// Content is free text. Date is auto-saved.
-// Clients can browse past notes by date.
-// ─────────────────────────────────────────────
+// ---------------------------------------------
 model WorkoutNote {
   id        String   @id @default(cuid())
-
-  // The note content — e.g. "Bench press: 3x10 @ 80kg. Felt strong."
   content   String
-
-  // The date of the workout — defaults to when the note is created
   date      DateTime @default(now())
 
   createdAt DateTime @default(now())
 
-  // Which client wrote this note
   clientId  String
   client    Client   @relation(fields: [clientId], references: [id])
 }

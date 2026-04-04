@@ -214,6 +214,12 @@
   outline-offset: 2px;
 }
 
+.login-password-toggle:disabled {
+  color: var(--mv-muted);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 /* ─── Inline options (remember + forgot) ─── */
 .login-options {
   display: flex;
@@ -253,6 +259,19 @@
 
 .login-forgot:hover {
   color: var(--mv-primary);
+}
+
+.login-forgot:focus-visible,
+.login-back:focus-visible {
+  outline: 2px solid var(--mv-primary);
+  outline-offset: 3px;
+  border-radius: 12px;
+}
+
+.login-forgot:disabled {
+  color: var(--mv-muted);
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .login-helper-note {
@@ -302,6 +321,10 @@
   position: relative;
 }
 
+.login-submit:disabled {
+  cursor: wait;
+}
+
 .login-submit-content {
   display: flex;
   align-items: center;
@@ -342,6 +365,16 @@
 
 .login-back:hover svg {
   transform: translateX(-3px);
+}
+
+.login-loading {
+  display: grid;
+  place-items: center;
+  min-height: 320px;
+  padding: 32px;
+  color: var(--mv-muted-strong);
+  font-weight: 700;
+  letter-spacing: 0.04em;
 }
 
 /* ─── Desktop: Side-by-side split ─── */

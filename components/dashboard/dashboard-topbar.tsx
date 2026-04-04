@@ -54,8 +54,9 @@ export function DashboardTopbar({
           <span className="dashboard-topbar__avatar">{profileMeta.initials}</span>
           <span className="dashboard-topbar__profile-copy">
             <strong>{profileMeta.name}</strong>
-            <small>
-              {profileMeta.subtitle} <Bell size={12} style={{ marginLeft: 6 }} />
+            <small className="dashboard-topbar__profile-status">
+              <span>{profileMeta.subtitle}</span>
+              <Bell size={12} aria-hidden="true" />
             </small>
           </span>
         </Link>

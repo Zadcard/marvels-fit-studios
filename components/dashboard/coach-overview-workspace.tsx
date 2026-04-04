@@ -91,7 +91,7 @@ export function CoachOverviewWorkspace() {
         <article className="dashboard-panel">
           <div className="dashboard-panel__header">
             <div>
-              <div className="mv-eyebrow">Today's movement</div>
+              <div className="mv-eyebrow">Today&apos;s movement</div>
               <h2>Recent activity</h2>
               <p>
                 The updates most likely to affect your next block, your notes, or
@@ -132,7 +132,7 @@ export function CoachOverviewWorkspace() {
           <div className="dashboard-panel__header">
             <div>
               <div className="mv-eyebrow">Coach shortcuts</div>
-              <h2>Quick actions and today's plan</h2>
+              <h2>Quick actions and today&apos;s plan</h2>
               <p>
                 Keep the page useful for daily work with just enough launch points
                 and structure.
