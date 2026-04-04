@@ -36,6 +36,25 @@ Why:
 - fits the current dashboard-heavy app very well
 - keeps auth, UI, and domain logic in one codebase
 
+## 1.1 Current Backend Baseline
+
+Compared to the earlier project state, the codebase already has some useful backend foundation pieces:
+
+- `lib/auth/credentials-auth-service.ts`
+- `lib/auth/user-repository.ts`
+- `lib/auth/password-verifier.ts`
+- `lib/auth/authorization-policy.ts`
+- role-specific server layouts for admin/coach/client dashboards
+- a reusable Prisma getter in `lib/prisma.ts`
+- early dashboard abstraction in `lib/dashboard/*`
+- early repository abstraction in `lib/repositories/*`
+
+Important note:
+
+- this is meaningful architectural progress
+- but most business repositories still return mock data
+- so the next backend work should build on these abstractions rather than replacing them
+
 ## 2. Final Backend Goals
 
 By the end of backend implementation, the app should support:
@@ -214,6 +233,13 @@ Definition of done:
 - reads use DAL
 - mutations use validators + guards + services
 - no direct Prisma usage in pages
+
+Updated note for current state:
+
+- auth foundation is partially done already
+- dashboard abstraction has started already
+- repository thinking has started already
+- Phase 1 should now focus on extending this pattern to real business domains, not starting from zero
 
 ### Phase 2: Real admin data
 
@@ -1003,6 +1029,12 @@ Create backend folders.
 - add `lib/validators`
 - add `app/actions`
 
+Current-state adjustment:
+
+- `lib/auth` already exists
+- part of the reusable dashboard infrastructure already exists
+- priority now is to add the missing `dal`, `services`, `validators`, and `actions` layers around the existing structure
+
 ### Step 3
 
 Implement auth helpers.
@@ -1031,6 +1063,11 @@ Implement services for:
 - create group
 - assign client to group
 
+Current-state adjustment:
+
+- keep the existing auth service style as the reference for code shape
+- do not bypass the new abstractions by writing Prisma calls directly inside dashboard components
+
 ### Step 6
 
 Implement DAL for:
@@ -1058,6 +1095,12 @@ Replace admin mock screens:
 - `admin-clients`
 - `admin-coaches`
 - then admin overview
+
+Current-state adjustment:
+
+- `admin-clients` already has a repository abstraction, but it is mock-backed
+- start by replacing the repository implementation with Prisma-backed data access
+- then move the same pattern to coaches and overview aggregates
 
 ### Step 9
 
