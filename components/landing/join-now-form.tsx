@@ -3,10 +3,8 @@
 import { useActionState, useEffect, useRef } from "react";
 import { useFormStatus } from "react-dom";
 
-import {
-  initialJoinNowState,
-  submitJoinNowLead,
-} from "@/app/actions/landing";
+import { submitJoinNowLead } from "@/app/actions/landing";
+import { initialJoinNowState } from "@/app/actions/join-now-types";
 
 function SubmitButton() {
   const { pending } = useFormStatus();

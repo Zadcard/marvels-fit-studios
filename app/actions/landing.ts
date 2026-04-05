@@ -6,6 +6,7 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 
 import { getPrisma, getPrismaPool } from "@/lib/prisma";
+import { type JoinNowActionState } from "./join-now-types";
 
 const joinNowSchema = z.object({
   name: z.string().trim().min(2, "Please enter your full name."),
@@ -21,25 +22,6 @@ const joinNowSchema = z.object({
     message: "You need to agree before submitting.",
   }),
 });
-
-type JoinNowFieldName =
-  | "name"
-  | "phone"
-  | "email"
-  | "password"
-  | "message"
-  | "privacy";
-
-export type JoinNowActionState = {
-  status: "idle" | "success" | "error";
-  message: string;
-  fieldErrors?: Partial<Record<JoinNowFieldName, string[]>>;
-};
-
-export const initialJoinNowState: JoinNowActionState = {
-  status: "idle",
-  message: "",
-};
 
 export async function submitJoinNowLead(
   _previousState: JoinNowActionState,
