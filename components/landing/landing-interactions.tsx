@@ -8,10 +8,9 @@ export function LandingInteractions() {
     const body = document.body;
     const navToggle = document.getElementById("navToggle");
     const navLinks = document.getElementById("navLinks");
-    const btnJoinNav = document.getElementById("btnJoinNav");
-    const btnJoinHero = document.getElementById("btnJoinHero");
     const btnLearnMore = document.getElementById("btnLearnMore");
-    const contactSection = document.getElementById("contact");
+    const joinModal = document.getElementById("landingJoinModal");
+    const joinModalPanel = document.getElementById("landingJoinPanel");
     const aboutSection = document.getElementById("about");
     const faqButtons = Array.from(
       document.querySelectorAll<HTMLButtonElement>(".faq-question")
@@ -21,6 +20,7 @@ export function LandingInteractions() {
     );
 
     let resizeTimer: number | undefined;
+    let lastJoinTrigger: HTMLElement | null = null;
     const prefersReducedMotion = window.matchMedia(
       "(prefers-reduced-motion: reduce)"
     );
@@ -40,6 +40,31 @@ export function LandingInteractions() {
       navLinks.classList.remove("open");
       navToggle.setAttribute("aria-expanded", "false");
       setScrollLock(false, "nav-open");
+    }
+
+    function openJoinModal(trigger?: HTMLElement | null) {
+      if (!joinModal || !joinModalPanel) {
+        return;
+      }
+
+      lastJoinTrigger = trigger ?? null;
+      joinModal.hidden = false;
+      setScrollLock(true, "modal-open");
+
+      window.requestAnimationFrame(() => {
+        joinModalPanel.focus();
+      });
+    }
+
+    function closeJoinModal() {
+      if (!joinModal) {
+        return;
+      }
+
+      joinModal.hidden = true;
+      setScrollLock(false, "modal-open");
+      lastJoinTrigger?.focus();
+      lastJoinTrigger = null;
     }
 
     function scrollToEl(el: Element | null) {
@@ -62,6 +87,21 @@ export function LandingInteractions() {
       const target = event.target as HTMLElement | null;
       const targetLink = target?.closest<HTMLAnchorElement>('a[href^="#"]');
       const scrollButton = target?.closest<HTMLElement>("[data-scroll-to]");
+      const openJoinButton = target?.closest<HTMLElement>("[data-open-join]");
+      const closeJoinButton = target?.closest<HTMLElement>("[data-close-join]");
+
+      if (openJoinButton) {
+        event.preventDefault();
+        closeNav();
+        openJoinModal(openJoinButton);
+        return;
+      }
+
+      if (closeJoinButton) {
+        event.preventDefault();
+        closeJoinModal();
+        return;
+      }
 
       if (targetLink) {
         const targetId = targetLink.getAttribute("href");
@@ -139,26 +179,6 @@ export function LandingInteractions() {
       );
     }
 
-    if (btnJoinNav) {
-      const handleJoinNavClick = () => {
-        closeNav();
-        scrollToEl(contactSection);
-      };
-
-      btnJoinNav.addEventListener("click", handleJoinNavClick);
-      cleanups.push(() =>
-        btnJoinNav.removeEventListener("click", handleJoinNavClick)
-      );
-    }
-
-    if (btnJoinHero) {
-      const handleJoinHeroClick = () => scrollToEl(contactSection);
-      btnJoinHero.addEventListener("click", handleJoinHeroClick);
-      cleanups.push(() =>
-        btnJoinHero.removeEventListener("click", handleJoinHeroClick)
-      );
-    }
-
     if (btnLearnMore && aboutSection) {
       const handleLearnMoreClick = () => scrollToEl(aboutSection);
       btnLearnMore.addEventListener("click", handleLearnMoreClick);
@@ -168,9 +188,16 @@ export function LandingInteractions() {
     }
 
     const handleEscapeKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        closeNav();
+      if (event.key !== "Escape") {
+        return;
       }
+
+      if (joinModal && !joinModal.hidden) {
+        closeJoinModal();
+        return;
+      }
+
+      closeNav();
     };
 
     document.addEventListener("keydown", handleEscapeKey);
@@ -257,7 +284,10 @@ export function LandingInteractions() {
         const maxScroll = Math.max(0, track.scrollWidth - track.clientWidth - 2);
         const currentIndex = getNearestIndex();
         const visibleSlides = getVisibleSlides();
-        const lastVisibleIndex = Math.min(slides.length, currentIndex + visibleSlides);
+        const lastVisibleIndex = Math.min(
+          slides.length,
+          currentIndex + visibleSlides
+        );
 
         prevButton.disabled = track.scrollLeft <= 2;
         nextButton.disabled = track.scrollLeft >= maxScroll;

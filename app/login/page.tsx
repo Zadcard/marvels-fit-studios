@@ -9,7 +9,6 @@ import {
   type KeyboardEvent,
 } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getSession, signIn } from "next-auth/react";
 
@@ -344,27 +343,6 @@ export default function LoginPage() {
   return (
     <div className="login-page">
       <div className="login-container">
-        <div className="login-brand">
-          <Image
-            src="/img/Logo-2.png"
-            alt="Marvel's Studios"
-            className="login-brand-logo"
-            width={56}
-            height={56}
-          />
-          <div className="login-brand-name">Marvel&apos;s Studios</div>
-          <h1 className="login-brand-tagline">
-            Train with structure, better coaching, and clear progress.
-          </h1>
-          <p className="login-brand-description">
-            Access your dashboard, sessions, and coach updates.
-          </p>
-          <div className="login-brand-badge">
-            <strong>3k+</strong>
-            <span>sessions supported</span>
-          </div>
-        </div>
-
         <Suspense fallback={<div className="login-loading">Loading secure login...</div>}>
           <LoginForm />
         </Suspense>

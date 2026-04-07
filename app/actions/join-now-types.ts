@@ -1,10 +1,4 @@
-type JoinNowFieldName =
-  | "name"
-  | "phone"
-  | "email"
-  | "password"
-  | "message"
-  | "privacy";
+type JoinNowFieldName = "name" | "phone" | "email" | "password";
 
 export type JoinNowActionState = {
   status: "idle" | "success" | "error";

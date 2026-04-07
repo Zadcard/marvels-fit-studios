@@ -17,10 +17,6 @@ const joinNowSchema = z.object({
     .min(8, "Password must be at least 8 characters.")
     .regex(/[A-Za-z]/, "Password must include at least one letter.")
     .regex(/[0-9]/, "Password must include at least one number."),
-  message: z.string().trim().max(1000, "Message is too long.").optional(),
-  privacy: z.string().refine((value) => value === "on", {
-    message: "You need to agree before submitting.",
-  }),
 });
 
 export async function submitJoinNowLead(
@@ -32,8 +28,6 @@ export async function submitJoinNowLead(
     phone: formData.get("phone"),
     email: formData.get("email"),
     password: formData.get("password"),
-    message: formData.get("message") || undefined,
-    privacy: formData.get("privacy"),
   });
 
   if (!parsed.success) {
@@ -90,7 +84,7 @@ export async function submitJoinNowLead(
       parsed.data.phone,
       normalizedEmail,
       passwordHash,
-      parsed.data.message?.trim() || null,
+      null,
       true,
     ]
   );
@@ -98,6 +92,6 @@ export async function submitJoinNowLead(
   return {
     status: "success",
     message:
-      "Your registration has been received. The studio team will contact you soon.",
+      "Your request has been received. The studio team will contact you soon.",
   };
 }

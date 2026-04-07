@@ -17,7 +17,7 @@ function SubmitButton() {
       aria-busy={pending}
       disabled={pending}
     >
-      {pending ? "Sending request..." : "Submit"}
+      {pending ? "Sending request..." : "Request Membership"}
     </button>
   );
 }
@@ -51,7 +51,7 @@ export function JoinNowForm() {
     <form
       ref={formRef}
       id="joinNowForm"
-      className="contact-form"
+      className="join-form"
       action={formAction}
       noValidate
     >
@@ -80,15 +80,12 @@ export function JoinNowForm() {
             placeholder="+20 1XX XXX XXXX"
             autoComplete="tel"
             inputMode="tel"
-            enterKeyHint="next"
+            enterKeyHint="done"
             aria-invalid={state.fieldErrors?.phone ? "true" : undefined}
             required
           />
           <FieldError errors={state.fieldErrors?.phone} />
         </label>
-      </div>
-
-      <div className="field-grid">
         <label>
           <span>Email address</span>
           <input
@@ -114,28 +111,13 @@ export function JoinNowForm() {
             type="password"
             placeholder="Create a password"
             autoComplete="new-password"
-            enterKeyHint="next"
+            enterKeyHint="done"
             aria-invalid={state.fieldErrors?.password ? "true" : undefined}
             required
           />
           <FieldError errors={state.fieldErrors?.password} />
         </label>
       </div>
-
-      <label className="consent-row" htmlFor="cf-privacy">
-        <input
-          id="cf-privacy"
-          name="privacy"
-          type="checkbox"
-          aria-invalid={state.fieldErrors?.privacy ? "true" : undefined}
-          required
-        />
-        <span>
-          I agree that Marvel&apos;s Studios may contact me regarding my
-          registration.
-        </span>
-      </label>
-      <FieldError errors={state.fieldErrors?.privacy} />
 
       <SubmitButton />
 

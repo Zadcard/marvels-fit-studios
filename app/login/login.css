@@ -16,9 +16,8 @@
 
 .login-container {
   width: 100%;
-  max-width: 980px;
-  display: grid;
-  grid-template-columns: 1fr;
+  max-width: 560px;
+  display: block;
   border: 1px solid var(--mv-line);
   border-radius: 28px;
   overflow: hidden;
@@ -39,99 +38,12 @@
   }
 }
 
-.login-brand {
-  position: relative;
-  padding: clamp(28px, 5vw, 40px) clamp(24px, 4vw, 40px);
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 18px;
-  overflow: hidden;
-  background:
-    radial-gradient(circle at 20% 20%, rgba(230, 36, 41, 0.18), transparent 50%),
-    radial-gradient(circle at 80% 80%, rgba(230, 36, 41, 0.08), transparent 40%),
-    #080808;
-}
-
-.login-brand::after {
-  content: "";
-  position: absolute;
-  inset: 12px;
-  border: 1px dashed rgba(230, 36, 41, 0.22);
-  border-radius: 18px;
-  pointer-events: none;
-}
-
-.login-brand > * {
-  position: relative;
-  z-index: 1;
-}
-
-.login-brand-logo {
-  width: 56px;
-  height: 56px;
-  object-fit: contain;
-  border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(0, 0, 0, 1);
-  filter: brightness(2);
-  padding: 6px;
-}
-
-.login-brand-name {
-  font-family: var(--font-display), "Space Grotesk", sans-serif;
-  font-size: 1.05rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  color: var(--mv-text);
-}
-
-.login-brand-tagline {
-  font-family: var(--font-display), "Space Grotesk", sans-serif;
-  font-size: clamp(1.28rem, 3.5vw, 1.6rem);
-  font-weight: 700;
-  letter-spacing: -0.03em;
-  line-height: 1.08;
-  color: var(--mv-text);
-  max-width: 20ch;
-}
-
-.login-brand-description {
-  color: var(--mv-muted);
-  font-size: 0.86rem;
-  line-height: 1.55;
-  max-width: 30ch;
-}
-
-.login-brand-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 4px;
-  padding: 7px 14px;
-  border-radius: 999px;
-  border: 1px solid rgba(230, 36, 41, 0.2);
-  background: rgba(230, 36, 41, 0.08);
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: var(--mv-muted-strong);
-  letter-spacing: 0.04em;
-}
-
-.login-brand-badge strong {
-  color: var(--mv-primary);
-  font-family: var(--font-display), "Space Grotesk", sans-serif;
-  font-size: 0.92rem;
-}
-
 .login-form-panel {
   padding: clamp(28px, 5vw, 44px) clamp(24px, 4vw, 44px);
   display: flex;
   flex-direction: column;
   justify-content: center;
   gap: 18px;
-  border-left: none;
-  border-top: 1px solid var(--mv-line);
 }
 
 .login-form-header {
@@ -406,34 +318,12 @@
 }
 
 @media (min-width: 860px) {
-  .login-container {
-    grid-template-columns: 0.42fr 0.58fr;
-    min-height: 520px;
-  }
-
-  .login-form-panel {
-    border-top: none;
-    border-left: 1px solid var(--mv-line);
-  }
-
-  .login-brand {
-    padding: 48px 40px;
-  }
-
   .login-form-panel {
     padding: 48px 40px;
   }
 }
 
 @media (min-width: 1100px) {
-  .login-container {
-    min-height: 560px;
-  }
-
-  .login-brand {
-    padding: 54px 48px;
-  }
-
   .login-form-panel {
     padding: 54px 48px;
   }
@@ -446,10 +336,6 @@
 
   .login-container {
     border-radius: 22px;
-  }
-
-  .login-brand {
-    padding: 28px 22px;
   }
 
   .login-form-panel {

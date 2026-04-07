@@ -57,8 +57,8 @@ model Lead {
   id              String     @id @default(cuid())
   fullName        String
   phone           String
-  email           String     @unique
-  passwordHash    String
+  email           String?    @unique
+  passwordHash    String?
   message         String?
   source          String     @default("landing-join-now")
   status          LeadStatus @default(NEW)
