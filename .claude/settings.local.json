@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx skills:*)",
+      "Bash(npx claude-code-templates@latest:*)",
+      "Bash(npx antigravity-awesome-skills:*)",
+      "Bash(pip install:*)",
+      "Bash(SuperClaude install:*)",
+      "Bash(pip3 install:*)",
+      "Bash(python -m pip install SuperClaude)",
+      "Bash(python3 -m pip install SuperClaude)",
+      "Bash(py:*)",
+      "Bash(cmd.exe:*)",
+      "Bash(powershell.exe:*)",
+      "Bash(git check-ignore:*)",
+      "Bash(python3 .claude/skills/ui-ux-pro-max/scripts/search.py \"fitness studio dashboard dark premium\" --design-system -f markdown)"
+    ]
+  }
+}

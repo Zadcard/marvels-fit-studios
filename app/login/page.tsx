@@ -110,7 +110,8 @@ function LoginForm() {
           return;
         }
 
-        router.replace(callbackUrl || getDashboardHomeForUserRole(userRole));
+        const safeCallbackUrl = callbackUrl?.startsWith("/") && !callbackUrl.startsWith("//") ? callbackUrl : null;
+        router.replace(safeCallbackUrl || getDashboardHomeForUserRole(userRole));
         router.refresh();
       } catch {
         setFormError("Unexpected error. Try again.");

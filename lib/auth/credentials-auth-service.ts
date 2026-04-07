@@ -41,31 +41,21 @@ export class CredentialsAuthService {
     const { email, password } = parsedCredentials;
     const fallbackUser = () => this.fallbackPolicy.getUser(email, password);
 
-    try {
-      const user = await this.userRepository.findByEmail(email);
+    const user = await this.userRepository.findByEmail(email);
 
-      if (!user?.password) {
-        return fallbackUser();
-      }
-
-      const passwordsMatch = await this.passwordVerifier.verify(
-        password,
-        user.password
-      );
-
-      if (passwordsMatch) {
-        return toAuthenticatedUser(user);
-      }
-
+    if (!user?.password) {
       return fallbackUser();
-    } catch (error) {
-      const demoUser = fallbackUser();
-
-      if (demoUser) {
-        return demoUser;
-      }
-
-      throw error;
     }
+
+    const passwordsMatch = await this.passwordVerifier.verify(
+      password,
+      user.password
+    );
+
+    if (passwordsMatch) {
+      return toAuthenticatedUser(user);
+    }
+
+    return null;
   }
 }

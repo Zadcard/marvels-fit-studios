@@ -356,7 +356,7 @@ body.dashboard-nav-open {
 
 .dashboard-topbar__search {
   min-height: 42px;
-  display: inline-flex;
+  display: none;
   align-items: center;
   gap: 8px;
   padding: 0 14px;
@@ -1213,8 +1213,8 @@ body.dashboard-nav-open {
 .dashboard-inline-button:hover,
 .dashboard-inline-button:focus-visible {
   color: var(--mv-text);
-  border-color: rgba(230, 36, 41, 0.3);
-  background: rgba(230, 36, 41, 0.1);
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .dashboard-mobile-list {

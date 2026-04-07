@@ -1,18 +1,10 @@
 import type { NextAuthConfig } from "next-auth";
-import Credentials from "next-auth/providers/credentials";
 import { UserRole } from "@prisma/client";
 
 export default {
   session: { strategy: "jwt" },
-  trustHost: true,
-  providers: [
-    Credentials({
-      // authorize logic is moved to auth.ts to avoid Edge Runtime conflicts
-      async authorize() {
-        return null;
-      },
-    }),
-  ],
+  trustHost: process.env.NODE_ENV !== "production",
+  providers: [],
   callbacks: {
     async jwt({ token, user }) {
       if (user) {

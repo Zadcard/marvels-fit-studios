@@ -34,8 +34,7 @@ const proxyFunc = auth((req) => {
   return NextResponse.next();
 });
 
-// Rename export to 'proxy' for Next.js 16 requirements
-export { proxyFunc as proxy };
+export { proxyFunc as middleware };
 
 // Match all routes except static ones
 export const config = {
