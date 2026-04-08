@@ -47,6 +47,9 @@ export function DashboardSidebar({
     session?.user?.name?.trim() ||
     session?.user?.email?.trim() ||
     profileMeta.name;
+  const displaySubtitle =
+    session?.user?.email?.trim() ||
+    profileMeta.subtitle;
 
   async function handleSignOut() {
     setSignOutError("");
@@ -156,7 +159,7 @@ export function DashboardSidebar({
         <div className="dashboard-sidebar__account-copy">
           <span className="dashboard-badge">Account</span>
           <strong>{displayName}</strong>
-          <p>{profileMeta.subtitle}</p>
+          <p>{displaySubtitle}</p>
         </div>
 
         <button

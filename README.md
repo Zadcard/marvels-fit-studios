@@ -47,6 +47,35 @@ If you want demo users in your database:
 npx prisma db seed
 ```
 
+## Promote Leads To Clients
+
+If a person signed up through `Join Now`, they are stored in `Lead` and cannot log in until they are promoted into a real `User` + `Client`.
+
+Use the bulk promotion script:
+
+```bash
+npm run promote:leads -- --all
+```
+
+To preview changes without writing anything:
+
+```bash
+npm run promote:leads -- --all --dry-run
+```
+
+To convert a single lead by email:
+
+```bash
+npm run promote:leads -- --email user@example.com
+```
+
+What the script does:
+
+- creates a `User` if one does not exist
+- reuses the lead password hash for credentials login
+- creates a linked `Client` profile
+- marks the `Lead` as `CONVERTED`
+
 Seeded demo accounts:
 
 - `admin@test.com`
@@ -68,6 +97,25 @@ npx prisma migrate deploy
 ```
 
 The project build already runs `prisma generate` automatically through `prebuild`.
+
+## Current Database Domains
+
+The schema now covers:
+
+- Auth and users
+- Landing leads
+- Coaches, clients, groups, payments, files, and workout notes
+- Training sessions and session bookings
+- Subscription plans and client subscriptions
+
+The new session and subscription tables are introduced by the migration at
+`prisma/migrations/20260408103000_add_session_and_subscription_domain/`.
+
+If you want demo data for the new domain tables, run:
+
+```bash
+npx prisma db seed
+```
 
 ## Verification Checklist
 

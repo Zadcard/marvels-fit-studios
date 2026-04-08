@@ -2,10 +2,14 @@ import { CreditCard, Sparkles } from "lucide-react";
 
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
 import { DashboardSurfaceNote } from "@/components/dashboard/dashboard-surface-note";
-import { clientSubscriptionRecord } from "@/lib/mocks/client-subscription";
+import type { ClientSubscriptionRecord } from "@/lib/dashboard/client-dashboard-data";
 
-export function ClientSubscriptionWorkspace() {
-  const benefitsCount = clientSubscriptionRecord.benefits.length;
+type ClientSubscriptionWorkspaceProps = {
+  data: ClientSubscriptionRecord;
+};
+
+export function ClientSubscriptionWorkspace({ data }: ClientSubscriptionWorkspaceProps) {
+  const benefitsCount = data.benefits.length;
 
   return (
     <div className="dashboard-stack">
@@ -17,19 +21,19 @@ export function ClientSubscriptionWorkspace() {
         description="Use this page for a quick read on your membership."
         items={[
           `${benefitsCount} benefits included.`,
-          `Renews ${clientSubscriptionRecord.renewalDate}.`,
+          `Renews ${data.renewalDate}.`,
         ]}
       />
 
       <section className="dashboard-mini-grid" aria-label="Subscription highlights">
         <article className="dashboard-mini-stat">
           <span className="dashboard-mini-stat__label">Plan</span>
-          <strong>{clientSubscriptionRecord.planName}</strong>
+          <strong>{data.planName}</strong>
           <p>Current membership.</p>
         </article>
         <article className="dashboard-mini-stat">
           <span className="dashboard-mini-stat__label">Renewal</span>
-          <strong>{clientSubscriptionRecord.renewalDate}</strong>
+          <strong>{data.renewalDate}</strong>
           <p>Renewal date.</p>
         </article>
         <article className="dashboard-mini-stat">
@@ -44,8 +48,8 @@ export function ClientSubscriptionWorkspace() {
           <div className="dashboard-panel__header">
             <div>
               <div className="mv-eyebrow">Current plan</div>
-              <h2>{clientSubscriptionRecord.planName}</h2>
-              <p>{clientSubscriptionRecord.note}</p>
+              <h2>{data.planName}</h2>
+              <p>{data.note}</p>
             </div>
             <CreditCard size={20} color="#ff8b8f" />
           </div>
@@ -53,20 +57,20 @@ export function ClientSubscriptionWorkspace() {
           <div className="dashboard-detail-grid">
             <div className="dashboard-detail-stat">
               <span className="dashboard-detail-stat__label">Status</span>
-              <strong>{clientSubscriptionRecord.status}</strong>
+              <strong>{data.status}</strong>
             </div>
             <div className="dashboard-detail-stat">
               <span className="dashboard-detail-stat__label">Payment</span>
-              <strong>{clientSubscriptionRecord.paymentStatus}</strong>
+              <strong>{data.paymentStatus}</strong>
             </div>
             <div className="dashboard-detail-stat">
               <span className="dashboard-detail-stat__label">Renews</span>
-              <strong>{clientSubscriptionRecord.renewalDate}</strong>
+              <strong>{data.renewalDate}</strong>
             </div>
             <div className="dashboard-detail-stat">
               <span className="dashboard-detail-stat__label">Billing</span>
               <strong>
-                {clientSubscriptionRecord.amountLabel} / {clientSubscriptionRecord.billingCycle}
+                {data.amountLabel} / {data.billingCycle}
               </strong>
             </div>
           </div>
@@ -88,7 +92,7 @@ export function ClientSubscriptionWorkspace() {
           </div>
 
           <div className="dashboard-summary-list">
-            {clientSubscriptionRecord.benefits.map((benefit) => (
+            {data.benefits.map((benefit) => (
               <div key={benefit} className="dashboard-summary-row">
                 <strong>Included</strong>
                 <span>{benefit}</span>

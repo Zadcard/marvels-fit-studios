@@ -1,7 +1,14 @@
 "use client";
 
 import { useDeferredValue, useState } from "react";
-import { CreditCard, ReceiptText } from "lucide-react";
+import {
+  BadgeDollarSign,
+  CircleDollarSign,
+  CreditCard,
+  ReceiptText,
+  RefreshCcw,
+  ShieldCheck,
+} from "lucide-react";
 
 import { DashboardFormSection } from "@/components/dashboard/dashboard-form-section";
 import { DashboardManagementToolbar } from "@/components/dashboard/dashboard-management-toolbar";
@@ -12,8 +19,6 @@ import { DashboardStatusBadge } from "@/components/dashboard/dashboard-status-ba
 import {
   adminPaymentStatusFilters,
   adminPlanFilters,
-  adminSubscriptionRecords,
-  adminSubscriptionStats,
   adminSubscriptionStatusFilters,
   type AdminPaymentStatus,
   type AdminPlanType,
@@ -38,6 +43,27 @@ const emptySubscriptionForm: SubscriptionFormState = {
   amountLabel: "",
   renewalDate: "",
 };
+
+type AdminSubscriptionsWorkspaceProps = {
+  stats: Array<{
+    id: string;
+    label: string;
+    value: string;
+    change: string;
+    detail: string;
+    note: string;
+    iconKey: "shield-check" | "refresh-ccw" | "circle-dollar-sign" | "badge-dollar-sign";
+    tone: "accent" | "success" | "warning" | "neutral";
+  }>;
+  records: AdminSubscriptionRecord[];
+};
+
+const statIconMap = {
+  "shield-check": ShieldCheck,
+  "refresh-ccw": RefreshCcw,
+  "circle-dollar-sign": CircleDollarSign,
+  "badge-dollar-sign": BadgeDollarSign,
+} as const;
 
 function getSubscriptionTone(status: AdminSubscriptionStatus) {
   switch (status) {
@@ -65,7 +91,10 @@ function getPaymentTone(status: AdminPaymentStatus) {
   }
 }
 
-export function AdminSubscriptionsWorkspace() {
+export function AdminSubscriptionsWorkspace({
+  stats,
+  records,
+}: AdminSubscriptionsWorkspaceProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const deferredSearchTerm = useDeferredValue(searchTerm);
   const [subscriptionFilter, setSubscriptionFilter] =
@@ -75,7 +104,7 @@ export function AdminSubscriptionsWorkspace() {
   const [planFilter, setPlanFilter] =
     useState<(typeof adminPlanFilters)[number]>("All plans");
   const [selectedSubscriptionId, setSelectedSubscriptionId] = useState(
-    adminSubscriptionRecords[0]?.id ?? ""
+    records[0]?.id ?? ""
   );
   const [editingSubscriptionId, setEditingSubscriptionId] = useState<string | null>(
     null
@@ -84,7 +113,7 @@ export function AdminSubscriptionsWorkspace() {
   const [formState, setFormState] =
     useState<SubscriptionFormState>(emptySubscriptionForm);
 
-  const filteredSubscriptions = adminSubscriptionRecords.filter((subscription) => {
+  const filteredSubscriptions = records.filter((subscription) => {
     const query = deferredSearchTerm.trim().toLowerCase();
     const matchesSearch =
       query.length === 0 ||
@@ -114,7 +143,7 @@ export function AdminSubscriptionsWorkspace() {
       (subscription) => subscription.id === selectedSubscriptionId
     ) ??
     filteredSubscriptions[0] ??
-    adminSubscriptionRecords[0];
+    records[0];
 
   const planSummary = adminPlanFilters
     .filter((filter): filter is AdminPlanType => filter !== "All plans")
@@ -159,9 +188,12 @@ export function AdminSubscriptionsWorkspace() {
       />
 
       <section className="dashboard-kpi-grid">
-        {adminSubscriptionStats.map((stat) => (
-          <DashboardStatCard key={stat.id} {...stat} />
-        ))}
+        {stats.map((stat) => {
+          const Icon = statIconMap[stat.iconKey];
+          const { iconKey, ...cardProps } = stat;
+
+          return <DashboardStatCard key={stat.id} {...cardProps} icon={Icon} />;
+        })}
       </section>
 
       <section className="dashboard-detail-layout">
@@ -233,7 +265,8 @@ export function AdminSubscriptionsWorkspace() {
               <button
                 type="button"
                 className="mv-btn mv-btn-outline"
-                onClick={() => openEditModal(selectedSubscription)}
+                onClick={() => selectedSubscription && openEditModal(selectedSubscription)}
+                disabled={!selectedSubscription}
               >
                 <ReceiptText size={16} />
                 Review Plan
@@ -242,6 +275,13 @@ export function AdminSubscriptionsWorkspace() {
           />
 
           <div className="dashboard-data-region">
+            {filteredSubscriptions.length === 0 ? (
+              <div className="dashboard-empty-state">
+                <strong>No subscriptions match this view</strong>
+                <p>Try a different search or reset the filters.</p>
+              </div>
+            ) : (
+              <>
             <div className="dashboard-table-wrap">
               <table className="dashboard-table">
                 <thead>
@@ -348,10 +388,14 @@ export function AdminSubscriptionsWorkspace() {
                 </article>
               ))}
             </div>
+              </>
+            )}
           </div>
         </article>
 
         <aside className="dashboard-panel dashboard-detail-panel">
+          {selectedSubscription ? (
+            <>
           <div className="dashboard-panel__header">
             <div>
               <span className="mv-eyebrow">Selected membership</span>
@@ -393,6 +437,13 @@ export function AdminSubscriptionsWorkspace() {
               ))}
             </div>
           </DashboardFormSection>
+            </>
+          ) : (
+            <div className="dashboard-empty-state">
+              <strong>No subscription selected</strong>
+              <p>Add a subscription or clear the filters to inspect one.</p>
+            </div>
+          )}
         </aside>
       </section>
 

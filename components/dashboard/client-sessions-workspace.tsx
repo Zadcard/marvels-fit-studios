@@ -10,12 +10,12 @@ import { DashboardStatusBadge } from "@/components/dashboard/dashboard-status-ba
 import { DashboardSurfaceNote } from "@/components/dashboard/dashboard-surface-note";
 import {
   clientSessionPeriodFilters,
-  clientSessionRecords,
   clientSessionTypeFilters,
   type ClientSessionPeriod,
+  type ClientSessionRecord,
   type ClientSessionStatus,
   type ClientSessionType,
-} from "@/lib/mocks/client-sessions";
+} from "@/lib/dashboard/client-dashboard-data";
 
 function getSessionTone(status: ClientSessionStatus) {
   switch (status) {
@@ -28,16 +28,18 @@ function getSessionTone(status: ClientSessionStatus) {
   }
 }
 
-export function ClientSessionsWorkspace() {
+type ClientSessionsWorkspaceProps = {
+  records: ClientSessionRecord[];
+};
+
+export function ClientSessionsWorkspace({ records }: ClientSessionsWorkspaceProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const deferredSearchTerm = useDeferredValue(searchTerm);
   const [periodFilter, setPeriodFilter] = useState<"All" | ClientSessionPeriod>("All");
   const [typeFilter, setTypeFilter] = useState<"All" | ClientSessionType>("All");
-  const [selectedSessionId, setSelectedSessionId] = useState(
-    clientSessionRecords[0]?.id ?? ""
-  );
+  const [selectedSessionId, setSelectedSessionId] = useState(records[0]?.id ?? "");
 
-  const filteredSessions = clientSessionRecords.filter((session) => {
+  const filteredSessions = records.filter((session) => {
     const query = deferredSearchTerm.trim().toLowerCase();
     const matchesSearch =
       query.length === 0 ||

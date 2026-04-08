@@ -2,10 +2,14 @@ import { Mail, MessageSquareMore, Phone, ShieldUser } from "lucide-react";
 
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
 import { DashboardSurfaceNote } from "@/components/dashboard/dashboard-surface-note";
-import { clientCoachRecord } from "@/lib/mocks/client-coach";
+import type { ClientCoachRecord } from "@/lib/dashboard/client-dashboard-data";
 
-export function ClientCoachWorkspace() {
-  const sanitizedNextSession = clientCoachRecord.nextSession.replace("Â·", "·");
+type ClientCoachWorkspaceProps = {
+  data: ClientCoachRecord;
+};
+
+export function ClientCoachWorkspace({ data }: ClientCoachWorkspaceProps) {
+  const sanitizedNextSession = data.nextSession.replace("Â·", "·");
 
   return (
     <div className="dashboard-stack">
@@ -24,7 +28,7 @@ export function ClientCoachWorkspace() {
       <section className="dashboard-mini-grid" aria-label="Coach relationship highlights">
         <article className="dashboard-mini-stat">
           <span className="dashboard-mini-stat__label">Specialization</span>
-          <strong>{clientCoachRecord.specialization}</strong>
+          <strong>{data.specialization}</strong>
           <p>Main focus area.</p>
         </article>
         <article className="dashboard-mini-stat">
@@ -42,25 +46,32 @@ export function ClientCoachWorkspace() {
       <section className="dashboard-secondary-grid">
         <article className="dashboard-panel dashboard-panel--accent dashboard-profile-hero">
           <div className="dashboard-profile-hero__identity">
-            <div className="dashboard-profile-avatar">AW</div>
+            <div className="dashboard-profile-avatar">
+              {data.fullName
+                .split(" ")
+                .map((part) => part[0])
+                .slice(0, 2)
+                .join("")
+                .toUpperCase()}
+            </div>
             <div className="dashboard-profile-hero__copy">
-              <span className="mv-eyebrow">{clientCoachRecord.roleLabel}</span>
-              <h2>{clientCoachRecord.fullName}</h2>
-              <p>{clientCoachRecord.bio}</p>
+              <span className="mv-eyebrow">{data.roleLabel}</span>
+              <h2>{data.fullName}</h2>
+              <p>{data.bio}</p>
             </div>
           </div>
 
           <div className="dashboard-record-card__meta">
-            <span>{clientCoachRecord.specialization}</span>
+            <span>{data.specialization}</span>
             <span>{sanitizedNextSession}</span>
           </div>
 
           <div className="dashboard-row-actions">
-            <a className="mv-btn mv-btn-outline" href={`mailto:${clientCoachRecord.email}`}>
+            <a className="mv-btn mv-btn-outline" href={`mailto:${data.email}`}>
               <Mail size={16} />
               Email coach
             </a>
-            <a className="mv-btn mv-btn-primary" href={`tel:${clientCoachRecord.phone}`}>
+            <a className="mv-btn mv-btn-primary" href={`tel:${data.phone}`}>
               <Phone size={16} />
               Call coach
             </a>
@@ -80,7 +91,7 @@ export function ClientCoachWorkspace() {
           <div className="dashboard-summary-list">
             <div className="dashboard-summary-row">
               <strong>Specialization</strong>
-              <span>{clientCoachRecord.specialization}</span>
+              <span>{data.specialization}</span>
             </div>
             <div className="dashboard-summary-row">
               <strong>Next session</strong>
@@ -88,7 +99,7 @@ export function ClientCoachWorkspace() {
             </div>
             <div className="dashboard-summary-row">
               <strong>Current note</strong>
-              <span>{clientCoachRecord.coachingNote}</span>
+              <span>{data.coachingNote}</span>
             </div>
             <div className="dashboard-summary-row">
               <strong>Focus</strong>
@@ -101,21 +112,21 @@ export function ClientCoachWorkspace() {
               <Mail size={18} />
               <div>
                 <strong>Coach email</strong>
-                <span>{clientCoachRecord.email}</span>
+                <span>{data.email}</span>
               </div>
             </div>
             <div className="dashboard-contact-card">
               <Phone size={18} />
               <div>
                 <strong>Coach phone</strong>
-                <span>{clientCoachRecord.phone}</span>
+                <span>{data.phone}</span>
               </div>
             </div>
             <div className="dashboard-contact-card">
               <MessageSquareMore size={18} />
               <div>
                 <strong>Current coaching focus</strong>
-                <span>{clientCoachRecord.coachingNote}</span>
+                <span>{data.coachingNote}</span>
               </div>
             </div>
           </div>

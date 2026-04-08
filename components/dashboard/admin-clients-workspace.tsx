@@ -1,7 +1,10 @@
 "use client";
 
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Plus, SlidersHorizontal } from "lucide-react";
 
+import { saveClientPaymentStatus } from "@/app/actions/admin-payments";
 import { DashboardManagementToolbar } from "@/components/dashboard/dashboard-management-toolbar";
 import { DashboardEmptyState } from "@/components/dashboard/dashboard-empty-state";
 import { DashboardModal } from "@/components/dashboard/dashboard-modal";
@@ -16,11 +19,27 @@ import { useManagedRecords } from "@/lib/dashboard/use-managed-records";
 import type { WorkspaceRowAction } from "@/lib/dashboard/workspace-definition";
 import {
   type AdminClientRecord,
-} from "@/lib/mocks/admin-clients";
-import { adminClientRepository } from "@/lib/repositories/admin-client-repository";
+} from "@/lib/dashboard/admin-dashboard-data";
 
-export function AdminClientsWorkspace() {
-  const records = adminClientRepository.list();
+type AdminClientsWorkspaceProps = {
+  records: AdminClientRecord[];
+};
+
+function getPaymentTone(status: AdminClientRecord["paymentStatus"]) {
+  switch (status) {
+    case "Paid":
+      return "success";
+    case "Due soon":
+      return "warning";
+    default:
+      return "neutral";
+  }
+}
+
+export function AdminClientsWorkspace({ records }: AdminClientsWorkspaceProps) {
+  const router = useRouter();
+  const [isSaving, startTransition] = useTransition();
+  const [errorMessage, setErrorMessage] = useState("");
   const {
     searchTerm,
     setSearchTerm,
@@ -40,6 +59,7 @@ export function AdminClientsWorkspace() {
     initialFilters: {
       status: "All",
       membership: "All",
+      paymentStatus: "All",
     } satisfies AdminClientWorkspaceFilters,
   });
 
@@ -49,10 +69,81 @@ export function AdminClientsWorkspace() {
       onClick: openEditModal,
     },
     {
-      label: "View",
-      onClick: () => undefined,
+      label: "Paid",
+      onClick: (record) => {
+        setErrorMessage("");
+        openEditModal(record);
+        updateFormField("paymentStatus", "Paid");
+      },
+    },
+    {
+      label: "Due soon",
+      onClick: (record) => {
+        setErrorMessage("");
+        startTransition(async () => {
+          try {
+            await saveClientPaymentStatus({
+              clientId: record.id,
+              paymentStatus: "Due soon",
+            });
+            router.refresh();
+          } catch (error) {
+            setErrorMessage(
+              error instanceof Error
+                ? error.message
+                : "Could not update payment status."
+            );
+          }
+        });
+      },
+    },
+    {
+      label: "Unpaid",
+      onClick: (record) => {
+        setErrorMessage("");
+        startTransition(async () => {
+          try {
+            await saveClientPaymentStatus({
+              clientId: record.id,
+              paymentStatus: "Unpaid",
+            });
+            router.refresh();
+          } catch (error) {
+            setErrorMessage(
+              error instanceof Error
+                ? error.message
+                : "Could not update payment status."
+            );
+          }
+        });
+      },
     },
   ];
+
+  const handleSaveClient = () => {
+    if (!editingRecordId) {
+      setIsModalOpen(false);
+      return;
+    }
+
+    setErrorMessage("");
+
+    startTransition(async () => {
+      try {
+        await saveClientPaymentStatus({
+          clientId: editingRecordId,
+          paymentStatus: formState.paymentStatus,
+          paymentAmount: formState.paymentAmount,
+        });
+        setIsModalOpen(false);
+        router.refresh();
+      } catch (error) {
+        setErrorMessage(
+          error instanceof Error ? error.message : "Could not update payment status."
+        );
+      }
+    });
+  };
 
   return (
     <div className="dashboard-stack">
@@ -116,6 +207,8 @@ export function AdminClientsWorkspace() {
                       <th>Client</th>
                       <th>Membership</th>
                       <th>Status</th>
+                      <th>Payment</th>
+                      <th>Amount</th>
                       <th>Assigned coach</th>
                       <th>Joined</th>
                       <th>Next session</th>
@@ -139,6 +232,13 @@ export function AdminClientsWorkspace() {
                             tone={adminClientToneByStatus[client.status]}
                           />
                         </td>
+                        <td>
+                          <DashboardStatusBadge
+                            label={client.paymentStatus}
+                            tone={getPaymentTone(client.paymentStatus)}
+                          />
+                        </td>
+                        <td>{client.paymentAmountLabel}</td>
                         <td>{client.assignedCoach}</td>
                         <td>{client.joinedDate}</td>
                         <td>{client.nextSession}</td>
@@ -177,6 +277,8 @@ export function AdminClientsWorkspace() {
                     </div>
                     <div className="dashboard-record-card__meta">
                       <span>{client.membership}</span>
+                      <span>{client.paymentStatus}</span>
+                      <span>{client.paymentAmountLabel}</span>
                       <span>{client.assignedCoach}</span>
                       <span>{client.nextSession}</span>
                     </div>
@@ -189,7 +291,7 @@ export function AdminClientsWorkspace() {
                           className="dashboard-inline-button"
                           onClick={() => action.onClick(client)}
                         >
-                          {action.label === "Edit" ? "Edit client" : "View details"}
+                          {action.label === "Edit" ? "Edit client" : action.label}
                         </button>
                       ))}
                     </div>
@@ -208,7 +310,10 @@ export function AdminClientsWorkspace() {
 
       <DashboardModal
         open={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={() => {
+          setErrorMessage("");
+          setIsModalOpen(false);
+        }}
         title={editingRecordId ? "Edit client" : "Add client"}
         description="Client details"
         footer={
@@ -216,22 +321,65 @@ export function AdminClientsWorkspace() {
             <button
               type="button"
               className="mv-btn mv-btn-outline"
-              onClick={() => setIsModalOpen(false)}
+              onClick={() => {
+                setErrorMessage("");
+                setIsModalOpen(false);
+              }}
             >
               Cancel
             </button>
             <button
               type="button"
               className="mv-btn mv-btn-primary"
-              onClick={() => setIsModalOpen(false)}
+              onClick={handleSaveClient}
+              disabled={isSaving}
             >
-              {editingRecordId ? "Save client" : "Create client"}
+              {isSaving
+                ? "Saving..."
+                : editingRecordId
+                  ? "Save payment"
+                  : "Create client"}
             </button>
           </>
         }
       >
+        {errorMessage ? (
+          <div className="dashboard-empty-state" role="alert">
+            <strong>Could not save payment</strong>
+            <p>{errorMessage}</p>
+          </div>
+        ) : null}
+        <div className="dashboard-stack">
+          <div className="dashboard-panel">
+            <div className="dashboard-panel__header">
+              <div>
+                <div className="mv-eyebrow">Payment controls</div>
+                <h2>Set payment status</h2>
+                <p>These buttons save to the database.</p>
+              </div>
+            </div>
+            <div className="dashboard-row-actions">
+              {(["Paid", "Due soon", "Unpaid"] as const).map((status) => (
+                <button
+                  key={status}
+                  type="button"
+                  className={
+                    formState.paymentStatus === status
+                      ? "mv-btn mv-btn-primary"
+                      : "mv-btn mv-btn-outline"
+                  }
+                  onClick={() => updateFormField("paymentStatus", status)}
+                >
+                  {status}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
         <div className="dashboard-form-grid">
-          {adminClientWorkspaceDefinition.formFields.map((field) => (
+          {adminClientWorkspaceDefinition.formFields
+            .filter((field) => field.key !== "paymentStatus")
+            .map((field) => (
             <label key={field.key} className="dashboard-form-field">
               <span>{field.label}</span>
               {field.kind === "select" ? (

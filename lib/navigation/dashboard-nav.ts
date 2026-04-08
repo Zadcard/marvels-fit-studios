@@ -1,5 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import {
+  ClipboardList,
   CalendarRange,
   CreditCard,
   Dumbbell,
@@ -49,6 +50,14 @@ const dashboardNavConfig: Record<DashboardRole, DashboardNavItem[]> = {
       section: "primary",
       available: true,
       exact: true,
+    },
+    {
+      label: "Leads",
+      href: "/admin/leads",
+      icon: ClipboardList,
+      description: "Review and approve",
+      section: "primary",
+      available: true,
     },
     {
       label: "Clients",

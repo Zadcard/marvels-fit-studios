@@ -3,11 +3,13 @@ import type { ComponentProps } from "react";
 import type { WorkspaceDefinition } from "@/lib/dashboard/workspace-definition";
 import {
   adminClientMembershipFilters,
+  adminPaymentStatusFilters,
   adminClientStatusFilters,
   type AdminClientMembership,
   type AdminClientRecord,
+  type AdminPaymentStatus,
   type AdminClientStatus,
-} from "@/lib/mocks/admin-clients";
+} from "@/lib/dashboard/admin-dashboard-data";
 
 export type ClientFormState = {
   fullName: string;
@@ -15,12 +17,15 @@ export type ClientFormState = {
   phone: string;
   membership: AdminClientMembership;
   status: AdminClientStatus;
+  paymentStatus: AdminPaymentStatus;
+  paymentAmount: string;
   assignedCoach: string;
 };
 
 export type AdminClientWorkspaceFilters = {
   status: "All" | AdminClientStatus;
   membership: "All" | AdminClientMembership;
+  paymentStatus: "All" | AdminPaymentStatus;
 };
 
 type DashboardTone = ComponentProps<
@@ -49,6 +54,11 @@ export const adminClientWorkspaceDefinition: WorkspaceDefinition<
       key: "membership",
       label: "Membership",
       options: adminClientMembershipFilters,
+    },
+    {
+      key: "paymentStatus",
+      label: "Payment",
+      options: adminPaymentStatusFilters,
     },
   ],
   formFields: [
@@ -86,6 +96,17 @@ export const adminClientWorkspaceDefinition: WorkspaceDefinition<
       kind: "select",
       options: adminClientStatusFilters.filter((status) => status !== "All"),
     },
+    {
+      key: "paymentStatus",
+      label: "Payment status",
+      kind: "select",
+      options: ["Paid", "Unpaid", "Due soon"],
+    },
+    {
+      key: "paymentAmount",
+      label: "Payment amount",
+      kind: "text",
+    },
   ],
   getSearchValue: (record) =>
     [
@@ -99,8 +120,11 @@ export const adminClientWorkspaceDefinition: WorkspaceDefinition<
       filters.status === "All" || record.status === filters.status;
     const matchesMembership =
       filters.membership === "All" || record.membership === filters.membership;
+    const matchesPaymentStatus =
+      filters.paymentStatus === "All" ||
+      record.paymentStatus === filters.paymentStatus;
 
-    return matchesStatus && matchesMembership;
+    return matchesStatus && matchesMembership && matchesPaymentStatus;
   },
   createEmptyForm: () => ({
     fullName: "",
@@ -108,6 +132,8 @@ export const adminClientWorkspaceDefinition: WorkspaceDefinition<
     phone: "",
     membership: "Group Membership",
     status: "Pending",
+    paymentStatus: "Unpaid",
+    paymentAmount: "",
     assignedCoach: "Unassigned",
   }),
   toFormState: (record) => ({
@@ -116,6 +142,11 @@ export const adminClientWorkspaceDefinition: WorkspaceDefinition<
     phone: record.phone,
     membership: record.membership,
     status: record.status,
+    paymentStatus: record.paymentStatus,
+    paymentAmount:
+      record.paymentAmountLabel === "No payment yet"
+        ? ""
+        : record.paymentAmountLabel.replace(/^EGP\s*/, ""),
     assignedCoach: record.assignedCoach,
   }),
 };

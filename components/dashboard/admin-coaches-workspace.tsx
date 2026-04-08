@@ -1,15 +1,16 @@
 "use client";
 
-import { useDeferredValue, useState } from "react";
+import { useDeferredValue, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Pencil, Plus, UserRoundSearch } from "lucide-react";
 
+import { saveCoach } from "@/app/actions/admin-coaches";
 import { DashboardManagementToolbar } from "@/components/dashboard/dashboard-management-toolbar";
 import { DashboardEmptyState } from "@/components/dashboard/dashboard-empty-state";
 import { DashboardModal } from "@/components/dashboard/dashboard-modal";
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
 import { DashboardStatusBadge } from "@/components/dashboard/dashboard-status-badge";
 import {
-  adminCoachRecords,
   adminCoachStatusFilters,
   type AdminCoachRecord,
   type AdminCoachSpecialization,
@@ -40,6 +41,10 @@ const emptyCoachForm: CoachFormState = {
   status: "Active",
 };
 
+type AdminCoachesWorkspaceProps = {
+  records: AdminCoachRecord[];
+};
+
 function getCoachTone(status: AdminCoachStatus) {
   switch (status) {
     case "Active":
@@ -51,19 +56,24 @@ function getCoachTone(status: AdminCoachStatus) {
   }
 }
 
-export function AdminCoachesWorkspace() {
+export function AdminCoachesWorkspace({
+  records,
+}: AdminCoachesWorkspaceProps) {
+  const router = useRouter();
+  const [isSaving, startTransition] = useTransition();
   const [searchTerm, setSearchTerm] = useState("");
   const deferredSearchTerm = useDeferredValue(searchTerm);
   const [statusFilter, setStatusFilter] = useState<"All" | AdminCoachStatus>("All");
   const [specializationFilter, setSpecializationFilter] = useState<
     "All" | AdminCoachSpecialization
   >("All");
-  const [selectedCoachId, setSelectedCoachId] = useState(adminCoachRecords[0]?.id ?? "");
+  const [selectedCoachId, setSelectedCoachId] = useState(records[0]?.id ?? "");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCoachId, setEditingCoachId] = useState<string | null>(null);
   const [formState, setFormState] = useState<CoachFormState>(emptyCoachForm);
+  const [errorMessage, setErrorMessage] = useState("");
 
-  const filteredCoaches = adminCoachRecords.filter((coach) => {
+  const filteredCoaches = records.filter((coach) => {
     const query = deferredSearchTerm.trim().toLowerCase();
     const matchesSearch =
       query.length === 0 ||
@@ -86,12 +96,14 @@ export function AdminCoachesWorkspace() {
 
   const openAddModal = () => {
     setEditingCoachId(null);
+    setErrorMessage("");
     setFormState(emptyCoachForm);
     setIsModalOpen(true);
   };
 
   const openEditModal = (coach: AdminCoachRecord) => {
     setEditingCoachId(coach.id);
+    setErrorMessage("");
     setFormState({
       fullName: coach.fullName,
       email: coach.email,
@@ -100,6 +112,27 @@ export function AdminCoachesWorkspace() {
       status: coach.status,
     });
     setIsModalOpen(true);
+  };
+
+  const handleSaveCoach = () => {
+    setErrorMessage("");
+
+    startTransition(async () => {
+      try {
+        await saveCoach({
+          coachId: editingCoachId,
+          fullName: formState.fullName,
+          email: formState.email,
+          phone: formState.phone,
+        });
+        setIsModalOpen(false);
+        router.refresh();
+      } catch (error) {
+        setErrorMessage(
+          error instanceof Error ? error.message : "Could not save coach."
+        );
+      }
+    });
   };
 
   return (
@@ -323,20 +356,45 @@ export function AdminCoachesWorkspace() {
 
       <DashboardModal
         open={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={() => {
+          setErrorMessage("");
+          setIsModalOpen(false);
+        }}
         title={editingCoachId ? "Edit coach" : "Add coach"}
         description="Coach details"
         footer={
           <>
-            <button type="button" className="mv-btn mv-btn-outline" onClick={() => setIsModalOpen(false)}>
+            <button
+              type="button"
+              className="mv-btn mv-btn-outline"
+              onClick={() => {
+                setErrorMessage("");
+                setIsModalOpen(false);
+              }}
+            >
               Cancel
             </button>
-            <button type="button" className="mv-btn mv-btn-primary" onClick={() => setIsModalOpen(false)}>
-              {editingCoachId ? "Save coach" : "Create coach"}
+            <button
+              type="button"
+              className="mv-btn mv-btn-primary"
+              onClick={handleSaveCoach}
+              disabled={isSaving}
+            >
+              {isSaving
+                ? "Saving..."
+                : editingCoachId
+                  ? "Save coach"
+                  : "Create coach"}
             </button>
           </>
         }
       >
+        {errorMessage ? (
+          <div className="dashboard-empty-state" role="alert">
+            <strong>Could not save coach</strong>
+            <p>{errorMessage}</p>
+          </div>
+        ) : null}
         <div className="dashboard-form-grid">
           <label className="dashboard-form-field">
             <span>Full name</span>

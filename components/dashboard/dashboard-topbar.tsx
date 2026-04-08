@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Menu, Search } from "lucide-react";
 import { usePathname } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 import {
   getDashboardProfileMeta,
@@ -22,8 +23,23 @@ export function DashboardTopbar({
   onMenuToggle,
 }: DashboardTopbarProps) {
   const pathname = usePathname();
+  const { data: session } = useSession();
   const routeMeta = getDashboardRouteMeta(pathname, role);
   const profileMeta = getDashboardProfileMeta(role);
+  const displayName =
+    session?.user?.name?.trim() ||
+    session?.user?.email?.trim() ||
+    profileMeta.name;
+  const displaySubtitle =
+    session?.user?.email?.trim() ||
+    profileMeta.subtitle;
+  const displayInitials = displayName
+    .split(" ")
+    .map((part) => part[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 
   return (
     <header className="dashboard-topbar">
@@ -51,11 +67,13 @@ export function DashboardTopbar({
         </div>
 
         <Link href={getDashboardProfileHref(role)} className="dashboard-topbar__profile">
-          <span className="dashboard-topbar__avatar">{profileMeta.initials}</span>
+          <span className="dashboard-topbar__avatar">
+            {displayInitials || profileMeta.initials}
+          </span>
           <span className="dashboard-topbar__profile-copy">
-            <strong>{profileMeta.name}</strong>
+            <strong>{displayName}</strong>
             <small className="dashboard-topbar__profile-status">
-              <span>{profileMeta.subtitle}</span>
+              <span>{displaySubtitle}</span>
             </small>
           </span>
         </Link>

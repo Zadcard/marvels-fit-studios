@@ -22,6 +22,11 @@ export function DashboardModal({
   const titleId = useId();
   const descriptionId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
+  const onCloseRef = useRef(onClose);
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   useEffect(() => {
     if (!open) {
@@ -30,7 +35,7 @@ export function DashboardModal({
 
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        onClose();
+        onCloseRef.current();
       }
     };
 
@@ -42,7 +47,7 @@ export function DashboardModal({
       document.body.classList.remove("modal-open");
       document.removeEventListener("keydown", handleEscape);
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) {
     return null;

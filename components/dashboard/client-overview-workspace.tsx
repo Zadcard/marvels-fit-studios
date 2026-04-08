@@ -5,7 +5,7 @@ import { DashboardActivityFeed } from "@/components/dashboard/dashboard-activity
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
 import { DashboardStatCard } from "@/components/dashboard/dashboard-stat-card";
 import { DashboardSurfaceNote } from "@/components/dashboard/dashboard-surface-note";
-import { clientOverviewData } from "@/lib/mocks/client-overview";
+import type { ClientOverviewData } from "@/lib/dashboard/client-dashboard-data";
 
 function getSessionBadgeClass(status: "Booked" | "Check-in ready" | "Waitlist") {
   if (status === "Check-in ready") {
@@ -19,9 +19,13 @@ function getSessionBadgeClass(status: "Booked" | "Check-in ready" | "Waitlist") 
   return "dashboard-badge dashboard-badge--accent";
 }
 
-export function ClientOverviewWorkspace() {
-  const bookedThisWeek = clientOverviewData.upcomingSessions.length;
-  const readyNow = clientOverviewData.upcomingSessions.filter(
+type ClientOverviewWorkspaceProps = {
+  data: ClientOverviewData;
+};
+
+export function ClientOverviewWorkspace({ data }: ClientOverviewWorkspaceProps) {
+  const bookedThisWeek = data.upcomingSessions.length;
+  const readyNow = data.upcomingSessions.filter(
     (session) => session.status === "Check-in ready"
   ).length;
 
@@ -50,13 +54,13 @@ export function ClientOverviewWorkspace() {
       <section className="dashboard-mini-grid" aria-label="Client overview highlights">
         <article className="dashboard-mini-stat">
           <span className="dashboard-mini-stat__label">Next touchpoint</span>
-          <strong>{clientOverviewData.coachSnapshot.nextTouchpoint}</strong>
+          <strong>{data.coachSnapshot.nextTouchpoint}</strong>
           <p>Next coach touchpoint.</p>
         </article>
         <article className="dashboard-mini-stat">
           <span className="dashboard-mini-stat__label">Membership state</span>
-          <strong>{clientOverviewData.subscriptionSnapshot.paymentStatus}</strong>
-          <p>{clientOverviewData.subscriptionSnapshot.renewalLabel}</p>
+          <strong>{data.subscriptionSnapshot.paymentStatus}</strong>
+          <p>{data.subscriptionSnapshot.renewalLabel}</p>
         </article>
         <article className="dashboard-mini-stat">
           <span className="dashboard-mini-stat__label">Weekly view</span>
@@ -66,7 +70,7 @@ export function ClientOverviewWorkspace() {
       </section>
 
       <section className="dashboard-kpi-grid" aria-label="Client overview stats">
-        {clientOverviewData.stats.map((stat) => (
+        {data.stats.map((stat) => (
           <DashboardStatCard key={stat.id} {...stat} />
         ))}
       </section>
@@ -82,7 +86,7 @@ export function ClientOverviewWorkspace() {
           </div>
 
           <div className="dashboard-session-list">
-            {clientOverviewData.upcomingSessions.map((session) => (
+            {data.upcomingSessions.map((session) => (
               <article key={session.id} className="dashboard-session-card">
                 <div className="dashboard-session-card__meta">
                   <span className={getSessionBadgeClass(session.status)}>
@@ -113,7 +117,7 @@ export function ClientOverviewWorkspace() {
             </div>
           </div>
 
-          <DashboardActivityFeed items={clientOverviewData.recentActivity} />
+          <DashboardActivityFeed items={data.recentActivity} />
         </article>
       </section>
 
@@ -130,20 +134,20 @@ export function ClientOverviewWorkspace() {
 
           <div className="dashboard-summary-list">
             <div className="dashboard-summary-row">
-              <strong>{clientOverviewData.coachSnapshot.fullName}</strong>
-              <span>{clientOverviewData.coachSnapshot.roleLabel}</span>
+              <strong>{data.coachSnapshot.fullName}</strong>
+              <span>{data.coachSnapshot.roleLabel}</span>
             </div>
             <div className="dashboard-summary-row">
               <strong>Specialization</strong>
-              <span>{clientOverviewData.coachSnapshot.specialization}</span>
+              <span>{data.coachSnapshot.specialization}</span>
             </div>
             <div className="dashboard-summary-row">
               <strong>Next touchpoint</strong>
-              <span>{clientOverviewData.coachSnapshot.nextTouchpoint}</span>
+              <span>{data.coachSnapshot.nextTouchpoint}</span>
             </div>
             <div className="dashboard-summary-row">
               <strong>Coach note</strong>
-              <span>{clientOverviewData.coachSnapshot.note}</span>
+              <span>{data.coachSnapshot.note}</span>
             </div>
           </div>
         </article>
@@ -160,21 +164,21 @@ export function ClientOverviewWorkspace() {
 
           <div className="dashboard-summary-list">
             <div className="dashboard-summary-row">
-              <strong>{clientOverviewData.subscriptionSnapshot.planName}</strong>
-              <span>{clientOverviewData.subscriptionSnapshot.benefitLine}</span>
+              <strong>{data.subscriptionSnapshot.planName}</strong>
+              <span>{data.subscriptionSnapshot.benefitLine}</span>
             </div>
             <div className="dashboard-summary-row">
               <strong>Renewal</strong>
-              <span>{clientOverviewData.subscriptionSnapshot.renewalLabel}</span>
+              <span>{data.subscriptionSnapshot.renewalLabel}</span>
             </div>
             <div className="dashboard-summary-row">
               <strong>Payment status</strong>
-              <span>{clientOverviewData.subscriptionSnapshot.paymentStatus}</span>
+              <span>{data.subscriptionSnapshot.paymentStatus}</span>
             </div>
           </div>
 
           <div className="dashboard-quick-grid">
-            {clientOverviewData.quickActions.map((action) => {
+            {data.quickActions.map((action) => {
               const Icon = action.icon;
 
               return (

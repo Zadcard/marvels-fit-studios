@@ -9,8 +9,6 @@ import { DashboardModal } from "@/components/dashboard/dashboard-modal";
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
 import { DashboardStatusBadge } from "@/components/dashboard/dashboard-status-badge";
 import {
-  adminGroupSessionRecords,
-  adminPrivateSessionRecords,
   adminSessionStatusFilters,
   type AdminGroupSessionRecord,
   type AdminPrivateSessionRecord,
@@ -36,6 +34,11 @@ const emptySessionForm: SessionFormState = {
   timeLabel: "",
 };
 
+type AdminSessionsWorkspaceProps = {
+  groupRecords: AdminGroupSessionRecord[];
+  privateRecords: AdminPrivateSessionRecord[];
+};
+
 function getSessionTone(status: AdminSessionStatus) {
   switch (status) {
     case "Scheduled":
@@ -49,7 +52,10 @@ function getSessionTone(status: AdminSessionStatus) {
   }
 }
 
-export function AdminSessionsWorkspace() {
+export function AdminSessionsWorkspace({
+  groupRecords,
+  privateRecords,
+}: AdminSessionsWorkspaceProps) {
   const [view, setView] = useState<SessionView>("group");
   const [searchTerm, setSearchTerm] = useState("");
   const deferredSearchTerm = useDeferredValue(searchTerm);
@@ -57,7 +63,7 @@ export function AdminSessionsWorkspace() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formState, setFormState] = useState<SessionFormState>(emptySessionForm);
 
-  const groupRecords = adminGroupSessionRecords.filter((session) => {
+  const filteredGroupRecords = groupRecords.filter((session) => {
     const query = deferredSearchTerm.trim().toLowerCase();
     const matchesSearch =
       query.length === 0 ||
@@ -71,7 +77,7 @@ export function AdminSessionsWorkspace() {
     return matchesSearch && matchesStatus;
   });
 
-  const privateRecords = adminPrivateSessionRecords.filter((session) => {
+  const filteredPrivateRecords = privateRecords.filter((session) => {
     const query = deferredSearchTerm.trim().toLowerCase();
     const matchesSearch =
       query.length === 0 ||
@@ -87,8 +93,8 @@ export function AdminSessionsWorkspace() {
 
   const activeSummary =
     view === "group"
-      ? `${groupRecords.length} group sessions in view`
-      : `${privateRecords.length} private sessions in view`;
+      ? `${filteredGroupRecords.length} group sessions in view`
+      : `${filteredPrivateRecords.length} private sessions in view`;
 
   return (
     <div className="dashboard-stack">
@@ -163,9 +169,9 @@ export function AdminSessionsWorkspace() {
         />
 
         {view === "group" ? (
-          <SessionGroupTable records={groupRecords} />
+          <SessionGroupTable records={filteredGroupRecords} />
         ) : (
-          <SessionPrivateTable records={privateRecords} />
+          <SessionPrivateTable records={filteredPrivateRecords} />
         )}
       </section>
 

@@ -1,28 +1,62 @@
 "use client";
 
 import { useState } from "react";
-import { KeyRound, Save } from "lucide-react";
+import { BellRing, KeyRound, Save, ShieldCheck, TimerReset, Trophy } from "lucide-react";
 
 import { DashboardFormSection } from "@/components/dashboard/dashboard-form-section";
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
 import { DashboardSwitch } from "@/components/dashboard/dashboard-switch";
 import {
-  adminProfileMetrics,
-  adminProfilePreferences,
-  adminProfileRecord,
   type AdminProfilePreferences,
   type AdminProfileRecord,
 } from "@/lib/mocks/admin-profile";
 
-const initialProfile: AdminProfileRecord = { ...adminProfileRecord };
-const initialPreferences: AdminProfilePreferences = {
-  ...adminProfilePreferences,
+const defaultProfile: AdminProfileRecord = {
+  fullName: "Admin User",
+  roleLabel: "Studio Admin",
+  email: "No email",
+  phone: "No phone on file",
+  location: "Studio HQ",
+  bio: "Admin profile data is not available yet.",
+  initials: "AU",
+  joinedLabel: "Joined recently",
+  credentialsNote: "Password updates are still a UI placeholder in this build.",
+};
+const defaultPreferences: AdminProfilePreferences = {
+  emailUpdates: true,
+  mobileAlerts: true,
+  renewalEscalations: false,
 };
 
-export function AdminProfileWorkspace() {
-  const [profile, setProfile] = useState<AdminProfileRecord>(initialProfile);
+type AdminProfileWorkspaceProps = {
+  profile?: AdminProfileRecord | null;
+  metrics?: Array<{
+    id: string;
+    label: string;
+    value: string;
+    detail: string;
+    iconKey: "shield-check" | "timer-reset" | "trophy" | "bell-ring";
+  }>;
+  preferences?: AdminProfilePreferences | null;
+};
+
+const metricIconMap = {
+  "shield-check": ShieldCheck,
+  "timer-reset": TimerReset,
+  trophy: Trophy,
+  "bell-ring": BellRing,
+} as const;
+
+export function AdminProfileWorkspace({
+  profile: initialProfile,
+  metrics = [],
+  preferences: initialPreferences,
+}: AdminProfileWorkspaceProps) {
+  const [profile, setProfile] = useState<AdminProfileRecord>(
+    initialProfile ?? defaultProfile
+  );
   const [preferences, setPreferences] =
-    useState<AdminProfilePreferences>(initialPreferences);
+    useState<AdminProfilePreferences>(initialPreferences ?? defaultPreferences);
   const [saveMessage, setSaveMessage] = useState("Preview mode.");
 
   const updateProfile = <Key extends keyof AdminProfileRecord>(
@@ -79,10 +113,13 @@ export function AdminProfileWorkspace() {
       </section>
 
       <section className="dashboard-kpi-grid">
-        {adminProfileMetrics.map((metric) => (
+        {metrics.map((metric) => (
           <article key={metric.id} className="dashboard-profile-metric">
             <span className="dashboard-profile-metric__icon">
-              <metric.icon size={18} />
+              {(() => {
+                const Icon = metricIconMap[metric.iconKey];
+                return <Icon size={18} />;
+              })()}
             </span>
             <strong>{metric.value}</strong>
             <span>{metric.label}</span>

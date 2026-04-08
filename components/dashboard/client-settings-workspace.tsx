@@ -9,13 +9,14 @@ import { DashboardSurfaceNote } from "@/components/dashboard/dashboard-surface-n
 import { DashboardSwitch } from "@/components/dashboard/dashboard-switch";
 import {
   clientSettingsOptions,
-  clientSettingsRecord,
   type ClientSettingsRecord,
-} from "@/lib/mocks/client-settings";
+} from "@/lib/dashboard/client-dashboard-data";
 
-const initialSettings: ClientSettingsRecord = { ...clientSettingsRecord };
+type ClientSettingsWorkspaceProps = {
+  initialSettings: ClientSettingsRecord;
+};
 
-export function ClientSettingsWorkspace() {
+export function ClientSettingsWorkspace({ initialSettings }: ClientSettingsWorkspaceProps) {
   const [settings, setSettings] = useState<ClientSettingsRecord>(initialSettings);
   const [saveMessage, setSaveMessage] = useState("Preview mode.");
   const hasChanges = JSON.stringify(settings) !== JSON.stringify(initialSettings);

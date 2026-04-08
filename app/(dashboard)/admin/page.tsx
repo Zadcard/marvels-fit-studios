@@ -10,13 +10,15 @@ import {
 import { DashboardActivityFeed } from "@/components/dashboard/dashboard-activity-feed";
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
 import { DashboardStatCard } from "@/components/dashboard/dashboard-stat-card";
-import { adminOverviewData } from "@/lib/mocks/admin-overview";
+import { adminOverviewRepository } from "@/lib/repositories/admin-overview-repository";
 
 export const metadata = {
   title: "Admin Dashboard",
 };
 
-export default function AdminOverviewPage() {
+export default async function AdminOverviewPage() {
+  const adminOverviewData = await adminOverviewRepository.getOverview();
+
   return (
     <div className="dashboard-stack">
       <DashboardPageHeader

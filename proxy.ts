@@ -9,7 +9,7 @@ import {
 
 const { auth } = NextAuth(authConfig);
 
-const proxyFunc = auth((req) => {
+export const proxy = auth((req) => {
   const { nextUrl } = req;
   const isLoggedIn = !!req.auth;
   const userRole = req.auth?.user?.role;
@@ -34,9 +34,6 @@ const proxyFunc = auth((req) => {
   return NextResponse.next();
 });
 
-export { proxyFunc as middleware };
-
-// Match all routes except static ones
 export const config = {
   matcher: ["/((?!api|_next/static|_next/image|favicon.ico|img|.*\\.js|.*\\.css).*)"],
 };

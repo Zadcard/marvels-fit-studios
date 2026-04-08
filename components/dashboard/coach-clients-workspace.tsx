@@ -10,11 +10,11 @@ import { DashboardStatusBadge } from "@/components/dashboard/dashboard-status-ba
 import { DashboardSurfaceNote } from "@/components/dashboard/dashboard-surface-note";
 import {
   coachClientPlanFilters,
-  coachClientRecords,
   coachClientStatusFilters,
+  type CoachClientRecord,
   type CoachClientPlan,
   type CoachClientStatus,
-} from "@/lib/mocks/coach-clients";
+} from "@/lib/dashboard/coach-client-record";
 
 function getCoachClientTone(status: CoachClientStatus) {
   switch (status) {
@@ -42,16 +42,18 @@ function getSuggestedAction(status: CoachClientStatus) {
   }
 }
 
-export function CoachClientsWorkspace() {
+type CoachClientsWorkspaceProps = {
+  records: CoachClientRecord[];
+};
+
+export function CoachClientsWorkspace({ records }: CoachClientsWorkspaceProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const deferredSearchTerm = useDeferredValue(searchTerm);
   const [statusFilter, setStatusFilter] = useState<"All" | CoachClientStatus>("All");
   const [planFilter, setPlanFilter] = useState<"All" | CoachClientPlan>("All");
-  const [selectedClientId, setSelectedClientId] = useState(
-    coachClientRecords[0]?.id ?? ""
-  );
+  const [selectedClientId, setSelectedClientId] = useState(records[0]?.id ?? "");
 
-  const filteredClients = coachClientRecords.filter((client) => {
+  const filteredClients = records.filter((client) => {
     const query = deferredSearchTerm.trim().toLowerCase();
     const matchesSearch =
       query.length === 0 ||

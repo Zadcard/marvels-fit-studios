@@ -29,6 +29,46 @@ enum LeadStatus {
   CLOSED
 }
 
+enum TrainingSessionType {
+  GROUP
+  PRIVATE
+}
+
+enum TrainingSessionStatus {
+  DRAFT
+  SCHEDULED
+  COMPLETED
+  CANCELED
+}
+
+enum BookingStatus {
+  BOOKED
+  ATTENDED
+  MISSED
+  CANCELED
+  WAITLIST
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  TRIAL
+  PAUSED
+  EXPIRED
+  CANCELED
+}
+
+enum BillingCycle {
+  MONTHLY
+  WEEKLY
+  CUSTOM
+}
+
+enum ClientPaymentStatus {
+  PAID
+  UNPAID
+  DUE_SOON
+}
+
 model User {
   id            String    @id @default(cuid())
   name          String?
@@ -45,6 +85,8 @@ model User {
   // Profile Relations (1-to-1)
   coachProfile  Coach?
   clientProfile Client?
+  createdTrainingSessions TrainingSession[] @relation("TrainingSessionCreatedBy")
+  sessionNotesAuthored    SessionNote[]
 
   // Admin Actions
   approvedCompensations SessionCompensation[]
@@ -118,6 +160,7 @@ model Coach {
 
   // One coach can manage many groups
   groups    Group[]
+  trainingSessions TrainingSession[]
 }
 
 // ---------------------------------------------
@@ -137,6 +180,7 @@ model Client {
   membershipType String   @default("monthly")
   sessionsLeft   Int      @default(0)
   isPaid         Boolean  @default(false)
+  paymentStatus  ClientPaymentStatus @default(UNPAID)
 
   createdAt      DateTime @default(now())
 
@@ -149,6 +193,8 @@ model Client {
   files          File[]
   workoutNotes   WorkoutNote[]
   compensations  SessionCompensation[]
+  bookings       SessionBooking[]
+  subscriptions  ClientSubscription[]
 }
 
 // ---------------------------------------------
@@ -168,6 +214,7 @@ model Group {
   // Members and files in this group
   clients   Client[]
   files     File[]
+  trainingSessions TrainingSession[]
 }
 
 enum GroupType {
@@ -190,6 +237,10 @@ model Payment {
   // Which client made this payment
   clientId  String
   client    Client   @relation(fields: [clientId], references: [id])
+
+  // Optional subscription the payment belongs to
+  clientSubscriptionId String?
+  clientSubscription   ClientSubscription? @relation(fields: [clientSubscriptionId], references: [id], onDelete: SetNull)
 }
 
 // ---------------------------------------------
@@ -241,4 +292,106 @@ model WorkoutNote {
 
   clientId  String
   client    Client   @relation(fields: [clientId], references: [id])
+}
+
+model TrainingSession {
+  id          String                @id @default(cuid())
+  title       String
+  description String?
+  type        TrainingSessionType
+  status      TrainingSessionStatus @default(SCHEDULED)
+  startsAt    DateTime
+  endsAt      DateTime
+  capacity    Int?
+  location    String?
+  coachId     String
+  groupId     String?
+  createdById String
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+
+  coach       Coach                 @relation(fields: [coachId], references: [id])
+  group       Group?                @relation(fields: [groupId], references: [id])
+  createdBy   User                  @relation("TrainingSessionCreatedBy", fields: [createdById], references: [id])
+  bookings    SessionBooking[]
+  notes       SessionNote[]
+
+  @@index([coachId])
+  @@index([groupId])
+  @@index([createdById])
+  @@index([startsAt])
+}
+
+model SessionBooking {
+  id                String        @id @default(cuid())
+  trainingSessionId String
+  clientId          String
+  status            BookingStatus @default(BOOKED)
+  bookedAt          DateTime      @default(now())
+  attendedAt        DateTime?
+  canceledAt        DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  trainingSession   TrainingSession @relation(fields: [trainingSessionId], references: [id], onDelete: Cascade)
+  client            Client          @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@unique([trainingSessionId, clientId])
+  @@index([clientId])
+  @@index([status])
+}
+
+model SubscriptionPlan {
+  id               String               @id @default(cuid())
+  name             String
+  slug             String               @unique
+  description      String?
+  billingCycle     BillingCycle
+  sessionsIncluded Int?
+  price            Float
+  currency         String               @default("EGP")
+  isActive         Boolean              @default(true)
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+
+  subscriptions    ClientSubscription[]
+}
+
+model ClientSubscription {
+  id            String             @id @default(cuid())
+  clientId      String
+  planId        String
+  status        SubscriptionStatus @default(ACTIVE)
+  startsAt      DateTime
+  endsAt        DateTime?
+  renewsAt      DateTime?
+  sessionsTotal Int?
+  sessionsUsed  Int                @default(0)
+  isAutoRenew   Boolean            @default(false)
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  client        Client             @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  plan          SubscriptionPlan   @relation(fields: [planId], references: [id])
+  payments      Payment[]
+
+  @@unique([clientId, planId])
+  @@index([clientId])
+  @@index([planId])
+  @@index([status])
+}
+
+model SessionNote {
+  id                String          @id @default(cuid())
+  trainingSessionId String
+  authorId          String
+  content           String
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  trainingSession   TrainingSession @relation(fields: [trainingSessionId], references: [id], onDelete: Cascade)
+  author            User            @relation(fields: [authorId], references: [id])
+
+  @@index([trainingSessionId])
+  @@index([authorId])
 }

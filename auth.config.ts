@@ -1,8 +1,15 @@
 import type { NextAuthConfig } from "next-auth";
 import { UserRole } from "@prisma/client";
 
+const isProduction = process.env.NODE_ENV === "production";
+const authSecret =
+  process.env.AUTH_SECRET ??
+  process.env.NEXTAUTH_SECRET ??
+  (isProduction ? undefined : "dev-only-auth-secret-change-me");
+
 export default {
   session: { strategy: "jwt" },
+  secret: authSecret,
   trustHost: process.env.NODE_ENV !== "production",
   providers: [],
   callbacks: {
