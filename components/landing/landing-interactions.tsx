@@ -18,7 +18,6 @@ export function LandingInteractions() {
     const carousels = Array.from(
       document.querySelectorAll<HTMLElement>("[data-carousel]")
     );
-
     let resizeTimer: number | undefined;
     let lastJoinTrigger: HTMLElement | null = null;
     const prefersReducedMotion = window.matchMedia(
