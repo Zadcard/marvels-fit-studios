@@ -11,7 +11,10 @@ export const metadata = {
 export default async function CoachSessionsPage() {
   const coachUser = await requireRole(UserRole.COACH);
 
-  const records = await coachSessionRepository.listForCoachUserId(coachUser.id);
+  const [records, clientOptions] = await Promise.all([
+    coachSessionRepository.listForCoachUserId(coachUser.id),
+    coachSessionRepository.listClientOptions(),
+  ]);
 
-  return <CoachSessionsWorkspace records={records} />;
+  return <CoachSessionsWorkspace records={records} clientOptions={clientOptions} />;
 }

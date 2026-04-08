@@ -5,9 +5,15 @@ import type {
   CoachSessionRecord,
   CoachSessionStatus,
 } from "@/lib/dashboard/coach-session-data";
+import type { CoachScheduleRecord } from "@/lib/dashboard/coach-schedule-data";
 import { getPrisma } from "@/lib/prisma";
 
 const dayFormatter = new Intl.DateTimeFormat("en-US", { weekday: "short" });
+const dayKeyFormatter = new Intl.DateTimeFormat("en-US", { weekday: "long" });
+const dateFormatter = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+});
 const timeFormatter = new Intl.DateTimeFormat("en-US", {
   hour: "numeric",
   minute: "2-digit",
@@ -68,6 +74,16 @@ function mapBookingStatus(
 
 export class CoachSessionRepository {
   private prisma = getPrisma();
+
+  async listClientOptions(): Promise<Array<{ id: string; fullName: string }>> {
+    return this.prisma.client.findMany({
+      orderBy: [{ fullName: "asc" }],
+      select: {
+        id: true,
+        fullName: true,
+      },
+    });
+  }
 
   async listForCoachUserId(userId: string): Promise<CoachSessionRecord[]> {
     const sessions = await this.prisma.trainingSession.findMany({
@@ -159,6 +175,65 @@ export class CoachSessionRepository {
         bookings,
       };
     });
+  }
+
+  async listScheduleForCoachUserId(userId: string): Promise<CoachScheduleRecord[]> {
+    const sessions = await this.listForCoachUserId(userId);
+
+    return sessions.map((session) => {
+      const startsAt = new Date(`${new Date().toDateString()} ${session.timeLabel}`);
+      const timeRange = session.timeLabel;
+
+      return {
+        id: session.id,
+        dayKey: dayKeyFormatter.format(
+          this.parseSessionDate(session.dayLabel, session.timeLabel)
+        ),
+        dayLabel: session.dayLabel,
+        dateLabel: dateFormatter.format(
+          this.parseSessionDate(session.dayLabel, session.timeLabel)
+        ),
+        title: session.title,
+        timeRange,
+        sessionType: session.sessionType,
+        status: session.status,
+        location: session.location,
+        rosterLabel: session.rosterLabel,
+        note: session.note,
+      };
+    });
+  }
+
+  private parseSessionDate(dayLabel: string, timeLabel: string) {
+    const now = new Date();
+    const candidate = new Date(now);
+
+    if (dayLabel === "Tomorrow") {
+      candidate.setDate(candidate.getDate() + 1);
+    } else if (dayLabel !== "Today") {
+      const weekdays = [
+        "Sun",
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri",
+        "Sat",
+      ];
+      const targetDay = weekdays.indexOf(dayLabel);
+
+      if (targetDay >= 0) {
+        const offset = (targetDay - candidate.getDay() + 7) % 7;
+        candidate.setDate(candidate.getDate() + offset);
+      }
+    }
+
+    const parsedTime = new Date(`2000-01-01 ${timeLabel}`);
+    if (!Number.isNaN(parsedTime.getTime())) {
+      candidate.setHours(parsedTime.getHours(), parsedTime.getMinutes(), 0, 0);
+    }
+
+    return candidate;
   }
 }
 

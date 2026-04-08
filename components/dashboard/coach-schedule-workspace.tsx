@@ -9,18 +9,12 @@ import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-heade
 import { DashboardStatusBadge } from "@/components/dashboard/dashboard-status-badge";
 import { DashboardSurfaceNote } from "@/components/dashboard/dashboard-surface-note";
 import {
-  coachScheduleDayFilters,
-  coachScheduleRecords,
   coachScheduleStatusFilters,
+  type CoachScheduleRecord,
   type CoachScheduleStatus,
-} from "@/lib/mocks/coach-schedule";
+} from "@/lib/dashboard/coach-schedule-data";
 
 type ScheduleView = "week" | "day";
-
-const scheduleDays = coachScheduleDayFilters.filter(
-  (day): day is Exclude<(typeof coachScheduleDayFilters)[number], "All days"> =>
-    day !== "All days"
-);
 
 function getCoachScheduleTone(status: CoachScheduleStatus) {
   switch (status) {
@@ -33,7 +27,13 @@ function getCoachScheduleTone(status: CoachScheduleStatus) {
   }
 }
 
-export function CoachScheduleWorkspace() {
+type CoachScheduleWorkspaceProps = {
+  records: CoachScheduleRecord[];
+};
+
+export function CoachScheduleWorkspace({ records }: CoachScheduleWorkspaceProps) {
+  const scheduleDays = [...new Set(records.map((session) => session.dayKey))];
+  const coachScheduleDayFilters = ["All days", ...scheduleDays] as const;
   const [view, setView] = useState<ScheduleView>("week");
   const [searchTerm, setSearchTerm] = useState("");
   const deferredSearchTerm = useDeferredValue(searchTerm);
@@ -42,7 +42,7 @@ export function CoachScheduleWorkspace() {
   const [statusFilter, setStatusFilter] =
     useState<(typeof coachScheduleStatusFilters)[number]>("All");
 
-  const filteredSchedule = coachScheduleRecords.filter((session) => {
+  const filteredSchedule = records.filter((session) => {
     const query = deferredSearchTerm.trim().toLowerCase();
     const matchesSearch =
       query.length === 0 ||
@@ -161,7 +161,7 @@ export function CoachScheduleWorkspace() {
                     )
                   }
                 >
-                  {coachScheduleStatusFilters.map((filter) => (
+                    {coachScheduleStatusFilters.map((filter) => (
                     <option key={filter} value={filter}>
                       {filter}
                     </option>
@@ -179,7 +179,7 @@ export function CoachScheduleWorkspace() {
                     )
                   }
                 >
-                  {coachScheduleDayFilters.map((filter) => (
+                    {coachScheduleDayFilters.map((filter) => (
                     <option key={filter} value={filter}>
                       {filter}
                     </option>

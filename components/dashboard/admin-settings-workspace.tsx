@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { RefreshCcw, Save } from "lucide-react";
 
 import { DashboardFormSection } from "@/components/dashboard/dashboard-form-section";
@@ -12,11 +12,20 @@ import {
   type AdminStudioSettings,
 } from "@/lib/mocks/admin-settings";
 
-const initialSettings: AdminStudioSettings = { ...adminStudioSettings };
+type AdminSettingsWorkspaceProps = {
+  initialSettings?: AdminStudioSettings;
+  saveSettingsAction?: (input: AdminStudioSettings) => Promise<void>;
+};
 
-export function AdminSettingsWorkspace() {
-  const [settings, setSettings] = useState<AdminStudioSettings>(initialSettings);
-  const [saveMessage, setSaveMessage] = useState("Preview mode.");
+export function AdminSettingsWorkspace({
+  initialSettings,
+  saveSettingsAction,
+}: AdminSettingsWorkspaceProps) {
+  const defaultSettings = initialSettings ?? adminStudioSettings;
+  const [settings, setSettings] = useState<AdminStudioSettings>(defaultSettings);
+  const [saveMessage, setSaveMessage] = useState("Live settings loaded.");
+  const [isSaving, startTransition] = useTransition();
+  const hasChanges = JSON.stringify(settings) !== JSON.stringify(defaultSettings);
 
   const updateField = <Key extends keyof AdminStudioSettings>(
     field: Key,
@@ -29,12 +38,8 @@ export function AdminSettingsWorkspace() {
   };
 
   const resetSettings = () => {
-    setSettings(initialSettings);
-    setSaveMessage("Defaults restored.");
-  };
-
-  const saveSettings = () => {
-    setSaveMessage("Preview updated.");
+    setSettings(defaultSettings);
+    setSaveMessage("Saved values restored.");
   };
 
   return (
@@ -47,9 +52,27 @@ export function AdminSettingsWorkspace() {
               <RefreshCcw size={16} />
               Reset
             </button>
-            <button type="button" className="mv-btn mv-btn-primary" onClick={saveSettings}>
+            <button
+              type="button"
+              className="mv-btn mv-btn-primary"
+              disabled={!hasChanges || isSaving}
+              onClick={() =>
+                startTransition(async () => {
+                  try {
+                    if (saveSettingsAction) {
+                      await saveSettingsAction(settings);
+                    }
+                    setSaveMessage("Studio settings saved.");
+                  } catch (error) {
+                    setSaveMessage(
+                      error instanceof Error ? error.message : "Could not save studio settings."
+                    );
+                  }
+                })
+              }
+            >
               <Save size={16} />
-              Save
+              {isSaving ? "Saving..." : "Save"}
             </button>
           </>
         }
@@ -270,6 +293,10 @@ export function AdminSettingsWorkspace() {
             <div className="dashboard-summary-row">
               <strong>Schedule week</strong>
               <span>Starts on {settings.scheduleStartDay}</span>
+            </div>
+            <div className="dashboard-summary-row">
+              <strong>Save state</strong>
+              <span>{hasChanges ? "Edits pending" : "Up to date"}</span>
             </div>
           </div>
         </aside>

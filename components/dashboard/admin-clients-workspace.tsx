@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, SlidersHorizontal } from "lucide-react";
 
-import { saveAdminClient } from "@/app/actions/admin-clients";
+import { deleteAdminClient, saveAdminClient } from "@/app/actions/admin-clients";
 import { DashboardManagementToolbar } from "@/components/dashboard/dashboard-management-toolbar";
 import { DashboardEmptyState } from "@/components/dashboard/dashboard-empty-state";
 import { DashboardModal } from "@/components/dashboard/dashboard-modal";
@@ -39,7 +39,10 @@ function getPaymentTone(status: AdminClientRecord["paymentStatus"]) {
 export function AdminClientsWorkspace({ records }: AdminClientsWorkspaceProps) {
   const router = useRouter();
   const [isSaving, startTransition] = useTransition();
+  const [isDeleting, startDeleteTransition] = useTransition();
   const [errorMessage, setErrorMessage] = useState("");
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deleteConfirmationText, setDeleteConfirmationText] = useState("");
   const {
     searchTerm,
     setSearchTerm,
@@ -71,11 +74,6 @@ export function AdminClientsWorkspace({ records }: AdminClientsWorkspaceProps) {
   ];
 
   const handleSaveClient = () => {
-    if (!editingRecordId) {
-      setIsModalOpen(false);
-      return;
-    }
-
     setErrorMessage("");
 
     startTransition(async () => {
@@ -94,6 +92,31 @@ export function AdminClientsWorkspace({ records }: AdminClientsWorkspaceProps) {
       } catch (error) {
         setErrorMessage(
           error instanceof Error ? error.message : "Could not save client."
+        );
+      }
+    });
+  };
+
+  const handleDeleteClient = () => {
+    if (!editingRecordId) {
+      return;
+    }
+
+    setErrorMessage("");
+
+    startDeleteTransition(async () => {
+      try {
+        await deleteAdminClient({
+          clientId: editingRecordId,
+          confirmationText: deleteConfirmationText,
+        });
+        setIsDeleteModalOpen(false);
+        setDeleteConfirmationText("");
+        setIsModalOpen(false);
+        router.refresh();
+      } catch (error) {
+        setErrorMessage(
+          error instanceof Error ? error.message : "Could not delete client."
         );
       }
     });
@@ -272,6 +295,20 @@ export function AdminClientsWorkspace({ records }: AdminClientsWorkspaceProps) {
         description="Client details"
         footer={
           <>
+            {editingRecordId ? (
+              <button
+                type="button"
+                className="mv-btn mv-btn-danger"
+                onClick={() => {
+                  setErrorMessage("");
+                  setDeleteConfirmationText("");
+                  setIsDeleteModalOpen(true);
+                }}
+                disabled={isSaving || isDeleting}
+              >
+                Delete client
+              </button>
+            ) : null}
             <button
               type="button"
               className="mv-btn mv-btn-outline"
@@ -286,12 +323,12 @@ export function AdminClientsWorkspace({ records }: AdminClientsWorkspaceProps) {
               type="button"
               className="mv-btn mv-btn-primary"
               onClick={handleSaveClient}
-              disabled={isSaving}
+              disabled={isSaving || isDeleting}
             >
               {isSaving
                 ? "Saving..."
                 : editingRecordId
-                  ? "Save payment"
+                  ? "Save client"
                   : "Create client"}
             </button>
           </>
@@ -309,7 +346,7 @@ export function AdminClientsWorkspace({ records }: AdminClientsWorkspaceProps) {
               <div>
                 <div className="mv-eyebrow">Payment controls</div>
                 <h2>Set payment status</h2>
-                <p>Client status and payment changes save to the database.</p>
+                <p>Client profile, status, and payment changes save to the database.</p>
               </div>
             </div>
             <div className="dashboard-row-actions">
@@ -362,6 +399,63 @@ export function AdminClientsWorkspace({ records }: AdminClientsWorkspaceProps) {
               )}
             </label>
           ))}
+        </div>
+      </DashboardModal>
+
+      <DashboardModal
+        open={isDeleteModalOpen}
+        onClose={() => {
+          if (isDeleting) {
+            return;
+          }
+
+          setErrorMessage("");
+          setDeleteConfirmationText("");
+          setIsDeleteModalOpen(false);
+        }}
+        title="Delete client"
+        description='Type "Delete" to confirm client deletion'
+        footer={
+          <>
+            <button
+              type="button"
+              className="mv-btn mv-btn-outline"
+              onClick={() => {
+                setErrorMessage("");
+                setDeleteConfirmationText("");
+                setIsDeleteModalOpen(false);
+              }}
+              disabled={isDeleting}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="mv-btn mv-btn-danger"
+              onClick={handleDeleteClient}
+              disabled={isDeleting || deleteConfirmationText.trim() !== "Delete"}
+            >
+              {isDeleting ? "Deleting..." : "Delete client"}
+            </button>
+          </>
+        }
+      >
+        {errorMessage ? (
+          <div className="dashboard-empty-state" role="alert">
+            <strong>Could not delete client</strong>
+            <p>{errorMessage}</p>
+          </div>
+        ) : null}
+        <div className="dashboard-form-grid">
+          <label className="dashboard-form-field dashboard-form-field--wide">
+            <span>Confirmation</span>
+            <input
+              className="dashboard-input"
+              value={deleteConfirmationText}
+              onChange={(event) => setDeleteConfirmationText(event.target.value)}
+              placeholder='Type "Delete" to confirm client deletion'
+            />
+          </label>
         </div>
       </DashboardModal>
     </div>

@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { Save } from "lucide-react";
 
+import { saveCoachSettings } from "@/app/actions/coach-settings";
 import { DashboardFormSection } from "@/components/dashboard/dashboard-form-section";
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
 import { DashboardSurfaceNote } from "@/components/dashboard/dashboard-surface-note";
@@ -13,12 +14,18 @@ import {
   type CoachSettingsRecord,
 } from "@/lib/mocks/coach-settings";
 
-const initialSettings: CoachSettingsRecord = { ...coachSettingsRecord };
+type CoachSettingsWorkspaceProps = {
+  initialSettings?: CoachSettingsRecord | null;
+};
 
-export function CoachSettingsWorkspace() {
-  const [settings, setSettings] = useState<CoachSettingsRecord>(initialSettings);
-  const [saveMessage, setSaveMessage] = useState("Preview mode.");
-  const hasChanges = JSON.stringify(settings) !== JSON.stringify(initialSettings);
+export function CoachSettingsWorkspace({
+  initialSettings,
+}: CoachSettingsWorkspaceProps) {
+  const defaultSettings = initialSettings ?? coachSettingsRecord;
+  const [settings, setSettings] = useState<CoachSettingsRecord>(defaultSettings);
+  const [saveMessage, setSaveMessage] = useState("Live profile loaded.");
+  const [isSaving, startTransition] = useTransition();
+  const hasChanges = JSON.stringify(settings) !== JSON.stringify(defaultSettings);
   const enabledAlerts = [
     settings.mobileAlerts,
     settings.clientCheckIns,
@@ -43,13 +50,27 @@ export function CoachSettingsWorkspace() {
           <button
             type="button"
             className="mv-btn mv-btn-primary"
-            disabled={!hasChanges}
+            disabled={!hasChanges || isSaving}
             onClick={() =>
-              setSaveMessage("Preview updated.")
+              startTransition(async () => {
+                try {
+                  await saveCoachSettings({
+                    fullName: settings.fullName,
+                    email: settings.email,
+                    phone: settings.phone,
+                    specialization: settings.specialization,
+                  });
+                  setSaveMessage("Coach profile saved.");
+                } catch (error) {
+                  setSaveMessage(
+                    error instanceof Error ? error.message : "Could not save coach settings."
+                  );
+                }
+              })
             }
           >
             <Save size={16} />
-            Save changes
+            {isSaving ? "Saving..." : "Save changes"}
           </button>
         }
       />
@@ -57,7 +78,7 @@ export function CoachSettingsWorkspace() {
       <DashboardSurfaceNote
         eyebrow="Settings"
         title="Profile details and workflow alerts are grouped separately."
-        description="Update coach details, preferences, and alerts here."
+        description="Core coach profile fields save to the database. Preference controls are still UI-only."
         items={[
           `${enabledAlerts}/3 alerts enabled.`,
           hasChanges ? "Unsaved changes pending." : "No pending changes.",
@@ -103,7 +124,8 @@ export function CoachSettingsWorkspace() {
                 <input
                   className="dashboard-input"
                   value={settings.roleLabel}
-                  onChange={(event) => updateField("roleLabel", event.target.value)}
+                  disabled
+                  readOnly
                 />
               </label>
               <label className="dashboard-form-field">
@@ -126,13 +148,14 @@ export function CoachSettingsWorkspace() {
 
             <label className="dashboard-form-field">
               <span>Bio</span>
-              <textarea
-                className="dashboard-textarea"
-                rows={5}
-                value={settings.bio}
-                onChange={(event) => updateField("bio", event.target.value)}
-              />
-            </label>
+                <textarea
+                  className="dashboard-textarea"
+                  rows={5}
+                  value={settings.bio}
+                  disabled
+                  readOnly
+                />
+              </label>
           </DashboardFormSection>
 
           <DashboardFormSection
@@ -146,9 +169,7 @@ export function CoachSettingsWorkspace() {
                 <select
                   className="dashboard-select"
                   value={settings.preferredView}
-                  onChange={(event) =>
-                    updateField("preferredView", event.target.value)
-                  }
+                  disabled
                 >
                   {coachSettingsOptions.preferredViews.map((option) => (
                     <option key={option} value={option}>
@@ -162,9 +183,7 @@ export function CoachSettingsWorkspace() {
                 <select
                   className="dashboard-select"
                   value={settings.reminderLeadTime}
-                  onChange={(event) =>
-                    updateField("reminderLeadTime", event.target.value)
-                  }
+                  disabled
                 >
                   {coachSettingsOptions.reminderLeadTimes.map((option) => (
                     <option key={option} value={option}>
@@ -175,13 +194,21 @@ export function CoachSettingsWorkspace() {
               </label>
               <label className="dashboard-form-field">
                 <span>Specialization</span>
-                <input
-                  className="dashboard-input"
+                <select
+                  className="dashboard-select"
                   value={settings.specialization}
                   onChange={(event) =>
                     updateField("specialization", event.target.value)
                   }
-                />
+                >
+                  {["Strength", "Conditioning", "Mobility", "Private Coaching"].map(
+                    (option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    )
+                  )}
+                </select>
               </label>
             </div>
 
@@ -191,9 +218,8 @@ export function CoachSettingsWorkspace() {
                 className="dashboard-textarea"
                 rows={4}
                 value={settings.availabilityNote}
-                onChange={(event) =>
-                  updateField("availabilityNote", event.target.value)
-                }
+                disabled
+                readOnly
               />
             </label>
           </DashboardFormSection>
@@ -206,19 +232,19 @@ export function CoachSettingsWorkspace() {
             <div className="dashboard-stack">
               <DashboardSwitch
                 checked={settings.mobileAlerts}
-                onCheckedChange={(checked) => updateField("mobileAlerts", checked)}
+                onCheckedChange={() => {}}
                 label="Mobile alerts"
                 description="Upcoming session reminders and urgent changes."
               />
               <DashboardSwitch
                 checked={settings.clientCheckIns}
-                onCheckedChange={(checked) => updateField("clientCheckIns", checked)}
+                onCheckedChange={() => {}}
                 label="Client check-ins"
                 description="Clients who need follow-up."
               />
               <DashboardSwitch
                 checked={settings.waitlistFlags}
-                onCheckedChange={(checked) => updateField("waitlistFlags", checked)}
+                onCheckedChange={() => {}}
                 label="Waitlist flags"
                 description="Demand spikes on group classes."
               />

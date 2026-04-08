@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { BellRing, KeyRound, Save, ShieldCheck, TimerReset, Trophy } from "lucide-react";
 
+import { saveAdminProfile } from "@/app/actions/admin-profile";
 import { DashboardFormSection } from "@/components/dashboard/dashboard-form-section";
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
 import { DashboardSwitch } from "@/components/dashboard/dashboard-switch";
@@ -52,12 +53,13 @@ export function AdminProfileWorkspace({
   metrics = [],
   preferences: initialPreferences,
 }: AdminProfileWorkspaceProps) {
+  const [isSaving, startTransition] = useTransition();
   const [profile, setProfile] = useState<AdminProfileRecord>(
     initialProfile ?? defaultProfile
   );
   const [preferences, setPreferences] =
     useState<AdminProfilePreferences>(initialPreferences ?? defaultPreferences);
-  const [saveMessage, setSaveMessage] = useState("Preview mode.");
+  const [saveMessage, setSaveMessage] = useState("Live profile loaded.");
 
   const updateProfile = <Key extends keyof AdminProfileRecord>(
     field: Key,
@@ -87,10 +89,24 @@ export function AdminProfileWorkspace({
           <button
             type="button"
             className="mv-btn mv-btn-primary"
-            onClick={() => setSaveMessage("Preview updated.")}
+            onClick={() =>
+              startTransition(async () => {
+                try {
+                  await saveAdminProfile({
+                    fullName: profile.fullName,
+                    email: profile.email,
+                  });
+                  setSaveMessage("Admin profile saved.");
+                } catch (error) {
+                  setSaveMessage(
+                    error instanceof Error ? error.message : "Could not save admin profile."
+                  );
+                }
+              })
+            }
           >
             <Save size={16} />
-            Save Profile
+            {isSaving ? "Saving..." : "Save Profile"}
           </button>
         }
       />
@@ -157,7 +173,8 @@ export function AdminProfileWorkspace({
                 <input
                   className="dashboard-input"
                   value={profile.phone}
-                  onChange={(event) => updateProfile("phone", event.target.value)}
+                  disabled
+                  readOnly
                 />
               </label>
               <label className="dashboard-form-field">
@@ -165,7 +182,8 @@ export function AdminProfileWorkspace({
                 <input
                   className="dashboard-input"
                   value={profile.location}
-                  onChange={(event) => updateProfile("location", event.target.value)}
+                  disabled
+                  readOnly
                 />
               </label>
             </div>
@@ -175,7 +193,8 @@ export function AdminProfileWorkspace({
               <textarea
                 className="dashboard-textarea"
                 value={profile.bio}
-                onChange={(event) => updateProfile("bio", event.target.value)}
+                disabled
+                readOnly
                 rows={5}
               />
             </label>
@@ -189,25 +208,19 @@ export function AdminProfileWorkspace({
             <div className="dashboard-stack">
               <DashboardSwitch
                 checked={preferences.emailUpdates}
-                onCheckedChange={(checked) =>
-                  updatePreference("emailUpdates", checked)
-                }
+                onCheckedChange={() => {}}
                 label="Email updates"
                 description="Weekly summaries by email."
               />
               <DashboardSwitch
                 checked={preferences.mobileAlerts}
-                onCheckedChange={(checked) =>
-                  updatePreference("mobileAlerts", checked)
-                }
+                onCheckedChange={() => {}}
                 label="Mobile alerts"
                 description="Time-sensitive schedule alerts."
               />
               <DashboardSwitch
                 checked={preferences.renewalEscalations}
-                onCheckedChange={(checked) =>
-                  updatePreference("renewalEscalations", checked)
-                }
+                onCheckedChange={() => {}}
                 label="Renewal escalations"
                 description="At-risk membership alerts."
               />

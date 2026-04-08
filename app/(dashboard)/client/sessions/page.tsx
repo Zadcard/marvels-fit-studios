@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
+import { UserRole } from "@prisma/client";
 
-import { auth } from "@/auth";
 import { ClientSessionsWorkspace } from "@/components/dashboard/client-sessions-workspace";
+import { requireRole } from "@/lib/auth/session";
 import { clientDashboardRepository } from "@/lib/repositories/client-dashboard-repository";
 
 export const metadata = {
@@ -9,13 +10,12 @@ export const metadata = {
 };
 
 export default async function ClientSessionsPage() {
-  const session = await auth();
+  try {
+    const user = await requireRole(UserRole.CLIENT);
+    const records = await clientDashboardRepository.getSessions(user.id);
 
-  if (!session?.user?.id) {
+    return <ClientSessionsWorkspace records={records} />;
+  } catch {
     redirect("/login");
   }
-
-  const records = await clientDashboardRepository.getSessions(session.user.id);
-
-  return <ClientSessionsWorkspace records={records} />;
 }

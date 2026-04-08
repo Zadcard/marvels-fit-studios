@@ -5,24 +5,56 @@ import { DashboardActivityFeed } from "@/components/dashboard/dashboard-activity
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
 import { DashboardStatCard } from "@/components/dashboard/dashboard-stat-card";
 import { DashboardSurfaceNote } from "@/components/dashboard/dashboard-surface-note";
-import { coachOverviewData } from "@/lib/mocks/coach-overview";
+import type { CoachOverviewData } from "@/lib/dashboard/coach-overview-data";
 
-function getCoachSessionTone(status: "Ready" | "Waitlist" | "Prep") {
+function getCoachSessionTone(
+  status: "Ready" | "Waitlist" | "Prep" | "Completed"
+) {
   switch (status) {
     case "Ready":
       return "success";
     case "Waitlist":
       return "warning";
+    case "Completed":
+      return "neutral";
     default:
       return "accent";
   }
 }
 
-export function CoachOverviewWorkspace() {
-  const readySessions = coachOverviewData.upcomingSessions.filter(
+type CoachOverviewWorkspaceProps = {
+  data: CoachOverviewData;
+};
+
+const coachQuickActions = [
+  {
+    id: "coach-action-1",
+    label: "Open today's sessions",
+    description: "Jump straight into the next coaching blocks and prep notes.",
+    ctaLabel: "Review sessions",
+    href: "/coach/sessions",
+  },
+  {
+    id: "coach-action-2",
+    label: "Log progress note",
+    description: "Capture form cues and client momentum after classes.",
+    ctaLabel: "Open notes",
+    href: "/coach/clients",
+  },
+  {
+    id: "coach-action-3",
+    label: "Check schedule",
+    description: "Look ahead without leaving the coach dashboard.",
+    ctaLabel: "Preview",
+    href: "/coach/schedule",
+  },
+];
+
+export function CoachOverviewWorkspace({ data }: CoachOverviewWorkspaceProps) {
+  const readySessions = data.upcomingSessions.filter(
     (session) => session.status === "Ready"
   ).length;
-  const attentionClients = coachOverviewData.clientSpotlights.filter(
+  const attentionClients = data.clientSpotlights.filter(
     (client) => client.momentum === "Needs check-in"
   ).length;
 
@@ -67,13 +99,13 @@ export function CoachOverviewWorkspace() {
         </article>
         <article className="dashboard-mini-stat">
           <span className="dashboard-mini-stat__label">Today&apos;s plan</span>
-          <strong>{coachOverviewData.todaysPlan.length} steps</strong>
+          <strong>{data.todaysPlan.length} steps</strong>
           <p>Today&apos;s plan.</p>
         </article>
       </section>
 
       <section className="dashboard-kpi-grid" aria-label="Coach overview stats">
-        {coachOverviewData.stats.map((stat) => (
+        {data.stats.map((stat) => (
           <DashboardStatCard key={stat.id} {...stat} />
         ))}
       </section>
@@ -89,7 +121,7 @@ export function CoachOverviewWorkspace() {
           </div>
 
           <div className="dashboard-session-list">
-            {coachOverviewData.upcomingSessions.map((session) => (
+            {data.upcomingSessions.map((session) => (
               <article key={session.id} className="dashboard-session-card">
                 <div className="dashboard-session-card__meta">
                   <span
@@ -127,7 +159,7 @@ export function CoachOverviewWorkspace() {
               <p>Updates that affect the day.</p>
             </div>
           </div>
-          <DashboardActivityFeed items={coachOverviewData.recentActivity} />
+          <DashboardActivityFeed items={data.recentActivity} />
         </article>
       </section>
 
@@ -142,7 +174,7 @@ export function CoachOverviewWorkspace() {
           </div>
 
           <div className="dashboard-snapshot-list">
-            {coachOverviewData.clientSpotlights.map((client) => (
+            {data.clientSpotlights.map((client) => (
               <article key={client.id} className="dashboard-snapshot-item">
                 <span className="dashboard-badge">{client.momentum}</span>
                 <strong>{client.fullName}</strong>
@@ -163,13 +195,11 @@ export function CoachOverviewWorkspace() {
           </div>
 
           <div className="dashboard-quick-grid">
-            {coachOverviewData.quickActions.map((action) => {
-              const Icon = action.icon;
-
+            {coachQuickActions.map((action) => {
               return (
                 <div key={action.id} className="dashboard-quick-card">
                   <span className="dashboard-quick-card__icon">
-                    <Icon size={20} />
+                    <ArrowRight size={20} />
                   </span>
                   <div>
                     <strong>{action.label}</strong>
@@ -185,7 +215,7 @@ export function CoachOverviewWorkspace() {
           </div>
 
           <div className="dashboard-summary-list">
-            {coachOverviewData.todaysPlan.map((item) => (
+            {data.todaysPlan.map((item) => (
               <div key={item.id} className="dashboard-summary-row">
                 <strong>
                   {item.timeLabel} - {item.title}

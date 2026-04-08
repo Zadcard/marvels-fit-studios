@@ -1,5 +1,5 @@
 import { AdminProfileWorkspace } from "@/components/dashboard/admin-profile-workspace";
-import { auth } from "@/auth";
+import { requireRole } from "@/lib/auth/session";
 import { adminProfileRepository } from "@/lib/repositories/admin-profile-repository";
 
 export const metadata = {
@@ -7,11 +7,8 @@ export const metadata = {
 };
 
 export default async function AdminProfilePage() {
-  const session = await auth();
-
-  const data = session?.user?.id
-    ? await adminProfileRepository.getByUserId(session.user.id)
-    : null;
+  const adminUser = await requireRole("ADMIN");
+  const data = await adminProfileRepository.getByUserId(adminUser.id);
 
   return (
     <AdminProfileWorkspace

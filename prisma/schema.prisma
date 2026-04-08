@@ -82,6 +82,25 @@ enum ClientLifecycleStatus {
   PAUSED
 }
 
+model StudioSettings {
+  id                    String   @id
+  studioName            String   @default("Marvel Fitness Studio")
+  supportEmail          String   @default("hello@marvelfitness.studio")
+  supportPhone          String   @default("+20 10 5555 9084")
+  timezone              String   @default("Africa/Cairo")
+  defaultSessionLength  String   @default("60 minutes")
+  intakeLeadTime        String   @default("24 hours")
+  overbookWaitlist      Boolean  @default(true)
+  coachAutoReminders    Boolean  @default(true)
+  memberCheckInAlerts   Boolean  @default(true)
+  renewalDigest         Boolean  @default(false)
+  cancellationWindow    String   @default("6 hours")
+  privateSessionBuffer  String   @default("15 minutes")
+  scheduleStartDay      String   @default("Monday")
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
 model User {
   id            String    @id @default(cuid())
   name          String?

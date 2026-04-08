@@ -15,11 +15,9 @@ export type ClientFormState = {
   fullName: string;
   email: string;
   phone: string;
-  membership: AdminClientMembership;
   status: AdminClientStatus;
   paymentStatus: AdminPaymentStatus;
   paymentAmount: string;
-  assignedCoach: string;
 };
 
 export type AdminClientWorkspaceFilters = {
@@ -78,19 +76,6 @@ export const adminClientWorkspaceDefinition: WorkspaceDefinition<
       kind: "tel",
     },
     {
-      key: "assignedCoach",
-      label: "Assigned coach",
-      kind: "text",
-    },
-    {
-      key: "membership",
-      label: "Membership",
-      kind: "select",
-      options: adminClientMembershipFilters.filter(
-        (membership) => membership !== "All"
-      ),
-    },
-    {
       key: "status",
       label: "Status",
       kind: "select",
@@ -130,23 +115,19 @@ export const adminClientWorkspaceDefinition: WorkspaceDefinition<
     fullName: "",
     email: "",
     phone: "",
-    membership: "Group Membership",
     status: "Pending",
     paymentStatus: "Unpaid",
     paymentAmount: "",
-    assignedCoach: "Unassigned",
   }),
   toFormState: (record) => ({
     fullName: record.fullName,
     email: record.email,
     phone: record.phone,
-    membership: record.membership,
     status: record.status,
     paymentStatus: record.paymentStatus,
     paymentAmount:
       record.paymentAmountLabel === "No payment yet"
         ? ""
         : record.paymentAmountLabel.replace(/^EGP\s*/, ""),
-    assignedCoach: record.assignedCoach,
   }),
 };

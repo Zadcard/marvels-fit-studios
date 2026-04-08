@@ -130,6 +130,66 @@ function buildBenefits(subscription: {
 
 type ClientDashboardQuery = Awaited<ReturnType<ClientDashboardRepository["getClientDashboardQuery"]>>;
 
+type ClientDashboardSessionEntry = {
+  id: string;
+  title: string;
+  type: "GROUP" | "PRIVATE";
+  startsAt: Date;
+  endsAt: Date;
+  location: string | null;
+  description: string | null;
+  coachName: string;
+  note: string | null;
+  bookingStatus: "BOOKED" | "ATTENDED" | "MISSED" | "CANCELED" | "WAITLIST" | null;
+  attendedAt: Date | null;
+};
+
+function buildClientSessionEntries(
+  client: NonNullable<ClientDashboardQuery>
+): ClientDashboardSessionEntry[] {
+  const sessionMap = new Map<string, ClientDashboardSessionEntry>();
+
+  for (const booking of client.bookings) {
+    sessionMap.set(booking.trainingSession.id, {
+      id: booking.trainingSession.id,
+      title: booking.trainingSession.title,
+      type: booking.trainingSession.type,
+      startsAt: booking.trainingSession.startsAt,
+      endsAt: booking.trainingSession.endsAt,
+      location: booking.trainingSession.location,
+      description: booking.trainingSession.description,
+      coachName: booking.trainingSession.coach.fullName,
+      note: booking.trainingSession.notes[0]?.content ?? null,
+      bookingStatus: booking.status,
+      attendedAt: booking.attendedAt ?? null,
+    });
+  }
+
+  for (const session of client.group?.trainingSessions ?? []) {
+    if (sessionMap.has(session.id)) {
+      continue;
+    }
+
+    sessionMap.set(session.id, {
+      id: session.id,
+      title: session.title,
+      type: session.type,
+      startsAt: session.startsAt,
+      endsAt: session.endsAt,
+      location: session.location,
+      description: session.description,
+      coachName: session.coach.fullName,
+      note: session.notes[0]?.content ?? null,
+      bookingStatus: null,
+      attendedAt: null,
+    });
+  }
+
+  return [...sessionMap.values()].sort(
+    (left, right) => left.startsAt.getTime() - right.startsAt.getTime()
+  );
+}
+
 export class ClientDashboardRepository {
   private prisma = getPrisma();
 
@@ -161,6 +221,30 @@ export class ClientDashboardRepository {
                 user: {
                   select: {
                     email: true,
+                  },
+                },
+              },
+            },
+            trainingSessions: {
+              orderBy: [{ startsAt: "asc" }],
+              select: {
+                id: true,
+                title: true,
+                type: true,
+                startsAt: true,
+                endsAt: true,
+                location: true,
+                description: true,
+                coach: {
+                  select: {
+                    fullName: true,
+                  },
+                },
+                notes: {
+                  orderBy: [{ createdAt: "desc" }],
+                  take: 1,
+                  select: {
+                    content: true,
                   },
                 },
               },
@@ -249,25 +333,26 @@ export class ClientDashboardRepository {
       return null;
     }
 
-    const upcomingBookings = client.bookings.filter(
-      (booking) => booking.trainingSession.startsAt.getTime() >= Date.now()
+    const sessionEntries = buildClientSessionEntries(client);
+    const upcomingBookings = sessionEntries.filter(
+      (session) => session.startsAt.getTime() >= Date.now()
     );
-    const completedBookings = client.bookings.filter(
-      (booking) => booking.status === "ATTENDED" || !!booking.attendedAt
+    const completedBookings = sessionEntries.filter(
+      (session) => session.bookingStatus === "ATTENDED" || !!session.attendedAt
     );
     const activeSubscription = client.subscriptions[0] ?? null;
     const latestWorkoutNote = client.workoutNotes[0] ?? null;
 
     const upcomingSessions: ClientUpcomingSession[] = upcomingBookings.slice(0, 3).map((booking) => ({
-      id: booking.trainingSession.id,
-      title: booking.trainingSession.title,
-      dayLabel: getDayLabel(booking.trainingSession.startsAt),
-      timeLabel: formatTime(booking.trainingSession.startsAt),
-      sessionType: booking.trainingSession.type === "PRIVATE" ? "Private" : "Group",
-      location: booking.trainingSession.location ?? "Studio floor",
-      coachName: booking.trainingSession.coach.fullName,
+      id: booking.id,
+      title: booking.title,
+      dayLabel: getDayLabel(booking.startsAt),
+      timeLabel: formatTime(booking.startsAt),
+      sessionType: booking.type === "PRIVATE" ? "Private" : "Group",
+      location: booking.location ?? "Studio floor",
+      coachName: booking.coachName,
       status:
-        booking.trainingSession.startsAt.getTime() - Date.now() <= 24 * 60 * 60 * 1000
+        booking.startsAt.getTime() - Date.now() <= 24 * 60 * 60 * 1000
           ? "Check-in ready"
           : "Booked",
     }));
@@ -298,15 +383,15 @@ export class ClientDashboardRepository {
       recentActivity.push({
         id: "client-activity-booking",
         title: "Next session confirmed",
-        description: `${upcomingBookings[0].trainingSession.title} is booked with ${upcomingBookings[0].trainingSession.coach.fullName}.`,
-        timeLabel: formatDate(upcomingBookings[0].trainingSession.startsAt),
+        description: `${upcomingBookings[0].title} is booked with ${upcomingBookings[0].coachName}.`,
+        timeLabel: formatDate(upcomingBookings[0].startsAt),
         tone: "warning",
       });
     }
 
-    const coachName = client.group?.coach.fullName ?? upcomingBookings[0]?.trainingSession.coach.fullName ?? "Unassigned coach";
+    const coachName = client.group?.coach.fullName ?? upcomingBookings[0]?.coachName ?? "Unassigned coach";
     const nextTouchpoint = upcomingBookings[0]
-      ? formatDateTime(upcomingBookings[0].trainingSession.startsAt)
+      ? formatDateTime(upcomingBookings[0].startsAt)
       : "No session booked";
 
     return {
@@ -389,13 +474,14 @@ export class ClientDashboardRepository {
       return null;
     }
 
-    const nextBooking = client.bookings.find(
-      (booking) => booking.trainingSession.startsAt.getTime() >= Date.now()
-    );
+    const visibleSessions = buildClientSessionEntries(client);
+    const nextBooking =
+      visibleSessions.find((booking) => booking.startsAt.getTime() >= Date.now()) ??
+      visibleSessions[0];
     const coach = client.group?.coach;
 
     return {
-      fullName: coach?.fullName ?? nextBooking?.trainingSession.coach.fullName ?? "Unassigned coach",
+      fullName: coach?.fullName ?? nextBooking?.coachName ?? "Unassigned coach",
       roleLabel: "Assigned Coach",
       specialization: client.group ? `Coach for ${client.group.name}` : "General coaching support",
       email: coach?.user.email ?? "Not available",
@@ -404,7 +490,7 @@ export class ClientDashboardRepository {
         ? `${coach.fullName} is currently attached to your training roster and group.`
         : "A coach will appear here once you are assigned to a group or booked into a coached session.",
       nextSession: nextBooking
-        ? `${formatDateTime(nextBooking.trainingSession.startsAt)} - ${nextBooking.trainingSession.title}`
+        ? `${formatDateTime(nextBooking.startsAt)} - ${nextBooking.title}`
         : "No session booked",
       coachingNote:
         client.workoutNotes[0]?.content ??
@@ -459,29 +545,29 @@ export class ClientDashboardRepository {
       return [];
     }
 
-    return client.bookings.map((booking) => {
-      const isPast = booking.trainingSession.startsAt.getTime() < Date.now();
+    return buildClientSessionEntries(client).map((booking) => {
+      const isPast = booking.startsAt.getTime() < Date.now();
       const status =
-        booking.status === "ATTENDED" || !!booking.attendedAt
+        booking.bookingStatus === "ATTENDED" || !!booking.attendedAt
           ? "Completed"
           : !isPast &&
-              booking.trainingSession.startsAt.getTime() - Date.now() <= 24 * 60 * 60 * 1000
+              booking.startsAt.getTime() - Date.now() <= 24 * 60 * 60 * 1000
             ? "Check-in ready"
             : "Booked";
 
       return {
-        id: booking.trainingSession.id,
-        title: booking.trainingSession.title,
-        sessionType: booking.trainingSession.type === "PRIVATE" ? "Private" : "Group",
+        id: booking.id,
+        title: booking.title,
+        sessionType: booking.type === "PRIVATE" ? "Private" : "Group",
         status,
         period: isPast ? "Past" : "Upcoming",
-        dayLabel: getDayLabel(booking.trainingSession.startsAt),
-        timeLabel: formatTime(booking.trainingSession.startsAt),
-        location: booking.trainingSession.location ?? "Studio floor",
-        coachName: booking.trainingSession.coach.fullName,
+        dayLabel: getDayLabel(booking.startsAt),
+        timeLabel: formatTime(booking.startsAt),
+        location: booking.location ?? "Studio floor",
+        coachName: booking.coachName,
         note:
-          booking.trainingSession.notes[0]?.content ??
-          booking.trainingSession.description ??
+          booking.note ??
+          booking.description ??
           "No additional session note has been added yet.",
       };
     });
@@ -494,9 +580,9 @@ export class ClientDashboardRepository {
       return null;
     }
 
-    const sessionTimes = client.bookings
-      .filter((booking) => booking.trainingSession.startsAt.getTime() >= Date.now())
-      .map((booking) => booking.trainingSession.startsAt);
+    const sessionTimes = buildClientSessionEntries(client)
+      .filter((booking) => booking.startsAt.getTime() >= Date.now())
+      .map((booking) => booking.startsAt);
 
     return {
       fullName: client.fullName || client.user.name || "Client",
