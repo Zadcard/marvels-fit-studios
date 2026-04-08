@@ -229,6 +229,21 @@ model Client {
   compensations  SessionCompensation[]
   bookings       SessionBooking[]
   subscriptions  ClientSubscription[]
+  preferences    ClientPreferences?
+}
+
+model ClientPreferences {
+  id                   String   @id @default(cuid())
+  clientId             String   @unique
+  goalLabel            String   @default("Build steady strength and improve movement confidence.")
+  preferredSessionTime String   @default("Flexible")
+  notificationEmail    Boolean  @default(true)
+  scheduleReminders    Boolean  @default(true)
+  coachUpdates         Boolean  @default(true)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  client               Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
 }
 
 // ---------------------------------------------
@@ -399,6 +414,7 @@ model ClientSubscription {
   startsAt      DateTime
   endsAt        DateTime?
   renewsAt      DateTime?
+  customPrice   Float?
   sessionsTotal Int?
   sessionsUsed  Int                @default(0)
   isAutoRenew   Boolean            @default(false)

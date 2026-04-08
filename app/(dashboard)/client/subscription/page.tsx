@@ -9,17 +9,22 @@ export const metadata = {
   title: "My Subscription",
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function ClientSubscriptionPage() {
+  let user;
+
   try {
-    const user = await requireRole(UserRole.CLIENT);
-    const data = await clientDashboardRepository.getSubscription(user.id);
-
-    if (!data) {
-      redirect("/login");
-    }
-
-    return <ClientSubscriptionWorkspace data={data} />;
+    user = await requireRole(UserRole.CLIENT);
   } catch {
     redirect("/login");
   }
+
+  const data = await clientDashboardRepository.getSubscription(user.id);
+
+  if (!data) {
+    redirect("/login");
+  }
+
+  return <ClientSubscriptionWorkspace data={data} />;
 }

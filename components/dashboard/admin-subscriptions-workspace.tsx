@@ -1,6 +1,6 @@
 "use client";
 
-import { useDeferredValue, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useState, useTransition } from "react";
 import {
   BadgeDollarSign,
   CircleDollarSign,
@@ -9,7 +9,9 @@ import {
   RefreshCcw,
   ShieldCheck,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
+import { saveAdminSubscription } from "@/app/actions/admin-subscriptions";
 import { DashboardFormSection } from "@/components/dashboard/dashboard-form-section";
 import { DashboardManagementToolbar } from "@/components/dashboard/dashboard-management-toolbar";
 import { DashboardModal } from "@/components/dashboard/dashboard-modal";
@@ -27,20 +29,20 @@ import {
 } from "@/lib/mocks/admin-subscriptions";
 
 type SubscriptionFormState = {
-  memberName: string;
-  planName: AdminPlanType;
+  clientId: string;
+  planId: string;
   subscriptionStatus: AdminSubscriptionStatus;
   paymentStatus: AdminPaymentStatus;
-  amountLabel: string;
+  amount: string;
   renewalDate: string;
 };
 
 const emptySubscriptionForm: SubscriptionFormState = {
-  memberName: "",
-  planName: "Group Membership",
+  clientId: "",
+  planId: "",
   subscriptionStatus: "Active",
   paymentStatus: "Paid",
-  amountLabel: "",
+  amount: "",
   renewalDate: "",
 };
 
@@ -56,6 +58,8 @@ type AdminSubscriptionsWorkspaceProps = {
     tone: "accent" | "success" | "warning" | "neutral";
   }>;
   records: AdminSubscriptionRecord[];
+  clientOptions: Array<{ id: string; label: string }>;
+  planOptions: Array<{ id: string; label: string; amountLabel: string }>;
 };
 
 const statIconMap = {
@@ -94,7 +98,12 @@ function getPaymentTone(status: AdminPaymentStatus) {
 export function AdminSubscriptionsWorkspace({
   stats,
   records,
+  clientOptions,
+  planOptions,
 }: AdminSubscriptionsWorkspaceProps) {
+  const router = useRouter();
+  const [subscriptionRecords, setSubscriptionRecords] =
+    useState<AdminSubscriptionRecord[]>(records);
   const [searchTerm, setSearchTerm] = useState("");
   const deferredSearchTerm = useDeferredValue(searchTerm);
   const [subscriptionFilter, setSubscriptionFilter] =
@@ -112,8 +121,19 @@ export function AdminSubscriptionsWorkspace({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formState, setFormState] =
     useState<SubscriptionFormState>(emptySubscriptionForm);
+  const [saveMessage, setSaveMessage] = useState("");
+  const [isSaving, startTransition] = useTransition();
 
-  const filteredSubscriptions = records.filter((subscription) => {
+  useEffect(() => {
+    setSubscriptionRecords(records);
+  }, [records]);
+
+  const selectedPlan = useMemo(
+    () => planOptions.find((plan) => plan.id === formState.planId) ?? null,
+    [formState.planId, planOptions]
+  );
+
+  const filteredSubscriptions = subscriptionRecords.filter((subscription) => {
     const query = deferredSearchTerm.trim().toLowerCase();
     const matchesSearch =
       query.length === 0 ||
@@ -143,7 +163,7 @@ export function AdminSubscriptionsWorkspace({
       (subscription) => subscription.id === selectedSubscriptionId
     ) ??
     filteredSubscriptions[0] ??
-    records[0];
+    subscriptionRecords[0];
 
   const planSummary = adminPlanFilters
     .filter((filter): filter is AdminPlanType => filter !== "All plans")
@@ -157,14 +177,69 @@ export function AdminSubscriptionsWorkspace({
   const openEditModal = (subscription: AdminSubscriptionRecord) => {
     setEditingSubscriptionId(subscription.id);
     setFormState({
-      memberName: subscription.memberName,
-      planName: subscription.planName,
+      clientId: subscription.clientId,
+      planId: subscription.planId,
       subscriptionStatus: subscription.subscriptionStatus,
       paymentStatus: subscription.paymentStatus,
-      amountLabel: subscription.amountLabel,
-      renewalDate: subscription.renewalDate,
+      amount: subscription.amountValue,
+      renewalDate: subscription.renewalDateValue,
     });
+    setSaveMessage("");
     setIsModalOpen(true);
+  };
+
+  const upsertLocalRecord = (saved: {
+    id: string;
+    clientId: string;
+    planId: string;
+    renewsAt: string;
+    amount: number;
+    paymentStatus: AdminPaymentStatus;
+    subscriptionStatus: AdminSubscriptionStatus;
+  }) => {
+    const clientLabel =
+      clientOptions.find((option) => option.id === saved.clientId)?.label ?? "Unknown client";
+    const planOption = planOptions.find((option) => option.id === saved.planId);
+    const existing = subscriptionRecords.find((record) => record.id === saved.id);
+    const renewalDateValue = new Date(saved.renewsAt);
+    const renewalDate = new Intl.DateTimeFormat("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    }).format(renewalDateValue);
+    const amountLabel = new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "EGP",
+      maximumFractionDigits: 0,
+    }).format(saved.amount);
+
+    const nextRecord: AdminSubscriptionRecord = {
+      id: saved.id,
+      clientId: saved.clientId,
+      planId: saved.planId,
+      memberName: clientLabel,
+      planName:
+        existing?.planName ??
+        ((planOption?.label as AdminPlanType | undefined) ?? "Group Membership"),
+      subscriptionStatus: saved.subscriptionStatus,
+      paymentStatus: saved.paymentStatus,
+      assignedCoach: existing?.assignedCoach ?? "Assigned via client roster",
+      renewalDate,
+      renewalDateValue: renewalDateValue.toISOString().slice(0, 10),
+      amountLabel,
+      amountValue: String(saved.amount),
+      billingCycle: existing?.billingCycle ?? "Monthly",
+      note:
+        saved.paymentStatus === "Paid"
+          ? "Latest payment is recorded."
+          : "Payment follow-up is still needed.",
+    };
+
+    setSubscriptionRecords((current) => {
+      const withoutExisting = current.filter((record) => record.id !== saved.id);
+      return [nextRecord, ...withoutExisting];
+    });
+    setSelectedSubscriptionId(saved.id);
   };
 
   return (
@@ -177,7 +252,13 @@ export function AdminSubscriptionsWorkspace({
             className="mv-btn mv-btn-primary"
             onClick={() => {
               setEditingSubscriptionId(null);
-              setFormState(emptySubscriptionForm);
+              setFormState({
+                ...emptySubscriptionForm,
+                clientId: clientOptions[0]?.id ?? "",
+                planId: planOptions[0]?.id ?? "",
+                amount: planOptions[0]?.amountLabel.replace(/[^0-9.]/g, "") ?? "",
+              });
+              setSaveMessage("");
               setIsModalOpen(true);
             }}
           >
@@ -464,9 +545,40 @@ export function AdminSubscriptionsWorkspace({
             <button
               type="button"
               className="mv-btn mv-btn-primary"
-              onClick={() => setIsModalOpen(false)}
+              disabled={isSaving}
+              onClick={() =>
+                startTransition(async () => {
+                  try {
+                    const saved = await saveAdminSubscription({
+                      subscriptionId: editingSubscriptionId,
+                      clientId: formState.clientId,
+                      planId: formState.planId,
+                      subscriptionStatus: formState.subscriptionStatus,
+                      paymentStatus: formState.paymentStatus,
+                      amount: formState.amount,
+                      renewalDate: formState.renewalDate,
+                    });
+                    upsertLocalRecord(saved);
+                    setSaveMessage(
+                      editingSubscriptionId
+                        ? "Subscription updated."
+                        : "Subscription created."
+                    );
+                    setIsModalOpen(false);
+                    router.refresh();
+                  } catch (error) {
+                    setSaveMessage(
+                      error instanceof Error
+                        ? error.message
+                        : "Could not save subscription."
+                    );
+                  }
+                })
+              }
             >
-              {editingSubscriptionId
+              {isSaving
+                ? "Saving..."
+                : editingSubscriptionId
                 ? "Save subscription"
                 : "Create subscription"}
             </button>
@@ -476,36 +588,46 @@ export function AdminSubscriptionsWorkspace({
         <div className="dashboard-form-grid">
           <label className="dashboard-form-field">
             <span>Member</span>
-            <input
-              className="dashboard-input"
-              value={formState.memberName}
+            <select
+              className="dashboard-select"
+              value={formState.clientId}
               onChange={(event) =>
                 setFormState((current) => ({
                   ...current,
-                  memberName: event.target.value,
+                  clientId: event.target.value,
                 }))
               }
-            />
+            >
+              <option value="">Choose client</option>
+              {clientOptions.map((option) => (
+                <option key={option.id} value={option.id}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
           </label>
           <label className="dashboard-form-field">
             <span>Plan</span>
             <select
               className="dashboard-select"
-              value={formState.planName}
+              value={formState.planId}
               onChange={(event) =>
                 setFormState((current) => ({
                   ...current,
-                  planName: event.target.value as AdminPlanType,
+                  planId: event.target.value,
+                  amount:
+                    planOptions
+                      .find((plan) => plan.id === event.target.value)
+                      ?.amountLabel.replace(/[^0-9.]/g, "") ?? current.amount,
                 }))
               }
             >
-              {adminPlanFilters
-                .filter((filter): filter is AdminPlanType => filter !== "All plans")
-                .map((filter) => (
-                  <option key={filter} value={filter}>
-                    {filter}
-                  </option>
-                ))}
+              <option value="">Choose plan</option>
+              {planOptions.map((option) => (
+                <option key={option.id} value={option.id}>
+                  {option.label}
+                </option>
+              ))}
             </select>
           </label>
           <label className="dashboard-form-field">
@@ -560,6 +682,7 @@ export function AdminSubscriptionsWorkspace({
             <span>Renewal date</span>
             <input
               className="dashboard-input"
+              type="date"
               value={formState.renewalDate}
               onChange={(event) =>
                 setFormState((current) => ({
@@ -573,15 +696,31 @@ export function AdminSubscriptionsWorkspace({
             <span>Amount</span>
             <input
               className="dashboard-input"
-              value={formState.amountLabel}
+              value={formState.amount}
               onChange={(event) =>
                 setFormState((current) => ({
                   ...current,
-                  amountLabel: event.target.value,
+                  amount: event.target.value,
                 }))
               }
             />
           </label>
+        </div>
+        <div className="dashboard-summary-list">
+          <div className="dashboard-summary-row">
+            <strong>Selected plan</strong>
+            <span>{selectedPlan?.label ?? "None selected"}</span>
+          </div>
+          <div className="dashboard-summary-row">
+            <strong>Suggested amount</strong>
+            <span>{selectedPlan?.amountLabel ?? "Not available"}</span>
+          </div>
+          {saveMessage ? (
+            <div className="dashboard-summary-row">
+              <strong>Status</strong>
+              <span>{saveMessage}</span>
+            </div>
+          ) : null}
         </div>
       </DashboardModal>
     </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { Save } from "lucide-react";
 
 import { DashboardFormSection } from "@/components/dashboard/dashboard-form-section";
@@ -14,11 +14,16 @@ import {
 
 type ClientSettingsWorkspaceProps = {
   initialSettings: ClientSettingsRecord;
+  saveSettingsAction?: (input: ClientSettingsRecord) => Promise<void>;
 };
 
-export function ClientSettingsWorkspace({ initialSettings }: ClientSettingsWorkspaceProps) {
+export function ClientSettingsWorkspace({
+  initialSettings,
+  saveSettingsAction,
+}: ClientSettingsWorkspaceProps) {
   const [settings, setSettings] = useState<ClientSettingsRecord>(initialSettings);
-  const [saveMessage, setSaveMessage] = useState("Preview mode.");
+  const [saveMessage, setSaveMessage] = useState("Live settings loaded.");
+  const [isSaving, startTransition] = useTransition();
   const hasChanges = JSON.stringify(settings) !== JSON.stringify(initialSettings);
   const enabledNotifications = [
     settings.notificationEmail,
@@ -44,13 +49,24 @@ export function ClientSettingsWorkspace({ initialSettings }: ClientSettingsWorks
           <button
             type="button"
             className="mv-btn mv-btn-primary"
-            disabled={!hasChanges}
+            disabled={!hasChanges || isSaving}
             onClick={() =>
-              setSaveMessage("Preview updated.")
+              startTransition(async () => {
+                try {
+                  if (saveSettingsAction) {
+                    await saveSettingsAction(settings);
+                  }
+                  setSaveMessage("Client settings saved.");
+                } catch (error) {
+                  setSaveMessage(
+                    error instanceof Error ? error.message : "Could not save client settings."
+                  );
+                }
+              })
             }
           >
             <Save size={16} />
-            Save changes
+            {isSaving ? "Saving..." : "Save changes"}
           </button>
         }
       />

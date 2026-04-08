@@ -10,9 +10,7 @@ import {
 } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { getSession, signIn } from "next-auth/react";
-
-import { getDashboardHomeForUserRole } from "@/lib/auth/authorization-policy";
+import { signIn } from "next-auth/react";
 
 import "./login.css";
 
@@ -85,6 +83,10 @@ function LoginForm() {
           email,
           password,
           redirect: false,
+          callbackUrl:
+            callbackUrl?.startsWith("/") && !callbackUrl.startsWith("//")
+              ? callbackUrl
+              : "/auth/redirect",
         });
 
         if (result?.error) {
@@ -100,18 +102,12 @@ function LoginForm() {
           return;
         }
 
-        const session = await getSession();
-        const userRole = session?.user?.role;
-
-        if (!userRole) {
-          setFormError("Account found, but no role is assigned.");
-          setIsLoading(false);
-          return;
-        }
-
-        const safeCallbackUrl = callbackUrl?.startsWith("/") && !callbackUrl.startsWith("//") ? callbackUrl : null;
-        router.replace(safeCallbackUrl || getDashboardHomeForUserRole(userRole));
-        router.refresh();
+        window.location.href =
+          result?.url && result.url.startsWith("/")
+            ? result.url
+            : callbackUrl?.startsWith("/") && !callbackUrl.startsWith("//")
+              ? callbackUrl
+              : "/auth/redirect";
       } catch {
         setFormError("Unexpected error. Try again.");
         triggerShake();

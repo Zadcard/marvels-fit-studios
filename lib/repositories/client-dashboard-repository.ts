@@ -92,6 +92,9 @@ function inferPreferredSessionTime(startsAtValues: Date[]) {
   return "Flexible";
 }
 
+const defaultClientGoal =
+  "Build steady strength and improve movement confidence.";
+
 function inferPaymentStatus(subscription: {
   status: string;
   payments: Array<{ date: Date }>;
@@ -139,10 +142,77 @@ type ClientDashboardSessionEntry = {
   location: string | null;
   description: string | null;
   coachName: string;
+  coachEmail: string | null;
+  coachPhone: string | null;
+  coachSpecialization: string | null;
   note: string | null;
   bookingStatus: "BOOKED" | "ATTENDED" | "MISSED" | "CANCELED" | "WAITLIST" | null;
   attendedAt: Date | null;
 };
+
+type ClientPrimaryCoach = {
+  fullName: string;
+  email: string;
+  phone: string;
+  specialization: string;
+  bio: string;
+};
+
+function formatCoachSpecialization(
+  specialization: "STRENGTH" | "CONDITIONING" | "MOBILITY" | "PRIVATE_COACHING" | null | undefined
+) {
+  switch (specialization) {
+    case "CONDITIONING":
+      return "Conditioning";
+    case "MOBILITY":
+      return "Mobility";
+    case "PRIVATE_COACHING":
+      return "Private Coaching";
+    case "STRENGTH":
+      return "Strength";
+    default:
+      return "Coaching support";
+  }
+}
+
+function resolvePrimaryCoach(
+  client: NonNullable<ClientDashboardQuery>,
+  visibleSessions: ClientDashboardSessionEntry[]
+): ClientPrimaryCoach {
+  const sessionCoach =
+    visibleSessions.find((session) => session.startsAt.getTime() >= Date.now()) ??
+    visibleSessions[0];
+
+  if (sessionCoach) {
+    return {
+      fullName: sessionCoach.coachName,
+      email: sessionCoach.coachEmail ?? "Not available",
+      phone: sessionCoach.coachPhone ?? "Not available",
+      specialization:
+        sessionCoach.coachSpecialization ??
+        (sessionCoach.type === "PRIVATE" ? "Private Coaching" : "Coaching support"),
+      bio: `Assigned through ${sessionCoach.title}.`,
+    };
+  }
+
+  if (client.group?.coach) {
+    return {
+      fullName: client.group.coach.fullName,
+      email: client.group.coach.user.email ?? "Not available",
+      phone: client.group.coach.phone ?? "Not available",
+      specialization: "Coaching support",
+      bio: `${client.group.coach.fullName} is currently attached to your training roster and group.`,
+    };
+  }
+
+  return {
+    fullName: "Unassigned coach",
+    email: "Not available",
+    phone: "Not available",
+    specialization: "General coaching support",
+    bio: "A coach will appear here once you are assigned to a group or booked into a coached session.",
+  };
+}
 
 function buildClientSessionEntries(
   client: NonNullable<ClientDashboardQuery>
@@ -159,6 +229,12 @@ function buildClientSessionEntries(
       location: booking.trainingSession.location,
       description: booking.trainingSession.description,
       coachName: booking.trainingSession.coach.fullName,
+      coachEmail: booking.trainingSession.coach.user.email,
+      coachPhone: booking.trainingSession.coach.phone,
+      coachSpecialization:
+        booking.trainingSession.type === "PRIVATE"
+          ? "Private Coaching"
+          : "Coaching support",
       note: booking.trainingSession.notes[0]?.content ?? null,
       bookingStatus: booking.status,
       attendedAt: booking.attendedAt ?? null,
@@ -179,6 +255,10 @@ function buildClientSessionEntries(
       location: session.location,
       description: session.description,
       coachName: session.coach.fullName,
+      coachEmail: session.coach.user.email,
+      coachPhone: session.coach.phone,
+      coachSpecialization:
+        session.type === "PRIVATE" ? "Private Coaching" : "Coaching support",
       note: session.notes[0]?.content ?? null,
       bookingStatus: null,
       attendedAt: null,
@@ -238,6 +318,12 @@ export class ClientDashboardRepository {
                 coach: {
                   select: {
                     fullName: true,
+                    phone: true,
+                    user: {
+                      select: {
+                        email: true,
+                      },
+                    },
                   },
                 },
                 notes: {
@@ -252,13 +338,14 @@ export class ClientDashboardRepository {
           },
         },
         subscriptions: {
-          orderBy: [{ startsAt: "desc" }],
+          orderBy: [{ updatedAt: "desc" }, { startsAt: "desc" }],
           take: 1,
           select: {
             status: true,
             startsAt: true,
             endsAt: true,
             renewsAt: true,
+            updatedAt: true,
             sessionsTotal: true,
             sessionsUsed: true,
             isAutoRenew: true,
@@ -301,6 +388,12 @@ export class ClientDashboardRepository {
                 coach: {
                   select: {
                     fullName: true,
+                    phone: true,
+                    user: {
+                      select: {
+                        email: true,
+                      },
+                    },
                   },
                 },
                 notes: {
@@ -342,6 +435,7 @@ export class ClientDashboardRepository {
     );
     const activeSubscription = client.subscriptions[0] ?? null;
     const latestWorkoutNote = client.workoutNotes[0] ?? null;
+    const primaryCoach = resolvePrimaryCoach(client, sessionEntries);
 
     const upcomingSessions: ClientUpcomingSession[] = upcomingBookings.slice(0, 3).map((booking) => ({
       id: booking.id,
@@ -389,7 +483,6 @@ export class ClientDashboardRepository {
       });
     }
 
-    const coachName = client.group?.coach.fullName ?? upcomingBookings[0]?.coachName ?? "Unassigned coach";
     const nextTouchpoint = upcomingBookings[0]
       ? formatDateTime(upcomingBookings[0].startsAt)
       : "No session booked";
@@ -439,13 +532,11 @@ export class ClientDashboardRepository {
       upcomingSessions,
       recentActivity,
       coachSnapshot: {
-        fullName: coachName,
+        fullName: primaryCoach.fullName,
         roleLabel: "Assigned Coach",
-        specialization: client.group ? `Leads ${client.group.name}` : "Coaching assignment",
+        specialization: primaryCoach.specialization,
         nextTouchpoint,
-        note:
-          latestWorkoutNote?.content ??
-          "Your latest coaching note will appear here once your coach logs progress.",
+        note: latestWorkoutNote?.content ?? primaryCoach.bio,
       },
       subscriptionSnapshot: {
         planName: activeSubscription?.plan.name ?? "No active plan",
@@ -478,17 +569,15 @@ export class ClientDashboardRepository {
     const nextBooking =
       visibleSessions.find((booking) => booking.startsAt.getTime() >= Date.now()) ??
       visibleSessions[0];
-    const coach = client.group?.coach;
+    const primaryCoach = resolvePrimaryCoach(client, visibleSessions);
 
     return {
-      fullName: coach?.fullName ?? nextBooking?.coachName ?? "Unassigned coach",
+      fullName: primaryCoach.fullName,
       roleLabel: "Assigned Coach",
-      specialization: client.group ? `Coach for ${client.group.name}` : "General coaching support",
-      email: coach?.user.email ?? "Not available",
-      phone: coach?.phone ?? "Not available",
-      bio: coach
-        ? `${coach.fullName} is currently attached to your training roster and group.`
-        : "A coach will appear here once you are assigned to a group or booked into a coached session.",
+      specialization: primaryCoach.specialization,
+      email: primaryCoach.email,
+      phone: primaryCoach.phone,
+      bio: primaryCoach.bio,
       nextSession: nextBooking
         ? `${formatDateTime(nextBooking.startsAt)} - ${nextBooking.title}`
         : "No session booked",
@@ -505,7 +594,32 @@ export class ClientDashboardRepository {
       return null;
     }
 
-    const subscription = client.subscriptions[0];
+    const subscription = await this.prisma.clientSubscription.findFirst({
+      where: {
+        clientId: client.id,
+      },
+      orderBy: [{ updatedAt: "desc" }, { startsAt: "desc" }],
+      select: {
+        id: true,
+        status: true,
+        startsAt: true,
+        endsAt: true,
+        renewsAt: true,
+        sessionsTotal: true,
+        sessionsUsed: true,
+        isAutoRenew: true,
+        plan: {
+          select: {
+            name: true,
+            description: true,
+            billingCycle: true,
+            sessionsIncluded: true,
+            price: true,
+            currency: true,
+          },
+        },
+      },
+    });
 
     if (!subscription) {
       return {
@@ -520,16 +634,43 @@ export class ClientDashboardRepository {
       };
     }
 
+    const latestPayment = await this.prisma.payment.findFirst({
+      where: {
+        clientSubscriptionId: subscription.id,
+      },
+      orderBy: [{ date: "desc" }, { createdAt: "desc" }],
+      select: {
+        amount: true,
+        currency: true,
+        date: true,
+      },
+    });
+
+    const customPriceRows = await this.prisma.$queryRaw<
+      Array<{ customPrice: number | null }>
+    >`
+      SELECT "customPrice"
+      FROM "ClientSubscription"
+      WHERE "id" = ${subscription.id}
+      LIMIT 1
+    `;
+    const customPrice = customPriceRows[0]?.customPrice ?? null;
+
     return {
       planName: subscription.plan.name,
       status: titleCase(subscription.status),
-      paymentStatus: inferPaymentStatus(subscription),
+      paymentStatus: inferPaymentStatus({
+        status: subscription.status,
+        payments: latestPayment ? [{ date: latestPayment.date }] : [],
+      }),
       renewalDate: subscription.renewsAt
         ? formatDate(subscription.renewsAt)
         : subscription.endsAt
           ? formatDate(subscription.endsAt)
           : "No renewal date set",
-      amountLabel: `${subscription.plan.currency} ${subscription.plan.price.toFixed(0)}`,
+      amountLabel: `${latestPayment?.currency ?? subscription.plan.currency} ${(
+        latestPayment?.amount ?? customPrice ?? subscription.plan.price
+      ).toFixed(0)}`,
       billingCycle: titleCase(subscription.plan.billingCycle),
       benefits: buildBenefits(subscription),
       note:
@@ -580,6 +721,27 @@ export class ClientDashboardRepository {
       return null;
     }
 
+    const preferenceRows = await this.prisma.$queryRaw<
+      Array<{
+        goalLabel: string;
+        preferredSessionTime: string;
+        notificationEmail: boolean;
+        scheduleReminders: boolean;
+        coachUpdates: boolean;
+      }>
+    >`
+      SELECT
+        "goalLabel",
+        "preferredSessionTime",
+        "notificationEmail",
+        "scheduleReminders",
+        "coachUpdates"
+      FROM "ClientPreferences"
+      WHERE "clientId" = ${client.id}
+      LIMIT 1
+    `;
+
+    const preferences = preferenceRows[0] ?? null;
     const sessionTimes = buildClientSessionEntries(client)
       .filter((booking) => booking.startsAt.getTime() >= Date.now())
       .map((booking) => booking.startsAt);
@@ -588,13 +750,12 @@ export class ClientDashboardRepository {
       fullName: client.fullName || client.user.name || "Client",
       email: client.user.email ?? "",
       phone: client.phone ?? "",
-      goalLabel:
-        client.workoutNotes[0]?.content ??
-        "Build steady strength and improve movement confidence.",
-      preferredSessionTime: inferPreferredSessionTime(sessionTimes),
-      notificationEmail: true,
-      scheduleReminders: true,
-      coachUpdates: true,
+      goalLabel: preferences?.goalLabel ?? client.workoutNotes[0]?.content ?? defaultClientGoal,
+      preferredSessionTime:
+        preferences?.preferredSessionTime ?? inferPreferredSessionTime(sessionTimes),
+      notificationEmail: preferences?.notificationEmail ?? true,
+      scheduleReminders: preferences?.scheduleReminders ?? true,
+      coachUpdates: preferences?.coachUpdates ?? true,
     };
   }
 }

@@ -5,8 +5,18 @@ export const metadata = {
   title: "Subscriptions Management",
 };
 
-export default async function AdminSubscriptionsPage() {
-  const { stats, records } = await adminSubscriptionRepository.list();
+export const dynamic = "force-dynamic";
 
-  return <AdminSubscriptionsWorkspace stats={stats} records={records} />;
+export default async function AdminSubscriptionsPage() {
+  const { stats, records, clientOptions, planOptions } =
+    await adminSubscriptionRepository.list();
+
+  return (
+    <AdminSubscriptionsWorkspace
+      stats={stats}
+      records={records}
+      clientOptions={clientOptions}
+      planOptions={planOptions}
+    />
+  );
 }

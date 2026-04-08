@@ -31,13 +31,17 @@ export type AdminSubscriptionStat = {
 
 export type AdminSubscriptionRecord = {
   id: string;
+  clientId: string;
+  planId: string;
   memberName: string;
   planName: AdminPlanType;
   subscriptionStatus: AdminSubscriptionStatus;
   paymentStatus: AdminPaymentStatus;
   assignedCoach: string;
   renewalDate: string;
+  renewalDateValue: string;
   amountLabel: string;
+  amountValue: string;
   billingCycle: string;
   note: string;
 };
@@ -104,73 +108,97 @@ export const adminSubscriptionStats: AdminSubscriptionStat[] = [
 export const adminSubscriptionRecords: AdminSubscriptionRecord[] = [
   {
     id: "subscription-1",
+    clientId: "client-1",
+    planId: "plan-1",
     memberName: "Nour Hassan",
     planName: "Hybrid Elite",
     subscriptionStatus: "Active",
     paymentStatus: "Paid",
     assignedCoach: "Ahmed Waheed",
     renewalDate: "Apr 12, 2026",
+    renewalDateValue: "2026-04-12",
     amountLabel: "EGP 3,400",
+    amountValue: "3400",
     billingCycle: "Monthly",
     note: "High-engagement member with both group and private attendance.",
   },
   {
     id: "subscription-2",
+    clientId: "client-2",
+    planId: "plan-2",
     memberName: "Sara Nabil",
     planName: "Private Coaching",
     subscriptionStatus: "Pending renewal",
     paymentStatus: "Due soon",
     assignedCoach: "Reham Badawy",
     renewalDate: "Apr 08, 2026",
+    renewalDateValue: "2026-04-08",
     amountLabel: "EGP 4,200",
+    amountValue: "4200",
     billingCycle: "Monthly",
     note: "Renewal conversation should happen after Wednesday progress review.",
   },
   {
     id: "subscription-3",
+    clientId: "client-3",
+    planId: "plan-3",
     memberName: "Mona Adel",
     planName: "Group Membership",
     subscriptionStatus: "Active",
     paymentStatus: "Paid",
     assignedCoach: "Karim Adel",
     renewalDate: "Apr 28, 2026",
+    renewalDateValue: "2026-04-28",
     amountLabel: "EGP 1,850",
+    amountValue: "1850",
     billingCycle: "Monthly",
     note: "Consistent attendance and low support burden.",
   },
   {
     id: "subscription-4",
+    clientId: "client-4",
+    planId: "plan-4",
     memberName: "Dina Ragab",
     planName: "Starter Reset",
     subscriptionStatus: "Trial",
     paymentStatus: "Manual review",
     assignedCoach: "Hisham Mostafa",
     renewalDate: "Apr 06, 2026",
+    renewalDateValue: "2026-04-06",
     amountLabel: "EGP 950",
+    amountValue: "950",
     billingCycle: "Two weeks",
     note: "Trial extension is waiting for intake clarification.",
   },
   {
     id: "subscription-5",
+    clientId: "client-5",
+    planId: "plan-5",
     memberName: "Yara Mostafa",
     planName: "Private Coaching",
     subscriptionStatus: "Paused",
     paymentStatus: "Overdue",
     assignedCoach: "Youssef Abdelatif",
     renewalDate: "Mar 31, 2026",
+    renewalDateValue: "2026-03-31",
     amountLabel: "EGP 4,000",
+    amountValue: "4000",
     billingCycle: "Monthly",
     note: "Paused after travel; payment follow-up should stay gentle.",
   },
   {
     id: "subscription-6",
+    clientId: "client-6",
+    planId: "plan-6",
     memberName: "Tamer Adel",
     planName: "Group Membership",
     subscriptionStatus: "Pending renewal",
     paymentStatus: "Due soon",
     assignedCoach: "Ahmed Farouk",
     renewalDate: "Apr 10, 2026",
+    renewalDateValue: "2026-04-10",
     amountLabel: "EGP 1,850",
+    amountValue: "1850",
     billingCycle: "Monthly",
     note: "Likely renewal if evening slot preference is preserved.",
   },

@@ -9,17 +9,22 @@ export const metadata = {
   title: "Client Dashboard",
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function ClientOverviewPage() {
+  let user;
+
   try {
-    const user = await requireRole(UserRole.CLIENT);
-    const data = await clientDashboardRepository.getOverview(user.id);
-
-    if (!data) {
-      redirect("/login");
-    }
-
-    return <ClientOverviewWorkspace data={data} />;
+    user = await requireRole(UserRole.CLIENT);
   } catch {
     redirect("/login");
   }
+
+  const data = await clientDashboardRepository.getOverview(user.id);
+
+  if (!data) {
+    redirect("/login");
+  }
+
+  return <ClientOverviewWorkspace data={data} />;
 }

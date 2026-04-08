@@ -84,6 +84,65 @@ function mapPaymentStatus(record: {
 export class AdminSubscriptionRepository {
   private prisma = getPrisma();
 
+  private async ensureDefaultPlans() {
+    const existingPlanCount = await this.prisma.subscriptionPlan.count();
+
+    if (existingPlanCount > 0) {
+      return;
+    }
+
+    await this.prisma.$transaction([
+      this.prisma.subscriptionPlan.create({
+        data: {
+          name: "Group Membership",
+          slug: "group-membership",
+          description: "Core recurring plan for coached group training.",
+          billingCycle: "MONTHLY",
+          sessionsIncluded: 8,
+          price: 1850,
+          currency: "EGP",
+          isActive: true,
+        },
+      }),
+      this.prisma.subscriptionPlan.create({
+        data: {
+          name: "Private Coaching",
+          slug: "private-coaching",
+          description: "One-to-one coaching plan with private sessions.",
+          billingCycle: "MONTHLY",
+          sessionsIncluded: 8,
+          price: 4200,
+          currency: "EGP",
+          isActive: true,
+        },
+      }),
+      this.prisma.subscriptionPlan.create({
+        data: {
+          name: "Hybrid Elite",
+          slug: "hybrid-elite",
+          description: "Mix of group and private training support.",
+          billingCycle: "MONTHLY",
+          sessionsIncluded: 12,
+          price: 3400,
+          currency: "EGP",
+          isActive: true,
+        },
+      }),
+      this.prisma.subscriptionPlan.create({
+        data: {
+          name: "Starter Reset",
+          slug: "starter-reset",
+          description: "Short onboarding plan for new clients.",
+          billingCycle: "CUSTOM",
+          sessionsIncluded: 4,
+          price: 950,
+          currency: "EGP",
+          isActive: true,
+        },
+      }),
+    ]);
+  }
+
   async list(): Promise<{
     stats: Array<{
       id: string;
@@ -96,12 +155,24 @@ export class AdminSubscriptionRepository {
       tone: "accent" | "success" | "warning" | "neutral";
     }>;
     records: AdminSubscriptionRecord[];
+    clientOptions: Array<{ id: string; label: string }>;
+    planOptions: Array<{ id: string; label: string; amountLabel: string }>;
   }> {
+    await this.ensureDefaultPlans();
+
     const now = new Date();
     const in7Days = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-    const [subscriptions, activePlans, renewalsThisWeek, collectedThisCycle, atRiskAccounts] =
+    const [
+      subscriptions,
+      activePlans,
+      renewalsThisWeek,
+      collectedThisCycle,
+      atRiskAccounts,
+      clients,
+      plans,
+    ] =
       await Promise.all([
         this.prisma.clientSubscription.findMany({
           orderBy: [{ startsAt: "desc" }],
@@ -111,6 +182,7 @@ export class AdminSubscriptionRepository {
             renewsAt: true,
             plan: {
               select: {
+                id: true,
                 name: true,
                 billingCycle: true,
                 price: true,
@@ -118,6 +190,7 @@ export class AdminSubscriptionRepository {
             },
             client: {
               select: {
+                id: true,
                 fullName: true,
                 isPaid: true,
                 group: {
@@ -190,7 +263,31 @@ export class AdminSubscriptionRepository {
             ],
           },
         }),
+        this.prisma.client.findMany({
+          orderBy: [{ fullName: "asc" }],
+          select: {
+            id: true,
+            fullName: true,
+          },
+        }),
+        this.prisma.subscriptionPlan.findMany({
+          where: { isActive: true },
+          orderBy: [{ name: "asc" }],
+          select: {
+            id: true,
+            name: true,
+            price: true,
+            currency: true,
+          },
+        }),
       ]);
+
+    const customPriceRows = await this.prisma.$queryRaw<
+      Array<{ id: string; customPrice: number | null }>
+    >`SELECT "id", "customPrice" FROM "ClientSubscription"`;
+    const customPriceBySubscriptionId = new Map(
+      customPriceRows.map((row) => [row.id, row.customPrice])
+    );
 
     const records = subscriptions.map((subscription) => {
       const planName = mapPlanName(subscription);
@@ -202,6 +299,8 @@ export class AdminSubscriptionRepository {
 
       return {
         id: subscription.id,
+        clientId: (subscription as typeof subscription & { client: { id?: string } }).client.id,
+        planId: subscription.plan.id,
         memberName: subscription.client.fullName,
         planName,
         subscriptionStatus,
@@ -213,7 +312,15 @@ export class AdminSubscriptionRepository {
         renewalDate: subscription.renewsAt
           ? dateFormatter.format(subscription.renewsAt)
           : "No renewal set",
-        amountLabel: currencyFormatter.format(subscription.plan.price),
+        renewalDateValue: subscription.renewsAt
+          ? subscription.renewsAt.toISOString().slice(0, 10)
+          : "",
+        amountLabel: currencyFormatter.format(
+          customPriceBySubscriptionId.get(subscription.id) ?? subscription.plan.price
+        ),
+        amountValue: String(
+          customPriceBySubscriptionId.get(subscription.id) ?? subscription.plan.price
+        ),
         billingCycle:
           subscription.plan.billingCycle.charAt(0) +
           subscription.plan.billingCycle.slice(1).toLowerCase(),
@@ -276,7 +383,23 @@ export class AdminSubscriptionRepository {
       },
     ];
 
-    return { stats, records };
+    return {
+      stats,
+      records,
+      clientOptions: clients.map((client) => ({
+        id: client.id,
+        label: client.fullName,
+      })),
+      planOptions: plans.map((plan) => ({
+        id: plan.id,
+        label: plan.name,
+        amountLabel: new Intl.NumberFormat("en-US", {
+          style: "currency",
+          currency: plan.currency,
+          maximumFractionDigits: 0,
+        }).format(plan.price),
+      })),
+    };
   }
 }
 

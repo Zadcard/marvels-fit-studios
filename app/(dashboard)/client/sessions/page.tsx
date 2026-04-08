@@ -10,12 +10,15 @@ export const metadata = {
 };
 
 export default async function ClientSessionsPage() {
-  try {
-    const user = await requireRole(UserRole.CLIENT);
-    const records = await clientDashboardRepository.getSessions(user.id);
+  let user;
 
-    return <ClientSessionsWorkspace records={records} />;
+  try {
+    user = await requireRole(UserRole.CLIENT);
   } catch {
     redirect("/login");
   }
+
+  const records = await clientDashboardRepository.getSessions(user.id);
+
+  return <ClientSessionsWorkspace records={records} />;
 }

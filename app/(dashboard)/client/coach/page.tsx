@@ -10,16 +10,19 @@ export const metadata = {
 };
 
 export default async function ClientCoachPage() {
+  let user;
+
   try {
-    const user = await requireRole(UserRole.CLIENT);
-    const data = await clientDashboardRepository.getCoach(user.id);
-
-    if (!data) {
-      redirect("/login");
-    }
-
-    return <ClientCoachWorkspace data={data} />;
+    user = await requireRole(UserRole.CLIENT);
   } catch {
     redirect("/login");
   }
+
+  const data = await clientDashboardRepository.getCoach(user.id);
+
+  if (!data) {
+    redirect("/login");
+  }
+
+  return <ClientCoachWorkspace data={data} />;
 }
