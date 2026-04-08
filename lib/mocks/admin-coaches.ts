@@ -1,4 +1,3 @@
-export type AdminCoachStatus = "Active" | "Limited" | "Away";
 export type AdminCoachSpecialization =
   | "Strength"
   | "Conditioning"
@@ -9,7 +8,6 @@ export type AdminCoachRecord = {
   id: string;
   fullName: string;
   specialization: AdminCoachSpecialization;
-  status: AdminCoachStatus;
   activeClients: number;
   sessionsThisWeek: number;
   email: string;
@@ -17,19 +15,11 @@ export type AdminCoachRecord = {
   summary: string;
 };
 
-export const adminCoachStatusFilters: Array<"All" | AdminCoachStatus> = [
-  "All",
-  "Active",
-  "Limited",
-  "Away",
-];
-
 export const adminCoachRecords: AdminCoachRecord[] = [
   {
     id: "coach-ahmed-waheed",
     fullName: "Ahmed Waheed",
     specialization: "Strength",
-    status: "Active",
     activeClients: 42,
     sessionsThisWeek: 11,
     email: "ahmed.waheed@example.com",
@@ -40,7 +30,6 @@ export const adminCoachRecords: AdminCoachRecord[] = [
     id: "coach-hisham-mostafa",
     fullName: "Hisham Mostafa",
     specialization: "Private Coaching",
-    status: "Active",
     activeClients: 18,
     sessionsThisWeek: 13,
     email: "hisham.mostafa@example.com",
@@ -51,7 +40,6 @@ export const adminCoachRecords: AdminCoachRecord[] = [
     id: "coach-ahmed-farouk",
     fullName: "Ahmed Farouk",
     specialization: "Conditioning",
-    status: "Active",
     activeClients: 26,
     sessionsThisWeek: 9,
     email: "ahmed.farouk@example.com",
@@ -62,7 +50,6 @@ export const adminCoachRecords: AdminCoachRecord[] = [
     id: "coach-youssef-abdelatif",
     fullName: "Youssef Abdelatif",
     specialization: "Mobility",
-    status: "Limited",
     activeClients: 14,
     sessionsThisWeek: 6,
     email: "youssef.abdelatif@example.com",
@@ -73,7 +60,6 @@ export const adminCoachRecords: AdminCoachRecord[] = [
     id: "coach-abdullah-zaki",
     fullName: "Abdullah Zaki",
     specialization: "Conditioning",
-    status: "Away",
     activeClients: 12,
     sessionsThisWeek: 0,
     email: "abdullah.zaki@example.com",

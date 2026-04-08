@@ -1,44 +1,80 @@
 "use client";
 
-import { useDeferredValue, useState } from "react";
+import { useDeferredValue, useMemo, useState, useTransition } from "react";
 import { CalendarPlus2, LayoutGrid, Rows3 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
+import { saveAdminSession } from "@/app/actions/admin-sessions";
 import { DashboardManagementToolbar } from "@/components/dashboard/dashboard-management-toolbar";
 import { DashboardModal } from "@/components/dashboard/dashboard-modal";
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
 import { DashboardStatCard } from "@/components/dashboard/dashboard-stat-card";
 import { DashboardStatusBadge } from "@/components/dashboard/dashboard-status-badge";
+import { CoachOptionPicker } from "@/components/dashboard/coach-option-picker";
+import { SessionTypePicker } from "@/components/dashboard/session-type-picker";
+import type {
+  AdminScheduleSessionRecord,
+  AdminScheduleSessionStatus,
+  AdminScheduleSessionType,
+  AdminScheduleStat,
+} from "@/lib/dashboard/admin-schedule-data";
 import {
   adminScheduleDayFilters,
-  adminScheduleSessionRecords,
   adminScheduleSessionTypeFilters,
-  adminScheduleStats,
   adminScheduleStatusFilters,
-  type AdminScheduleSessionStatus,
-  type AdminScheduleSessionType,
-} from "@/lib/mocks/admin-schedule";
+} from "@/lib/dashboard/admin-schedule-data";
+import type { AdminSessionCoachOption } from "@/lib/repositories/admin-session-repository";
 
 type ScheduleView = "week" | "day";
 type ScheduleDraftState = {
   title: string;
-  sessionType: AdminScheduleSessionType;
-  dayLabel: string;
-  timeRange: string;
-  coachName: string;
+  sessionType: "GROUP" | "PRIVATE";
+  status: "SCHEDULED" | "DRAFT";
+  startsAt: string;
+  endsAt: string;
+  coachId: string;
+  location: string;
+  capacity: string;
+  description: string;
 };
 
-const scheduleDays = adminScheduleDayFilters.filter(
-  (day): day is Exclude<(typeof adminScheduleDayFilters)[number], "All days"> =>
-    day !== "All days"
-);
+function toDateTimeLocalValue(value: string) {
+  const date = new Date(value);
 
-const emptyScheduleDraft: ScheduleDraftState = {
-  title: "",
-  sessionType: "Group",
-  dayLabel: "Monday",
-  timeRange: "",
-  coachName: "",
-};
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  const offset = date.getTimezoneOffset();
+  const adjusted = new Date(date.getTime() - offset * 60 * 1000);
+  return adjusted.toISOString().slice(0, 16);
+}
+
+function createDefaultDraft(coachId: string): ScheduleDraftState {
+  const now = new Date();
+  const start = new Date(now);
+  start.setMinutes(0, 0, 0);
+  start.setHours(start.getHours() + 1);
+
+  const end = new Date(start);
+  end.setHours(end.getHours() + 1);
+
+  return {
+    title: "",
+    sessionType: "GROUP",
+    status: "SCHEDULED",
+    startsAt: toDateTimeLocalValue(start.toISOString()),
+    endsAt: toDateTimeLocalValue(end.toISOString()),
+    coachId,
+    location: "",
+    capacity: "12",
+    description: "",
+  };
+}
+
+function toIsoDateTime(value: string) {
+  return new Date(value).toISOString();
+}
 
 function getScheduleTone(status: AdminScheduleSessionStatus) {
   switch (status) {
@@ -57,7 +93,19 @@ function getSessionTypeTone(type: AdminScheduleSessionType) {
   return type === "Group" ? "accent" : "neutral";
 }
 
-export function AdminScheduleWorkspace() {
+type AdminScheduleWorkspaceProps = {
+  stats: AdminScheduleStat[];
+  records: AdminScheduleSessionRecord[];
+  coachOptions: AdminSessionCoachOption[];
+};
+
+export function AdminScheduleWorkspace({
+  stats,
+  records,
+  coachOptions,
+}: AdminScheduleWorkspaceProps) {
+  const router = useRouter();
+  const [isSaving, startSaveTransition] = useTransition();
   const [view, setView] = useState<ScheduleView>("week");
   const [searchTerm, setSearchTerm] = useState("");
   const deferredSearchTerm = useDeferredValue(searchTerm);
@@ -67,15 +115,23 @@ export function AdminScheduleWorkspace() {
     useState<(typeof adminScheduleStatusFilters)[number]>("All statuses");
   const [sessionTypeFilter, setSessionTypeFilter] =
     useState<(typeof adminScheduleSessionTypeFilters)[number]>("All types");
-  const [selectedSessionId, setSelectedSessionId] = useState(
-    adminScheduleSessionRecords[0]?.id ?? ""
-  );
+  const [selectedSessionId, setSelectedSessionId] = useState(records[0]?.id ?? "");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [draftState, setDraftState] = useState<ScheduleDraftState>(
-    emptyScheduleDraft
+    createDefaultDraft(coachOptions[0]?.id ?? "")
+  );
+  const [errorMessage, setErrorMessage] = useState("");
+
+  const scheduleDays = useMemo(
+    () =>
+      adminScheduleDayFilters.filter(
+        (day): day is Exclude<(typeof adminScheduleDayFilters)[number], "All days"> =>
+          day !== "All days"
+      ),
+    []
   );
 
-  const filteredSessions = adminScheduleSessionRecords.filter((session) => {
+  const filteredSessions = records.filter((session) => {
     const query = deferredSearchTerm.trim().toLowerCase();
     const matchesSearch =
       query.length === 0 ||
@@ -104,15 +160,45 @@ export function AdminScheduleWorkspace() {
 
   const visibleDays =
     view === "week"
-      ? scheduleDays.filter((day) =>
-          dayFilter === "All days" ? true : day === focusedDay
-        )
+      ? scheduleDays.filter((day) => (dayFilter === "All days" ? true : day === focusedDay))
       : [focusedDay];
 
   const selectedSession =
     filteredSessions.find((session) => session.id === selectedSessionId) ??
     filteredSessions[0] ??
-    adminScheduleSessionRecords[0];
+    records[0];
+
+  const handleCreateSession = () => {
+    setErrorMessage("");
+
+    startSaveTransition(async () => {
+      try {
+        await saveAdminSession({
+          title: draftState.title,
+          description: draftState.description,
+          type: draftState.sessionType,
+          status: draftState.status,
+          coachId: draftState.coachId,
+          location: draftState.location,
+          startsAt: toIsoDateTime(draftState.startsAt),
+          endsAt: toIsoDateTime(draftState.endsAt),
+          capacity:
+            draftState.sessionType === "PRIVATE"
+              ? 1
+              : draftState.capacity.trim() === ""
+                ? null
+                : Number(draftState.capacity),
+        });
+        setIsCreateModalOpen(false);
+        setDraftState(createDefaultDraft(coachOptions[0]?.id ?? ""));
+        router.refresh();
+      } catch (error) {
+        setErrorMessage(
+          error instanceof Error ? error.message : "Could not create session."
+        );
+      }
+    });
+  };
 
   return (
     <div className="dashboard-stack">
@@ -123,7 +209,8 @@ export function AdminScheduleWorkspace() {
             type="button"
             className="mv-btn mv-btn-primary"
             onClick={() => {
-              setDraftState(emptyScheduleDraft);
+              setDraftState(createDefaultDraft(coachOptions[0]?.id ?? ""));
+              setErrorMessage("");
               setIsCreateModalOpen(true);
             }}
           >
@@ -134,8 +221,17 @@ export function AdminScheduleWorkspace() {
       />
 
       <section className="dashboard-kpi-grid">
-        {adminScheduleStats.map((stat) => (
-          <DashboardStatCard key={stat.id} {...stat} />
+        {stats.map((stat) => (
+          <DashboardStatCard
+            key={stat.id}
+            label={stat.label}
+            value={stat.value}
+            change={stat.change}
+            detail={stat.detail}
+            note={stat.note}
+            icon={stat.icon}
+            tone={stat.tone}
+          />
         ))}
       </section>
 
@@ -268,9 +364,7 @@ export function AdminScheduleWorkspace() {
           }
         >
           {visibleDays.map((day) => {
-            const daySessions = filteredSessions.filter(
-              (session) => session.dayKey === day
-            );
+            const daySessions = filteredSessions.filter((session) => session.dayKey === day);
 
             return (
               <section key={day} className="dashboard-schedule-day">
@@ -334,92 +428,77 @@ export function AdminScheduleWorkspace() {
         </div>
       </section>
 
-      <section className="dashboard-secondary-grid">
-        <article className="dashboard-panel">
-          <div className="dashboard-panel__header">
-            <div>
-              <span className="mv-eyebrow">Selected block</span>
-              <h2>{selectedSession.title}</h2>
-              <p>{selectedSession.highlight}</p>
+      {selectedSession ? (
+        <section className="dashboard-secondary-grid">
+          <article className="dashboard-panel">
+            <div className="dashboard-panel__header">
+              <div>
+                <span className="mv-eyebrow">Selected block</span>
+                <h2>{selectedSession.title}</h2>
+                <p>{selectedSession.highlight}</p>
+              </div>
             </div>
-          </div>
 
-          <div className="dashboard-detail-grid">
-            <div className="dashboard-detail-stat">
-              <span className="dashboard-detail-stat__label">Coach</span>
-              <strong>{selectedSession.coachName}</strong>
+            <div className="dashboard-detail-grid">
+              <div className="dashboard-detail-stat">
+                <span className="dashboard-detail-stat__label">Coach</span>
+                <strong>{selectedSession.coachName}</strong>
+              </div>
+              <div className="dashboard-detail-stat">
+                <span className="dashboard-detail-stat__label">Timing</span>
+                <strong>{selectedSession.timeRange}</strong>
+              </div>
+              <div className="dashboard-detail-stat">
+                <span className="dashboard-detail-stat__label">Location</span>
+                <strong>{selectedSession.location}</strong>
+              </div>
+              <div className="dashboard-detail-stat">
+                <span className="dashboard-detail-stat__label">Occupancy</span>
+                <strong>{selectedSession.occupancyLabel}</strong>
+              </div>
             </div>
-            <div className="dashboard-detail-stat">
-              <span className="dashboard-detail-stat__label">Timing</span>
-              <strong>{selectedSession.timeRange}</strong>
-            </div>
-            <div className="dashboard-detail-stat">
-              <span className="dashboard-detail-stat__label">Location</span>
-              <strong>{selectedSession.location}</strong>
-            </div>
-            <div className="dashboard-detail-stat">
-              <span className="dashboard-detail-stat__label">Occupancy</span>
-              <strong>{selectedSession.occupancyLabel}</strong>
-            </div>
-          </div>
 
-          <div className="dashboard-contact-block">
-            <span className="dashboard-detail-stat__label">Admin note</span>
-            <p>{selectedSession.focus}</p>
-            <p>{selectedSession.attendanceNote}</p>
-          </div>
-        </article>
-
-        <article className="dashboard-panel">
-          <div className="dashboard-panel__header">
-            <div>
-              <span className="mv-eyebrow">Planning cues</span>
-              <h2>What to watch next</h2>
-              <p>Short operational notes for the next schedule decisions.</p>
+            <div className="dashboard-contact-block">
+              <span className="dashboard-detail-stat__label">Admin note</span>
+              <p>{selectedSession.focus}</p>
+              <p>{selectedSession.attendanceNote}</p>
             </div>
-          </div>
-
-          <div className="dashboard-summary-list">
-            <div className="dashboard-summary-row">
-              <strong>Waitlist pressure</strong>
-              <span>Conditioning Lab is full and may need an overflow block.</span>
-            </div>
-            <div className="dashboard-summary-row">
-              <strong>Soft demand</strong>
-              <span>Mobility Flow needs a small push before Tuesday evening.</span>
-            </div>
-            <div className="dashboard-summary-row">
-              <strong>Private follow-up</strong>
-              <span>Friday&apos;s return-to-training session still needs confirmation.</span>
-            </div>
-          </div>
-        </article>
-      </section>
+          </article>
+        </section>
+      ) : null}
 
       <DashboardModal
         open={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         title="Create schedule block"
-        description="Schedule block details"
+        description="This saves a real session to the database."
         footer={
           <>
             <button
               type="button"
               className="mv-btn mv-btn-outline"
               onClick={() => setIsCreateModalOpen(false)}
+              disabled={isSaving}
             >
               Cancel
             </button>
             <button
               type="button"
               className="mv-btn mv-btn-primary"
-              onClick={() => setIsCreateModalOpen(false)}
+              onClick={handleCreateSession}
+              disabled={isSaving}
             >
-              Save block
+              {isSaving ? "Saving..." : "Save block"}
             </button>
           </>
         }
       >
+        {errorMessage ? (
+          <div className="dashboard-empty-state" role="alert">
+            <strong>Could not create session</strong>
+            <p>{errorMessage}</p>
+          </div>
+        ) : null}
         <div className="dashboard-form-grid">
           <label className="dashboard-form-field">
             <span>Title</span>
@@ -436,66 +515,113 @@ export function AdminScheduleWorkspace() {
           </label>
           <label className="dashboard-form-field">
             <span>Session type</span>
-            <select
-              className="dashboard-select"
+            <SessionTypePicker
               value={draftState.sessionType}
-              onChange={(event) =>
+              onChange={(nextType) =>
                 setDraftState((current) => ({
                   ...current,
-                  sessionType: event.target.value as AdminScheduleSessionType,
-                }))
-              }
-            >
-              {adminScheduleSessionTypeFilters
-                .filter((filter) => filter !== "All types")
-                .map((filter) => (
-                  <option key={filter} value={filter}>
-                    {filter}
-                  </option>
-                ))}
-            </select>
-          </label>
-          <label className="dashboard-form-field">
-            <span>Day</span>
-            <select
-              className="dashboard-select"
-              value={draftState.dayLabel}
-              onChange={(event) =>
-                setDraftState((current) => ({
-                  ...current,
-                  dayLabel: event.target.value,
-                }))
-              }
-            >
-              {scheduleDays.map((day) => (
-                <option key={day} value={day}>
-                  {day}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="dashboard-form-field">
-            <span>Time range</span>
-            <input
-              className="dashboard-input"
-              value={draftState.timeRange}
-              onChange={(event) =>
-                setDraftState((current) => ({
-                  ...current,
-                  timeRange: event.target.value,
+                  sessionType: nextType,
+                  capacity: nextType === "PRIVATE" ? "1" : current.capacity || "12",
                 }))
               }
             />
           </label>
           <label className="dashboard-form-field">
-            <span>Coach</span>
-            <input
-              className="dashboard-input"
-              value={draftState.coachName}
+            <span>Status</span>
+            <select
+              className="dashboard-select"
+              value={draftState.status}
               onChange={(event) =>
                 setDraftState((current) => ({
                   ...current,
-                  coachName: event.target.value,
+                  status: event.target.value as "SCHEDULED" | "DRAFT",
+                }))
+              }
+            >
+              <option value="SCHEDULED">Scheduled</option>
+              <option value="DRAFT">Draft</option>
+            </select>
+          </label>
+          <label className="dashboard-form-field">
+            <span>Starts at</span>
+            <input
+              type="datetime-local"
+              className="dashboard-input"
+              value={draftState.startsAt}
+              onChange={(event) =>
+                setDraftState((current) => ({
+                  ...current,
+                  startsAt: event.target.value,
+                }))
+              }
+            />
+          </label>
+          <label className="dashboard-form-field">
+            <span>Ends at</span>
+            <input
+              type="datetime-local"
+              className="dashboard-input"
+              value={draftState.endsAt}
+              onChange={(event) =>
+                setDraftState((current) => ({
+                  ...current,
+                  endsAt: event.target.value,
+                }))
+              }
+            />
+          </label>
+          <div className="dashboard-form-field dashboard-form-field--wide">
+            <span>Coach</span>
+            <CoachOptionPicker
+              value={draftState.coachId}
+              onChange={(coachId) =>
+                setDraftState((current) => ({
+                  ...current,
+                  coachId,
+                }))
+              }
+              options={coachOptions}
+            />
+          </div>
+          <label className="dashboard-form-field">
+            <span>Location</span>
+            <input
+              className="dashboard-input"
+              value={draftState.location}
+              onChange={(event) =>
+                setDraftState((current) => ({
+                  ...current,
+                  location: event.target.value,
+                }))
+              }
+            />
+          </label>
+          <label className="dashboard-form-field">
+            <span>Capacity</span>
+            <input
+              type="number"
+              min={1}
+              max={draftState.sessionType === "PRIVATE" ? 1 : 100}
+              disabled={draftState.sessionType === "PRIVATE"}
+              className="dashboard-input"
+              value={draftState.sessionType === "PRIVATE" ? "1" : draftState.capacity}
+              onChange={(event) =>
+                setDraftState((current) => ({
+                  ...current,
+                  capacity: event.target.value,
+                }))
+              }
+            />
+          </label>
+          <label className="dashboard-form-field">
+            <span>Description</span>
+            <input
+              className="dashboard-input"
+              value={draftState.description}
+              onChange={(event) =>
+                setDraftState((current) => ({
+                  ...current,
+                  description: event.target.value,
                 }))
               }
             />

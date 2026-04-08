@@ -2,7 +2,8 @@ export type AdminSessionStatus =
   | "Scheduled"
   | "Waitlist"
   | "Completed"
-  | "Draft";
+  | "Draft"
+  | "Canceled";
 
 export type AdminSessionRecord = {
   id: string;
@@ -30,6 +31,7 @@ export const adminSessionStatusFilters: Array<"All" | AdminSessionStatus> = [
   "Waitlist",
   "Completed",
   "Draft",
+  "Canceled",
 ];
 
 export const adminGroupSessionRecords: AdminGroupSessionRecord[] = [

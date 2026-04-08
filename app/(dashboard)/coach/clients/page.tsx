@@ -1,7 +1,7 @@
-import { redirect } from "next/navigation";
+import { UserRole } from "@prisma/client";
 
-import { auth } from "@/auth";
 import { CoachClientsWorkspace } from "@/components/dashboard/coach-clients-workspace";
+import { requireRole } from "@/lib/auth/session";
 import { coachClientRepository } from "@/lib/repositories/coach-client-repository";
 
 export const metadata = {
@@ -9,13 +9,9 @@ export const metadata = {
 };
 
 export default async function CoachClientsPage() {
-  const session = await auth();
+  const coachUser = await requireRole(UserRole.COACH);
 
-  if (!session?.user?.id) {
-    redirect("/login");
-  }
-
-  const records = await coachClientRepository.listForCoachUserId(session.user.id);
+  const records = await coachClientRepository.listForCoachUserId(coachUser.id);
 
   return <CoachClientsWorkspace records={records} />;
 }

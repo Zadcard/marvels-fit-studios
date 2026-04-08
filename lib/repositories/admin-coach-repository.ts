@@ -3,39 +3,22 @@ import "server-only";
 import type {
   AdminCoachRecord,
   AdminCoachSpecialization,
-  AdminCoachStatus,
 } from "@/lib/mocks/admin-coaches";
 import { getPrisma } from "@/lib/prisma";
 
-function inferSpecialization(record: {
-  groups: Array<{ type: "GROUP" | "PRIVATE" }>;
-  trainingSessions: Array<{ type: "GROUP" | "PRIVATE" }>;
-}): AdminCoachSpecialization {
-  const privateCount =
-    record.groups.filter((group) => group.type === "PRIVATE").length +
-    record.trainingSessions.filter((session) => session.type === "PRIVATE").length;
-
-  if (privateCount > 0) {
-    return "Private Coaching";
+function toAdminCoachSpecialization(
+  specialization: "STRENGTH" | "CONDITIONING" | "MOBILITY" | "PRIVATE_COACHING"
+): AdminCoachSpecialization {
+  switch (specialization) {
+    case "CONDITIONING":
+      return "Conditioning";
+    case "MOBILITY":
+      return "Mobility";
+    case "PRIVATE_COACHING":
+      return "Private Coaching";
+    default:
+      return "Strength";
   }
-
-  if (record.trainingSessions.length >= 3) {
-    return "Conditioning";
-  }
-
-  return "Strength";
-}
-
-function inferStatus(activeClients: number, sessionsThisWeek: number): AdminCoachStatus {
-  if (activeClients === 0 && sessionsThisWeek === 0) {
-    return "Away";
-  }
-
-  if (sessionsThisWeek <= 1) {
-    return "Limited";
-  }
-
-  return "Active";
 }
 
 export class AdminCoachRepository {
@@ -75,6 +58,26 @@ export class AdminCoachRepository {
       },
     });
 
+    const coachMetaRows = await this.prisma.$queryRaw<
+      Array<{
+        id: string;
+        specialization:
+          | "STRENGTH"
+          | "CONDITIONING"
+          | "MOBILITY"
+          | "PRIVATE_COACHING";
+      }>
+    >`SELECT "id", "specialization" FROM "Coach"`;
+
+    const coachMeta = new Map(
+      coachMetaRows.map((row) => [
+        row.id,
+        {
+          specialization: row.specialization,
+        },
+      ])
+    );
+
     return coaches.map((coach) => {
       const activeClients = coach.groups.reduce(
         (total, group) => total + group._count.clients,
@@ -83,12 +86,14 @@ export class AdminCoachRepository {
       const sessionsThisWeek = coach.trainingSessions.filter(
         (session) => session.startsAt >= now && session.startsAt <= weekEnd
       ).length;
+      const meta = coachMeta.get(coach.id);
 
       return {
         id: coach.id,
         fullName: coach.fullName,
-        specialization: inferSpecialization(coach),
-        status: inferStatus(activeClients, sessionsThisWeek),
+        specialization: toAdminCoachSpecialization(
+          meta?.specialization ?? "STRENGTH"
+        ),
         activeClients,
         sessionsThisWeek,
         email: coach.user.email ?? "No email",

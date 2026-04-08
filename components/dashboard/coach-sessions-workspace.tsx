@@ -1,20 +1,23 @@
 "use client";
 
-import { useDeferredValue, useEffect, useState } from "react";
+import { useDeferredValue, useEffect, useState, useTransition } from "react";
 import { ClipboardCheck } from "lucide-react";
+import { useRouter } from "next/navigation";
 
+import { updateCoachAttendance } from "@/app/actions/coach-attendance";
 import { DashboardManagementToolbar } from "@/components/dashboard/dashboard-management-toolbar";
 import { DashboardEmptyState } from "@/components/dashboard/dashboard-empty-state";
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
 import { DashboardStatusBadge } from "@/components/dashboard/dashboard-status-badge";
 import { DashboardSurfaceNote } from "@/components/dashboard/dashboard-surface-note";
 import {
-  coachSessionRecords,
   coachSessionStatusFilters,
   coachSessionTypeFilters,
+  type CoachSessionBookingStatus,
+  type CoachSessionRecord,
   type CoachSessionStatus,
   type CoachSessionType,
-} from "@/lib/mocks/coach-sessions";
+} from "@/lib/dashboard/coach-session-data";
 
 function getCoachSessionTone(status: CoachSessionStatus) {
   switch (status) {
@@ -33,16 +36,34 @@ function getCoachTypeTone(type: CoachSessionType) {
   return type === "Group" ? "accent" : "neutral";
 }
 
-export function CoachSessionsWorkspace() {
+function getBookingTone(status: CoachSessionBookingStatus) {
+  switch (status) {
+    case "Attended":
+      return "success";
+    case "Missed":
+      return "warning";
+    case "Waitlist":
+      return "accent";
+    default:
+      return "neutral";
+  }
+}
+
+type CoachSessionsWorkspaceProps = {
+  records: CoachSessionRecord[];
+};
+
+export function CoachSessionsWorkspace({ records }: CoachSessionsWorkspaceProps) {
+  const router = useRouter();
+  const [isUpdatingAttendance, startAttendanceTransition] = useTransition();
   const [searchTerm, setSearchTerm] = useState("");
   const deferredSearchTerm = useDeferredValue(searchTerm);
   const [typeFilter, setTypeFilter] = useState<"All" | CoachSessionType>("All");
   const [statusFilter, setStatusFilter] = useState<"All" | CoachSessionStatus>("All");
-  const [selectedSessionId, setSelectedSessionId] = useState(
-    coachSessionRecords[0]?.id ?? ""
-  );
+  const [selectedSessionId, setSelectedSessionId] = useState(records[0]?.id ?? "");
+  const [feedbackMessage, setFeedbackMessage] = useState("");
 
-  const filteredSessions = coachSessionRecords.filter((session) => {
+  const filteredSessions = records.filter((session) => {
     const query = deferredSearchTerm.trim().toLowerCase();
     const matchesSearch =
       query.length === 0 ||
@@ -80,6 +101,32 @@ export function CoachSessionsWorkspace() {
     setStatusFilter("All");
   };
 
+  const handleAttendanceUpdate = (
+    trainingSessionId: string,
+    clientId: string,
+    status: "ATTENDED" | "MISSED"
+  ) => {
+    setFeedbackMessage("");
+
+    startAttendanceTransition(async () => {
+      try {
+        await updateCoachAttendance(trainingSessionId, clientId, status);
+        setFeedbackMessage(
+          status === "ATTENDED"
+            ? "Attendance marked successfully."
+            : "Client marked as missed."
+        );
+        router.refresh();
+      } catch (error) {
+        setFeedbackMessage(
+          error instanceof Error
+            ? error.message
+            : "Attendance update did not complete."
+        );
+      }
+    });
+  };
+
   return (
     <div className="dashboard-stack">
       <DashboardPageHeader eyebrow="Coach sessions" />
@@ -87,11 +134,8 @@ export function CoachSessionsWorkspace() {
       <DashboardSurfaceNote
         eyebrow="Sessions"
         title="Track the sessions you are responsible for."
-        description="Filter the list, then open a session for details."
-        items={[
-          `${readySessions} ready sessions.`,
-          `${groupSessions} group sessions.`,
-        ]}
+        description="Filter the list, open a session, and update attendance from the roster."
+        items={[`${readySessions} ready sessions.`, `${groupSessions} group sessions.`]}
       />
 
       <section className="dashboard-mini-grid" aria-label="Coach session highlights">
@@ -158,6 +202,13 @@ export function CoachSessionsWorkspace() {
               </>
             }
           />
+
+          {feedbackMessage ? (
+            <div className="dashboard-info-strip">
+              <strong>Attendance update</strong>
+              <p>{feedbackMessage}</p>
+            </div>
+          ) : null}
 
           <div className="dashboard-data-region">
             {filteredSessions.length > 0 ? (
@@ -309,9 +360,72 @@ export function CoachSessionsWorkspace() {
                 <p>{selectedSession.note}</p>
               </div>
 
-              <div className="dashboard-info-strip">
-                <strong>Attendance</strong>
-                <p>Attendance and note updates appear here.</p>
+              <div className="dashboard-stack">
+                <div className="dashboard-panel">
+                  <div className="dashboard-panel__header">
+                    <div>
+                      <div className="mv-eyebrow">Attendance</div>
+                      <h2>Session roster</h2>
+                      <p>Mark each booked client as attended or missed.</p>
+                    </div>
+                  </div>
+
+                  {selectedSession.bookings.length > 0 ? (
+                    <div className="dashboard-mobile-list">
+                      {selectedSession.bookings.map((booking) => (
+                        <article key={booking.clientId} className="dashboard-record-card">
+                          <div className="dashboard-record-card__header">
+                            <div>
+                              <h3>{booking.fullName}</h3>
+                              <p>Session participant</p>
+                            </div>
+                            <DashboardStatusBadge
+                              label={booking.status}
+                              tone={getBookingTone(booking.status)}
+                            />
+                          </div>
+                          <div className="dashboard-row-actions">
+                            <button
+                              type="button"
+                              className="dashboard-inline-button"
+                              onClick={() =>
+                                handleAttendanceUpdate(
+                                  selectedSession.id,
+                                  booking.clientId,
+                                  "ATTENDED"
+                                )
+                              }
+                              disabled={
+                                isUpdatingAttendance || booking.status === "Attended"
+                              }
+                            >
+                              Mark attended
+                            </button>
+                            <button
+                              type="button"
+                              className="dashboard-inline-button"
+                              onClick={() =>
+                                handleAttendanceUpdate(
+                                  selectedSession.id,
+                                  booking.clientId,
+                                  "MISSED"
+                                )
+                              }
+                              disabled={isUpdatingAttendance || booking.status === "Missed"}
+                            >
+                              Mark missed
+                            </button>
+                          </div>
+                        </article>
+                      ))}
+                    </div>
+                  ) : (
+                    <DashboardEmptyState
+                      title="No active bookings yet"
+                      description="This session does not have any booked clients to mark."
+                    />
+                  )}
+                </div>
               </div>
             </>
           ) : (

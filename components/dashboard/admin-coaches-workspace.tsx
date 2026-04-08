@@ -4,17 +4,14 @@ import { useDeferredValue, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Pencil, Plus, UserRoundSearch } from "lucide-react";
 
-import { saveCoach } from "@/app/actions/admin-coaches";
+import { deleteCoach, saveCoach } from "@/app/actions/admin-coaches";
 import { DashboardManagementToolbar } from "@/components/dashboard/dashboard-management-toolbar";
 import { DashboardEmptyState } from "@/components/dashboard/dashboard-empty-state";
 import { DashboardModal } from "@/components/dashboard/dashboard-modal";
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
-import { DashboardStatusBadge } from "@/components/dashboard/dashboard-status-badge";
 import {
-  adminCoachStatusFilters,
   type AdminCoachRecord,
   type AdminCoachSpecialization,
-  type AdminCoachStatus,
 } from "@/lib/mocks/admin-coaches";
 
 type CoachFormState = {
@@ -22,7 +19,6 @@ type CoachFormState = {
   email: string;
   phone: string;
   specialization: AdminCoachSpecialization;
-  status: AdminCoachStatus;
 };
 
 const specializationFilters: Array<"All" | AdminCoachSpecialization> = [
@@ -38,32 +34,20 @@ const emptyCoachForm: CoachFormState = {
   email: "",
   phone: "",
   specialization: "Strength",
-  status: "Active",
 };
 
 type AdminCoachesWorkspaceProps = {
   records: AdminCoachRecord[];
 };
 
-function getCoachTone(status: AdminCoachStatus) {
-  switch (status) {
-    case "Active":
-      return "success";
-    case "Limited":
-      return "warning";
-    default:
-      return "neutral";
-  }
-}
-
 export function AdminCoachesWorkspace({
   records,
 }: AdminCoachesWorkspaceProps) {
   const router = useRouter();
   const [isSaving, startTransition] = useTransition();
+  const [isDeleting, startDeleteTransition] = useTransition();
   const [searchTerm, setSearchTerm] = useState("");
   const deferredSearchTerm = useDeferredValue(searchTerm);
-  const [statusFilter, setStatusFilter] = useState<"All" | AdminCoachStatus>("All");
   const [specializationFilter, setSpecializationFilter] = useState<
     "All" | AdminCoachSpecialization
   >("All");
@@ -71,6 +55,8 @@ export function AdminCoachesWorkspace({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCoachId, setEditingCoachId] = useState<string | null>(null);
   const [formState, setFormState] = useState<CoachFormState>(emptyCoachForm);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deleteConfirmationText, setDeleteConfirmationText] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
 
   const filteredCoaches = records.filter((coach) => {
@@ -81,13 +67,11 @@ export function AdminCoachesWorkspace({
         .join(" ")
         .toLowerCase()
         .includes(query);
-    const matchesStatus =
-      statusFilter === "All" || coach.status === statusFilter;
     const matchesSpecialization =
       specializationFilter === "All" ||
       coach.specialization === specializationFilter;
 
-    return matchesSearch && matchesStatus && matchesSpecialization;
+    return matchesSearch && matchesSpecialization;
   });
 
   const selectedCoach =
@@ -109,7 +93,6 @@ export function AdminCoachesWorkspace({
       email: coach.email,
       phone: coach.phone,
       specialization: coach.specialization,
-      status: coach.status,
     });
     setIsModalOpen(true);
   };
@@ -124,12 +107,38 @@ export function AdminCoachesWorkspace({
           fullName: formState.fullName,
           email: formState.email,
           phone: formState.phone,
+          specialization: formState.specialization,
         });
         setIsModalOpen(false);
         router.refresh();
       } catch (error) {
         setErrorMessage(
           error instanceof Error ? error.message : "Could not save coach."
+        );
+      }
+    });
+  };
+
+  const handleDeleteCoach = () => {
+    if (!editingCoachId) {
+      return;
+    }
+
+    setErrorMessage("");
+
+    startDeleteTransition(async () => {
+      try {
+        await deleteCoach({
+          coachId: editingCoachId,
+          confirmationText: deleteConfirmationText,
+        });
+        setIsDeleteModalOpen(false);
+        setIsModalOpen(false);
+        setDeleteConfirmationText("");
+        router.refresh();
+      } catch (error) {
+        setErrorMessage(
+          error instanceof Error ? error.message : "Could not delete coach."
         );
       }
     });
@@ -156,22 +165,6 @@ export function AdminCoachesWorkspace({
             summary={`${filteredCoaches.length} coach records in view`}
             filters={
               <>
-                <label className="dashboard-filter-field">
-                  <span>Status</span>
-                  <select
-                    className="dashboard-select"
-                    value={statusFilter}
-                    onChange={(event) =>
-                      setStatusFilter(event.target.value as "All" | AdminCoachStatus)
-                    }
-                  >
-                    {adminCoachStatusFilters.map((status) => (
-                      <option key={status} value={status}>
-                        {status}
-                      </option>
-                    ))}
-                  </select>
-                </label>
                 <label className="dashboard-filter-field">
                   <span>Specialization</span>
                   <select
@@ -203,7 +196,6 @@ export function AdminCoachesWorkspace({
                   <tr>
                     <th>Coach</th>
                     <th>Specialization</th>
-                    <th>Status</th>
                     <th>Active clients</th>
                     <th>Sessions this week</th>
                     <th>Actions</th>
@@ -221,12 +213,8 @@ export function AdminCoachesWorkspace({
                       </td>
                       <td>{coach.specialization}</td>
                       <td>
-                        <DashboardStatusBadge
-                          label={coach.status}
-                          tone={getCoachTone(coach.status)}
-                        />
+                        {coach.activeClients}
                       </td>
-                      <td>{coach.activeClients}</td>
                       <td>{coach.sessionsThisWeek}</td>
                       <td>
                         <div className="dashboard-row-actions">
@@ -260,10 +248,6 @@ export function AdminCoachesWorkspace({
                       <h3>{coach.fullName}</h3>
                       <p>{coach.specialization}</p>
                     </div>
-                    <DashboardStatusBadge
-                      label={coach.status}
-                      tone={getCoachTone(coach.status)}
-                    />
                   </div>
                   <div className="dashboard-record-card__meta">
                     <span>{coach.activeClients} active clients</span>
@@ -317,10 +301,6 @@ export function AdminCoachesWorkspace({
               <strong>{selectedCoach.specialization}</strong>
             </div>
             <div className="dashboard-detail-stat">
-              <span className="dashboard-detail-stat__label">Status</span>
-              <strong>{selectedCoach.status}</strong>
-            </div>
-            <div className="dashboard-detail-stat">
               <span className="dashboard-detail-stat__label">Active clients</span>
               <strong>{selectedCoach.activeClients}</strong>
             </div>
@@ -364,6 +344,20 @@ export function AdminCoachesWorkspace({
         description="Coach details"
         footer={
           <>
+            {editingCoachId ? (
+              <button
+                type="button"
+                className="mv-btn mv-btn-danger"
+                onClick={() => {
+                  setErrorMessage("");
+                  setDeleteConfirmationText("");
+                  setIsDeleteModalOpen(true);
+                }}
+                disabled={isSaving || isDeleting}
+              >
+                Delete coach
+              </button>
+            ) : null}
             <button
               type="button"
               className="mv-btn mv-btn-outline"
@@ -371,6 +365,7 @@ export function AdminCoachesWorkspace({
                 setErrorMessage("");
                 setIsModalOpen(false);
               }}
+              disabled={isSaving || isDeleting}
             >
               Cancel
             </button>
@@ -378,7 +373,7 @@ export function AdminCoachesWorkspace({
               type="button"
               className="mv-btn mv-btn-primary"
               onClick={handleSaveCoach}
-              disabled={isSaving}
+              disabled={isSaving || isDeleting}
             >
               {isSaving
                 ? "Saving..."
@@ -456,26 +451,62 @@ export function AdminCoachesWorkspace({
                 ))}
             </select>
           </label>
-          <label className="dashboard-form-field">
-            <span>Status</span>
-            <select
-              className="dashboard-select"
-              value={formState.status}
-              onChange={(event) =>
-                setFormState((current) => ({
-                  ...current,
-                  status: event.target.value as AdminCoachStatus,
-                }))
-              }
+        </div>
+      </DashboardModal>
+
+      <DashboardModal
+        open={isDeleteModalOpen}
+        onClose={() => {
+          if (isDeleting) {
+            return;
+          }
+
+          setErrorMessage("");
+          setDeleteConfirmationText("");
+          setIsDeleteModalOpen(false);
+        }}
+        title="Delete coach"
+        description='Type "Delete" to confirm coach deletion'
+        footer={
+          <>
+            <button
+              type="button"
+              className="mv-btn mv-btn-outline"
+              onClick={() => {
+                setErrorMessage("");
+                setDeleteConfirmationText("");
+                setIsDeleteModalOpen(false);
+              }}
+              disabled={isDeleting}
             >
-              {adminCoachStatusFilters
-                .filter((status) => status !== "All")
-                .map((status) => (
-                  <option key={status} value={status}>
-                    {status}
-                  </option>
-                ))}
-            </select>
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="mv-btn mv-btn-danger"
+              onClick={handleDeleteCoach}
+              disabled={isDeleting || deleteConfirmationText.trim() !== "Delete"}
+            >
+              {isDeleting ? "Deleting..." : "Delete coach"}
+            </button>
+          </>
+        }
+      >
+        {errorMessage ? (
+          <div className="dashboard-empty-state" role="alert">
+            <strong>Could not delete coach</strong>
+            <p>{errorMessage}</p>
+          </div>
+        ) : null}
+        <div className="dashboard-form-grid">
+          <label className="dashboard-form-field dashboard-form-field--wide">
+            <span>Confirmation</span>
+            <input
+              className="dashboard-input"
+              value={deleteConfirmationText}
+              onChange={(event) => setDeleteConfirmationText(event.target.value)}
+              placeholder='Type "Delete" to confirm coach deletion'
+            />
           </label>
         </div>
       </DashboardModal>

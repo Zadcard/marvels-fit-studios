@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, SlidersHorizontal } from "lucide-react";
 
-import { saveClientPaymentStatus } from "@/app/actions/admin-payments";
+import { saveAdminClient } from "@/app/actions/admin-clients";
 import { DashboardManagementToolbar } from "@/components/dashboard/dashboard-management-toolbar";
 import { DashboardEmptyState } from "@/components/dashboard/dashboard-empty-state";
 import { DashboardModal } from "@/components/dashboard/dashboard-modal";
@@ -68,56 +68,6 @@ export function AdminClientsWorkspace({ records }: AdminClientsWorkspaceProps) {
       label: "Edit",
       onClick: openEditModal,
     },
-    {
-      label: "Paid",
-      onClick: (record) => {
-        setErrorMessage("");
-        openEditModal(record);
-        updateFormField("paymentStatus", "Paid");
-      },
-    },
-    {
-      label: "Due soon",
-      onClick: (record) => {
-        setErrorMessage("");
-        startTransition(async () => {
-          try {
-            await saveClientPaymentStatus({
-              clientId: record.id,
-              paymentStatus: "Due soon",
-            });
-            router.refresh();
-          } catch (error) {
-            setErrorMessage(
-              error instanceof Error
-                ? error.message
-                : "Could not update payment status."
-            );
-          }
-        });
-      },
-    },
-    {
-      label: "Unpaid",
-      onClick: (record) => {
-        setErrorMessage("");
-        startTransition(async () => {
-          try {
-            await saveClientPaymentStatus({
-              clientId: record.id,
-              paymentStatus: "Unpaid",
-            });
-            router.refresh();
-          } catch (error) {
-            setErrorMessage(
-              error instanceof Error
-                ? error.message
-                : "Could not update payment status."
-            );
-          }
-        });
-      },
-    },
   ];
 
   const handleSaveClient = () => {
@@ -130,8 +80,12 @@ export function AdminClientsWorkspace({ records }: AdminClientsWorkspaceProps) {
 
     startTransition(async () => {
       try {
-        await saveClientPaymentStatus({
+        await saveAdminClient({
           clientId: editingRecordId,
+          fullName: formState.fullName,
+          email: formState.email,
+          phone: formState.phone,
+          status: formState.status,
           paymentStatus: formState.paymentStatus,
           paymentAmount: formState.paymentAmount,
         });
@@ -139,7 +93,7 @@ export function AdminClientsWorkspace({ records }: AdminClientsWorkspaceProps) {
         router.refresh();
       } catch (error) {
         setErrorMessage(
-          error instanceof Error ? error.message : "Could not update payment status."
+          error instanceof Error ? error.message : "Could not save client."
         );
       }
     });
@@ -345,7 +299,7 @@ export function AdminClientsWorkspace({ records }: AdminClientsWorkspaceProps) {
       >
         {errorMessage ? (
           <div className="dashboard-empty-state" role="alert">
-            <strong>Could not save payment</strong>
+            <strong>Could not save client</strong>
             <p>{errorMessage}</p>
           </div>
         ) : null}
@@ -355,7 +309,7 @@ export function AdminClientsWorkspace({ records }: AdminClientsWorkspaceProps) {
               <div>
                 <div className="mv-eyebrow">Payment controls</div>
                 <h2>Set payment status</h2>
-                <p>These buttons save to the database.</p>
+                <p>Client status and payment changes save to the database.</p>
               </div>
             </div>
             <div className="dashboard-row-actions">

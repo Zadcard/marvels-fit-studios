@@ -6,12 +6,22 @@ export const metadata = {
 };
 
 export default async function AdminSessionsPage() {
-  const { groupRecords, privateRecords } = await adminSessionRepository.list();
+  const {
+    groupRecords,
+    privateRecords,
+    editorRecords,
+    coachOptions,
+    clientOptions,
+  } =
+    await adminSessionRepository.list();
 
   return (
     <AdminSessionsWorkspace
       groupRecords={groupRecords}
       privateRecords={privateRecords}
+      editorRecords={editorRecords}
+      coachOptions={coachOptions}
+      clientOptions={clientOptions}
     />
   );
 }

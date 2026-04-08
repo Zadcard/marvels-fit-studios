@@ -21,8 +21,8 @@ class ApiLoadTester:
     
     def run(self) -> Dict:
         """Execute the main functionality"""
-        print(f"🚀 Running {self.__class__.__name__}...")
-        print(f"📁 Target: {self.target_path}")
+        print(f"Running {self.__class__.__name__}...")
+        print(f"Target: {self.target_path}")
         
         try:
             self.validate_target()
@@ -33,7 +33,7 @@ class ApiLoadTester:
             return self.results
             
         except Exception as e:
-            print(f"❌ Error: {e}")
+            print(f"Error: {e}")
             sys.exit(1)
     
     def validate_target(self):

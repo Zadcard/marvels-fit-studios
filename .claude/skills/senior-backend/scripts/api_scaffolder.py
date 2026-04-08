@@ -21,19 +21,19 @@ class ApiScaffolder:
     
     def run(self) -> Dict:
         """Execute the main functionality"""
-        print(f"🚀 Running {self.__class__.__name__}...")
-        print(f"📁 Target: {self.target_path}")
+        print(f"Running {self.__class__.__name__}...")
+        print(f"Target: {self.target_path}")
         
         try:
             self.validate_target()
             self.analyze()
             self.generate_report()
             
-            print("✅ Completed successfully!")
+            print("Completed successfully!")
             return self.results
             
         except Exception as e:
-            print(f"❌ Error: {e}")
+            print(f"Error: {e}")
             sys.exit(1)
     
     def validate_target(self):
@@ -47,7 +47,7 @@ class ApiScaffolder:
     def analyze(self):
         """Perform the main analysis or operation"""
         if self.verbose:
-            print("📊 Analyzing...")
+            print("Analyzing...")
         
         # Main logic here
         self.results['status'] = 'success'
@@ -56,7 +56,7 @@ class ApiScaffolder:
         
         # Add analysis results
         if self.verbose:
-            print(f"✓ Analysis complete: {len(self.results.get('findings', []))} findings")
+            print(f"Analysis complete: {len(self.results.get('findings', []))} findings")
     
     def generate_report(self):
         """Generate and display the report"""

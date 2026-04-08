@@ -68,21 +68,17 @@ function inferMembership(record: {
   return "Group Membership";
 }
 
-function inferClientStatus(record: {
-  subscriptions: Array<{ status: string }>;
-  bookings: Array<{ trainingSession: { startsAt: Date } }>;
-}): AdminClientStatus {
-  const activeSubscription = record.subscriptions[0];
-
-  if (activeSubscription?.status === "PAUSED" || activeSubscription?.status === "EXPIRED") {
-    return "Paused";
+function mapClientStatus(
+  status: "ACTIVE" | "PENDING" | "PAUSED"
+): AdminClientStatus {
+  switch (status) {
+    case "ACTIVE":
+      return "Active";
+    case "PAUSED":
+      return "Paused";
+    default:
+      return "Pending";
   }
-
-  if (activeSubscription?.status === "ACTIVE") {
-    return "Active";
-  }
-
-  return record.bookings.length > 0 ? "Active" : "Pending";
 }
 
 function inferPaymentStatus(record: {
@@ -204,6 +200,17 @@ export class AdminClientRepository {
       },
     });
 
+    const clientStatusRows = await this.prisma.$queryRaw<
+      Array<{
+        id: string;
+        status: "ACTIVE" | "PENDING" | "PAUSED";
+      }>
+    >`SELECT "id", "status" FROM "Client"`;
+
+    const clientStatusMap = new Map(
+      clientStatusRows.map((row) => [row.id, row.status])
+    );
+
     return clients.map((client) => {
       const nextBooking = client.bookings[0];
       const assignedCoach =
@@ -217,7 +224,7 @@ export class AdminClientRepository {
         email: client.user.email ?? "No email",
         phone: client.phone ?? "No phone",
         membership: inferMembership(client),
-        status: inferClientStatus(client),
+        status: mapClientStatus(clientStatusMap.get(client.id) ?? "PENDING"),
         paymentStatus: inferPaymentStatus(client),
         paymentAmountLabel: client.payments[0]
           ? currencyFormatter.format(client.payments[0].amount)

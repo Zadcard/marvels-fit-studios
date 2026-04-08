@@ -33,6 +33,10 @@ function mapStatus(
   status: "DRAFT" | "SCHEDULED" | "COMPLETED" | "CANCELED",
   isAtCapacity: boolean
 ): AdminSessionStatus {
+  if (status === "CANCELED") {
+    return "Canceled";
+  }
+
   if (status === "DRAFT") {
     return "Draft";
   }
@@ -48,54 +52,106 @@ function mapStatus(
   return "Scheduled";
 }
 
+export type AdminSessionEditorRecord = {
+  id: string;
+  title: string;
+  description: string;
+  type: "GROUP" | "PRIVATE";
+  status: "DRAFT" | "SCHEDULED" | "COMPLETED" | "CANCELED";
+  coachId: string;
+  location: string;
+  startsAt: string;
+  endsAt: string;
+  capacity: number | null;
+  bookedClients: Array<{
+    id: string;
+    fullName: string;
+  }>;
+};
+
+export type AdminSessionCoachOption = {
+  id: string;
+  fullName: string;
+};
+
+export type AdminSessionClientOption = {
+  id: string;
+  fullName: string;
+};
+
 export class AdminSessionRepository {
   private prisma = getPrisma();
 
   async list(): Promise<{
     groupRecords: AdminGroupSessionRecord[];
     privateRecords: AdminPrivateSessionRecord[];
+    editorRecords: AdminSessionEditorRecord[];
+    coachOptions: AdminSessionCoachOption[];
+    clientOptions: AdminSessionClientOption[];
   }> {
-    const sessions = await this.prisma.trainingSession.findMany({
-      orderBy: [{ startsAt: "asc" }],
-      select: {
-        id: true,
-        title: true,
-        startsAt: true,
-        location: true,
-        status: true,
-        type: true,
-        capacity: true,
-        coach: {
-          select: {
-            fullName: true,
-          },
-        },
-        bookings: {
-          where: {
-            status: {
-              in: ["BOOKED", "ATTENDED", "WAITLIST"],
+    const [sessions, coaches, clients] = await Promise.all([
+      this.prisma.trainingSession.findMany({
+        orderBy: [{ startsAt: "asc" }],
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          startsAt: true,
+          endsAt: true,
+          location: true,
+          status: true,
+          type: true,
+          capacity: true,
+          coachId: true,
+          coach: {
+            select: {
+              fullName: true,
             },
           },
-          select: {
-            client: {
-              select: {
-                fullName: true,
+          bookings: {
+            where: {
+              status: {
+                in: ["BOOKED", "ATTENDED", "WAITLIST"],
+              },
+            },
+            select: {
+              clientId: true,
+              client: {
+                select: {
+                  id: true,
+                  fullName: true,
+                },
               },
             },
           },
-        },
-        notes: {
-          orderBy: [{ createdAt: "desc" }],
-          take: 1,
-          select: {
-            content: true,
+          notes: {
+            orderBy: [{ createdAt: "desc" }],
+            take: 1,
+            select: {
+              content: true,
+            },
           },
         },
-      },
-    });
+      }),
+      this.prisma.coach.findMany({
+        orderBy: [{ fullName: "asc" }],
+        select: {
+          id: true,
+          fullName: true,
+        },
+      }),
+      this.prisma.client.findMany({
+        orderBy: [{ fullName: "asc" }],
+        select: {
+          id: true,
+          fullName: true,
+        },
+      }),
+    ]);
 
     const groupRecords: AdminGroupSessionRecord[] = [];
     const privateRecords: AdminPrivateSessionRecord[] = [];
+    const editorRecords: AdminSessionEditorRecord[] = [];
 
     for (const session of sessions) {
       const enrolled = session.bookings.length;
@@ -110,6 +166,23 @@ export class AdminSessionRepository {
         location: session.location ?? "Studio floor",
         status: mapStatus(session.status, isAtCapacity),
       };
+
+      editorRecords.push({
+        id: session.id,
+        title: session.title,
+        description: session.description ?? "",
+        type: session.type,
+        status: session.status,
+        coachId: session.coachId,
+        location: session.location ?? "",
+        startsAt: session.startsAt.toISOString(),
+        endsAt: session.endsAt.toISOString(),
+        capacity: session.capacity,
+        bookedClients: session.bookings.map((booking) => ({
+          id: booking.client.id,
+          fullName: booking.client.fullName,
+        })),
+      });
 
       if (session.type === "PRIVATE") {
         privateRecords.push({
@@ -126,7 +199,13 @@ export class AdminSessionRepository {
       }
     }
 
-    return { groupRecords, privateRecords };
+    return {
+      groupRecords,
+      privateRecords,
+      editorRecords,
+      coachOptions: coaches,
+      clientOptions: clients,
+    };
   }
 }
 

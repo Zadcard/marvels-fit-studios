@@ -41,6 +41,13 @@ enum TrainingSessionStatus {
   CANCELED
 }
 
+enum CoachSpecialization {
+  STRENGTH
+  CONDITIONING
+  MOBILITY
+  PRIVATE_COACHING
+}
+
 enum BookingStatus {
   BOOKED
   ATTENDED
@@ -67,6 +74,12 @@ enum ClientPaymentStatus {
   PAID
   UNPAID
   DUE_SOON
+}
+
+enum ClientLifecycleStatus {
+  ACTIVE
+  PENDING
+  PAUSED
 }
 
 model User {
@@ -151,6 +164,7 @@ model Coach {
   id        String   @id @default(cuid())
   fullName  String
   phone     String?
+  specialization CoachSpecialization @default(STRENGTH)
 
   // Linked to global User account
   userId    String   @unique
@@ -181,6 +195,7 @@ model Client {
   sessionsLeft   Int      @default(0)
   isPaid         Boolean  @default(false)
   paymentStatus  ClientPaymentStatus @default(UNPAID)
+  status         ClientLifecycleStatus @default(PENDING)
 
   createdAt      DateTime @default(now())
 
