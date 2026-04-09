@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { BellRing, KeyRound, Save, ShieldCheck, TimerReset, Trophy } from "lucide-react";
+import { KeyRound, Save } from "lucide-react";
 
 import { saveAdminProfile } from "@/app/actions/admin-profile";
 import { DashboardFormSection } from "@/components/dashboard/dashboard-form-section";
+import { DashboardMiniStat } from "@/components/dashboard/dashboard-mini-stat";
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
+import { DashboardSurfaceNote } from "@/components/dashboard/dashboard-surface-note";
 import { DashboardSwitch } from "@/components/dashboard/dashboard-switch";
 import {
   type AdminProfilePreferences,
@@ -41,13 +43,6 @@ type AdminProfileWorkspaceProps = {
   preferences?: AdminProfilePreferences | null;
 };
 
-const metricIconMap = {
-  "shield-check": ShieldCheck,
-  "timer-reset": TimerReset,
-  trophy: Trophy,
-  "bell-ring": BellRing,
-} as const;
-
 export function AdminProfileWorkspace({
   profile: initialProfile,
   metrics = [],
@@ -60,6 +55,10 @@ export function AdminProfileWorkspace({
   const [preferences, setPreferences] =
     useState<AdminProfilePreferences>(initialPreferences ?? defaultPreferences);
   const [saveMessage, setSaveMessage] = useState("Live profile loaded.");
+  const pendingMetric = metrics.find((metric) => metric.id === "approvals") ?? metrics[0];
+  const responseMetric =
+    metrics.find((metric) => metric.id === "response-time") ?? metrics[1] ?? metrics[0];
+  const alertMetric = metrics.find((metric) => metric.id === "alerts") ?? metrics[3] ?? metrics[0];
 
   const updateProfile = <Key extends keyof AdminProfileRecord>(
     field: Key,
@@ -111,6 +110,45 @@ export function AdminProfileWorkspace({
         }
       />
 
+      <DashboardSurfaceNote
+        eyebrow="Account control"
+        title={`${profile.fullName} manages the admin workspace from this account.`}
+        description="Review identity details, keep notification defaults intentional, and treat this screen as the control point for admin-level communication."
+        items={[
+          `${pendingMetric?.value ?? "0"} items still need admin follow-up.`,
+          `${alertMetric?.value ?? "0"} live account alerts can escalate into renewals or billing issues.`,
+          saveMessage,
+        ]}
+      />
+
+      <section
+        className="dashboard-mini-grid dashboard-admin-priority-grid"
+        aria-label="Admin profile highlights"
+      >
+        <DashboardMiniStat
+          tone="accent"
+          label={pendingMetric?.label ?? "Pending approvals"}
+          value={pendingMetric?.value ?? "0"}
+          description="Work queue tied to this admin account."
+        />
+        <DashboardMiniStat
+          tone={preferences.mobileAlerts ? "success" : "warning"}
+          label="Mobile alerts"
+          value={preferences.mobileAlerts ? "Enabled" : "Muted"}
+          description="Urgent schedule and client alerts."
+        />
+        <DashboardMiniStat
+          tone={preferences.renewalEscalations ? "warning" : "success"}
+          label={responseMetric?.label ?? "Ops response"}
+          value={responseMetric?.value ?? "Clear"}
+          description={
+            preferences.renewalEscalations
+              ? "Renewal escalations are active."
+              : "Renewal escalations are quiet."
+          }
+        />
+      </section>
+
       <section className="dashboard-panel dashboard-panel--accent dashboard-profile-hero">
         <div className="dashboard-profile-hero__identity">
           <div className="dashboard-profile-avatar">{profile.initials}</div>
@@ -126,22 +164,6 @@ export function AdminProfileWorkspace({
           <span>{profile.joinedLabel}</span>
           <span>{profile.email}</span>
         </div>
-      </section>
-
-      <section className="dashboard-kpi-grid">
-        {metrics.map((metric) => (
-          <article key={metric.id} className="dashboard-profile-metric">
-            <span className="dashboard-profile-metric__icon">
-              {(() => {
-                const Icon = metricIconMap[metric.iconKey];
-                return <Icon size={18} />;
-              })()}
-            </span>
-            <strong>{metric.value}</strong>
-            <span>{metric.label}</span>
-            <p>{metric.detail}</p>
-          </article>
-        ))}
       </section>
 
       <section className="dashboard-detail-layout">
@@ -208,19 +230,21 @@ export function AdminProfileWorkspace({
             <div className="dashboard-stack">
               <DashboardSwitch
                 checked={preferences.emailUpdates}
-                onCheckedChange={() => {}}
+                onCheckedChange={(checked) => updatePreference("emailUpdates", checked)}
                 label="Email updates"
                 description="Weekly summaries by email."
               />
               <DashboardSwitch
                 checked={preferences.mobileAlerts}
-                onCheckedChange={() => {}}
+                onCheckedChange={(checked) => updatePreference("mobileAlerts", checked)}
                 label="Mobile alerts"
                 description="Time-sensitive schedule alerts."
               />
               <DashboardSwitch
                 checked={preferences.renewalEscalations}
-                onCheckedChange={() => {}}
+                onCheckedChange={(checked) =>
+                  updatePreference("renewalEscalations", checked)
+                }
                 label="Renewal escalations"
                 description="At-risk membership alerts."
               />

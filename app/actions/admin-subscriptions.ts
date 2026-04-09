@@ -130,16 +130,16 @@ export async function saveAdminSubscription(input: SaveAdminSubscriptionInput) {
     const subscription = existingSubscription
       ? await tx.clientSubscription.update({
           where: { id: existingSubscription.id },
-        data: {
-          clientId,
-          planId,
-          status: targetStatus,
-          startsAt,
-          renewsAt,
-          endsAt: targetStatus === "PAUSED" ? renewsAt : null,
-          sessionsTotal: plan.sessionsIncluded,
-          isAutoRenew: targetStatus !== "PAUSED",
-        },
+          data: {
+            clientId,
+            planId,
+            status: targetStatus,
+            startsAt,
+            renewsAt,
+            endsAt: targetStatus === "PAUSED" ? renewsAt : null,
+            sessionsTotal: plan.sessionsIncluded,
+            isAutoRenew: targetStatus !== "PAUSED",
+          },
           select: { id: true },
         })
       : await tx.clientSubscription.create({
@@ -155,12 +155,6 @@ export async function saveAdminSubscription(input: SaveAdminSubscriptionInput) {
         },
         select: { id: true },
       });
-
-    await tx.$executeRaw`
-      UPDATE "ClientSubscription"
-      SET "customPrice" = ${amount}
-      WHERE "id" = ${subscription.id}
-    `;
 
     await tx.client.update({
       where: { id: clientId },

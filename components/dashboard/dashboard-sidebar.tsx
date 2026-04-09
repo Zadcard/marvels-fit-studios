@@ -11,6 +11,7 @@ import { signOut, useSession } from "next-auth/react";
 import {
   getDashboardNav,
   getDashboardProfileMeta,
+  getDashboardRoleLabel,
   isDashboardNavItemActive,
 } from "@/lib/navigation/dashboard-nav";
 import type { DashboardRole } from "@/lib/auth/authorization-policy";
@@ -36,6 +37,7 @@ export function DashboardSidebar({
   const { data: session } = useSession();
   const navItems = getDashboardNav(role);
   const profileMeta = getDashboardProfileMeta(role);
+  const roleLabel = getDashboardRoleLabel(role);
   const groupedItems = {
     primary: navItems.filter((item) => item.section === "primary"),
     secondary: navItems.filter((item) => item.section === "secondary"),
@@ -83,7 +85,7 @@ export function DashboardSidebar({
 
         <div className="dashboard-sidebar__brand-copy">
           <p>Marvel&apos;s Studios</p>
-          <strong>{role} portal</strong>
+          <strong>{roleLabel} workspace</strong>
         </div>
 
         <button
@@ -157,7 +159,7 @@ export function DashboardSidebar({
 
       <div className="dashboard-sidebar__account">
         <div className="dashboard-sidebar__account-copy">
-          <span className="dashboard-badge">Account</span>
+          <span className="dashboard-badge dashboard-badge--accent">{roleLabel}</span>
           <strong>{displayName}</strong>
           <p>{displaySubtitle}</p>
         </div>

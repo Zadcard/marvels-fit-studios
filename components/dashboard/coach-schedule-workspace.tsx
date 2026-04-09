@@ -5,6 +5,7 @@ import { LayoutGrid, Rows3 } from "lucide-react";
 
 import { DashboardEmptyState } from "@/components/dashboard/dashboard-empty-state";
 import { DashboardManagementToolbar } from "@/components/dashboard/dashboard-management-toolbar";
+import { DashboardMiniStat } from "@/components/dashboard/dashboard-mini-stat";
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
 import { DashboardStatusBadge } from "@/components/dashboard/dashboard-status-badge";
 import { DashboardSurfaceNote } from "@/components/dashboard/dashboard-surface-note";
@@ -89,21 +90,21 @@ export function CoachScheduleWorkspace({ records }: CoachScheduleWorkspaceProps)
       />
 
       <section className="dashboard-mini-grid" aria-label="Coach schedule highlights">
-        <article className="dashboard-mini-stat">
-          <span className="dashboard-mini-stat__label">Blocks in view</span>
-          <strong>{filteredSchedule.length}</strong>
-          <p>Current workload.</p>
-        </article>
-        <article className="dashboard-mini-stat">
-          <span className="dashboard-mini-stat__label">Ready</span>
-          <strong>{readyBlocks}</strong>
-          <p>Ready to run.</p>
-        </article>
-        <article className="dashboard-mini-stat">
-          <span className="dashboard-mini-stat__label">Focus mode</span>
-          <strong>{view === "week" ? "Week" : "Day"}</strong>
-          <p>Current view.</p>
-        </article>
+        <DashboardMiniStat
+          label="Blocks in view"
+          value={filteredSchedule.length}
+          description="Current workload."
+        />
+        <DashboardMiniStat
+          label="Ready"
+          value={readyBlocks}
+          description="Ready to run."
+        />
+        <DashboardMiniStat
+          label="Focus mode"
+          value={view === "week" ? "Week" : "Day"}
+          description="Current view."
+        />
       </section>
 
       <section className="dashboard-panel dashboard-panel--accent">

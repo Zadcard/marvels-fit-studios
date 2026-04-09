@@ -1,5 +1,6 @@
 import { Mail, MessageSquareMore, Phone, ShieldUser } from "lucide-react";
 
+import { DashboardMiniStat } from "@/components/dashboard/dashboard-mini-stat";
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
 import { DashboardSurfaceNote } from "@/components/dashboard/dashboard-surface-note";
 import type { ClientCoachRecord } from "@/lib/dashboard/client-dashboard-data";
@@ -26,21 +27,21 @@ export function ClientCoachWorkspace({ data }: ClientCoachWorkspaceProps) {
       />
 
       <section className="dashboard-mini-grid" aria-label="Coach relationship highlights">
-        <article className="dashboard-mini-stat">
-          <span className="dashboard-mini-stat__label">Specialization</span>
-          <strong>{data.specialization}</strong>
-          <p>Main focus area.</p>
-        </article>
-        <article className="dashboard-mini-stat">
-          <span className="dashboard-mini-stat__label">Next touchpoint</span>
-          <strong>{sanitizedNextSession}</strong>
-          <p>Next touchpoint.</p>
-        </article>
-        <article className="dashboard-mini-stat">
-          <span className="dashboard-mini-stat__label">Communication</span>
-          <strong>Direct</strong>
-          <p>Phone and email available.</p>
-        </article>
+        <DashboardMiniStat
+          label="Specialization"
+          value={data.specialization}
+          description="Main focus area."
+        />
+        <DashboardMiniStat
+          label="Next touchpoint"
+          value={sanitizedNextSession}
+          description="Next touchpoint."
+        />
+        <DashboardMiniStat
+          label="Communication"
+          value="Direct"
+          description="Phone and email available."
+        />
       </section>
 
       <section className="dashboard-secondary-grid">

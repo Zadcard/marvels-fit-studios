@@ -67,7 +67,7 @@ function mapSubscriptionStatus(status: string, renewsAt: Date | null): AdminSubs
 function mapPaymentStatus(record: {
   status: string;
   renewsAt: Date | null;
-  payments: Array<{ date: Date }>;
+  payments: Array<{ amount: number; date: Date }>;
   client: { isPaid: boolean };
 }): AdminPaymentStatus {
   if (record.payments.length > 0) {
@@ -222,6 +222,7 @@ export class AdminSubscriptionRepository {
               orderBy: [{ date: "desc" }],
               take: 1,
               select: {
+                amount: true,
                 date: true,
               },
             },
@@ -282,13 +283,6 @@ export class AdminSubscriptionRepository {
         }),
       ]);
 
-    const customPriceRows = await this.prisma.$queryRaw<
-      Array<{ id: string; customPrice: number | null }>
-    >`SELECT "id", "customPrice" FROM "ClientSubscription"`;
-    const customPriceBySubscriptionId = new Map(
-      customPriceRows.map((row) => [row.id, row.customPrice])
-    );
-
     const records = subscriptions.map((subscription) => {
       const planName = mapPlanName(subscription);
       const subscriptionStatus = mapSubscriptionStatus(
@@ -296,6 +290,7 @@ export class AdminSubscriptionRepository {
         subscription.renewsAt
       );
       const paymentStatus = mapPaymentStatus(subscription);
+      const effectiveAmount = subscription.payments[0]?.amount ?? subscription.plan.price;
 
       return {
         id: subscription.id,
@@ -315,12 +310,8 @@ export class AdminSubscriptionRepository {
         renewalDateValue: subscription.renewsAt
           ? subscription.renewsAt.toISOString().slice(0, 10)
           : "",
-        amountLabel: currencyFormatter.format(
-          customPriceBySubscriptionId.get(subscription.id) ?? subscription.plan.price
-        ),
-        amountValue: String(
-          customPriceBySubscriptionId.get(subscription.id) ?? subscription.plan.price
-        ),
+        amountLabel: currencyFormatter.format(effectiveAmount),
+        amountValue: String(effectiveAmount),
         billingCycle:
           subscription.plan.billingCycle.charAt(0) +
           subscription.plan.billingCycle.slice(1).toLowerCase(),

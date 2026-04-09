@@ -9,6 +9,7 @@ import {
   getDashboardProfileMeta,
   getDashboardProfileHref,
   getDashboardRouteMeta,
+  getDashboardRoleLabel,
   getDashboardSearchPrompt,
 } from "@/lib/navigation/dashboard-nav";
 import type { DashboardRole } from "@/lib/auth/authorization-policy";
@@ -26,6 +27,7 @@ export function DashboardTopbar({
   const { data: session } = useSession();
   const routeMeta = getDashboardRouteMeta(pathname, role);
   const profileMeta = getDashboardProfileMeta(role);
+  const roleLabel = getDashboardRoleLabel(role);
   const displayName =
     session?.user?.name?.trim() ||
     session?.user?.email?.trim() ||
@@ -61,9 +63,19 @@ export function DashboardTopbar({
       </div>
 
       <div className="dashboard-topbar__right">
-        <div className="dashboard-topbar__search" role="note" aria-label="Search preview">
+        <div
+          className="dashboard-topbar__search"
+          role="note"
+          aria-label={`${getDashboardSearchPrompt(role)}. Search is not available on this screen yet.`}
+        >
           <Search size={16} />
-          <span>{getDashboardSearchPrompt(role)}</span>
+          <span className="dashboard-topbar__search-copy">
+            <strong>Quick find</strong>
+            <span>{getDashboardSearchPrompt(role)}</span>
+          </span>
+          <span className="dashboard-topbar__search-hint" aria-hidden="true">
+            /
+          </span>
         </div>
 
         <Link href={getDashboardProfileHref(role)} className="dashboard-topbar__profile">
@@ -74,6 +86,10 @@ export function DashboardTopbar({
             <strong>{displayName}</strong>
             <small className="dashboard-topbar__profile-status">
               <span>{displaySubtitle}</span>
+              <span className="dashboard-topbar__profile-separator" aria-hidden="true">
+                /
+              </span>
+              <span>{roleLabel}</span>
             </small>
           </span>
         </Link>

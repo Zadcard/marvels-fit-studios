@@ -2,13 +2,16 @@
 
 import { useDeferredValue, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Pencil, Plus, UserRoundSearch } from "lucide-react";
+import { Pencil, Plus } from "lucide-react";
 
 import { deleteCoach, saveCoach } from "@/app/actions/admin-coaches";
 import { DashboardManagementToolbar } from "@/components/dashboard/dashboard-management-toolbar";
 import { DashboardEmptyState } from "@/components/dashboard/dashboard-empty-state";
+import { DashboardMiniStat } from "@/components/dashboard/dashboard-mini-stat";
 import { DashboardModal } from "@/components/dashboard/dashboard-modal";
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
+import { DashboardStatusBadge } from "@/components/dashboard/dashboard-status-badge";
+import { DashboardSurfaceNote } from "@/components/dashboard/dashboard-surface-note";
 import {
   type AdminCoachRecord,
   type AdminCoachSpecialization,
@@ -35,6 +38,30 @@ const emptyCoachForm: CoachFormState = {
   phone: "",
   specialization: "Strength",
 };
+
+function getCoachLoadTone(coach: AdminCoachRecord) {
+  if (coach.sessionsThisWeek === 0) {
+    return "warning";
+  }
+
+  if (coach.activeClients >= 20 || coach.sessionsThisWeek >= 10) {
+    return "accent";
+  }
+
+  return "success";
+}
+
+function getCoachLoadLabel(coach: AdminCoachRecord) {
+  if (coach.sessionsThisWeek === 0) {
+    return "Needs schedule";
+  }
+
+  if (coach.activeClients >= 20 || coach.sessionsThisWeek >= 10) {
+    return "High load";
+  }
+
+  return "On track";
+}
 
 type AdminCoachesWorkspaceProps = {
   records: AdminCoachRecord[];
@@ -77,6 +104,16 @@ export function AdminCoachesWorkspace({
   const selectedCoach =
     filteredCoaches.find((coach) => coach.id === selectedCoachId) ??
     filteredCoaches[0];
+  const highLoadCount = filteredCoaches.filter(
+    (coach) => coach.activeClients >= 20 || coach.sessionsThisWeek >= 10
+  ).length;
+  const noSessionsCount = filteredCoaches.filter(
+    (coach) => coach.sessionsThisWeek === 0
+  ).length;
+  const activeCoverage = filteredCoaches.reduce(
+    (total, coach) => total + coach.activeClients,
+    0
+  );
 
   const openAddModal = () => {
     setEditingCoachId(null);
@@ -145,7 +182,7 @@ export function AdminCoachesWorkspace({
   };
 
   return (
-    <div className="dashboard-stack">
+    <div className="dashboard-stack dashboard-stack--dense">
       <DashboardPageHeader
         eyebrow="Admin coaches"
         actions={
@@ -156,13 +193,52 @@ export function AdminCoachesWorkspace({
         }
       />
 
+      <DashboardSurfaceNote
+        eyebrow="Coach coverage"
+        title={
+          noSessionsCount > 0
+            ? `${noSessionsCount} coaches have no sessions scheduled this week in this view.`
+            : "Coach coverage is active enough to focus on load balance and specialization."
+        }
+        description="Scan idle coverage first, then watch high-load coaches before assigning more clients or sessions."
+        items={[
+          `${filteredCoaches.length} coaches are visible in this filtered roster.`,
+          `${highLoadCount} coaches are carrying high client or session load.`,
+          `${activeCoverage} active client assignments are covered across this view.`,
+        ]}
+      />
+
+      <section
+        className="dashboard-mini-grid dashboard-admin-priority-grid"
+        aria-label="Coach priorities"
+      >
+        <DashboardMiniStat
+          tone={noSessionsCount > 0 ? "warning" : "success"}
+          label="No sessions"
+          value={noSessionsCount}
+          description="Need schedule coverage."
+        />
+        <DashboardMiniStat
+          tone={highLoadCount > 0 ? "accent" : "success"}
+          label="High load"
+          value={highLoadCount}
+          description="Need attention before adding more work."
+        />
+        <DashboardMiniStat
+          tone="success"
+          label="Client coverage"
+          value={activeCoverage}
+          description="Active clients covered in this view."
+        />
+      </section>
+
       <section className="dashboard-detail-layout">
-        <article className="dashboard-panel dashboard-panel--accent">
+        <article className="dashboard-panel dashboard-panel--accent dashboard-panel--dense">
           <DashboardManagementToolbar
             searchValue={searchTerm}
             onSearchChange={setSearchTerm}
             searchPlaceholder="Search by coach, specialty, or note"
-            summary={`${filteredCoaches.length} coach records in view`}
+            summary={`${filteredCoaches.length} coaches in view • ${noSessionsCount} need schedule coverage`}
             filters={
               <>
                 <label className="dashboard-filter-field">
@@ -190,89 +266,121 @@ export function AdminCoachesWorkspace({
           <div className="dashboard-data-region">
             {filteredCoaches.length > 0 ? (
               <>
-            <div className="dashboard-table-wrap">
-              <table className="dashboard-table">
-                <thead>
-                  <tr>
-                    <th>Coach</th>
-                    <th>Specialization</th>
-                    <th>Active clients</th>
-                    <th>Sessions this week</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredCoaches.map((coach) => (
-                    <tr key={coach.id}>
-                      <td>
-                        <div className="dashboard-table__identity">
-                          <strong>{coach.fullName}</strong>
-                          <span>{coach.email}</span>
-                          <small>{coach.phone}</small>
-                        </div>
-                      </td>
-                      <td>{coach.specialization}</td>
-                      <td>
-                        {coach.activeClients}
-                      </td>
-                      <td>{coach.sessionsThisWeek}</td>
-                      <td>
-                        <div className="dashboard-row-actions">
-                          <button
-                            type="button"
-                            className="dashboard-inline-button"
-                            onClick={() => setSelectedCoachId(coach.id)}
-                          >
-                            Inspect
-                          </button>
-                          <button
-                            type="button"
-                            className="dashboard-inline-button"
-                            onClick={() => openEditModal(coach)}
-                          >
-                            Edit
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                <div className="dashboard-panel__meta-strip">
+                  <span>{highLoadCount} high load</span>
+                  <span>{noSessionsCount} no sessions</span>
+                  <span>{activeCoverage} active clients covered</span>
+                </div>
 
-            <div className="dashboard-mobile-list">
-              {filteredCoaches.map((coach) => (
-                <article key={coach.id} className="dashboard-record-card">
-                  <div className="dashboard-record-card__header">
-                    <div>
-                      <h3>{coach.fullName}</h3>
-                      <p>{coach.specialization}</p>
-                    </div>
-                  </div>
-                  <div className="dashboard-record-card__meta">
-                    <span>{coach.activeClients} active clients</span>
-                    <span>{coach.sessionsThisWeek} sessions this week</span>
-                  </div>
-                  <p className="dashboard-record-card__note">{coach.summary}</p>
-                  <div className="dashboard-row-actions">
-                    <button
-                      type="button"
-                      className="dashboard-inline-button"
-                      onClick={() => setSelectedCoachId(coach.id)}
+                <div className="dashboard-table-wrap">
+                  <table className="dashboard-table dashboard-coach-table">
+                    <thead>
+                      <tr>
+                        <th>Coach</th>
+                        <th>Coverage</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredCoaches.map((coach) => (
+                        <tr key={coach.id}>
+                          <td>
+                            <div className="dashboard-table__identity">
+                              <strong>{coach.fullName}</strong>
+                              <span>{coach.email}</span>
+                              <small>{coach.phone}</small>
+                            </div>
+                            <div className="dashboard-coach-table__specialization">
+                              <DashboardStatusBadge
+                                label={coach.specialization}
+                                tone="neutral"
+                              />
+                              <DashboardStatusBadge
+                                label={getCoachLoadLabel(coach)}
+                                tone={getCoachLoadTone(coach)}
+                              />
+                            </div>
+                          </td>
+                          <td>
+                            <div className="dashboard-coach-table__load">
+                              <div className="dashboard-coach-table__metric">
+                                <strong>{coach.activeClients}</strong>
+                                <span>active clients</span>
+                              </div>
+                              <div className="dashboard-coach-table__metric">
+                                <strong>{coach.sessionsThisWeek}</strong>
+                                <span>sessions this week</span>
+                              </div>
+                              <p>{coach.summary}</p>
+                            </div>
+                          </td>
+                          <td>
+                            <div className="dashboard-row-actions">
+                              <button
+                                type="button"
+                                className="dashboard-inline-button"
+                                onClick={() => setSelectedCoachId(coach.id)}
+                              >
+                                Inspect
+                              </button>
+                              <button
+                                type="button"
+                                className="dashboard-inline-button"
+                                onClick={() => openEditModal(coach)}
+                              >
+                                Edit
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="dashboard-mobile-list">
+                  {filteredCoaches.map((coach) => (
+                    <article
+                      key={coach.id}
+                      className="dashboard-record-card dashboard-record-card--coach"
                     >
-                      Open detail
-                    </button>
-                    <button
-                      type="button"
-                      className="dashboard-inline-button"
-                      onClick={() => openEditModal(coach)}
-                    >
-                      Edit coach
-                    </button>
-                  </div>
-                </article>
-              ))}
-            </div>
+                      <div className="dashboard-record-card__header">
+                        <div>
+                          <span className="dashboard-record-card__eyebrow">
+                            {coach.specialization}
+                          </span>
+                          <h3>{coach.fullName}</h3>
+                          <p>{coach.email}</p>
+                        </div>
+                        <DashboardStatusBadge
+                          label={getCoachLoadLabel(coach)}
+                          tone={getCoachLoadTone(coach)}
+                        />
+                      </div>
+                      <div className="dashboard-record-card__meta">
+                        <span>{coach.activeClients} active clients</span>
+                        <span>{coach.sessionsThisWeek} sessions this week</span>
+                      </div>
+                      <p className="dashboard-record-card__note">{coach.summary}</p>
+                      <div className="dashboard-row-actions">
+                        <button
+                          type="button"
+                          className="dashboard-inline-button"
+                          onClick={() => setSelectedCoachId(coach.id)}
+                        >
+                          Open detail
+                        </button>
+                        <button
+                          type="button"
+                          className="dashboard-inline-button"
+                          onClick={() => openEditModal(coach)}
+                        >
+                          Edit coach
+                        </button>
+                      </div>
+                    </article>
+                  ))}
+                </div>
               </>
             ) : (
               <DashboardEmptyState
@@ -283,47 +391,59 @@ export function AdminCoachesWorkspace({
           </div>
         </article>
 
-        <aside className="dashboard-panel dashboard-detail-panel">
+        <aside className="dashboard-panel dashboard-detail-panel dashboard-panel--dense">
           {selectedCoach ? (
             <>
-          <div className="dashboard-panel__header">
-            <div>
+              <div className="dashboard-panel__header dashboard-panel__header--tight">
+                <div>
                   <div className="mv-eyebrow">Coach detail</div>
                   <h2>{selectedCoach.fullName}</h2>
-                  <p>{selectedCoach.specialization}</p>
-            </div>
-            <UserRoundSearch size={20} color="#ff8b8f" />
-          </div>
+                  <p>{selectedCoach.summary}</p>
+                </div>
+                <DashboardStatusBadge
+                  label={getCoachLoadLabel(selectedCoach)}
+                  tone={getCoachLoadTone(selectedCoach)}
+                />
+              </div>
 
-          <div className="dashboard-detail-grid">
-            <div className="dashboard-detail-stat">
-              <span className="dashboard-detail-stat__label">Specialization</span>
-              <strong>{selectedCoach.specialization}</strong>
-            </div>
-            <div className="dashboard-detail-stat">
-              <span className="dashboard-detail-stat__label">Active clients</span>
-              <strong>{selectedCoach.activeClients}</strong>
-            </div>
-            <div className="dashboard-detail-stat">
-              <span className="dashboard-detail-stat__label">Weekly sessions</span>
-              <strong>{selectedCoach.sessionsThisWeek}</strong>
-            </div>
-          </div>
+              <div className="dashboard-detail-grid">
+                <div className="dashboard-detail-stat">
+                  <span className="dashboard-detail-stat__label">Specialization</span>
+                  <strong>{selectedCoach.specialization}</strong>
+                </div>
+                <div className="dashboard-detail-stat">
+                  <span className="dashboard-detail-stat__label">Active clients</span>
+                  <strong>{selectedCoach.activeClients}</strong>
+                </div>
+                <div className="dashboard-detail-stat">
+                  <span className="dashboard-detail-stat__label">Weekly sessions</span>
+                  <strong>{selectedCoach.sessionsThisWeek}</strong>
+                </div>
+                <div className="dashboard-detail-stat">
+                  <span className="dashboard-detail-stat__label">Coverage state</span>
+                  <strong>{getCoachLoadLabel(selectedCoach)}</strong>
+                  <small>
+                    {selectedCoach.sessionsThisWeek === 0
+                      ? "No sessions are scheduled for this week yet."
+                      : "Current load based on active clients and scheduled sessions."}
+                  </small>
+                </div>
+              </div>
 
-          <div className="dashboard-contact-block">
-            <span className="dashboard-detail-stat__label">Contact</span>
-            <p>{selectedCoach.email}</p>
-            <p>{selectedCoach.phone}</p>
-          </div>
+              <div className="dashboard-contact-block">
+                <span className="dashboard-detail-stat__label">Contact</span>
+                <p>{selectedCoach.email}</p>
+                <p>{selectedCoach.phone}</p>
+              </div>
 
-          <button
-            type="button"
-            className="mv-btn mv-btn-secondary"
-            onClick={() => openEditModal(selectedCoach)}
-          >
-            <Pencil size={16} />
-            Edit Coach
-          </button>
+              <button
+                type="button"
+                className="mv-btn mv-btn-secondary"
+                onClick={() => openEditModal(selectedCoach)}
+              >
+                <Pencil size={16} />
+                Edit Coach
+              </button>
             </>
           ) : (
             <DashboardEmptyState

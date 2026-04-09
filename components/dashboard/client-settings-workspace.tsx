@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { Save } from "lucide-react";
 
 import { DashboardFormSection } from "@/components/dashboard/dashboard-form-section";
+import { DashboardMiniStat } from "@/components/dashboard/dashboard-mini-stat";
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
 import { DashboardSurfaceNote } from "@/components/dashboard/dashboard-surface-note";
 import { DashboardSwitch } from "@/components/dashboard/dashboard-switch";
@@ -82,21 +83,21 @@ export function ClientSettingsWorkspace({
       />
 
       <section className="dashboard-mini-grid" aria-label="Client settings highlights">
-        <article className="dashboard-mini-stat">
-          <span className="dashboard-mini-stat__label">Preferred time</span>
-          <strong>{settings.preferredSessionTime}</strong>
-          <p>Current scheduling preference.</p>
-        </article>
-        <article className="dashboard-mini-stat">
-          <span className="dashboard-mini-stat__label">Notifications on</span>
-          <strong>{enabledNotifications}/3</strong>
-          <p>Active alerts.</p>
-        </article>
-        <article className="dashboard-mini-stat">
-          <span className="dashboard-mini-stat__label">Changes pending</span>
-          <strong>{hasChanges ? "Yes" : "No"}</strong>
-          <p>Pending edits.</p>
-        </article>
+        <DashboardMiniStat
+          label="Preferred time"
+          value={settings.preferredSessionTime}
+          description="Current scheduling preference."
+        />
+        <DashboardMiniStat
+          label="Notifications on"
+          value={`${enabledNotifications}/3`}
+          description="Active alerts."
+        />
+        <DashboardMiniStat
+          label="Changes pending"
+          value={hasChanges ? "Yes" : "No"}
+          description="Pending edits."
+        />
       </section>
 
       <section className="dashboard-detail-layout">

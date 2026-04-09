@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowRight, CreditCard, ShieldUser, Sparkles } from "lucide-react";
 
 import { DashboardActivityFeed } from "@/components/dashboard/dashboard-activity-feed";
+import { DashboardMiniStat } from "@/components/dashboard/dashboard-mini-stat";
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
 import { DashboardStatCard } from "@/components/dashboard/dashboard-stat-card";
 import { DashboardSurfaceNote } from "@/components/dashboard/dashboard-surface-note";
@@ -52,21 +53,21 @@ export function ClientOverviewWorkspace({ data }: ClientOverviewWorkspaceProps) 
       />
 
       <section className="dashboard-mini-grid" aria-label="Client overview highlights">
-        <article className="dashboard-mini-stat">
-          <span className="dashboard-mini-stat__label">Next touchpoint</span>
-          <strong>{data.coachSnapshot.nextTouchpoint}</strong>
-          <p>Next coach touchpoint.</p>
-        </article>
-        <article className="dashboard-mini-stat">
-          <span className="dashboard-mini-stat__label">Membership state</span>
-          <strong>{data.subscriptionSnapshot.paymentStatus}</strong>
-          <p>{data.subscriptionSnapshot.renewalLabel}</p>
-        </article>
-        <article className="dashboard-mini-stat">
-          <span className="dashboard-mini-stat__label">Weekly view</span>
-          <strong>{bookedThisWeek} sessions</strong>
-          <p>Booked this week.</p>
-        </article>
+        <DashboardMiniStat
+          label="Next touchpoint"
+          value={data.coachSnapshot.nextTouchpoint}
+          description="Next coach touchpoint."
+        />
+        <DashboardMiniStat
+          label="Membership state"
+          value={data.subscriptionSnapshot.paymentStatus}
+          description={data.subscriptionSnapshot.renewalLabel}
+        />
+        <DashboardMiniStat
+          label="Weekly view"
+          value={`${bookedThisWeek} sessions`}
+          description="Booked this week."
+        />
       </section>
 
       <section className="dashboard-kpi-grid" aria-label="Client overview stats">

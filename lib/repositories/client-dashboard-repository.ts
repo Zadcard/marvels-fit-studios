@@ -158,23 +158,6 @@ type ClientPrimaryCoach = {
   bio: string;
 };
 
-function formatCoachSpecialization(
-  specialization: "STRENGTH" | "CONDITIONING" | "MOBILITY" | "PRIVATE_COACHING" | null | undefined
-) {
-  switch (specialization) {
-    case "CONDITIONING":
-      return "Conditioning";
-    case "MOBILITY":
-      return "Mobility";
-    case "PRIVATE_COACHING":
-      return "Private Coaching";
-    case "STRENGTH":
-      return "Strength";
-    default:
-      return "Coaching support";
-  }
-}
-
 function resolvePrimaryCoach(
   client: NonNullable<ClientDashboardQuery>,
   visibleSessions: ClientDashboardSessionEntry[]

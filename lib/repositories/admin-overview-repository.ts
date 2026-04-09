@@ -42,6 +42,10 @@ type AdminOverviewData = {
   studioSnapshot: AdminStudioSnapshot[];
 };
 
+type TimedAdminRecentActivityItem = AdminRecentActivityItem & {
+  occurredAt: number;
+};
+
 function getDayLabel(date: Date) {
   const now = new Date();
   const tomorrow = new Date(now);
@@ -225,41 +229,41 @@ export class AdminOverviewRepository {
     const stats: AdminOverviewStat[] = [
       {
         id: "members",
-        label: "Total members",
+        label: "Members",
         value: numberFormatter.format(totalMembers),
-        change: `${activeLeadCount} active leads`,
-        detail: "Live client roster from the database.",
-        note: "Database-backed",
+        change: `${activeLeadCount} in lead queue`,
+        detail: "Clients currently active in the roster.",
+        note: "Roster live",
         icon: Users,
         tone: "accent",
       },
       {
         id: "coaches",
-        label: "Active coaches",
+        label: "Coach coverage",
         value: numberFormatter.format(coachCount),
-        change: "Roster coverage",
-        detail: "Coach accounts currently available in the system.",
-        note: "Database-backed",
+        change: "Coverage ready",
+        detail: "Coaches currently available for scheduling.",
+        note: "Roster live",
         icon: ShieldUser,
         tone: "success",
       },
       {
         id: "sessions",
-        label: "Sessions this week",
+        label: "Week sessions",
         value: numberFormatter.format(sessionsThisWeek),
         change: `${upcomingSessions.length} in next 48h`,
-        detail: "Scheduled sessions across group and private coaching.",
-        note: "Database-backed",
+        detail: "Scheduled group and private sessions.",
+        note: "Schedule live",
         icon: Dumbbell,
         tone: "neutral",
       },
       {
         id: "revenue",
-        label: "Revenue this month",
+        label: "Month revenue",
         value: currencyFormatter.format(revenueAggregate._sum.amount ?? 0),
         change: `${activeSubscriptions} active plans`,
-        detail: "Payments recorded this month.",
-        note: "Database-backed",
+        detail: "Payments captured this month.",
+        note: "Billing live",
         icon: CircleDollarSign,
         tone: revenueAggregate._sum.amount ? "success" : "warning",
       },
@@ -268,7 +272,7 @@ export class AdminOverviewRepository {
     const upcomingSessionCards: AdminUpcomingSession[] = upcomingSessions.map(
       (session) => {
         const bookedSeats = session.bookings.length;
-        const capacity = session.capacity ?? (session.type === "PRIVATE" ? 1 : 1);
+        const capacity = session.capacity ?? 1;
 
         return {
           id: session.id,
@@ -290,70 +294,118 @@ export class AdminOverviewRepository {
       }
     );
 
-    const recentActivity: AdminRecentActivityItem[] = [
+    const recentActivityItems = [
       ...latestLeads.map((lead) => ({
         id: `lead-${lead.id}`,
-        title: "Lead updated",
-        description: `${lead.fullName} is marked ${lead.status.toLowerCase()}.`,
+        title: "Lead queue",
+        description: `${lead.fullName} moved to ${lead.status.toLowerCase()}.`,
         timeLabel: getRelativeLabel(lead.createdAt),
+        occurredAt: lead.createdAt.getTime(),
         tone: lead.status === "NEW" ? ("success" as const) : ("warning" as const),
       })),
       ...latestPayments.map((payment) => ({
         id: `payment-${payment.id}`,
-        title: "Payment recorded",
+        title: "Payment cleared",
         description: `${payment.client.fullName} paid ${payment.currency} ${payment.amount.toFixed(0)}.`,
         timeLabel: getRelativeLabel(payment.date),
+        occurredAt: payment.date.getTime(),
         tone: "success" as const,
       })),
       ...latestNotes.map((note) => ({
         id: `note-${note.id}`,
-        title: "Coach note added",
+        title: "Session note",
         description: `${note.author.name ?? "A coach"} updated ${note.trainingSession.title}.`,
         timeLabel: getRelativeLabel(note.createdAt),
+        occurredAt: note.createdAt.getTime(),
         tone: "neutral" as const,
       })),
-    ]
-      .sort((a, b) => a.timeLabel.localeCompare(b.timeLabel))
-      .slice(0, 6);
+    ] satisfies TimedAdminRecentActivityItem[];
 
-    const quickActions: AdminQuickAction[] = [
-      {
-        id: "action-1",
-        label: "Add new client",
-        description: "Open the roster and review live client records.",
-        ctaLabel: "Open",
-        href: "/admin/clients",
-        icon: UserPlus,
-        emphasis: "primary",
-      },
-      {
-        id: "action-2",
-        label: "Create session",
-        description: "Open the sessions workspace and plan the next block.",
-        ctaLabel: "Launch",
-        href: "/admin/sessions",
-        icon: CalendarPlus2,
-        emphasis: "secondary",
-      },
-      {
-        id: "action-3",
-        label: "Assign coach",
-        description: "Review the live coach roster and current load.",
-        ctaLabel: "Review",
-        href: "/admin/coaches",
-        icon: ShieldUser,
-        emphasis: "secondary",
-      },
-      {
-        id: "action-4",
-        label: "Review leads",
-        description: "Approve incoming leads and convert the right people to clients.",
-        ctaLabel: "Open",
-        href: "/admin/leads",
-        icon: ClipboardPlus,
-        emphasis: "secondary",
-      },
-    ];
+    const recentActivity: AdminRecentActivityItem[] = recentActivityItems
+      .sort((a, b) => b.occurredAt - a.occurredAt)
+      .slice(0, 6)
+      .map(({ occurredAt, ...item }) => {
+        void occurredAt;
+        return item;
+      });
+
+    const quickActions: AdminQuickAction[] = activeLeadCount > 0
+      ? [
+          {
+            id: "action-1",
+            label: "Clear lead queue",
+            description: "Review waiting leads and convert the ready ones.",
+            ctaLabel: "Review",
+            href: "/admin/leads",
+            icon: ClipboardPlus,
+            emphasis: "primary",
+          },
+          {
+            id: "action-2",
+            label: "Add client",
+            description: "Open the roster and add a new client record.",
+            ctaLabel: "Open",
+            href: "/admin/clients",
+            icon: UserPlus,
+            emphasis: "secondary",
+          },
+          {
+            id: "action-3",
+            label: "Create session",
+            description: "Build the next session block or adjust a live one.",
+            ctaLabel: "Launch",
+            href: "/admin/sessions",
+            icon: CalendarPlus2,
+            emphasis: "secondary",
+          },
+          {
+            id: "action-4",
+            label: "Check coach coverage",
+            description: "Review coach load before adding more capacity.",
+            ctaLabel: "Review",
+            href: "/admin/coaches",
+            icon: ShieldUser,
+            emphasis: "secondary",
+          },
+        ]
+      : [
+          {
+            id: "action-1",
+            label: "Add client",
+            description: "Open the roster and add a new client record.",
+            ctaLabel: "Open",
+            href: "/admin/clients",
+            icon: UserPlus,
+            emphasis: "primary",
+          },
+          {
+            id: "action-2",
+            label: "Create session",
+            description: "Build the next session block or adjust a live one.",
+            ctaLabel: "Launch",
+            href: "/admin/sessions",
+            icon: CalendarPlus2,
+            emphasis: "secondary",
+          },
+          {
+            id: "action-3",
+            label: "Check coach coverage",
+            description: "Review coach load before adding more capacity.",
+            ctaLabel: "Review",
+            href: "/admin/coaches",
+            icon: ShieldUser,
+            emphasis: "secondary",
+          },
+          {
+            id: "action-4",
+            label: "Review subscriptions",
+            description: "Check renewal pressure before the next billing cycle.",
+            ctaLabel: "Open",
+            href: "/admin/subscriptions",
+            icon: CircleDollarSign,
+            emphasis: "secondary",
+          },
+        ];
 
     const groupShare =
       activeSubscriptions === 0
@@ -374,13 +426,13 @@ export class AdminOverviewRepository {
         id: "snapshot-2",
         label: "Plan demand",
         value: `${groupShare}%`,
-        description: "Share of active subscriptions leaning group-first.",
+        description: "Active plans currently leaning group-first.",
       },
       {
         id: "snapshot-3",
         label: "Energy note",
         value: attendedBookings >= 5 ? "Strong" : "Steady",
-        description: "Attendance signal based on recorded attended bookings.",
+        description: "Attendance signal from recorded attended bookings.",
       },
       {
         id: "snapshot-4",
@@ -388,8 +440,8 @@ export class AdminOverviewRepository {
         value: activeLeadCount > 0 ? "Leads" : "Sessions",
         description:
           activeLeadCount > 0
-            ? "There are still leads waiting for admin action."
-            : "The schedule is the main operational surface right now.",
+            ? "Clear the waiting lead queue before opening more capacity."
+            : "Sessions are the main operational surface right now.",
       },
     ];
 

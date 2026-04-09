@@ -181,7 +181,6 @@ export class CoachSessionRepository {
     const sessions = await this.listForCoachUserId(userId);
 
     return sessions.map((session) => {
-      const startsAt = new Date(`${new Date().toDateString()} ${session.timeLabel}`);
       const timeRange = session.timeLabel;
 
       return {

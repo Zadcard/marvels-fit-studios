@@ -4,7 +4,9 @@ import { useState, useTransition } from "react";
 import { RefreshCcw, Save } from "lucide-react";
 
 import { DashboardFormSection } from "@/components/dashboard/dashboard-form-section";
+import { DashboardMiniStat } from "@/components/dashboard/dashboard-mini-stat";
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
+import { DashboardSurfaceNote } from "@/components/dashboard/dashboard-surface-note";
 import { DashboardSwitch } from "@/components/dashboard/dashboard-switch";
 import {
   adminStudioSettingOptions,
@@ -26,6 +28,11 @@ export function AdminSettingsWorkspace({
   const [saveMessage, setSaveMessage] = useState("Live settings loaded.");
   const [isSaving, startTransition] = useTransition();
   const hasChanges = JSON.stringify(settings) !== JSON.stringify(defaultSettings);
+  const notificationDefaultsCount = [
+    settings.coachAutoReminders,
+    settings.memberCheckInAlerts,
+    settings.renewalDigest,
+  ].filter(Boolean).length;
 
   const updateField = <Key extends keyof AdminStudioSettings>(
     field: Key,
@@ -77,6 +84,41 @@ export function AdminSettingsWorkspace({
           </>
         }
       />
+
+      <DashboardSurfaceNote
+        eyebrow="Studio defaults"
+        title="This page sets the operating defaults for the whole admin workspace."
+        description="Keep the core studio identity clean, set scheduling rules deliberately, and use this screen to avoid drift between booking, reminder, and intake behavior."
+        items={[
+          `${settings.defaultSessionLength} remains the base session length.`,
+          `${settings.intakeLeadTime} lead time is applied before intake decisions.`,
+          saveMessage,
+        ]}
+      />
+
+      <section
+        className="dashboard-mini-grid dashboard-admin-priority-grid"
+        aria-label="Settings highlights"
+      >
+        <DashboardMiniStat
+          tone={hasChanges ? "warning" : "success"}
+          label="Save state"
+          value={hasChanges ? "Pending" : "Synced"}
+          description={hasChanges ? "There are unsaved studio edits." : "Saved defaults are current."}
+        />
+        <DashboardMiniStat
+          tone={settings.overbookWaitlist ? "warning" : "neutral"}
+          label="Waitlist mode"
+          value={settings.overbookWaitlist ? "Managed overflow" : "Closed"}
+          description="Controls whether the studio allows pressure-mode overflow."
+        />
+        <DashboardMiniStat
+          tone={notificationDefaultsCount > 1 ? "accent" : "neutral"}
+          label="Notification defaults"
+          value={`${notificationDefaultsCount}/3`}
+          description="Coach, member, and renewal reminders enabled by default."
+        />
+      </section>
 
       <section className="dashboard-detail-layout">
         <div className="dashboard-stack">

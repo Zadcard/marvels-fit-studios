@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowRight, Clock3, NotebookPen } from "lucide-react";
 
 import { DashboardActivityFeed } from "@/components/dashboard/dashboard-activity-feed";
+import { DashboardMiniStat } from "@/components/dashboard/dashboard-mini-stat";
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
 import { DashboardStatCard } from "@/components/dashboard/dashboard-stat-card";
 import { DashboardSurfaceNote } from "@/components/dashboard/dashboard-surface-note";
@@ -87,21 +88,21 @@ export function CoachOverviewWorkspace({ data }: CoachOverviewWorkspaceProps) {
       />
 
       <section className="dashboard-mini-grid" aria-label="Coach overview highlights">
-        <article className="dashboard-mini-stat">
-          <span className="dashboard-mini-stat__label">Ready sessions</span>
-          <strong>{readySessions}</strong>
-          <p>Ready to run.</p>
-        </article>
-        <article className="dashboard-mini-stat">
-          <span className="dashboard-mini-stat__label">Clients needing attention</span>
-          <strong>{attentionClients}</strong>
-          <p>Need follow-up.</p>
-        </article>
-        <article className="dashboard-mini-stat">
-          <span className="dashboard-mini-stat__label">Today&apos;s plan</span>
-          <strong>{data.todaysPlan.length} steps</strong>
-          <p>Today&apos;s plan.</p>
-        </article>
+        <DashboardMiniStat
+          label="Ready sessions"
+          value={readySessions}
+          description="Ready to run."
+        />
+        <DashboardMiniStat
+          label="Clients needing attention"
+          value={attentionClients}
+          description="Need follow-up."
+        />
+        <DashboardMiniStat
+          label="Today&apos;s plan"
+          value={`${data.todaysPlan.length} steps`}
+          description="Today&apos;s plan."
+        />
       </section>
 
       <section className="dashboard-kpi-grid" aria-label="Coach overview stats">
