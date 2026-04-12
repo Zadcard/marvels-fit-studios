@@ -7,9 +7,11 @@ import { Plus } from "lucide-react";
 import { deleteAdminClient, saveAdminClient } from "@/app/actions/admin-clients";
 import { DashboardManagementToolbar } from "@/components/dashboard/dashboard-management-toolbar";
 import { DashboardEmptyState } from "@/components/dashboard/dashboard-empty-state";
+import { DashboardMiniStat } from "@/components/dashboard/dashboard-mini-stat";
 import { DashboardModal } from "@/components/dashboard/dashboard-modal";
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
 import { DashboardStatusBadge } from "@/components/dashboard/dashboard-status-badge";
+import { DashboardSurfaceNote } from "@/components/dashboard/dashboard-surface-note";
 import {
   adminClientToneByStatus,
   adminClientWorkspaceDefinition,
@@ -65,6 +67,17 @@ export function AdminClientsWorkspace({ records }: AdminClientsWorkspaceProps) {
       paymentStatus: "All",
     } satisfies AdminClientWorkspaceFilters,
   });
+
+  const activeClients = filteredRecords.filter((client) => client.status === "Active").length;
+  const paymentAttentionCount = filteredRecords.filter(
+    (client) => client.paymentStatus !== "Paid"
+  ).length;
+  const unassignedCoachCount = filteredRecords.filter(
+    (client) => client.assignedCoach === "Unassigned"
+  ).length;
+  const awaitingSessionCount = filteredRecords.filter(
+    (client) => client.nextSession === "Awaiting first session"
+  ).length;
 
   const getRowActions = (): WorkspaceRowAction<AdminClientRecord>[] => [
     {
@@ -124,7 +137,7 @@ export function AdminClientsWorkspace({ records }: AdminClientsWorkspaceProps) {
   };
 
   return (
-    <div className="dashboard-stack">
+    <div className="dashboard-stack dashboard-stack--dense">
       <DashboardPageHeader
         eyebrow="Admin clients"
         actions={
@@ -139,12 +152,51 @@ export function AdminClientsWorkspace({ records }: AdminClientsWorkspaceProps) {
         }
       />
 
-      <section className="dashboard-panel dashboard-panel--accent">
+      <DashboardSurfaceNote
+        eyebrow="Client roster"
+        title={
+          paymentAttentionCount > 0
+            ? `${paymentAttentionCount} clients need billing attention in this view.`
+            : "Billing is clear enough to focus on coach coverage and session readiness."
+        }
+        description="Scan billing attention first, then resolve missing coach assignment or first-session readiness."
+        items={[
+          `${activeClients} active clients currently in this filtered roster.`,
+          `${unassignedCoachCount} clients still need a coach assignment.`,
+          `${awaitingSessionCount} clients are still waiting for a first session.`,
+        ]}
+      />
+
+      <section
+        className="dashboard-mini-grid dashboard-admin-priority-grid"
+        aria-label="Client priorities"
+      >
+        <DashboardMiniStat
+          tone={paymentAttentionCount > 0 ? "warning" : "success"}
+          label="Billing attention"
+          value={paymentAttentionCount}
+          description="Due soon or unpaid."
+        />
+        <DashboardMiniStat
+          tone={unassignedCoachCount > 0 ? "accent" : "success"}
+          label="Unassigned coach"
+          value={unassignedCoachCount}
+          description="Need coach coverage."
+        />
+        <DashboardMiniStat
+          tone={awaitingSessionCount > 0 ? "accent" : "success"}
+          label="Awaiting session"
+          value={awaitingSessionCount}
+          description="No first session booked yet."
+        />
+      </section>
+
+      <section className="dashboard-panel dashboard-panel--accent dashboard-panel--dense">
         <DashboardManagementToolbar
           searchValue={searchTerm}
           onSearchChange={setSearchTerm}
           searchPlaceholder={adminClientWorkspaceDefinition.searchPlaceholder}
-          summary={`${filteredRecords.length} client records in view`}
+          summary={`${filteredRecords.length} clients in view • ${paymentAttentionCount} need billing attention`}
           filters={
             <>
               {adminClientWorkspaceDefinition.filters.map((filter) => (
@@ -172,18 +224,19 @@ export function AdminClientsWorkspace({ records }: AdminClientsWorkspaceProps) {
         <div className="dashboard-data-region">
           {filteredRecords.length > 0 ? (
             <>
+              <div className="dashboard-panel__meta-strip">
+                <span>{activeClients} active</span>
+                <span>{paymentAttentionCount} billing watch</span>
+                <span>{unassignedCoachCount} unassigned</span>
+              </div>
+
               <div className="dashboard-table-wrap">
-                <table className="dashboard-table">
+                <table className="dashboard-table dashboard-client-table">
                   <thead>
                     <tr>
                       <th>Client</th>
-                      <th>Membership</th>
-                      <th>Status</th>
                       <th>Payment</th>
-                      <th>Amount</th>
-                      <th>Assigned coach</th>
-                      <th>Joined</th>
-                      <th>Next session</th>
+                      <th>Readiness</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
@@ -196,24 +249,36 @@ export function AdminClientsWorkspace({ records }: AdminClientsWorkspaceProps) {
                             <span>{client.email}</span>
                             <small>{client.phone}</small>
                           </div>
+                          <div className="dashboard-client-table__program">
+                            <DashboardStatusBadge
+                              label={client.status}
+                              tone={adminClientToneByStatus[client.status]}
+                            />
+                            <span>{client.membership}</span>
+                            <span>Joined {client.joinedDate}</span>
+                          </div>
                         </td>
-                        <td>{client.membership}</td>
                         <td>
-                          <DashboardStatusBadge
-                            label={client.status}
-                            tone={adminClientToneByStatus[client.status]}
-                          />
+                          <div className="dashboard-client-table__billing">
+                            <DashboardStatusBadge
+                              label={client.paymentStatus}
+                              tone={getPaymentTone(client.paymentStatus)}
+                            />
+                            <strong>{client.paymentAmountLabel}</strong>
+                            <p>
+                              {client.paymentStatus === "Paid"
+                                ? "Billing is current."
+                                : "Needs billing follow-up."}
+                            </p>
+                          </div>
                         </td>
                         <td>
-                          <DashboardStatusBadge
-                            label={client.paymentStatus}
-                            tone={getPaymentTone(client.paymentStatus)}
-                          />
+                          <div className="dashboard-client-table__readiness">
+                            <strong>{client.assignedCoach}</strong>
+                            <span>{client.nextSession}</span>
+                            <small>{client.progressNote}</small>
+                          </div>
                         </td>
-                        <td>{client.paymentAmountLabel}</td>
-                        <td>{client.assignedCoach}</td>
-                        <td>{client.joinedDate}</td>
-                        <td>{client.nextSession}</td>
                         <td>
                           <div className="dashboard-row-actions">
                             {getRowActions().map((action) => (
@@ -236,9 +301,15 @@ export function AdminClientsWorkspace({ records }: AdminClientsWorkspaceProps) {
 
               <div className="dashboard-mobile-list">
                 {filteredRecords.map((client) => (
-                  <article key={client.id} className="dashboard-record-card">
+                  <article
+                    key={client.id}
+                    className="dashboard-record-card dashboard-record-card--client"
+                  >
                     <div className="dashboard-record-card__header">
                       <div>
+                        <span className="dashboard-record-card__eyebrow">
+                          {client.membership}
+                        </span>
                         <h3>{client.fullName}</h3>
                         <p>{client.email}</p>
                       </div>
@@ -248,7 +319,6 @@ export function AdminClientsWorkspace({ records }: AdminClientsWorkspaceProps) {
                       />
                     </div>
                     <div className="dashboard-record-card__meta">
-                      <span>{client.membership}</span>
                       <span>{client.paymentStatus}</span>
                       <span>{client.paymentAmountLabel}</span>
                       <span>{client.assignedCoach}</span>

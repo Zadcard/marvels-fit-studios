@@ -71,7 +71,7 @@ function mapSubscriptionStatus(status: string, renewsAt: Date | null): AdminSubs
 function mapPaymentStatus(record: {
   status: string;
   renewsAt: Date | null;
-  payments: Array<{ date: Date }>;
+  payments: Array<{ amount: number; date: Date }>;
   client: { isPaid: boolean };
 }): AdminPaymentStatus {
   const latestPayment = record.payments[0]?.date ?? null;
@@ -329,6 +329,7 @@ export class AdminSubscriptionRepository {
         subscription.renewsAt
       );
       const paymentStatus = mapPaymentStatus(subscription);
+      const effectiveAmount = subscription.customPrice ?? subscription.plan.price;
 
       return {
         id: subscription.id,
@@ -348,12 +349,8 @@ export class AdminSubscriptionRepository {
         renewalDateValue: subscription.renewsAt
           ? subscription.renewsAt.toISOString().slice(0, 10)
           : "",
-        amountLabel: currencyFormatter.format(
-          subscription.customPrice ?? subscription.plan.price
-        ),
-        amountValue: String(
-          subscription.customPrice ?? subscription.plan.price
-        ),
+        amountLabel: currencyFormatter.format(effectiveAmount),
+        amountValue: String(effectiveAmount),
         billingCycle: mapBillingCycleLabel(subscription.plan.billingCycle),
         note:
           paymentStatus === "Paid"

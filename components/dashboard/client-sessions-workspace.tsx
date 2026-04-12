@@ -5,6 +5,7 @@ import { CalendarClock } from "lucide-react";
 
 import { DashboardManagementToolbar } from "@/components/dashboard/dashboard-management-toolbar";
 import { DashboardEmptyState } from "@/components/dashboard/dashboard-empty-state";
+import { DashboardMiniStat } from "@/components/dashboard/dashboard-mini-stat";
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
 import { DashboardStatusBadge } from "@/components/dashboard/dashboard-status-badge";
 import { DashboardSurfaceNote } from "@/components/dashboard/dashboard-surface-note";
@@ -96,21 +97,21 @@ export function ClientSessionsWorkspace({ records }: ClientSessionsWorkspaceProp
       />
 
       <section className="dashboard-mini-grid" aria-label="Client session highlights">
-        <article className="dashboard-mini-stat">
-          <span className="dashboard-mini-stat__label">Upcoming</span>
-          <strong>{upcomingCount}</strong>
-          <p>Still ahead.</p>
-        </article>
-        <article className="dashboard-mini-stat">
-          <span className="dashboard-mini-stat__label">Check-in ready</span>
-          <strong>{readyCount}</strong>
-          <p>Ready now.</p>
-        </article>
-        <article className="dashboard-mini-stat">
-          <span className="dashboard-mini-stat__label">Private</span>
-          <strong>{privateCount}</strong>
-          <p>Private sessions.</p>
-        </article>
+        <DashboardMiniStat
+          label="Upcoming"
+          value={upcomingCount}
+          description="Still ahead."
+        />
+        <DashboardMiniStat
+          label="Check-in ready"
+          value={readyCount}
+          description="Ready now."
+        />
+        <DashboardMiniStat
+          label="Private"
+          value={privateCount}
+          description="Private sessions."
+        />
       </section>
 
       <section className="dashboard-detail-layout">

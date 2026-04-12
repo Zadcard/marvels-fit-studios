@@ -67,6 +67,7 @@ export default function LandingPage() {
                     id="btnJoinHero"
                     type="button"
                     data-open-join
+                    data-analytics-source="hero-primary-cta"
                   >
                     Start Membership
                   </button>
@@ -217,6 +218,7 @@ export default function LandingPage() {
                         className="btn btn-primary btn-faq-cta"
                         type="button"
                         data-open-join
+                        data-analytics-source="faq-answer-cta"
                       >
                         Join Now
                       </button>

@@ -6,6 +6,7 @@ import { Save } from "lucide-react";
 import { saveCoachSettings } from "@/app/actions/coach-settings";
 import { AccountSecurityPanel } from "@/components/dashboard/account-security-panel";
 import { DashboardFormSection } from "@/components/dashboard/dashboard-form-section";
+import { DashboardMiniStat } from "@/components/dashboard/dashboard-mini-stat";
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
 import { DashboardSurfaceNote } from "@/components/dashboard/dashboard-surface-note";
 import { DashboardSwitch } from "@/components/dashboard/dashboard-switch";
@@ -87,21 +88,21 @@ export function CoachSettingsWorkspace({
       />
 
       <section className="dashboard-mini-grid" aria-label="Coach settings highlights">
-        <article className="dashboard-mini-stat">
-          <span className="dashboard-mini-stat__label">Preferred landing view</span>
-          <strong>{settings.preferredView}</strong>
-          <p>Preferred landing view.</p>
-        </article>
-        <article className="dashboard-mini-stat">
-          <span className="dashboard-mini-stat__label">Alerts on</span>
-          <strong>{enabledAlerts}/3</strong>
-          <p>Active alerts.</p>
-        </article>
-        <article className="dashboard-mini-stat">
-          <span className="dashboard-mini-stat__label">Changes pending</span>
-          <strong>{hasChanges ? "Yes" : "No"}</strong>
-          <p>Pending edits.</p>
-        </article>
+        <DashboardMiniStat
+          label="Preferred landing view"
+          value={settings.preferredView}
+          description="Preferred landing view."
+        />
+        <DashboardMiniStat
+          label="Alerts on"
+          value={`${enabledAlerts}/3`}
+          description="Active alerts."
+        />
+        <DashboardMiniStat
+          label="Changes pending"
+          value={hasChanges ? "Yes" : "No"}
+          description="Pending edits."
+        />
       </section>
 
       <section className="dashboard-detail-layout">

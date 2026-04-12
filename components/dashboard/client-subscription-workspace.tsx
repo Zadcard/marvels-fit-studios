@@ -1,5 +1,6 @@
 import { CreditCard, Sparkles } from "lucide-react";
 
+import { DashboardMiniStat } from "@/components/dashboard/dashboard-mini-stat";
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
 import { DashboardSurfaceNote } from "@/components/dashboard/dashboard-surface-note";
 import type { ClientSubscriptionRecord } from "@/lib/dashboard/client-dashboard-data";
@@ -26,21 +27,21 @@ export function ClientSubscriptionWorkspace({ data }: ClientSubscriptionWorkspac
       />
 
       <section className="dashboard-mini-grid" aria-label="Subscription highlights">
-        <article className="dashboard-mini-stat">
-          <span className="dashboard-mini-stat__label">Plan</span>
-          <strong>{data.planName}</strong>
-          <p>Current membership.</p>
-        </article>
-        <article className="dashboard-mini-stat">
-          <span className="dashboard-mini-stat__label">Renewal</span>
-          <strong>{data.renewalDate}</strong>
-          <p>Renewal date.</p>
-        </article>
-        <article className="dashboard-mini-stat">
-          <span className="dashboard-mini-stat__label">Benefits</span>
-          <strong>{benefitsCount}</strong>
-          <p>Included benefits.</p>
-        </article>
+        <DashboardMiniStat
+          label="Plan"
+          value={data.planName}
+          description="Current membership."
+        />
+        <DashboardMiniStat
+          label="Renewal"
+          value={data.renewalDate}
+          description="Renewal date."
+        />
+        <DashboardMiniStat
+          label="Benefits"
+          value={benefitsCount}
+          description="Included benefits."
+        />
       </section>
 
       <section className="dashboard-secondary-grid">

@@ -1,0 +1,75 @@
+{
+  "landing_join_modal_opened": {
+    "description": "Track when a visitor opens the landing join modal from a call to action.",
+    "trigger": "Fire after a landing page CTA opens the membership request modal.",
+    "privacy": "no-pii",
+    "properties": {
+      "trigger_source": {
+        "type": "string",
+        "required": true,
+        "description": "Stable identifier for the CTA that opened the modal."
+      }
+    }
+  },
+  "landing_join_form_submit_attempted": {
+    "description": "Track when a visitor submits the landing join form.",
+    "trigger": "Fire on the client before the landing join form server action runs.",
+    "privacy": "no-pii",
+    "properties": {
+      "form_id": {
+        "type": "string",
+        "required": true,
+        "description": "Stable identifier for the submitted form."
+      },
+      "lead_source": {
+        "type": "string",
+        "required": true,
+        "description": "Stable source identifier associated with the lead pipeline."
+      }
+    }
+  },
+  "landing_join_form_submit_succeeded": {
+    "description": "Track when the landing join form completes successfully.",
+    "trigger": "Fire after the landing join form server action returns a success state.",
+    "privacy": "no-pii",
+    "properties": {
+      "form_id": {
+        "type": "string",
+        "required": true,
+        "description": "Stable identifier for the submitted form."
+      },
+      "lead_source": {
+        "type": "string",
+        "required": true,
+        "description": "Stable source identifier associated with the lead pipeline."
+      }
+    }
+  },
+  "landing_join_form_submit_failed": {
+    "description": "Track when the landing join form returns an error state.",
+    "trigger": "Fire after the landing join form server action returns an error state.",
+    "privacy": "no-pii",
+    "properties": {
+      "form_id": {
+        "type": "string",
+        "required": true,
+        "description": "Stable identifier for the submitted form."
+      },
+      "lead_source": {
+        "type": "string",
+        "required": true,
+        "description": "Stable source identifier associated with the lead pipeline."
+      },
+      "failure_reason": {
+        "type": "string",
+        "required": true,
+        "description": "Coarse non-PII failure category for analytics reporting."
+      },
+      "field_error_count": {
+        "type": "number",
+        "required": true,
+        "description": "Number of fields with validation or duplicate-entry errors."
+      }
+    }
+  }
+}

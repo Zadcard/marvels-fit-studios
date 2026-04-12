@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { trackEvent } from "@/lib/analytics/client";
 
 export function LandingInteractions() {
   useEffect(() => {
@@ -49,6 +50,9 @@ export function LandingInteractions() {
       lastJoinTrigger = trigger ?? null;
       joinModal.hidden = false;
       setScrollLock(true, "modal-open");
+      trackEvent("landing_join_modal_opened", {
+        trigger_source: trigger?.dataset.analyticsSource ?? "unknown",
+      });
 
       window.requestAnimationFrame(() => {
         joinModalPanel.focus();

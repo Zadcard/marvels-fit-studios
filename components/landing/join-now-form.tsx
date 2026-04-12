@@ -4,7 +4,11 @@ import { useActionState, useEffect, useRef } from "react";
 import { useFormStatus } from "react-dom";
 
 import { submitJoinNowLead } from "@/app/actions/landing";
-import { initialJoinNowState } from "@/app/actions/join-now-types";
+import {
+  initialJoinNowState,
+  type JoinNowActionState,
+} from "@/app/actions/join-now-types";
+import { trackEvent } from "@/lib/analytics/client";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -34,8 +38,29 @@ function FieldError({ errors }: FieldErrorProps) {
   return <span className="field-error-text">{errors[0]}</span>;
 }
 
+function classifyJoinNowFailure(state: JoinNowActionState) {
+  const emailErrors = state.fieldErrors?.email ?? [];
+
+  if (emailErrors.some((error) => error.includes("already linked to an account"))) {
+    return "existing_account";
+  }
+
+  if (emailErrors.some((error) => error.includes("already been submitted"))) {
+    return "duplicate_lead";
+  }
+
+  if (state.fieldErrors && Object.keys(state.fieldErrors).length > 0) {
+    return "validation";
+  }
+
+  return "server_error";
+}
+
 export function JoinNowForm() {
   const formRef = useRef<HTMLFormElement>(null);
+  const activeSubmissionIdRef = useRef<number | null>(null);
+  const trackedSubmissionIdRef = useRef<number | null>(null);
+  const submissionCounterRef = useRef(0);
   const [state, formAction] = useActionState(
     submitJoinNowLead,
     initialJoinNowState
@@ -45,7 +70,35 @@ export function JoinNowForm() {
     if (state.status === "success") {
       formRef.current?.reset();
     }
-  }, [state.status]);
+
+    const activeSubmissionId = activeSubmissionIdRef.current;
+
+    if (
+      !activeSubmissionId ||
+      trackedSubmissionIdRef.current === activeSubmissionId
+    ) {
+      return;
+    }
+
+    if (state.status === "success") {
+      trackEvent("landing_join_form_submit_succeeded", {
+        form_id: "join_now_form",
+        lead_source: "landing-join-now",
+      });
+      trackedSubmissionIdRef.current = activeSubmissionId;
+      return;
+    }
+
+    if (state.status === "error") {
+      trackEvent("landing_join_form_submit_failed", {
+        form_id: "join_now_form",
+        lead_source: "landing-join-now",
+        failure_reason: classifyJoinNowFailure(state),
+        field_error_count: Object.keys(state.fieldErrors ?? {}).length,
+      });
+      trackedSubmissionIdRef.current = activeSubmissionId;
+    }
+  }, [state]);
 
   return (
     <form
@@ -53,6 +106,15 @@ export function JoinNowForm() {
       id="joinNowForm"
       className="join-form"
       action={formAction}
+      onSubmitCapture={() => {
+        submissionCounterRef.current += 1;
+        activeSubmissionIdRef.current = submissionCounterRef.current;
+
+        trackEvent("landing_join_form_submit_attempted", {
+          form_id: "join_now_form",
+          lead_source: "landing-join-now",
+        });
+      }}
       noValidate
     >
       <div className="field-grid">

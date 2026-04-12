@@ -5,6 +5,7 @@ import { UserRoundSearch } from "lucide-react";
 
 import { DashboardManagementToolbar } from "@/components/dashboard/dashboard-management-toolbar";
 import { DashboardEmptyState } from "@/components/dashboard/dashboard-empty-state";
+import { DashboardMiniStat } from "@/components/dashboard/dashboard-mini-stat";
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
 import { DashboardStatusBadge } from "@/components/dashboard/dashboard-status-badge";
 import { DashboardSurfaceNote } from "@/components/dashboard/dashboard-surface-note";
@@ -106,21 +107,21 @@ export function CoachClientsWorkspace({ records }: CoachClientsWorkspaceProps) {
       />
 
       <section className="dashboard-mini-grid" aria-label="Coach client highlights">
-        <article className="dashboard-mini-stat">
-          <span className="dashboard-mini-stat__label">Clients in view</span>
-          <strong>{filteredClients.length}</strong>
-          <p>Current roster view.</p>
-        </article>
-        <article className="dashboard-mini-stat">
-          <span className="dashboard-mini-stat__label">Needs check-in</span>
-          <strong>{needsCheckIn}</strong>
-          <p>Need follow-up.</p>
-        </article>
-        <article className="dashboard-mini-stat">
-          <span className="dashboard-mini-stat__label">Hybrid plans</span>
-          <strong>{activeHybrid}</strong>
-          <p>Hybrid plans.</p>
-        </article>
+        <DashboardMiniStat
+          label="Clients in view"
+          value={filteredClients.length}
+          description="Current roster view."
+        />
+        <DashboardMiniStat
+          label="Needs check-in"
+          value={needsCheckIn}
+          description="Need follow-up."
+        />
+        <DashboardMiniStat
+          label="Hybrid plans"
+          value={activeHybrid}
+          description="Hybrid plans."
+        />
       </section>
 
       <section className="dashboard-detail-layout">

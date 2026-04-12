@@ -2,7 +2,7 @@
 
 import { useDeferredValue, useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarPlus, Layers3, Pencil } from "lucide-react";
+import { CalendarPlus, Pencil } from "lucide-react";
 
 import {
   cancelAdminSession,
@@ -15,9 +15,11 @@ import {
 } from "@/app/actions/admin-session-bookings";
 import { DashboardManagementToolbar } from "@/components/dashboard/dashboard-management-toolbar";
 import { DashboardEmptyState } from "@/components/dashboard/dashboard-empty-state";
+import { DashboardMiniStat } from "@/components/dashboard/dashboard-mini-stat";
 import { DashboardModal } from "@/components/dashboard/dashboard-modal";
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
 import { DashboardStatusBadge } from "@/components/dashboard/dashboard-status-badge";
+import { DashboardSurfaceNote } from "@/components/dashboard/dashboard-surface-note";
 import { CoachOptionPicker } from "@/components/dashboard/coach-option-picker";
 import { SessionTypePicker } from "@/components/dashboard/session-type-picker";
 import {
@@ -152,6 +154,42 @@ function getSessionTone(status: AdminSessionStatus) {
     default:
       return "accent";
   }
+}
+
+function isClientAssigned(clientName: string) {
+  return clientName !== "Unassigned";
+}
+
+function getGroupCapacityCopy(session: AdminGroupSessionRecord) {
+  if (session.status === "Canceled") {
+    return "Canceled session.";
+  }
+
+  if (session.status === "Completed") {
+    return "Completed.";
+  }
+
+  if (session.status === "Draft") {
+    return "Still in draft.";
+  }
+
+  const remainingSeats = Math.max(session.capacity - session.enrolled, 0);
+
+  if (remainingSeats === 0) {
+    return "At capacity.";
+  }
+
+  if (session.enrolled === 0) {
+    return "No bookings yet.";
+  }
+
+  return `${remainingSeats} ${remainingSeats === 1 ? "spot" : "spots"} left.`;
+}
+
+function getPrivateAssignmentCopy(session: AdminPrivateSessionRecord) {
+  return isClientAssigned(session.clientName)
+    ? session.focus
+    : "Needs client assignment.";
 }
 
 function toDateTimeLocalValue(value: string) {
@@ -318,14 +356,14 @@ export function AdminSessionsWorkspace({
     );
   };
 
+  const normalizedSearchTerm = deferredSearchTerm.trim().toLowerCase();
   const filteredGroupRecords = currentGroupRecords.filter((session) => {
-    const query = deferredSearchTerm.trim().toLowerCase();
     const matchesSearch =
-      query.length === 0 ||
+      normalizedSearchTerm.length === 0 ||
       [session.title, session.coachName, session.location]
         .join(" ")
         .toLowerCase()
-        .includes(query);
+        .includes(normalizedSearchTerm);
     const matchesStatus =
       statusFilter === "All" || session.status === statusFilter;
 
@@ -333,23 +371,64 @@ export function AdminSessionsWorkspace({
   });
 
   const filteredPrivateRecords = currentPrivateRecords.filter((session) => {
-    const query = deferredSearchTerm.trim().toLowerCase();
     const matchesSearch =
-      query.length === 0 ||
+      normalizedSearchTerm.length === 0 ||
       [session.title, session.coachName, session.clientName, session.focus]
         .join(" ")
         .toLowerCase()
-        .includes(query);
+        .includes(normalizedSearchTerm);
     const matchesStatus =
       statusFilter === "All" || session.status === statusFilter;
 
     return matchesSearch && matchesStatus;
   });
 
+  const groupCoachCount = new Set(filteredGroupRecords.map((session) => session.coachName)).size;
+  const groupBookedCount = filteredGroupRecords.reduce(
+    (total, session) => total + session.enrolled,
+    0
+  );
+  const groupAtCapacityCount = filteredGroupRecords.filter(
+    (session) => session.status === "Waitlist"
+  ).length;
+  const groupNeedsBookingsCount = filteredGroupRecords.filter(
+    (session) =>
+      session.enrolled === 0 &&
+      session.status !== "Canceled" &&
+      session.status !== "Completed"
+  ).length;
+  const groupDraftCount = filteredGroupRecords.filter(
+    (session) => session.status === "Draft"
+  ).length;
+  const groupOpenSpots = filteredGroupRecords.reduce((total, session) => {
+    if (session.status === "Canceled" || session.status === "Completed") {
+      return total;
+    }
+
+    return total + Math.max(session.capacity - session.enrolled, 0);
+  }, 0);
+
+  const privateCoachCount = new Set(
+    filteredPrivateRecords.map((session) => session.coachName)
+  ).size;
+  const privateAssignedCount = filteredPrivateRecords.filter((session) =>
+    isClientAssigned(session.clientName)
+  ).length;
+  const privateNeedsClientCount = filteredPrivateRecords.filter(
+    (session) => !isClientAssigned(session.clientName)
+  ).length;
+  const privateDraftCount = filteredPrivateRecords.filter(
+    (session) => session.status === "Draft"
+  ).length;
+  const privateCompletedCount = filteredPrivateRecords.filter(
+    (session) => session.status === "Completed"
+  ).length;
+
+  const isFiltered = normalizedSearchTerm.length > 0 || statusFilter !== "All";
   const activeSummary =
     view === "group"
-      ? `${filteredGroupRecords.length} group sessions in view`
-      : `${filteredPrivateRecords.length} private sessions in view`;
+      ? `${filteredGroupRecords.length} sessions, ${groupBookedCount} bookings in view`
+      : `${filteredPrivateRecords.length} sessions, ${privateAssignedCount} assigned in view`;
 
   const openCreateModal = () => {
     setEditingSessionId(null);
@@ -551,15 +630,17 @@ export function AdminSessionsWorkspace({
   const editingRecord = editingSessionId
     ? sessionRecordMap.get(editingSessionId)
     : undefined;
+  const bookedClients = useMemo(
+    () => editingRecord?.bookedClients ?? [],
+    [editingRecord?.bookedClients]
+  );
   const availableClientOptions = useMemo(
     () =>
       clientOptions.filter(
         (client) =>
-          !editingRecord?.bookedClients.some(
-            (bookedClient) => bookedClient.id === client.id
-          )
+          !bookedClients.some((bookedClient) => bookedClient.id === client.id)
       ),
-    [clientOptions, editingRecord?.bookedClients]
+    [bookedClients, clientOptions]
   );
   const normalizedClientSearchTerm = clientSearchTerm.trim().toLowerCase();
   const filteredAvailableClientOptions = useMemo(
@@ -574,12 +655,12 @@ export function AdminSessionsWorkspace({
   const normalizedRosterSearchTerm = rosterSearchTerm.trim().toLowerCase();
   const filteredBookedClients = useMemo(
     () =>
-      editingRecord?.bookedClients.filter((client) =>
+      bookedClients.filter((client) =>
         normalizedRosterSearchTerm.length === 0
           ? true
           : client.fullName.toLowerCase().includes(normalizedRosterSearchTerm)
-      ) ?? [],
-    [editingRecord?.bookedClients, normalizedRosterSearchTerm]
+      ),
+    [bookedClients, normalizedRosterSearchTerm]
   );
   const resolvedSelectedClientId = filteredAvailableClientOptions.some(
     (client) => client.id === selectedClientId
@@ -649,6 +730,90 @@ export function AdminSessionsWorkspace({
         </div>
       ) : null}
 
+      <DashboardSurfaceNote
+        eyebrow={view === "group" ? "Group schedule" : "Private schedule"}
+        title={
+          view === "group"
+            ? groupAtCapacityCount > 0
+              ? `${groupAtCapacityCount} group sessions are already at capacity in this view.`
+              : groupNeedsBookingsCount > 0
+                ? `${groupNeedsBookingsCount} group sessions still need bookings before they go live.`
+                : "Group schedule is balanced enough to focus on coach timing and room coverage."
+            : privateNeedsClientCount > 0
+              ? `${privateNeedsClientCount} private sessions still need a client assignment in this view.`
+              : privateDraftCount > 0
+                ? `${privateDraftCount} private sessions are still sitting in draft.`
+                : "Private schedule is clear enough to focus on coach timing and follow-through."
+        }
+        description={
+          view === "group"
+            ? "Use this board to catch seat pressure, move drafts to scheduled, and rebalance groups before members arrive."
+            : "Use this board to close assignment gaps, keep coaches aligned, and confirm private sessions before the day starts."
+        }
+        items={
+          view === "group"
+            ? [
+                `${filteredGroupRecords.length} visible group sessions across ${groupCoachCount} coaches.`,
+                `${groupBookedCount} bookings are already placed in this view.`,
+                `${groupDraftCount} drafts still need confirmation.`,
+              ]
+            : [
+                `${filteredPrivateRecords.length} visible private sessions across ${privateCoachCount} coaches.`,
+                `${privateAssignedCount} private sessions already have a client assigned.`,
+                `${privateCompletedCount} sessions are marked completed in this view.`,
+              ]
+        }
+      />
+
+      <section
+        className="dashboard-mini-grid dashboard-admin-priority-grid"
+        aria-label={view === "group" ? "Group session priorities" : "Private session priorities"}
+      >
+        {view === "group" ? (
+          <>
+            <DashboardMiniStat
+              tone={groupAtCapacityCount > 0 ? "warning" : "success"}
+              label="At capacity"
+              value={groupAtCapacityCount}
+              description="Need overflow or another group."
+            />
+            <DashboardMiniStat
+              tone={groupNeedsBookingsCount > 0 ? "accent" : "success"}
+              label="Needs bookings"
+              value={groupNeedsBookingsCount}
+              description="Still empty or too light."
+            />
+            <DashboardMiniStat
+              tone={groupDraftCount > 0 ? "warning" : "success"}
+              label="Drafts"
+              value={groupDraftCount}
+              description="Not fully confirmed yet."
+            />
+          </>
+        ) : (
+          <>
+            <DashboardMiniStat
+              tone={privateNeedsClientCount > 0 ? "warning" : "success"}
+              label="Needs client"
+              value={privateNeedsClientCount}
+              description="Still missing assignment."
+            />
+            <DashboardMiniStat
+              tone={privateDraftCount > 0 ? "accent" : "success"}
+              label="Drafts"
+              value={privateDraftCount}
+              description="Still need confirmation."
+            />
+            <DashboardMiniStat
+              tone="success"
+              label="Assigned"
+              value={privateAssignedCount}
+              description="Client coverage locked in."
+            />
+          </>
+        )}
+      </section>
+
       <section className="dashboard-panel dashboard-panel--accent">
         <div className="dashboard-segmented">
           <button
@@ -673,6 +838,22 @@ export function AdminSessionsWorkspace({
           >
             Private sessions
           </button>
+        </div>
+
+        <div className="dashboard-panel__meta-strip">
+          {view === "group" ? (
+            <>
+              <span>{filteredGroupRecords.length} visible sessions</span>
+              <span>{groupCoachCount} coaches on coverage</span>
+              <span>{groupOpenSpots} open spots</span>
+            </>
+          ) : (
+            <>
+              <span>{filteredPrivateRecords.length} visible sessions</span>
+              <span>{privateCoachCount} coaches on coverage</span>
+              <span>{privateAssignedCount} client assignments locked</span>
+            </>
+          )}
         </div>
 
         <DashboardManagementToolbar
@@ -702,11 +883,23 @@ export function AdminSessionsWorkspace({
               </select>
             </label>
           }
+          isFiltered={isFiltered}
+          onReset={() => {
+            setSearchTerm("");
+            setStatusFilter("All");
+          }}
           actions={
-            <button type="button" className="mv-btn mv-btn-outline">
-              <Layers3 size={16} />
-              Live load
-            </button>
+            <span
+              className={
+                view === "group"
+                  ? "dashboard-badge dashboard-badge--warning"
+                  : "dashboard-badge dashboard-badge--success"
+              }
+            >
+              {view === "group"
+                ? `${groupOpenSpots} open spots`
+                : `${privateAssignedCount}/${filteredPrivateRecords.length || 0} assigned`}
+            </span>
           }
         />
 
@@ -1103,8 +1296,7 @@ function SessionGroupTable({
               <thead>
                 <tr>
                   <th>Session</th>
-                  <th>Coach</th>
-                  <th>Status</th>
+                  <th>Coverage</th>
                   <th>Capacity</th>
                   <th>Timing</th>
                   <th>Actions</th>
@@ -1117,22 +1309,34 @@ function SessionGroupTable({
                       <div className="dashboard-table__identity">
                         <strong>{session.title}</strong>
                         <span>{session.location}</span>
+                        <small>{session.dayLabel}, {session.timeLabel}</small>
                       </div>
                     </td>
-                    <td>{session.coachName}</td>
                     <td>
-                      <DashboardStatusBadge
-                        label={session.status}
-                        tone={getSessionTone(session.status)}
-                      />
+                      <div className="dashboard-session-table__status">
+                        <strong>{session.coachName}</strong>
+                        <DashboardStatusBadge
+                          label={session.status}
+                          tone={getSessionTone(session.status)}
+                        />
+                      </div>
                     </td>
                     <td>
-                      {session.enrolled}/{session.capacity}
+                      <div className="dashboard-session-table__capacity">
+                        <strong>
+                          {session.enrolled}/{session.capacity}
+                        </strong>
+                        <p>{getGroupCapacityCopy(session)}</p>
+                      </div>
                     </td>
                     <td>
-                      {session.dayLabel}, {session.timeLabel}
+                      <div className="dashboard-session-table__timing">
+                        <strong>{session.dayLabel}</strong>
+                        <span>{session.timeLabel}</span>
+                        <small>{session.location}</small>
+                      </div>
                     </td>
-                    <td>
+                    <td className="dashboard-session-table__action">
                       <div className="dashboard-row-actions">
                         <button
                           type="button"
@@ -1159,9 +1363,13 @@ function SessionGroupTable({
 
           <div className="dashboard-mobile-list">
             {records.map((session) => (
-              <article key={session.id} className="dashboard-record-card">
+              <article
+                key={session.id}
+                className="dashboard-record-card dashboard-record-card--session"
+              >
                 <div className="dashboard-record-card__header">
                   <div>
+                    <div className="dashboard-record-card__eyebrow">Group session</div>
                     <h3>{session.title}</h3>
                     <p>{session.coachName}</p>
                   </div>
@@ -1172,13 +1380,13 @@ function SessionGroupTable({
                 </div>
                 <div className="dashboard-record-card__meta">
                   <span>{session.location}</span>
+                  <span>{session.dayLabel}</span>
+                  <span>{session.timeLabel}</span>
                   <span>
-                    {session.enrolled}/{session.capacity} enrolled
-                  </span>
-                  <span>
-                    {session.dayLabel}, {session.timeLabel}
+                    {session.enrolled}/{session.capacity} booked
                   </span>
                 </div>
+                <p className="dashboard-record-card__note">{getGroupCapacityCopy(session)}</p>
                 <div className="dashboard-row-actions">
                   <button
                     type="button"
@@ -1232,9 +1440,7 @@ function SessionPrivateTable({
                 <tr>
                   <th>Session</th>
                   <th>Client</th>
-                  <th>Coach</th>
-                  <th>Status</th>
-                  <th>Focus</th>
+                  <th>Coverage</th>
                   <th>Timing</th>
                   <th>Actions</th>
                 </tr>
@@ -1246,21 +1452,32 @@ function SessionPrivateTable({
                       <div className="dashboard-table__identity">
                         <strong>{session.title}</strong>
                         <span>{session.location}</span>
+                        <small>{session.dayLabel}, {session.timeLabel}</small>
                       </div>
                     </td>
-                    <td>{session.clientName}</td>
-                    <td>{session.coachName}</td>
                     <td>
-                      <DashboardStatusBadge
-                        label={session.status}
-                        tone={getSessionTone(session.status)}
-                      />
-                    </td>
-                    <td>{session.focus}</td>
-                    <td>
-                      {session.dayLabel}, {session.timeLabel}
+                      <div className="dashboard-session-table__client">
+                        <strong>{session.clientName}</strong>
+                        <p>{getPrivateAssignmentCopy(session)}</p>
+                      </div>
                     </td>
                     <td>
+                      <div className="dashboard-session-table__status">
+                        <strong>{session.coachName}</strong>
+                        <DashboardStatusBadge
+                          label={session.status}
+                          tone={getSessionTone(session.status)}
+                        />
+                      </div>
+                    </td>
+                    <td>
+                      <div className="dashboard-session-table__timing">
+                        <strong>{session.dayLabel}</strong>
+                        <span>{session.timeLabel}</span>
+                        <small>{session.location}</small>
+                      </div>
+                    </td>
+                    <td className="dashboard-session-table__action">
                       <div className="dashboard-row-actions">
                         <button
                           type="button"
@@ -1287,9 +1504,13 @@ function SessionPrivateTable({
 
           <div className="dashboard-mobile-list">
             {records.map((session) => (
-              <article key={session.id} className="dashboard-record-card">
+              <article
+                key={session.id}
+                className="dashboard-record-card dashboard-record-card--session"
+              >
                 <div className="dashboard-record-card__header">
                   <div>
+                    <div className="dashboard-record-card__eyebrow">Private session</div>
                     <h3>{session.title}</h3>
                     <p>{session.clientName}</p>
                   </div>
@@ -1300,11 +1521,11 @@ function SessionPrivateTable({
                 </div>
                 <div className="dashboard-record-card__meta">
                   <span>{session.coachName}</span>
-                  <span>{session.focus}</span>
-                  <span>
-                    {session.dayLabel}, {session.timeLabel}
-                  </span>
+                  <span>{session.location}</span>
+                  <span>{session.dayLabel}</span>
+                  <span>{session.timeLabel}</span>
                 </div>
+                <p className="dashboard-record-card__note">{getPrivateAssignmentCopy(session)}</p>
                 <div className="dashboard-row-actions">
                   <button
                     type="button"

@@ -12,6 +12,8 @@
     "start": "next start",
     "lint": "eslint",
     "check:backend": "node scripts/backend-smoke-check.cjs",
+    "test:analytics": "node tests/analytics-event-catalog.test.mjs",
+    "test:design-system": "node tests/dashboard-mini-stat-adoption.test.mjs",
     "promote:leads": "node scripts/promote-leads-to-clients.cjs"
   },
   "dependencies": {

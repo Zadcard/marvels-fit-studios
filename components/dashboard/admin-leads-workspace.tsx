@@ -1,12 +1,14 @@
 "use client";
 
 import { useDeferredValue, useMemo, useState, useTransition } from "react";
+import Link from "next/link";
 import { UserRoundPlus } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { approveLeadAsClient } from "@/app/actions/admin-leads";
 import { DashboardManagementToolbar } from "@/components/dashboard/dashboard-management-toolbar";
 import { DashboardEmptyState } from "@/components/dashboard/dashboard-empty-state";
+import { DashboardMiniStat } from "@/components/dashboard/dashboard-mini-stat";
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
 import { DashboardStatusBadge } from "@/components/dashboard/dashboard-status-badge";
 import { DashboardSurfaceNote } from "@/components/dashboard/dashboard-surface-note";
@@ -57,6 +59,8 @@ export function AdminLeadsWorkspace({ records }: AdminLeadsWorkspaceProps) {
   }, [deferredSearchTerm, records, statusFilter]);
 
   const pendingLeads = filteredRecords.filter((lead) => lead.status !== "Converted").length;
+  const newLeads = filteredRecords.filter((lead) => lead.status === "New").length;
+  const contactedLeads = filteredRecords.filter((lead) => lead.status === "Contacted").length;
   const convertedLeads = filteredRecords.filter((lead) => lead.status === "Converted").length;
   const hasActiveFilters = searchTerm.trim().length > 0 || statusFilter !== "All";
 
@@ -80,43 +84,62 @@ export function AdminLeadsWorkspace({ records }: AdminLeadsWorkspaceProps) {
   };
 
   return (
-    <div className="dashboard-stack">
-      <DashboardPageHeader eyebrow="Admin leads" />
+    <div className="dashboard-stack dashboard-stack--dense">
+      <DashboardPageHeader
+        eyebrow="Admin leads"
+        actions={
+          <Link href="/admin/clients" className="mv-btn mv-btn-outline">
+            <UserRoundPlus size={16} />
+            Open Clients
+          </Link>
+        }
+      />
 
       <DashboardSurfaceNote
-        eyebrow="Approval flow"
-        title="Review leads first, then approve only the ones that should become clients."
-        description="This page keeps lead intake separate from account creation."
+        eyebrow="Lead queue"
+        title={
+          pendingLeads > 0
+            ? `${pendingLeads} leads still need a decision in this view.`
+            : "All visible leads are already resolved or converted."
+        }
+        description="Work new inquiries first, move contacted leads to a decision, and only create clients when the lead is ready."
         items={[
-          `${pendingLeads} awaiting review in this view.`,
-          `${convertedLeads} already converted in this view.`,
+          `${newLeads} new leads need first contact.`,
+          `${contactedLeads} contacted leads are waiting on a decision.`,
+          `${convertedLeads} converted leads stay here as history.`,
         ]}
       />
 
-      <section className="dashboard-mini-grid" aria-label="Lead highlights">
-        <article className="dashboard-mini-stat">
-          <span className="dashboard-mini-stat__label">Leads in view</span>
-          <strong>{filteredRecords.length}</strong>
-          <p>Current filtered lead list.</p>
-        </article>
-        <article className="dashboard-mini-stat">
-          <span className="dashboard-mini-stat__label">Awaiting approval</span>
-          <strong>{pendingLeads}</strong>
-          <p>Still only leads.</p>
-        </article>
-        <article className="dashboard-mini-stat">
-          <span className="dashboard-mini-stat__label">Converted</span>
-          <strong>{convertedLeads}</strong>
-          <p>Already promoted to client.</p>
-        </article>
+      <section
+        className="dashboard-mini-grid dashboard-admin-priority-grid"
+        aria-label="Lead highlights"
+      >
+        <DashboardMiniStat
+          tone={newLeads > 0 ? "accent" : "success"}
+          label="New"
+          value={newLeads}
+          description="Need first response."
+        />
+        <DashboardMiniStat
+          tone={contactedLeads > 0 ? "warning" : "success"}
+          label="Contacted"
+          value={contactedLeads}
+          description="Waiting on a decision."
+        />
+        <DashboardMiniStat
+          tone="success"
+          label="Converted"
+          value={convertedLeads}
+          description="Already promoted to client."
+        />
       </section>
 
-      <section className="dashboard-panel dashboard-panel--accent">
+      <section className="dashboard-panel dashboard-panel--accent dashboard-panel--dense">
         <DashboardManagementToolbar
           searchValue={searchTerm}
           onSearchChange={setSearchTerm}
           searchPlaceholder="Search by lead, email, phone, or message"
-          summary={`${filteredRecords.length} lead records in view`}
+          summary={`${filteredRecords.length} leads in view • ${pendingLeads} still need action`}
           isFiltered={hasActiveFilters}
           onReset={resetFilters}
           filters={
@@ -141,7 +164,7 @@ export function AdminLeadsWorkspace({ records }: AdminLeadsWorkspaceProps) {
 
         {actionMessage ? (
           <div className="dashboard-info-strip">
-            <strong>Lead action</strong>
+            <strong>Latest action</strong>
             <p>{actionMessage}</p>
           </div>
         ) : null}
@@ -149,21 +172,30 @@ export function AdminLeadsWorkspace({ records }: AdminLeadsWorkspaceProps) {
         <div className="dashboard-data-region">
           {filteredRecords.length > 0 ? (
             <>
+              <div className="dashboard-panel__meta-strip">
+                <span>{newLeads} new</span>
+                <span>{contactedLeads} contacted</span>
+                <span>{convertedLeads} converted</span>
+              </div>
+
               <div className="dashboard-table-wrap">
-                <table className="dashboard-table">
+                <table className="dashboard-table dashboard-lead-table">
                   <thead>
                     <tr>
                       <th>Lead</th>
-                      <th>Status</th>
-                      <th>Source</th>
-                      <th>Created</th>
+                      <th>Queue</th>
                       <th>Message</th>
-                      <th>Actions</th>
+                      <th>Decision</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredRecords.map((lead) => (
-                      <tr key={lead.id}>
+                      <tr
+                        key={lead.id}
+                        className={
+                          lead.status === "Converted" ? "dashboard-lead-row--converted" : undefined
+                        }
+                      >
                         <td>
                           <div className="dashboard-table__identity">
                             <strong>{lead.fullName}</strong>
@@ -172,25 +204,32 @@ export function AdminLeadsWorkspace({ records }: AdminLeadsWorkspaceProps) {
                           </div>
                         </td>
                         <td>
-                          <DashboardStatusBadge
-                            label={lead.status}
-                            tone={getLeadTone(lead.status)}
-                          />
+                          <div className="dashboard-lead-table__status">
+                            <DashboardStatusBadge
+                              label={lead.status}
+                              tone={getLeadTone(lead.status)}
+                            />
+                            <div className="dashboard-lead-table__meta">
+                              <span>{lead.source}</span>
+                              <span>{lead.createdAt}</span>
+                            </div>
+                          </div>
                         </td>
-                        <td>{lead.source}</td>
-                        <td>{lead.createdAt}</td>
-                        <td>{lead.message}</td>
                         <td>
+                          <p className="dashboard-lead-table__message">{lead.message}</p>
+                        </td>
+                        <td className="dashboard-lead-table__action">
                           {lead.status === "Converted" ? (
                             <DashboardStatusBadge label="Client created" tone="success" />
                           ) : (
                             <button
                               type="button"
-                              className="dashboard-inline-button"
+                              className="mv-btn mv-btn-primary dashboard-lead-table__approve"
                               onClick={() => handleApprove(lead.id)}
                               disabled={isPending}
                             >
-                              Approve as client
+                              <UserRoundPlus size={16} />
+                              {isPending ? "Approving..." : "Approve"}
                             </button>
                           )}
                         </td>
@@ -202,9 +241,17 @@ export function AdminLeadsWorkspace({ records }: AdminLeadsWorkspaceProps) {
 
               <div className="dashboard-mobile-list">
                 {filteredRecords.map((lead) => (
-                  <article key={lead.id} className="dashboard-record-card">
+                  <article
+                    key={lead.id}
+                    className={
+                      lead.status === "Converted"
+                        ? "dashboard-record-card dashboard-record-card--lead"
+                        : "dashboard-record-card dashboard-record-card--lead dashboard-record-card--active"
+                    }
+                  >
                     <div className="dashboard-record-card__header">
                       <div>
+                        <span className="dashboard-record-card__eyebrow">{lead.source}</span>
                         <h3>{lead.fullName}</h3>
                         <p>{lead.email}</p>
                       </div>
@@ -214,7 +261,6 @@ export function AdminLeadsWorkspace({ records }: AdminLeadsWorkspaceProps) {
                       />
                     </div>
                     <div className="dashboard-record-card__meta">
-                      <span>{lead.source}</span>
                       <span>{lead.createdAt}</span>
                       <span>{lead.phone}</span>
                     </div>
@@ -225,12 +271,12 @@ export function AdminLeadsWorkspace({ records }: AdminLeadsWorkspaceProps) {
                       ) : (
                         <button
                           type="button"
-                          className="dashboard-inline-button"
+                          className="mv-btn mv-btn-primary"
                           onClick={() => handleApprove(lead.id)}
                           disabled={isPending}
                         >
                           <UserRoundPlus size={16} />
-                          Approve as client
+                          {isPending ? "Approving..." : "Approve as client"}
                         </button>
                       )}
                     </div>

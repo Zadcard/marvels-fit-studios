@@ -185,7 +185,12 @@ export function LandingHeader() {
             <Link href="/login" className="btn btn-nav-login nav-login-mobile">
               Login
             </Link>
-            <button className="btn btn-primary nav-join-mobile" type="button" data-open-join>
+            <button
+              className="btn btn-primary nav-join-mobile"
+              type="button"
+              data-open-join
+              data-analytics-source="nav-mobile-cta"
+            >
               Join Now
             </button>
           </div>
@@ -203,6 +208,7 @@ export function LandingHeader() {
               id="btnJoinNav"
               type="button"
               data-open-join
+              data-analytics-source="nav-desktop-cta"
             >
               Join Now
             </button>
@@ -285,7 +291,12 @@ export function LandingFooter() {
           and a premium training experience in Giza.
         </p>
         <div className="footer-cta-actions">
-          <button className="btn btn-primary" type="button" data-open-join>
+          <button
+            className="btn btn-primary"
+            type="button"
+            data-open-join
+            data-analytics-source="footer-primary-cta"
+          >
             Start Membership
           </button>
           <Link href="/login" className="btn btn-secondary">
@@ -344,6 +355,7 @@ export function LandingFooter() {
               className="footer-link-button"
               type="button"
               data-open-join
+              data-analytics-source="footer-link-cta"
             >
               Start Membership
             </button>

@@ -12,6 +12,7 @@ import { updateCoachAttendance } from "@/app/actions/coach-attendance";
 import { saveCoachSessionNote } from "@/app/actions/coach-session-notes";
 import { DashboardManagementToolbar } from "@/components/dashboard/dashboard-management-toolbar";
 import { DashboardEmptyState } from "@/components/dashboard/dashboard-empty-state";
+import { DashboardMiniStat } from "@/components/dashboard/dashboard-mini-stat";
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
 import { DashboardStatusBadge } from "@/components/dashboard/dashboard-status-badge";
 import { DashboardSurfaceNote } from "@/components/dashboard/dashboard-surface-note";
@@ -257,21 +258,21 @@ export function CoachSessionsWorkspace({
       />
 
       <section className="dashboard-mini-grid" aria-label="Coach session highlights">
-        <article className="dashboard-mini-stat">
-          <span className="dashboard-mini-stat__label">Sessions in view</span>
-          <strong>{filteredSessions.length}</strong>
-          <p>Current load.</p>
-        </article>
-        <article className="dashboard-mini-stat">
-          <span className="dashboard-mini-stat__label">Ready</span>
-          <strong>{readySessions}</strong>
-          <p>Ready now.</p>
-        </article>
-        <article className="dashboard-mini-stat">
-          <span className="dashboard-mini-stat__label">Group blocks</span>
-          <strong>{groupSessions}</strong>
-          <p>Group sessions.</p>
-        </article>
+        <DashboardMiniStat
+          label="Sessions in view"
+          value={filteredSessions.length}
+          description="Current load."
+        />
+        <DashboardMiniStat
+          label="Ready"
+          value={readySessions}
+          description="Ready now."
+        />
+        <DashboardMiniStat
+          label="Group blocks"
+          value={groupSessions}
+          description="Group sessions."
+        />
       </section>
 
       <section className="dashboard-detail-layout">
