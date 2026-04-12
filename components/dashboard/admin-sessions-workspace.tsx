@@ -551,23 +551,36 @@ export function AdminSessionsWorkspace({
   const editingRecord = editingSessionId
     ? sessionRecordMap.get(editingSessionId)
     : undefined;
-  const availableClientOptions = clientOptions.filter(
-    (client) =>
-      !editingRecord?.bookedClients.some((bookedClient) => bookedClient.id === client.id)
+  const availableClientOptions = useMemo(
+    () =>
+      clientOptions.filter(
+        (client) =>
+          !editingRecord?.bookedClients.some(
+            (bookedClient) => bookedClient.id === client.id
+          )
+      ),
+    [clientOptions, editingRecord?.bookedClients]
   );
   const normalizedClientSearchTerm = clientSearchTerm.trim().toLowerCase();
-  const filteredAvailableClientOptions = availableClientOptions.filter((client) =>
-    normalizedClientSearchTerm.length === 0
-      ? true
-      : client.fullName.toLowerCase().includes(normalizedClientSearchTerm)
+  const filteredAvailableClientOptions = useMemo(
+    () =>
+      availableClientOptions.filter((client) =>
+        normalizedClientSearchTerm.length === 0
+          ? true
+          : client.fullName.toLowerCase().includes(normalizedClientSearchTerm)
+      ),
+    [availableClientOptions, normalizedClientSearchTerm]
   );
   const normalizedRosterSearchTerm = rosterSearchTerm.trim().toLowerCase();
-  const filteredBookedClients =
-    editingRecord?.bookedClients.filter((client) =>
-      normalizedRosterSearchTerm.length === 0
-        ? true
-        : client.fullName.toLowerCase().includes(normalizedRosterSearchTerm)
-    ) ?? [];
+  const filteredBookedClients = useMemo(
+    () =>
+      editingRecord?.bookedClients.filter((client) =>
+        normalizedRosterSearchTerm.length === 0
+          ? true
+          : client.fullName.toLowerCase().includes(normalizedRosterSearchTerm)
+      ) ?? [],
+    [editingRecord?.bookedClients, normalizedRosterSearchTerm]
+  );
   const resolvedSelectedClientId = filteredAvailableClientOptions.some(
     (client) => client.id === selectedClientId
   )

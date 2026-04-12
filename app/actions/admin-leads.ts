@@ -1,17 +1,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-
-import { auth } from "@/auth";
-import { promoteLeadsToClients } from "@/lib/leads/promote-leads-to-clients";
 import { UserRole } from "@prisma/client";
 
-export async function approveLeadAsClient(leadId: string) {
-  const session = await auth();
+import { requireRole } from "@/lib/auth/session";
+import { promoteLeadsToClients } from "@/lib/leads/promote-leads-to-clients";
 
-  if (session?.user?.role !== UserRole.ADMIN) {
-    throw new Error("Unauthorized");
-  }
+export async function approveLeadAsClient(leadId: string) {
+  await requireRole(UserRole.ADMIN);
 
   const summary = await promoteLeadsToClients({
     leadIds: [leadId],

@@ -24,6 +24,14 @@ const timeFormatter = new Intl.DateTimeFormat("en-US", {
   minute: "2-digit",
 });
 
+function formatCurrency(amount: number, currency: string) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency,
+    maximumFractionDigits: 0,
+  }).format(amount);
+}
+
 function titleCase(value: string) {
   return value
     .toLowerCase()
@@ -97,10 +105,26 @@ const defaultClientGoal =
 
 function inferPaymentStatus(subscription: {
   status: string;
+  renewsAt?: Date | null;
   payments: Array<{ date: Date }>;
 }) {
-  if (subscription.status === "ACTIVE" && subscription.payments.length > 0) {
-    return "Paid";
+  const latestPayment = subscription.payments[0]?.date ?? null;
+
+  if (subscription.status === "CANCELED") {
+    return "Canceled";
+  }
+
+  if (subscription.status === "PAUSED" || subscription.status === "EXPIRED") {
+    return "Paused";
+  }
+
+  if (subscription.status === "ACTIVE" && latestPayment && subscription.renewsAt) {
+    const activeWindowStart = new Date(subscription.renewsAt);
+    activeWindowStart.setUTCDate(activeWindowStart.getUTCDate() - 45);
+
+    if (latestPayment.getTime() >= activeWindowStart.getTime()) {
+      return "Paid";
+    }
   }
 
   if (subscription.status === "ACTIVE") {
@@ -157,23 +181,6 @@ type ClientPrimaryCoach = {
   specialization: string;
   bio: string;
 };
-
-function formatCoachSpecialization(
-  specialization: "STRENGTH" | "CONDITIONING" | "MOBILITY" | "PRIVATE_COACHING" | null | undefined
-) {
-  switch (specialization) {
-    case "CONDITIONING":
-      return "Conditioning";
-    case "MOBILITY":
-      return "Mobility";
-    case "PRIVATE_COACHING":
-      return "Private Coaching";
-    case "STRENGTH":
-      return "Strength";
-    default:
-      return "Coaching support";
-  }
-}
 
 function resolvePrimaryCoach(
   client: NonNullable<ClientDashboardQuery>,
@@ -284,6 +291,15 @@ export class ClientDashboardRepository {
         sessionsLeft: true,
         isPaid: true,
         createdAt: true,
+        preferences: {
+          select: {
+            goalLabel: true,
+            preferredSessionTime: true,
+            notificationEmail: true,
+            scheduleReminders: true,
+            coachUpdates: true,
+          },
+        },
         user: {
           select: {
             id: true,
@@ -306,6 +322,11 @@ export class ClientDashboardRepository {
               },
             },
             trainingSessions: {
+              where: {
+                status: {
+                  in: ["SCHEDULED", "COMPLETED"],
+                },
+              },
               orderBy: [{ startsAt: "asc" }],
               select: {
                 id: true,
@@ -346,6 +367,7 @@ export class ClientDashboardRepository {
             endsAt: true,
             renewsAt: true,
             updatedAt: true,
+            customPrice: true,
             sessionsTotal: true,
             sessionsUsed: true,
             isAutoRenew: true,
@@ -371,6 +393,16 @@ export class ClientDashboardRepository {
           },
         },
         bookings: {
+          where: {
+            status: {
+              in: ["BOOKED", "ATTENDED", "MISSED", "WAITLIST"],
+            },
+            trainingSession: {
+              status: {
+                in: ["SCHEDULED", "COMPLETED"],
+              },
+            },
+          },
           orderBy: [{ trainingSession: { startsAt: "asc" } }],
           select: {
             status: true,
@@ -605,6 +637,7 @@ export class ClientDashboardRepository {
         startsAt: true,
         endsAt: true,
         renewsAt: true,
+        customPrice: true,
         sessionsTotal: true,
         sessionsUsed: true,
         isAutoRenew: true,
@@ -631,36 +664,32 @@ export class ClientDashboardRepository {
         billingCycle: titleCase(client.membershipType),
         benefits: ["No active subscription has been attached to this client yet."],
         note: "Subscription details will appear here once a plan is assigned.",
+        paymentHistory: [],
       };
     }
 
-    const latestPayment = await this.prisma.payment.findFirst({
+    const paymentHistory = await this.prisma.payment.findMany({
       where: {
         clientSubscriptionId: subscription.id,
       },
       orderBy: [{ date: "desc" }, { createdAt: "desc" }],
+      take: 5,
       select: {
+        id: true,
         amount: true,
         currency: true,
         date: true,
+        note: true,
       },
     });
-
-    const customPriceRows = await this.prisma.$queryRaw<
-      Array<{ customPrice: number | null }>
-    >`
-      SELECT "customPrice"
-      FROM "ClientSubscription"
-      WHERE "id" = ${subscription.id}
-      LIMIT 1
-    `;
-    const customPrice = customPriceRows[0]?.customPrice ?? null;
+    const latestPayment = paymentHistory[0] ?? null;
 
     return {
       planName: subscription.plan.name,
       status: titleCase(subscription.status),
       paymentStatus: inferPaymentStatus({
         status: subscription.status,
+        renewsAt: subscription.renewsAt,
         payments: latestPayment ? [{ date: latestPayment.date }] : [],
       }),
       renewalDate: subscription.renewsAt
@@ -669,13 +698,19 @@ export class ClientDashboardRepository {
           ? formatDate(subscription.endsAt)
           : "No renewal date set",
       amountLabel: `${latestPayment?.currency ?? subscription.plan.currency} ${(
-        latestPayment?.amount ?? customPrice ?? subscription.plan.price
+        latestPayment?.amount ?? subscription.customPrice ?? subscription.plan.price
       ).toFixed(0)}`,
       billingCycle: titleCase(subscription.plan.billingCycle),
       benefits: buildBenefits(subscription),
       note:
         subscription.plan.description ??
         "Current membership summary and billing state.",
+      paymentHistory: paymentHistory.map((payment) => ({
+        id: payment.id,
+        amountLabel: formatCurrency(payment.amount, payment.currency),
+        dateLabel: formatDate(payment.date),
+        note: payment.note ?? "Payment recorded.",
+      })),
     };
   }
 
@@ -721,27 +756,7 @@ export class ClientDashboardRepository {
       return null;
     }
 
-    const preferenceRows = await this.prisma.$queryRaw<
-      Array<{
-        goalLabel: string;
-        preferredSessionTime: string;
-        notificationEmail: boolean;
-        scheduleReminders: boolean;
-        coachUpdates: boolean;
-      }>
-    >`
-      SELECT
-        "goalLabel",
-        "preferredSessionTime",
-        "notificationEmail",
-        "scheduleReminders",
-        "coachUpdates"
-      FROM "ClientPreferences"
-      WHERE "clientId" = ${client.id}
-      LIMIT 1
-    `;
-
-    const preferences = preferenceRows[0] ?? null;
+    const preferences = client.preferences;
     const sessionTimes = buildClientSessionEntries(client)
       .filter((booking) => booking.startsAt.getTime() >= Date.now())
       .map((booking) => booking.startsAt);

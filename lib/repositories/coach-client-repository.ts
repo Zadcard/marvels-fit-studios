@@ -144,7 +144,13 @@ export class PrismaCoachClientRepository implements CoachClientRepository {
           {
             bookings: {
               some: {
+                status: {
+                  in: ["BOOKED", "ATTENDED", "MISSED", "WAITLIST"],
+                },
                 trainingSession: {
+                  status: {
+                    not: "CANCELED",
+                  },
                   coach: {
                     userId,
                   },
@@ -181,7 +187,13 @@ export class PrismaCoachClientRepository implements CoachClientRepository {
         },
         bookings: {
           where: {
+            status: {
+              in: ["BOOKED", "ATTENDED", "MISSED", "WAITLIST"],
+            },
             trainingSession: {
+              status: {
+                not: "CANCELED",
+              },
               coach: {
                 userId,
               },

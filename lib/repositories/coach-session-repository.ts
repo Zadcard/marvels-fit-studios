@@ -91,6 +91,9 @@ export class CoachSessionRepository {
         coach: {
           userId,
         },
+        status: {
+          not: "CANCELED",
+        },
       },
       orderBy: [{ startsAt: "asc" }],
       select: {
@@ -151,6 +154,8 @@ export class CoachSessionRepository {
           ? bookings[0]?.fullName ?? "No client assigned"
           : `${bookings.length} / ${(session.capacity ?? bookings.length) || 1} booked`;
 
+      const noteValue = session.notes[0]?.content ?? "";
+
       return {
         id: session.id,
         title: session.title,
@@ -169,9 +174,8 @@ export class CoachSessionRepository {
           (session.type === "PRIVATE"
             ? "Private coaching block"
             : "Coached group session"),
-        note:
-          session.notes[0]?.content ??
-          "Attendance updates and coaching notes appear here.",
+        note: noteValue || "Attendance updates and coaching notes appear here.",
+        noteValue,
         bookings,
       };
     });
@@ -181,7 +185,6 @@ export class CoachSessionRepository {
     const sessions = await this.listForCoachUserId(userId);
 
     return sessions.map((session) => {
-      const startsAt = new Date(`${new Date().toDateString()} ${session.timeLabel}`);
       const timeRange = session.timeLabel;
 
       return {

@@ -1,7 +1,9 @@
 "use server";
 
+import { UserRole } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 
+import { requireRole } from "@/lib/auth/session";
 import { getPrisma } from "@/lib/prisma";
 
 type SaveClientPaymentInput = {
@@ -20,6 +22,7 @@ function parseAmount(value: string | undefined) {
 }
 
 export async function saveClientPaymentStatus(input: SaveClientPaymentInput) {
+  await requireRole(UserRole.ADMIN);
   const prisma = getPrisma();
   const client = await prisma.client.findUnique({
     where: { id: input.clientId },

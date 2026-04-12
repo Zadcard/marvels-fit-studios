@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { Save } from "lucide-react";
 
 import { saveCoachSettings } from "@/app/actions/coach-settings";
+import { AccountSecurityPanel } from "@/components/dashboard/account-security-panel";
 import { DashboardFormSection } from "@/components/dashboard/dashboard-form-section";
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
 import { DashboardSurfaceNote } from "@/components/dashboard/dashboard-surface-note";
@@ -78,7 +79,7 @@ export function CoachSettingsWorkspace({
       <DashboardSurfaceNote
         eyebrow="Settings"
         title="Profile details and workflow alerts are grouped separately."
-        description="Core coach profile fields save to the database. Preference controls are still UI-only."
+        description="Core coach profile fields save to the database. Alert switches are read-only until notification delivery is connected."
         items={[
           `${enabledAlerts}/3 alerts enabled.`,
           hasChanges ? "Unsaved changes pending." : "No pending changes.",
@@ -235,18 +236,21 @@ export function CoachSettingsWorkspace({
                 onCheckedChange={() => {}}
                 label="Mobile alerts"
                 description="Upcoming session reminders and urgent changes."
+                disabled
               />
               <DashboardSwitch
                 checked={settings.clientCheckIns}
                 onCheckedChange={() => {}}
                 label="Client check-ins"
                 description="Clients who need follow-up."
+                disabled
               />
               <DashboardSwitch
                 checked={settings.waitlistFlags}
                 onCheckedChange={() => {}}
                 label="Waitlist flags"
                 description="Demand spikes on group classes."
+                disabled
               />
             </div>
           </DashboardFormSection>
@@ -285,6 +289,8 @@ export function CoachSettingsWorkspace({
           </div>
         </aside>
       </section>
+
+      <AccountSecurityPanel />
     </div>
   );
 }

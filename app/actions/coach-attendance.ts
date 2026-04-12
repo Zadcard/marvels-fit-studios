@@ -65,11 +65,25 @@ export async function updateCoachAttendance(
     },
     select: {
       id: true,
+      status: true,
+      trainingSession: {
+        select: {
+          status: true,
+        },
+      },
     },
   });
 
   if (!booking) {
     throw new Error("Booking record not found.");
+  }
+
+  if (booking.trainingSession.status === "CANCELED") {
+    throw new Error("Attendance cannot be updated for canceled sessions.");
+  }
+
+  if (booking.status === "CANCELED") {
+    throw new Error("Attendance cannot be updated for canceled bookings.");
   }
 
   await prisma.sessionBooking.update({

@@ -9,7 +9,7 @@ export type WorkspaceFilterDefinition<
 type WorkspaceTextField<TForm extends Record<string, string>> = {
   key: Extract<keyof TForm, string>;
   label: string;
-  kind: "text" | "email" | "tel";
+  kind: "text" | "email" | "tel" | "password";
 };
 
 type WorkspaceSelectField<TForm extends Record<string, string>> = {

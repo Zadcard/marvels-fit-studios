@@ -1,9 +1,10 @@
 "use server";
 
 import bcrypt from "bcryptjs";
+import { ClientLifecycleStatus, ClientPaymentStatus, UserRole } from "@prisma/client";
 import { revalidatePath } from "next/cache";
-import { randomUUID } from "node:crypto";
 
+import { requireRole } from "@/lib/auth/session";
 import { getPrisma } from "@/lib/prisma";
 
 type SaveAdminClientInput = {
@@ -11,6 +12,7 @@ type SaveAdminClientInput = {
   fullName: string;
   email: string;
   phone?: string;
+  initialPassword?: string;
   status: "Active" | "Pending" | "Paused";
   paymentStatus: "Paid" | "Unpaid" | "Due soon";
   paymentAmount?: string;
@@ -23,27 +25,27 @@ type DeleteAdminClientInput = {
 
 function toClientStatus(
   status: SaveAdminClientInput["status"]
-): "ACTIVE" | "PENDING" | "PAUSED" {
+): ClientLifecycleStatus {
   switch (status) {
     case "Active":
-      return "ACTIVE";
+      return ClientLifecycleStatus.ACTIVE;
     case "Paused":
-      return "PAUSED";
+      return ClientLifecycleStatus.PAUSED;
     default:
-      return "PENDING";
+      return ClientLifecycleStatus.PENDING;
   }
 }
 
 function toPaymentStatus(
   status: SaveAdminClientInput["paymentStatus"]
-): "PAID" | "UNPAID" | "DUE_SOON" {
+): ClientPaymentStatus {
   switch (status) {
     case "Paid":
-      return "PAID";
+      return ClientPaymentStatus.PAID;
     case "Due soon":
-      return "DUE_SOON";
+      return ClientPaymentStatus.DUE_SOON;
     default:
-      return "UNPAID";
+      return ClientPaymentStatus.UNPAID;
   }
 }
 
@@ -56,11 +58,35 @@ function parseAmount(value: string | undefined) {
   return Number.isFinite(normalized) && normalized > 0 ? normalized : null;
 }
 
+function normalizePassword(value: string | undefined) {
+  return value?.trim() ?? "";
+}
+
+function assertValidPassword(password: string, mode: "create" | "reset") {
+  if (!password) {
+    if (mode === "create") {
+      throw new Error("Initial password is required for new clients.");
+    }
+
+    return;
+  }
+
+  if (password.length < 8) {
+    throw new Error("Password must be at least 8 characters.");
+  }
+
+  if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) {
+    throw new Error("Password must include at least one letter and one number.");
+  }
+}
+
 export async function saveAdminClient(input: SaveAdminClientInput) {
+  await requireRole(UserRole.ADMIN);
   const prisma = getPrisma();
   const fullName = input.fullName.trim();
   const email = input.email.trim().toLowerCase();
   const phone = input.phone?.trim() || null;
+  const initialPassword = normalizePassword(input.initialPassword);
   const status = toClientStatus(input.status);
   const paymentStatus = toPaymentStatus(input.paymentStatus);
   const amount = parseAmount(input.paymentAmount);
@@ -109,12 +135,17 @@ export async function saveAdminClient(input: SaveAdminClientInput) {
       throw new Error("Another user already uses this email.");
     }
 
+    assertValidPassword(initialPassword, "reset");
+
     await prisma.$transaction(async (tx) => {
       await tx.user.update({
         where: { id: client.userId },
         data: {
           name: fullName,
           email,
+          ...(initialPassword
+            ? { password: await bcrypt.hash(initialPassword, 12) }
+            : {}),
         },
       });
 
@@ -125,14 +156,9 @@ export async function saveAdminClient(input: SaveAdminClientInput) {
           phone,
           isPaid: paymentStatus === "PAID",
           paymentStatus,
+          status,
         },
       });
-
-      await tx.$executeRaw`
-        UPDATE "Client"
-        SET "status" = ${status}::"ClientLifecycleStatus"
-        WHERE "id" = ${client.id}
-      `;
 
       if (paymentStatus === "PAID") {
         if (!amount) {
@@ -159,8 +185,8 @@ export async function saveAdminClient(input: SaveAdminClientInput) {
       throw new Error("A user with this email already exists. Use a different email.");
     }
 
-    const password = await bcrypt.hash("password123", 12);
-    const clientId = randomUUID();
+    assertValidPassword(initialPassword, "create");
+    const password = await bcrypt.hash(initialPassword, 12);
 
     await prisma.$transaction(async (tx) => {
       const createdUser = await tx.user.create({
@@ -175,28 +201,19 @@ export async function saveAdminClient(input: SaveAdminClientInput) {
         },
       });
 
-      await tx.$executeRaw`
-        INSERT INTO "Client" (
-          "id",
-          "fullName",
-          "phone",
-          "status",
-          "isPaid",
-          "paymentStatus",
-          "userId",
-          "createdAt"
-        )
-        VALUES (
-          ${clientId},
-          ${fullName},
-          ${phone},
-          ${status}::"ClientLifecycleStatus",
-          ${paymentStatus === "PAID"},
-          ${paymentStatus}::"ClientPaymentStatus",
-          ${createdUser.id},
-          NOW()
-        )
-      `;
+      const createdClient = await tx.client.create({
+        data: {
+          fullName,
+          phone,
+          status,
+          isPaid: paymentStatus === "PAID",
+          paymentStatus,
+          userId: createdUser.id,
+        },
+        select: {
+          id: true,
+        },
+      });
 
       if (paymentStatus === "PAID") {
         if (!amount) {
@@ -208,7 +225,7 @@ export async function saveAdminClient(input: SaveAdminClientInput) {
             amount,
             currency: "EGP",
             note: "Initial payment recorded from the admin client editor.",
-            clientId,
+            clientId: createdClient.id,
           },
         });
       }
@@ -221,6 +238,7 @@ export async function saveAdminClient(input: SaveAdminClientInput) {
 }
 
 export async function deleteAdminClient(input: DeleteAdminClientInput) {
+  await requireRole(UserRole.ADMIN);
   const prisma = getPrisma();
 
   if (input.confirmationText.trim() !== "Delete") {

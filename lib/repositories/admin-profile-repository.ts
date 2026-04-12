@@ -84,7 +84,7 @@ export class AdminProfileRepository {
         bio: "Manages leads, clients, schedules, and day-to-day studio operations.",
         initials: getInitials(user.name, user.email),
         joinedLabel: `Joined ${dateFormatter.format(user.createdAt)}`,
-        credentialsNote: "Password updates are still a UI placeholder in this build.",
+        credentialsNote: "Password changes are available from this profile and are applied to your signed-in account.",
       },
       metrics: [
         {

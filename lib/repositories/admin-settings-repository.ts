@@ -25,67 +25,31 @@ export class AdminSettingsRepository {
   private prisma = getPrisma();
 
   async get(): Promise<AdminStudioSettings> {
-    await this.prisma.$executeRaw`
-      INSERT INTO "StudioSettings" (
-        "id",
-        "studioName",
-        "supportEmail",
-        "supportPhone",
-        "timezone",
-        "defaultSessionLength",
-        "intakeLeadTime",
-        "overbookWaitlist",
-        "coachAutoReminders",
-        "memberCheckInAlerts",
-        "renewalDigest",
-        "cancellationWindow",
-        "privateSessionBuffer",
-        "scheduleStartDay",
-        "createdAt",
-        "updatedAt"
-      )
-      VALUES (
-        ${DEFAULT_SETTINGS_ID},
-        ${defaultSettings.studioName},
-        ${defaultSettings.supportEmail},
-        ${defaultSettings.supportPhone},
-        ${defaultSettings.timezone},
-        ${defaultSettings.defaultSessionLength},
-        ${defaultSettings.intakeLeadTime},
-        ${defaultSettings.overbookWaitlist},
-        ${defaultSettings.coachAutoReminders},
-        ${defaultSettings.memberCheckInAlerts},
-        ${defaultSettings.renewalDigest},
-        ${defaultSettings.cancellationWindow},
-        ${defaultSettings.privateSessionBuffer},
-        ${defaultSettings.scheduleStartDay},
-        NOW(),
-        NOW()
-      )
-      ON CONFLICT ("id") DO NOTHING
-    `;
+    const settings = await this.prisma.studioSettings.upsert({
+      where: { id: DEFAULT_SETTINGS_ID },
+      create: {
+        id: DEFAULT_SETTINGS_ID,
+        ...defaultSettings,
+      },
+      update: {},
+      select: {
+        studioName: true,
+        supportEmail: true,
+        supportPhone: true,
+        timezone: true,
+        defaultSessionLength: true,
+        intakeLeadTime: true,
+        overbookWaitlist: true,
+        coachAutoReminders: true,
+        memberCheckInAlerts: true,
+        renewalDigest: true,
+        cancellationWindow: true,
+        privateSessionBuffer: true,
+        scheduleStartDay: true,
+      },
+    });
 
-    const rows = await this.prisma.$queryRaw<AdminStudioSettings[]>`
-      SELECT
-        "studioName",
-        "supportEmail",
-        "supportPhone",
-        "timezone",
-        "defaultSessionLength",
-        "intakeLeadTime",
-        "overbookWaitlist",
-        "coachAutoReminders",
-        "memberCheckInAlerts",
-        "renewalDigest",
-        "cancellationWindow",
-        "privateSessionBuffer",
-        "scheduleStartDay"
-      FROM "StudioSettings"
-      WHERE "id" = ${DEFAULT_SETTINGS_ID}
-      LIMIT 1
-    `;
-
-    return rows[0] ?? defaultSettings;
+    return settings;
   }
 }
 

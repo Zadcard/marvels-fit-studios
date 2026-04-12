@@ -19,6 +19,7 @@ export type CoachSessionRecord = {
   rosterLabel: string;
   focus: string;
   note: string;
+  noteValue: string;
   bookings: CoachSessionBookingRecord[];
 };
 

@@ -171,6 +171,7 @@ export async function cancelSessionBooking(input: CancelSessionBookingInput) {
     where: { id: booking.id },
     data: {
       status: BookingStatus.CANCELED,
+      attendedAt: null,
       canceledAt: new Date(),
     },
     select: {

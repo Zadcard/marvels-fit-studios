@@ -1,6 +1,10 @@
 import "server-only";
 
-import { TrainingSessionStatus, TrainingSessionType } from "@prisma/client";
+import {
+  BookingStatus,
+  TrainingSessionStatus,
+  TrainingSessionType,
+} from "@prisma/client";
 
 import { getPrisma } from "@/lib/prisma";
 import type {
@@ -72,6 +76,17 @@ export async function updateTrainingSession(input: UpdateTrainingSessionInput) {
     select: {
       id: true,
       status: true,
+      bookings: {
+        where: {
+          status: {
+            in: [BookingStatus.BOOKED, BookingStatus.ATTENDED, BookingStatus.WAITLIST],
+          },
+        },
+        orderBy: [{ bookedAt: "asc" }],
+        select: {
+          id: true,
+        },
+      },
     },
   });
 
@@ -83,22 +98,49 @@ export async function updateTrainingSession(input: UpdateTrainingSessionInput) {
     throw new Error("Canceled sessions cannot be edited.");
   }
 
-  return prisma.trainingSession.update({
-    where: { id: input.sessionId },
-    data: {
-      title: input.title.trim(),
-      description: normalizeOptionalString(input.description),
-      type: input.type,
-      status: input.status,
-      coachId: input.coachId,
-      location: normalizeOptionalString(input.location),
-      startsAt: new Date(input.startsAt),
-      endsAt: new Date(input.endsAt),
-      capacity: normalizeCapacity(input.type, input.capacity),
-    },
-    select: {
-      id: true,
-    },
+  const normalizedCapacity = normalizeCapacity(input.type, input.capacity);
+  const activeBookingCount = existingSession.bookings.length;
+
+  if (
+    input.type !== TrainingSessionType.PRIVATE &&
+    normalizedCapacity !== null &&
+    activeBookingCount > normalizedCapacity
+  ) {
+    throw new Error("Capacity cannot be lower than the current active roster.");
+  }
+
+  return prisma.$transaction(async (tx) => {
+    if (input.type === TrainingSessionType.PRIVATE && activeBookingCount > 1) {
+      await tx.sessionBooking.updateMany({
+        where: {
+          id: {
+            in: existingSession.bookings.slice(1).map((booking) => booking.id),
+          },
+        },
+        data: {
+          status: BookingStatus.CANCELED,
+          canceledAt: new Date(),
+        },
+      });
+    }
+
+    return tx.trainingSession.update({
+      where: { id: input.sessionId },
+      data: {
+        title: input.title.trim(),
+        description: normalizeOptionalString(input.description),
+        type: input.type,
+        status: input.status,
+        coachId: input.coachId,
+        location: normalizeOptionalString(input.location),
+        startsAt: new Date(input.startsAt),
+        endsAt: new Date(input.endsAt),
+        capacity: normalizedCapacity,
+      },
+      select: {
+        id: true,
+      },
+    });
   });
 }
 
@@ -125,14 +167,29 @@ export async function cancelTrainingSession(input: CancelTrainingSessionInput) {
     return existingSession;
   }
 
-  return prisma.trainingSession.update({
-    where: { id: input.sessionId },
-    data: {
-      status: TrainingSessionStatus.CANCELED,
-    },
-    select: {
-      id: true,
-    },
+  return prisma.$transaction(async (tx) => {
+    await tx.sessionBooking.updateMany({
+      where: {
+        trainingSessionId: input.sessionId,
+        status: {
+          in: [BookingStatus.BOOKED, BookingStatus.ATTENDED, BookingStatus.WAITLIST],
+        },
+      },
+      data: {
+        status: BookingStatus.CANCELED,
+        canceledAt: new Date(),
+      },
+    });
+
+    return tx.trainingSession.update({
+      where: { id: input.sessionId },
+      data: {
+        status: TrainingSessionStatus.CANCELED,
+      },
+      select: {
+        id: true,
+      },
+    });
   });
 }
 

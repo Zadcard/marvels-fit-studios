@@ -11,7 +11,10 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-import { saveAdminSubscription } from "@/app/actions/admin-subscriptions";
+import {
+  mutateAdminSubscriptionLifecycle,
+  saveAdminSubscription,
+} from "@/app/actions/admin-subscriptions";
 import { DashboardFormSection } from "@/components/dashboard/dashboard-form-section";
 import { DashboardManagementToolbar } from "@/components/dashboard/dashboard-management-toolbar";
 import { DashboardModal } from "@/components/dashboard/dashboard-modal";
@@ -28,10 +31,12 @@ import {
   type AdminSubscriptionStatus,
 } from "@/lib/mocks/admin-subscriptions";
 
+type EditableAdminSubscriptionStatus = Exclude<AdminSubscriptionStatus, "Canceled">;
+
 type SubscriptionFormState = {
   clientId: string;
   planId: string;
-  subscriptionStatus: AdminSubscriptionStatus;
+  subscriptionStatus: EditableAdminSubscriptionStatus;
   paymentStatus: AdminPaymentStatus;
   amount: string;
   renewalDate: string;
@@ -75,6 +80,8 @@ function getSubscriptionTone(status: AdminSubscriptionStatus) {
       return "success";
     case "Pending renewal":
       return "warning";
+    case "Canceled":
+      return "accent";
     case "Trial":
       return "accent";
     default:
@@ -123,6 +130,7 @@ export function AdminSubscriptionsWorkspace({
     useState<SubscriptionFormState>(emptySubscriptionForm);
   const [saveMessage, setSaveMessage] = useState("");
   const [isSaving, startTransition] = useTransition();
+  const [isMutating, startMutationTransition] = useTransition();
 
   useEffect(() => {
     setSubscriptionRecords(records);
@@ -175,6 +183,11 @@ export function AdminSubscriptionsWorkspace({
     }));
 
   const openEditModal = (subscription: AdminSubscriptionRecord) => {
+    if (subscription.subscriptionStatus === "Canceled") {
+      setSaveMessage("Canceled subscriptions can be reviewed in the detail pane.");
+      return;
+    }
+
     setEditingSubscriptionId(subscription.id);
     setFormState({
       clientId: subscription.clientId,
@@ -233,6 +246,7 @@ export function AdminSubscriptionsWorkspace({
         saved.paymentStatus === "Paid"
           ? "Latest payment is recorded."
           : "Payment follow-up is still needed.",
+      paymentHistory: existing?.paymentHistory ?? [],
     };
 
     setSubscriptionRecords((current) => {
@@ -240,6 +254,33 @@ export function AdminSubscriptionsWorkspace({
       return [nextRecord, ...withoutExisting];
     });
     setSelectedSubscriptionId(saved.id);
+  };
+
+  const handleLifecycleAction = (
+    action: "pause" | "resume" | "cancel" | "renew"
+  ) => {
+    if (!selectedSubscription) {
+      return;
+    }
+
+    setSaveMessage("");
+
+    startMutationTransition(async () => {
+      try {
+        const result = await mutateAdminSubscriptionLifecycle(
+          selectedSubscription.id,
+          action
+        );
+        setSaveMessage(result.message);
+        router.refresh();
+      } catch (error) {
+        setSaveMessage(
+          error instanceof Error
+            ? error.message
+            : "Could not update subscription."
+        );
+      }
+    });
   };
 
   return (
@@ -271,9 +312,19 @@ export function AdminSubscriptionsWorkspace({
       <section className="dashboard-kpi-grid">
         {stats.map((stat) => {
           const Icon = statIconMap[stat.iconKey];
-          const { iconKey, ...cardProps } = stat;
 
-          return <DashboardStatCard key={stat.id} {...cardProps} icon={Icon} />;
+          return (
+            <DashboardStatCard
+              key={stat.id}
+              label={stat.label}
+              value={stat.value}
+              change={stat.change}
+              detail={stat.detail}
+              note={stat.note}
+              tone={stat.tone}
+              icon={Icon}
+            />
+          );
         })}
       </section>
 
@@ -347,7 +398,10 @@ export function AdminSubscriptionsWorkspace({
                 type="button"
                 className="mv-btn mv-btn-outline"
                 onClick={() => selectedSubscription && openEditModal(selectedSubscription)}
-                disabled={!selectedSubscription}
+                disabled={
+                  !selectedSubscription ||
+                  selectedSubscription.subscriptionStatus === "Canceled"
+                }
               >
                 <ReceiptText size={16} />
                 Review Plan
@@ -414,6 +468,7 @@ export function AdminSubscriptionsWorkspace({
                             type="button"
                             className="dashboard-inline-button"
                             onClick={() => openEditModal(subscription)}
+                            disabled={subscription.subscriptionStatus === "Canceled"}
                           >
                             Edit
                           </button>
@@ -462,6 +517,7 @@ export function AdminSubscriptionsWorkspace({
                       type="button"
                       className="dashboard-inline-button"
                       onClick={() => openEditModal(subscription)}
+                      disabled={subscription.subscriptionStatus === "Canceled"}
                     >
                       Edit subscription
                     </button>
@@ -504,6 +560,57 @@ export function AdminSubscriptionsWorkspace({
             </div>
           </div>
 
+          <div className="dashboard-row-actions">
+            {selectedSubscription.subscriptionStatus === "Paused" ? (
+              <button
+                type="button"
+                className="mv-btn mv-btn-outline"
+                onClick={() => handleLifecycleAction("resume")}
+                disabled={isMutating}
+              >
+                {isMutating ? "Updating..." : "Resume"}
+              </button>
+            ) : null}
+            {selectedSubscription.subscriptionStatus !== "Paused" &&
+            selectedSubscription.subscriptionStatus !== "Canceled" ? (
+              <button
+                type="button"
+                className="mv-btn mv-btn-outline"
+                onClick={() => handleLifecycleAction("pause")}
+                disabled={isMutating}
+              >
+                {isMutating ? "Updating..." : "Pause"}
+              </button>
+            ) : null}
+            {selectedSubscription.subscriptionStatus !== "Canceled" ? (
+              <button
+                type="button"
+                className="mv-btn mv-btn-primary"
+                onClick={() => handleLifecycleAction("renew")}
+                disabled={isMutating}
+              >
+                {isMutating ? "Updating..." : "Renew"}
+              </button>
+            ) : null}
+            {selectedSubscription.subscriptionStatus !== "Canceled" ? (
+              <button
+                type="button"
+                className="mv-btn mv-btn-danger"
+                onClick={() => handleLifecycleAction("cancel")}
+                disabled={isMutating}
+              >
+                {isMutating ? "Updating..." : "Cancel"}
+              </button>
+            ) : null}
+          </div>
+
+          {saveMessage ? (
+            <div className="dashboard-empty-state" role="status">
+              <strong>Subscription update</strong>
+              <p>{saveMessage}</p>
+            </div>
+          ) : null}
+
           <DashboardFormSection
             eyebrow="Plan mix"
             title="Visible plan split"
@@ -517,6 +624,29 @@ export function AdminSubscriptionsWorkspace({
                 </div>
               ))}
             </div>
+          </DashboardFormSection>
+
+          <DashboardFormSection
+            eyebrow="Billing history"
+            title="Recent payments"
+            description="Latest recorded payments for this subscription."
+          >
+            {selectedSubscription.paymentHistory.length > 0 ? (
+              <div className="dashboard-summary-list">
+                {selectedSubscription.paymentHistory.map((payment) => (
+                  <div key={payment.id} className="dashboard-summary-row">
+                    <strong>{payment.amountLabel}</strong>
+                    <span>{payment.dateLabel}</span>
+                    <span>{payment.note}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="dashboard-empty-state">
+                <strong>No payments recorded yet</strong>
+                <p>The payment log will appear here after the first recorded charge.</p>
+              </div>
+            )}
           </DashboardFormSection>
             </>
           ) : (
@@ -638,14 +768,15 @@ export function AdminSubscriptionsWorkspace({
               onChange={(event) =>
                 setFormState((current) => ({
                   ...current,
-                  subscriptionStatus: event.target.value as AdminSubscriptionStatus,
+                  subscriptionStatus:
+                    event.target.value as EditableAdminSubscriptionStatus,
                 }))
               }
             >
               {adminSubscriptionStatusFilters
                 .filter(
-                  (filter): filter is AdminSubscriptionStatus =>
-                    filter !== "All statuses"
+                  (filter): filter is EditableAdminSubscriptionStatus =>
+                    filter !== "All statuses" && filter !== "Canceled"
                 )
                 .map((filter) => (
                   <option key={filter} value={filter}>

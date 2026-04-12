@@ -32,16 +32,6 @@ function getPrismaAdapter() {
   return globalForPrisma.prismaAdapter;
 }
 
-export function getPrismaPool() {
-  if (!globalForPrisma.prismaPool) {
-    globalForPrisma.prismaPool = new Pool({
-      connectionString: getConnectionString(),
-    });
-  }
-
-  return globalForPrisma.prismaPool;
-}
-
 export function getPrisma() {
   if (!globalForPrisma.prisma) {
     globalForPrisma.prisma = new PrismaClient({ adapter: getPrismaAdapter() });

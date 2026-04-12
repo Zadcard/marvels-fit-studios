@@ -9,13 +9,12 @@ import {
   type KeyboardEvent,
 } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 
 import "./login.css";
 
 function LoginForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl");
 
@@ -114,7 +113,7 @@ function LoginForm() {
         setIsLoading(false);
       }
     },
-    [callbackUrl, email, password, router, triggerShake, validateFields]
+    [callbackUrl, email, password, triggerShake, validateFields]
   );
 
   const handlePasswordKeyState = (event: KeyboardEvent<HTMLInputElement>) => {

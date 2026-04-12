@@ -44,59 +44,14 @@ export async function saveAdminSettings(input: AdminStudioSettings) {
     throw new Error("Timezone is required.");
   }
 
-  await prisma.$executeRaw`
-    INSERT INTO "StudioSettings" (
-      "id",
-      "studioName",
-      "supportEmail",
-      "supportPhone",
-      "timezone",
-      "defaultSessionLength",
-      "intakeLeadTime",
-      "overbookWaitlist",
-      "coachAutoReminders",
-      "memberCheckInAlerts",
-      "renewalDigest",
-      "cancellationWindow",
-      "privateSessionBuffer",
-      "scheduleStartDay",
-      "createdAt",
-      "updatedAt"
-    )
-    VALUES (
-      ${DEFAULT_SETTINGS_ID},
-      ${settings.studioName},
-      ${settings.supportEmail},
-      ${settings.supportPhone},
-      ${settings.timezone},
-      ${settings.defaultSessionLength},
-      ${settings.intakeLeadTime},
-      ${settings.overbookWaitlist},
-      ${settings.coachAutoReminders},
-      ${settings.memberCheckInAlerts},
-      ${settings.renewalDigest},
-      ${settings.cancellationWindow},
-      ${settings.privateSessionBuffer},
-      ${settings.scheduleStartDay},
-      NOW(),
-      NOW()
-    )
-    ON CONFLICT ("id") DO UPDATE SET
-      "studioName" = EXCLUDED."studioName",
-      "supportEmail" = EXCLUDED."supportEmail",
-      "supportPhone" = EXCLUDED."supportPhone",
-      "timezone" = EXCLUDED."timezone",
-      "defaultSessionLength" = EXCLUDED."defaultSessionLength",
-      "intakeLeadTime" = EXCLUDED."intakeLeadTime",
-      "overbookWaitlist" = EXCLUDED."overbookWaitlist",
-      "coachAutoReminders" = EXCLUDED."coachAutoReminders",
-      "memberCheckInAlerts" = EXCLUDED."memberCheckInAlerts",
-      "renewalDigest" = EXCLUDED."renewalDigest",
-      "cancellationWindow" = EXCLUDED."cancellationWindow",
-      "privateSessionBuffer" = EXCLUDED."privateSessionBuffer",
-      "scheduleStartDay" = EXCLUDED."scheduleStartDay",
-      "updatedAt" = NOW()
-  `;
+  await prisma.studioSettings.upsert({
+    where: { id: DEFAULT_SETTINGS_ID },
+    create: {
+      id: DEFAULT_SETTINGS_ID,
+      ...settings,
+    },
+    update: settings,
+  });
 
   revalidatePath("/admin");
   revalidatePath("/admin/settings");

@@ -1,6 +1,6 @@
 "use server";
 
-import { UserRole } from "@prisma/client";
+import { CoachSpecialization, UserRole } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 
 import { requireRole } from "@/lib/auth/session";
@@ -15,16 +15,16 @@ type SaveCoachSettingsInput = {
 
 function toCoachSpecialization(
   specialization: string
-): "STRENGTH" | "CONDITIONING" | "MOBILITY" | "PRIVATE_COACHING" {
+): CoachSpecialization {
   switch (specialization) {
     case "Conditioning":
-      return "CONDITIONING";
+      return CoachSpecialization.CONDITIONING;
     case "Mobility":
-      return "MOBILITY";
+      return CoachSpecialization.MOBILITY;
     case "Private Coaching":
-      return "PRIVATE_COACHING";
+      return CoachSpecialization.PRIVATE_COACHING;
     default:
-      return "STRENGTH";
+      return CoachSpecialization.STRENGTH;
   }
 }
 
@@ -71,14 +71,14 @@ export async function saveCoachSettings(input: SaveCoachSettingsInput) {
       throw new Error("Coach profile not found.");
     }
 
-    await tx.$executeRaw`
-      UPDATE "Coach"
-      SET
-        "fullName" = ${fullName},
-        "phone" = ${phone},
-        "specialization" = ${specialization}::"CoachSpecialization"
-      WHERE "id" = ${coachProfile.id}
-    `;
+    await tx.coach.update({
+      where: { id: coachProfile.id },
+      data: {
+        fullName,
+        phone,
+        specialization,
+      },
+    });
   });
 
   revalidatePath("/coach");

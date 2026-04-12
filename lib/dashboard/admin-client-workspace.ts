@@ -15,6 +15,7 @@ export type ClientFormState = {
   fullName: string;
   email: string;
   phone: string;
+  initialPassword: string;
   status: AdminClientStatus;
   paymentStatus: AdminPaymentStatus;
   paymentAmount: string;
@@ -76,6 +77,11 @@ export const adminClientWorkspaceDefinition: WorkspaceDefinition<
       kind: "tel",
     },
     {
+      key: "initialPassword",
+      label: "Initial / reset password",
+      kind: "password",
+    },
+    {
       key: "status",
       label: "Status",
       kind: "select",
@@ -115,6 +121,7 @@ export const adminClientWorkspaceDefinition: WorkspaceDefinition<
     fullName: "",
     email: "",
     phone: "",
+    initialPassword: "",
     status: "Pending",
     paymentStatus: "Unpaid",
     paymentAmount: "",
@@ -123,6 +130,7 @@ export const adminClientWorkspaceDefinition: WorkspaceDefinition<
     fullName: record.fullName,
     email: record.email,
     phone: record.phone,
+    initialPassword: "",
     status: record.status,
     paymentStatus: record.paymentStatus,
     paymentAmount:

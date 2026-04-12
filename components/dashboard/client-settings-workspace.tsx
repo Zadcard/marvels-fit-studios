@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { Save } from "lucide-react";
 
+import { AccountSecurityPanel } from "@/components/dashboard/account-security-panel";
 import { DashboardFormSection } from "@/components/dashboard/dashboard-form-section";
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
 import { DashboardSurfaceNote } from "@/components/dashboard/dashboard-surface-note";
@@ -221,6 +222,8 @@ export function ClientSettingsWorkspace({
           </div>
         </aside>
       </section>
+
+      <AccountSecurityPanel />
     </div>
   );
 }

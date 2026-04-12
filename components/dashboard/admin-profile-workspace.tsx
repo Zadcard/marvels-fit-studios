@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { BellRing, KeyRound, Save, ShieldCheck, TimerReset, Trophy } from "lucide-react";
+import { BellRing, Save, ShieldCheck, TimerReset, Trophy } from "lucide-react";
 
 import { saveAdminProfile } from "@/app/actions/admin-profile";
+import { AccountSecurityPanel } from "@/components/dashboard/account-security-panel";
 import { DashboardFormSection } from "@/components/dashboard/dashboard-form-section";
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
 import { DashboardSwitch } from "@/components/dashboard/dashboard-switch";
@@ -21,7 +22,7 @@ const defaultProfile: AdminProfileRecord = {
   bio: "Admin profile data is not available yet.",
   initials: "AU",
   joinedLabel: "Joined recently",
-  credentialsNote: "Password updates are still a UI placeholder in this build.",
+  credentialsNote: "Password updates are protected by current-password verification.",
 };
 const defaultPreferences: AdminProfilePreferences = {
   emailUpdates: true,
@@ -57,7 +58,7 @@ export function AdminProfileWorkspace({
   const [profile, setProfile] = useState<AdminProfileRecord>(
     initialProfile ?? defaultProfile
   );
-  const [preferences, setPreferences] =
+  const [preferences] =
     useState<AdminProfilePreferences>(initialPreferences ?? defaultPreferences);
   const [saveMessage, setSaveMessage] = useState("Live profile loaded.");
 
@@ -66,16 +67,6 @@ export function AdminProfileWorkspace({
     value: AdminProfileRecord[Key]
   ) => {
     setProfile((current) => ({
-      ...current,
-      [field]: value,
-    }));
-  };
-
-  const updatePreference = <Key extends keyof AdminProfilePreferences>(
-    field: Key,
-    value: AdminProfilePreferences[Key]
-  ) => {
-    setPreferences((current) => ({
       ...current,
       [field]: value,
     }));
@@ -202,8 +193,8 @@ export function AdminProfileWorkspace({
 
           <DashboardFormSection
             eyebrow="Preferences"
-            title="Communication preferences"
-            description="Update preferences."
+            title="Communication signals"
+            description="These signals are derived from current studio settings and account state."
           >
             <div className="dashboard-stack">
               <DashboardSwitch
@@ -211,45 +202,28 @@ export function AdminProfileWorkspace({
                 onCheckedChange={() => {}}
                 label="Email updates"
                 description="Weekly summaries by email."
+                disabled
               />
               <DashboardSwitch
                 checked={preferences.mobileAlerts}
                 onCheckedChange={() => {}}
                 label="Mobile alerts"
                 description="Time-sensitive schedule alerts."
+                disabled
               />
               <DashboardSwitch
                 checked={preferences.renewalEscalations}
                 onCheckedChange={() => {}}
                 label="Renewal escalations"
                 description="At-risk membership alerts."
+                disabled
               />
             </div>
           </DashboardFormSection>
         </div>
 
         <aside className="dashboard-detail-panel dashboard-stack">
-          <article className="dashboard-panel">
-            <div className="dashboard-panel__header">
-              <div>
-                <span className="mv-eyebrow">Security</span>
-                <h2>Credentials placeholder</h2>
-                <p>Credential settings preview.</p>
-              </div>
-              <KeyRound size={20} color="#ff8b8f" />
-            </div>
-
-            <div className="dashboard-form-columns">
-              <label className="dashboard-form-field">
-                <span>Current password</span>
-                <input className="dashboard-input" placeholder="Mock placeholder" />
-              </label>
-              <label className="dashboard-form-field">
-                <span>New password</span>
-                <input className="dashboard-input" placeholder="Mock placeholder" />
-              </label>
-            </div>
-          </article>
+          <AccountSecurityPanel />
 
           <article className="dashboard-panel">
             <div className="dashboard-panel__header">

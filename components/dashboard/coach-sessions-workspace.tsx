@@ -9,6 +9,7 @@ import {
   removeCoachClientFromSession,
 } from "@/app/actions/coach-session-bookings";
 import { updateCoachAttendance } from "@/app/actions/coach-attendance";
+import { saveCoachSessionNote } from "@/app/actions/coach-session-notes";
 import { DashboardManagementToolbar } from "@/components/dashboard/dashboard-management-toolbar";
 import { DashboardEmptyState } from "@/components/dashboard/dashboard-empty-state";
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
@@ -68,6 +69,7 @@ export function CoachSessionsWorkspace({
   const router = useRouter();
   const [isUpdatingAttendance, startAttendanceTransition] = useTransition();
   const [isManagingRoster, startRosterTransition] = useTransition();
+  const [isSavingNote, startNoteTransition] = useTransition();
   const [searchTerm, setSearchTerm] = useState("");
   const deferredSearchTerm = useDeferredValue(searchTerm);
   const [typeFilter, setTypeFilter] = useState<"All" | CoachSessionType>("All");
@@ -76,6 +78,7 @@ export function CoachSessionsWorkspace({
   const [feedbackMessage, setFeedbackMessage] = useState("");
   const [clientSearchTerm, setClientSearchTerm] = useState("");
   const [selectedClientId, setSelectedClientId] = useState(clientOptions[0]?.id ?? "");
+  const [noteDraft, setNoteDraft] = useState(records[0]?.noteValue ?? "");
   const detailRef = useRef<HTMLElement | null>(null);
 
   const filteredSessions = records.filter((session) => {
@@ -101,6 +104,11 @@ export function CoachSessionsWorkspace({
   const selectedSession =
     filteredSessions.find((session) => session.id === selectedSessionId) ??
     filteredSessions[0];
+
+  useEffect(() => {
+    setNoteDraft(selectedSession?.noteValue ?? "");
+  }, [selectedSession?.id, selectedSession?.noteValue]);
+
   const availableClientOptions = clientOptions.filter(
     (client) =>
       !selectedSession?.bookings.some((booking) => booking.clientId === client.id)
@@ -211,6 +219,27 @@ export function CoachSessionsWorkspace({
       } catch (error) {
         setFeedbackMessage(
           error instanceof Error ? error.message : "Could not remove client."
+        );
+      }
+    });
+  };
+
+  const handleSaveNote = () => {
+    if (!selectedSession) {
+      return;
+    }
+
+    setFeedbackMessage("");
+
+    startNoteTransition(async () => {
+      try {
+        const result = await saveCoachSessionNote(selectedSession.id, noteDraft);
+        setNoteDraft(result.content);
+        setFeedbackMessage("Session note saved.");
+        router.refresh();
+      } catch (error) {
+        setFeedbackMessage(
+          error instanceof Error ? error.message : "Could not save session note."
         );
       }
     });
@@ -447,6 +476,37 @@ export function CoachSessionsWorkspace({
               <div className="dashboard-contact-block">
                 <span className="dashboard-detail-stat__label">Coach note</span>
                 <p>{selectedSession.note}</p>
+              </div>
+
+              <div className="dashboard-panel">
+                <div className="dashboard-panel__header">
+                  <div>
+                    <div className="mv-eyebrow">Progress note</div>
+                    <h2>Update session note</h2>
+                    <p>This note is saved to the session and shared across the dashboards.</p>
+                  </div>
+                </div>
+                <div className="dashboard-form-grid">
+                  <label className="dashboard-form-field dashboard-form-field--wide">
+                    <span>Coach note</span>
+                    <textarea
+                      className="dashboard-input"
+                      rows={5}
+                      value={noteDraft}
+                      onChange={(event) => setNoteDraft(event.target.value)}
+                    />
+                  </label>
+                </div>
+                <div className="dashboard-row-actions">
+                  <button
+                    type="button"
+                    className="mv-btn mv-btn-primary"
+                    onClick={handleSaveNote}
+                    disabled={isSavingNote || noteDraft.trim().length === 0}
+                  >
+                    {isSavingNote ? "Saving note..." : "Save note"}
+                  </button>
+                </div>
               </div>
 
               <div className="dashboard-stack">

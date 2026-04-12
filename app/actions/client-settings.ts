@@ -1,6 +1,5 @@
 "use server";
 
-import { randomUUID } from "crypto";
 import { UserRole } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 
@@ -69,37 +68,28 @@ export async function saveClientSettings(input: ClientSettingsRecord) {
       },
     });
 
-    await tx.$executeRaw`
-      INSERT INTO "ClientPreferences" (
-        "id",
-        "clientId",
-        "goalLabel",
-        "preferredSessionTime",
-        "notificationEmail",
-        "scheduleReminders",
-        "coachUpdates",
-        "createdAt",
-        "updatedAt"
-      )
-      VALUES (
-        ${randomUUID()},
-        ${client.id},
-        ${settings.goalLabel || "Build steady strength and improve movement confidence."},
-        ${settings.preferredSessionTime || "Flexible"},
-        ${settings.notificationEmail},
-        ${settings.scheduleReminders},
-        ${settings.coachUpdates},
-        NOW(),
-        NOW()
-      )
-      ON CONFLICT ("clientId") DO UPDATE SET
-        "goalLabel" = EXCLUDED."goalLabel",
-        "preferredSessionTime" = EXCLUDED."preferredSessionTime",
-        "notificationEmail" = EXCLUDED."notificationEmail",
-        "scheduleReminders" = EXCLUDED."scheduleReminders",
-        "coachUpdates" = EXCLUDED."coachUpdates",
-        "updatedAt" = NOW()
-    `;
+    await tx.clientPreferences.upsert({
+      where: { clientId: client.id },
+      create: {
+        clientId: client.id,
+        goalLabel:
+          settings.goalLabel ||
+          "Build steady strength and improve movement confidence.",
+        preferredSessionTime: settings.preferredSessionTime || "Flexible",
+        notificationEmail: settings.notificationEmail,
+        scheduleReminders: settings.scheduleReminders,
+        coachUpdates: settings.coachUpdates,
+      },
+      update: {
+        goalLabel:
+          settings.goalLabel ||
+          "Build steady strength and improve movement confidence.",
+        preferredSessionTime: settings.preferredSessionTime || "Flexible",
+        notificationEmail: settings.notificationEmail,
+        scheduleReminders: settings.scheduleReminders,
+        coachUpdates: settings.coachUpdates,
+      },
+    });
   });
 
   revalidatePath("/client");

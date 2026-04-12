@@ -3,6 +3,7 @@ type DashboardSwitchProps = {
   onCheckedChange: (checked: boolean) => void;
   label: string;
   description: string;
+  disabled?: boolean;
 };
 
 export function DashboardSwitch({
@@ -10,6 +11,7 @@ export function DashboardSwitch({
   onCheckedChange,
   label,
   description,
+  disabled = false,
 }: DashboardSwitchProps) {
   return (
     <div className="dashboard-switch">
@@ -21,9 +23,15 @@ export function DashboardSwitch({
         type="button"
         role="switch"
         aria-checked={checked}
+        aria-disabled={disabled}
         aria-label={`${checked ? "Disable" : "Enable"} ${label}`}
+        disabled={disabled}
         className={checked ? "dashboard-switch__control dashboard-switch__control--on" : "dashboard-switch__control"}
-        onClick={() => onCheckedChange(!checked)}
+        onClick={() => {
+          if (!disabled) {
+            onCheckedChange(!checked);
+          }
+        }}
       >
         <span className="dashboard-switch__thumb" />
       </button>

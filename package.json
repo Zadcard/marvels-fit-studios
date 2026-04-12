@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "engines": {
-    "node": ">=20 <23"
+    "node": ">=20.19 <25"
   },
   "scripts": {
     "dev": "next dev",
@@ -11,6 +11,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "check:backend": "node scripts/backend-smoke-check.cjs",
     "promote:leads": "node scripts/promote-leads-to-clients.cjs"
   },
   "dependencies": {
@@ -22,7 +23,7 @@
     "clsx": "^2.1.1",
     "dotenv": "^17.4.0",
     "lucide-react": "^1.7.0",
-    "next": "15.5.14",
+    "next": "^16.2.1",
     "next-auth": "^5.0.0-beta.30",
     "pg": "^8.20.0",
     "radix-ui": "^1.4.3",
@@ -41,7 +42,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "15.5.14",
+    "eslint-config-next": "^16.2.1",
     "prisma": "^7.6.0",
     "tailwindcss": "^4",
     "ts-node": "^10.9.2",

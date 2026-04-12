@@ -104,6 +104,9 @@ export class AdminOverviewRepository {
       this.prisma.coach.count(),
       this.prisma.trainingSession.count({
         where: {
+          status: {
+            not: "CANCELED",
+          },
           startsAt: {
             gte: now,
             lte: weekEnd,
@@ -125,6 +128,7 @@ export class AdminOverviewRepository {
       }),
       this.prisma.trainingSession.findMany({
         where: {
+          status: "SCHEDULED",
           startsAt: {
             gte: now,
             lte: in48Hours,
@@ -218,6 +222,11 @@ export class AdminOverviewRepository {
       this.prisma.sessionBooking.count({
         where: {
           status: "ATTENDED",
+          trainingSession: {
+            status: {
+              not: "CANCELED",
+            },
+          },
         },
       }),
     ]);

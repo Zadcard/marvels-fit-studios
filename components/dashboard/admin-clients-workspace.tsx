@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, SlidersHorizontal } from "lucide-react";
+import { Plus } from "lucide-react";
 
 import { deleteAdminClient, saveAdminClient } from "@/app/actions/admin-clients";
 import { DashboardManagementToolbar } from "@/components/dashboard/dashboard-management-toolbar";
@@ -83,6 +83,7 @@ export function AdminClientsWorkspace({ records }: AdminClientsWorkspaceProps) {
           fullName: formState.fullName,
           email: formState.email,
           phone: formState.phone,
+          initialPassword: formState.initialPassword,
           status: formState.status,
           paymentStatus: formState.paymentStatus,
           paymentAmount: formState.paymentAmount,
@@ -165,12 +166,6 @@ export function AdminClientsWorkspace({ records }: AdminClientsWorkspaceProps) {
                 </label>
               ))}
             </>
-          }
-          actions={
-            <button type="button" className="mv-btn mv-btn-outline">
-              <SlidersHorizontal size={16} />
-              Export Mock
-            </button>
           }
         />
 

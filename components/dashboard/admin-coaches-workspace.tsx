@@ -18,6 +18,7 @@ type CoachFormState = {
   fullName: string;
   email: string;
   phone: string;
+  initialPassword: string;
   specialization: AdminCoachSpecialization;
 };
 
@@ -33,6 +34,7 @@ const emptyCoachForm: CoachFormState = {
   fullName: "",
   email: "",
   phone: "",
+  initialPassword: "",
   specialization: "Strength",
 };
 
@@ -92,6 +94,7 @@ export function AdminCoachesWorkspace({
       fullName: coach.fullName,
       email: coach.email,
       phone: coach.phone,
+      initialPassword: "",
       specialization: coach.specialization,
     });
     setIsModalOpen(true);
@@ -107,6 +110,7 @@ export function AdminCoachesWorkspace({
           fullName: formState.fullName,
           email: formState.email,
           phone: formState.phone,
+          initialPassword: formState.initialPassword,
           specialization: formState.specialization,
         });
         setIsModalOpen(false);
@@ -426,6 +430,20 @@ export function AdminCoachesWorkspace({
                 setFormState((current) => ({
                   ...current,
                   phone: event.target.value,
+                }))
+              }
+            />
+          </label>
+          <label className="dashboard-form-field">
+            <span>Initial / reset password</span>
+            <input
+              type="password"
+              className="dashboard-input"
+              value={formState.initialPassword}
+              onChange={(event) =>
+                setFormState((current) => ({
+                  ...current,
+                  initialPassword: event.target.value,
                 }))
               }
             />

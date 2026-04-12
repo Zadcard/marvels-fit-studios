@@ -77,7 +77,11 @@ export function ClientSubscriptionWorkspace({ data }: ClientSubscriptionWorkspac
 
           <div className="dashboard-info-strip">
             <strong>Billing</strong>
-            <p>Payment history appears here when available.</p>
+            <p>
+              {data.paymentHistory.length > 0
+                ? "Recent payment activity is now available below."
+                : "Payment history will appear here after the first recorded payment."}
+            </p>
           </div>
         </article>
 
@@ -100,6 +104,33 @@ export function ClientSubscriptionWorkspace({ data }: ClientSubscriptionWorkspac
             ))}
           </div>
         </article>
+      </section>
+
+      <section className="dashboard-panel">
+        <div className="dashboard-panel__header">
+          <div>
+            <div className="mv-eyebrow">Billing history</div>
+            <h2>Recent payments</h2>
+            <p>Your latest recorded membership payments.</p>
+          </div>
+        </div>
+
+        {data.paymentHistory.length > 0 ? (
+          <div className="dashboard-summary-list">
+            {data.paymentHistory.map((payment) => (
+              <div key={payment.id} className="dashboard-summary-row">
+                <strong>{payment.amountLabel}</strong>
+                <span>{payment.dateLabel}</span>
+                <span>{payment.note}</span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="dashboard-empty-state">
+            <strong>No payments recorded yet</strong>
+            <p>Once a payment is captured, it will show up here automatically.</p>
+          </div>
+        )}
       </section>
     </div>
   );

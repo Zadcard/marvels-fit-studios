@@ -34,6 +34,7 @@ export class AdminCoachRepository {
         id: true,
         fullName: true,
         phone: true,
+        specialization: true,
         user: {
           select: {
             email: true,
@@ -58,26 +59,6 @@ export class AdminCoachRepository {
       },
     });
 
-    const coachMetaRows = await this.prisma.$queryRaw<
-      Array<{
-        id: string;
-        specialization:
-          | "STRENGTH"
-          | "CONDITIONING"
-          | "MOBILITY"
-          | "PRIVATE_COACHING";
-      }>
-    >`SELECT "id", "specialization" FROM "Coach"`;
-
-    const coachMeta = new Map(
-      coachMetaRows.map((row) => [
-        row.id,
-        {
-          specialization: row.specialization,
-        },
-      ])
-    );
-
     return coaches.map((coach) => {
       const activeClients = coach.groups.reduce(
         (total, group) => total + group._count.clients,
@@ -86,14 +67,11 @@ export class AdminCoachRepository {
       const sessionsThisWeek = coach.trainingSessions.filter(
         (session) => session.startsAt >= now && session.startsAt <= weekEnd
       ).length;
-      const meta = coachMeta.get(coach.id);
 
       return {
         id: coach.id,
         fullName: coach.fullName,
-        specialization: toAdminCoachSpecialization(
-          meta?.specialization ?? "STRENGTH"
-        ),
+        specialization: toAdminCoachSpecialization(coach.specialization),
         activeClients,
         sessionsThisWeek,
         email: coach.user.email ?? "No email",

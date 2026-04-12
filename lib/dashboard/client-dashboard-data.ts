@@ -84,6 +84,12 @@ export type ClientSubscriptionRecord = {
   billingCycle: string;
   benefits: string[];
   note: string;
+  paymentHistory: Array<{
+    id: string;
+    amountLabel: string;
+    dateLabel: string;
+    note: string;
+  }>;
 };
 
 export type ClientSessionStatus = "Booked" | "Check-in ready" | "Completed";

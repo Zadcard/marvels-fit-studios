@@ -1,11 +1,9 @@
 "use server";
 
-import { randomUUID } from "node:crypto";
-
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 
-import { getPrisma, getPrismaPool } from "@/lib/prisma";
+import { getPrisma } from "@/lib/prisma";
 import { type JoinNowActionState } from "./join-now-types";
 
 const joinNowSchema = z.object({
@@ -39,7 +37,6 @@ export async function submitJoinNowLead(
   }
 
   const prisma = getPrisma();
-  const pool = getPrismaPool();
   const normalizedEmail = parsed.data.email.trim().toLowerCase();
 
   const existingUser = await prisma.user.findUnique({
@@ -57,12 +54,12 @@ export async function submitJoinNowLead(
     };
   }
 
-  const existingLead = await pool.query<{ id: string }>(
-    'SELECT "id" FROM "Lead" WHERE "email" = $1 LIMIT 1',
-    [normalizedEmail]
-  );
+  const existingLead = await prisma.lead.findUnique({
+    where: { email: normalizedEmail },
+    select: { id: true },
+  });
 
-  if (existingLead.rowCount) {
+  if (existingLead) {
     return {
       status: "error",
       message: "This email has already been submitted.",
@@ -73,21 +70,17 @@ export async function submitJoinNowLead(
   }
 
   const passwordHash = await bcrypt.hash(parsed.data.password, 12);
-  await pool.query(
-    `INSERT INTO "Lead"
-      ("id", "fullName", "phone", "email", "passwordHash", "message", "consentAccepted", "source", "status", "createdAt", "updatedAt")
-     VALUES
-      ($1, $2, $3, $4, $5, $6, $7, 'landing-join-now', 'NEW', NOW(), NOW())`,
-    [
-      randomUUID(),
-      parsed.data.name,
-      parsed.data.phone,
-      normalizedEmail,
+  await prisma.lead.create({
+    data: {
+      fullName: parsed.data.name,
+      phone: parsed.data.phone,
+      email: normalizedEmail,
       passwordHash,
-      null,
-      true,
-    ]
-  );
+      consentAccepted: true,
+      source: "landing-join-now",
+      status: "NEW",
+    },
+  });
 
   return {
     status: "success",

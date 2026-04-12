@@ -37,7 +37,7 @@ export const adminProfileRecord: AdminProfileRecord = {
   initials: "LM",
   joinedLabel: "Joined August 2023",
   credentialsNote:
-    "Password and credential updates are UI placeholders for the later auth phase.",
+    "Password changes are handled securely from the profile page.",
 };
 
 export const adminProfileMetrics: AdminProfileMetric[] = [

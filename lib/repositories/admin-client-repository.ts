@@ -121,6 +121,7 @@ export class AdminClientRepository {
         phone: true,
         isPaid: true,
         paymentStatus: true,
+        status: true,
         createdAt: true,
         user: {
           select: {
@@ -166,6 +167,16 @@ export class AdminClientRepository {
           },
         },
         bookings: {
+          where: {
+            status: {
+              in: ["BOOKED", "ATTENDED", "MISSED", "WAITLIST"],
+            },
+            trainingSession: {
+              status: {
+                not: "CANCELED",
+              },
+            },
+          },
           orderBy: [{ trainingSession: { startsAt: "asc" } }],
           take: 3,
           select: {
@@ -200,17 +211,6 @@ export class AdminClientRepository {
       },
     });
 
-    const clientStatusRows = await this.prisma.$queryRaw<
-      Array<{
-        id: string;
-        status: "ACTIVE" | "PENDING" | "PAUSED";
-      }>
-    >`SELECT "id", "status" FROM "Client"`;
-
-    const clientStatusMap = new Map(
-      clientStatusRows.map((row) => [row.id, row.status])
-    );
-
     return clients.map((client) => {
       const nextBooking = client.bookings[0];
       const assignedCoach =
@@ -224,7 +224,7 @@ export class AdminClientRepository {
         email: client.user.email ?? "No email",
         phone: client.phone ?? "No phone",
         membership: inferMembership(client),
-        status: mapClientStatus(clientStatusMap.get(client.id) ?? "PENDING"),
+        status: mapClientStatus(client.status),
         paymentStatus: inferPaymentStatus(client),
         paymentAmountLabel: client.payments[0]
           ? currencyFormatter.format(client.payments[0].amount)

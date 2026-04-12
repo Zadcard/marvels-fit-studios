@@ -53,7 +53,11 @@ function mapSubscriptionStatus(status: string, renewsAt: Date | null): AdminSubs
     return "Trial";
   }
 
-  if (status === "PAUSED" || status === "EXPIRED" || status === "CANCELED") {
+  if (status === "CANCELED") {
+    return "Canceled";
+  }
+
+  if (status === "PAUSED" || status === "EXPIRED") {
     return "Paused";
   }
 
@@ -70,8 +74,25 @@ function mapPaymentStatus(record: {
   payments: Array<{ date: Date }>;
   client: { isPaid: boolean };
 }): AdminPaymentStatus {
-  if (record.payments.length > 0) {
-    return "Paid";
+  const latestPayment = record.payments[0]?.date ?? null;
+
+  if (record.status === "CANCELED") {
+    return "Manual review";
+  }
+
+  if (record.status === "PAUSED" || record.status === "EXPIRED") {
+    return record.renewsAt && record.renewsAt.getTime() < Date.now()
+      ? "Overdue"
+      : "Manual review";
+  }
+
+  if (latestPayment && record.renewsAt) {
+    const activeWindowStart = new Date(record.renewsAt);
+    activeWindowStart.setUTCDate(activeWindowStart.getUTCDate() - 45);
+
+    if (latestPayment.getTime() >= activeWindowStart.getTime()) {
+      return "Paid";
+    }
   }
 
   if (record.status === "ACTIVE" && record.renewsAt) {
@@ -79,6 +100,10 @@ function mapPaymentStatus(record: {
   }
 
   return record.client.isPaid ? "Paid" : "Manual review";
+}
+
+function mapBillingCycleLabel(value: string) {
+  return value.charAt(0) + value.slice(1).toLowerCase();
 }
 
 export class AdminSubscriptionRepository {
@@ -180,6 +205,7 @@ export class AdminSubscriptionRepository {
             id: true,
             status: true,
             renewsAt: true,
+            customPrice: true,
             plan: {
               select: {
                 id: true,
@@ -203,6 +229,16 @@ export class AdminSubscriptionRepository {
                   },
                 },
                 bookings: {
+                  where: {
+                    status: {
+                      in: ["BOOKED", "ATTENDED", "MISSED", "WAITLIST"],
+                    },
+                    trainingSession: {
+                      status: {
+                        not: "CANCELED",
+                      },
+                    },
+                  },
                   select: {
                     trainingSession: {
                       select: {
@@ -220,9 +256,13 @@ export class AdminSubscriptionRepository {
             },
             payments: {
               orderBy: [{ date: "desc" }],
-              take: 1,
+              take: 5,
               select: {
+                id: true,
+                amount: true,
+                currency: true,
                 date: true,
+                note: true,
               },
             },
           },
@@ -282,13 +322,6 @@ export class AdminSubscriptionRepository {
         }),
       ]);
 
-    const customPriceRows = await this.prisma.$queryRaw<
-      Array<{ id: string; customPrice: number | null }>
-    >`SELECT "id", "customPrice" FROM "ClientSubscription"`;
-    const customPriceBySubscriptionId = new Map(
-      customPriceRows.map((row) => [row.id, row.customPrice])
-    );
-
     const records = subscriptions.map((subscription) => {
       const planName = mapPlanName(subscription);
       const subscriptionStatus = mapSubscriptionStatus(
@@ -316,19 +349,29 @@ export class AdminSubscriptionRepository {
           ? subscription.renewsAt.toISOString().slice(0, 10)
           : "",
         amountLabel: currencyFormatter.format(
-          customPriceBySubscriptionId.get(subscription.id) ?? subscription.plan.price
+          subscription.customPrice ?? subscription.plan.price
         ),
         amountValue: String(
-          customPriceBySubscriptionId.get(subscription.id) ?? subscription.plan.price
+          subscription.customPrice ?? subscription.plan.price
         ),
-        billingCycle:
-          subscription.plan.billingCycle.charAt(0) +
-          subscription.plan.billingCycle.slice(1).toLowerCase(),
+        billingCycle: mapBillingCycleLabel(subscription.plan.billingCycle),
         note:
           paymentStatus === "Paid"
             ? "Latest payment is recorded."
-            : "Payment follow-up is still needed.",
-      };
+            : subscriptionStatus === "Canceled"
+              ? "This subscription has been canceled."
+              : "Payment follow-up is still needed.",
+        paymentHistory: subscription.payments.map((payment) => ({
+          id: payment.id,
+          amountLabel: new Intl.NumberFormat("en-US", {
+            style: "currency",
+            currency: payment.currency,
+            maximumFractionDigits: 0,
+          }).format(payment.amount),
+          dateLabel: dateFormatter.format(payment.date),
+          note: payment.note ?? "Payment recorded.",
+        })),
+      } satisfies AdminSubscriptionRecord;
     });
 
     const stats: Array<{

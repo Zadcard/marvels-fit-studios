@@ -9,6 +9,7 @@ import {
 export type AdminSubscriptionStatus =
   | "Active"
   | "Pending renewal"
+  | "Canceled"
   | "Paused"
   | "Trial";
 export type AdminPaymentStatus = "Paid" | "Due soon" | "Overdue" | "Manual review";
@@ -44,12 +45,17 @@ export type AdminSubscriptionRecord = {
   amountValue: string;
   billingCycle: string;
   note: string;
+  paymentHistory: Array<{
+    id: string;
+    amountLabel: string;
+    dateLabel: string;
+    note: string;
+  }>;
 };
 
 export const adminSubscriptionStatusFilters: Array<
   "All statuses" | AdminSubscriptionStatus
-> = ["All statuses", "Active", "Pending renewal", "Paused", "Trial"];
-
+> = ["All statuses", "Active", "Pending renewal", "Paused", "Trial", "Canceled"];
 export const adminPaymentStatusFilters: Array<
   "All payments" | AdminPaymentStatus
 > = ["All payments", "Paid", "Due soon", "Overdue", "Manual review"];
@@ -88,7 +94,7 @@ export const adminSubscriptionStats: AdminSubscriptionStat[] = [
     label: "Collected this cycle",
     value: "EGP 96k",
     change: "On pace",
-    detail: "Frontend placeholder for the future billing and finance integration.",
+    detail: "Database-backed billing and subscription records.",
     note: "Mock finance",
     icon: CircleDollarSign,
     tone: "success",
@@ -121,6 +127,7 @@ export const adminSubscriptionRecords: AdminSubscriptionRecord[] = [
     amountValue: "3400",
     billingCycle: "Monthly",
     note: "High-engagement member with both group and private attendance.",
+    paymentHistory: [],
   },
   {
     id: "subscription-2",
@@ -137,6 +144,7 @@ export const adminSubscriptionRecords: AdminSubscriptionRecord[] = [
     amountValue: "4200",
     billingCycle: "Monthly",
     note: "Renewal conversation should happen after Wednesday progress review.",
+    paymentHistory: [],
   },
   {
     id: "subscription-3",
@@ -153,6 +161,7 @@ export const adminSubscriptionRecords: AdminSubscriptionRecord[] = [
     amountValue: "1850",
     billingCycle: "Monthly",
     note: "Consistent attendance and low support burden.",
+    paymentHistory: [],
   },
   {
     id: "subscription-4",
@@ -169,6 +178,7 @@ export const adminSubscriptionRecords: AdminSubscriptionRecord[] = [
     amountValue: "950",
     billingCycle: "Two weeks",
     note: "Trial extension is waiting for intake clarification.",
+    paymentHistory: [],
   },
   {
     id: "subscription-5",
@@ -185,6 +195,7 @@ export const adminSubscriptionRecords: AdminSubscriptionRecord[] = [
     amountValue: "4000",
     billingCycle: "Monthly",
     note: "Paused after travel; payment follow-up should stay gentle.",
+    paymentHistory: [],
   },
   {
     id: "subscription-6",
@@ -201,5 +212,6 @@ export const adminSubscriptionRecords: AdminSubscriptionRecord[] = [
     amountValue: "1850",
     billingCycle: "Monthly",
     note: "Likely renewal if evening slot preference is preserved.",
+    paymentHistory: [],
   },
 ];

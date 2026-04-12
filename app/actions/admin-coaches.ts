@@ -1,9 +1,10 @@
 "use server";
 
 import bcrypt from "bcryptjs";
+import { CoachSpecialization, UserRole } from "@prisma/client";
 import { revalidatePath } from "next/cache";
-import { randomUUID } from "node:crypto";
 
+import { requireRole } from "@/lib/auth/session";
 import { getPrisma } from "@/lib/prisma";
 
 type SaveCoachInput = {
@@ -11,6 +12,7 @@ type SaveCoachInput = {
   fullName: string;
   email: string;
   phone?: string;
+  initialPassword?: string;
   specialization: "Strength" | "Conditioning" | "Mobility" | "Private Coaching";
 };
 
@@ -21,24 +23,48 @@ type DeleteCoachInput = {
 
 function toCoachSpecialization(
   specialization: SaveCoachInput["specialization"]
-): "STRENGTH" | "CONDITIONING" | "MOBILITY" | "PRIVATE_COACHING" {
+): CoachSpecialization {
   switch (specialization) {
     case "Conditioning":
-      return "CONDITIONING";
+      return CoachSpecialization.CONDITIONING;
     case "Mobility":
-      return "MOBILITY";
+      return CoachSpecialization.MOBILITY;
     case "Private Coaching":
-      return "PRIVATE_COACHING";
+      return CoachSpecialization.PRIVATE_COACHING;
     default:
-      return "STRENGTH";
+      return CoachSpecialization.STRENGTH;
+  }
+}
+
+function normalizePassword(value: string | undefined) {
+  return value?.trim() ?? "";
+}
+
+function assertValidPassword(password: string, mode: "create" | "reset") {
+  if (!password) {
+    if (mode === "create") {
+      throw new Error("Initial password is required for new coaches.");
+    }
+
+    return;
+  }
+
+  if (password.length < 8) {
+    throw new Error("Password must be at least 8 characters.");
+  }
+
+  if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) {
+    throw new Error("Password must include at least one letter and one number.");
   }
 }
 
 export async function saveCoach(input: SaveCoachInput) {
+  await requireRole(UserRole.ADMIN);
   const prisma = getPrisma();
   const fullName = input.fullName.trim();
   const email = input.email.trim().toLowerCase();
   const phone = input.phone?.trim() || null;
+  const initialPassword = normalizePassword(input.initialPassword);
   const specialization = toCoachSpecialization(input.specialization);
 
   if (!fullName) {
@@ -78,24 +104,29 @@ export async function saveCoach(input: SaveCoachInput) {
       throw new Error("Another user already uses this email.");
     }
 
-    await prisma.$transaction([
-      prisma.user.update({
+    assertValidPassword(initialPassword, "reset");
+
+    await prisma.$transaction(async (tx) => {
+      await tx.user.update({
         where: { id: existingCoach.userId },
         data: {
           name: fullName,
           email,
+          ...(initialPassword
+            ? { password: await bcrypt.hash(initialPassword, 12) }
+            : {}),
         },
-      }),
-    ]);
+      });
 
-    await prisma.$executeRaw`
-      UPDATE "Coach"
-      SET
-        "fullName" = ${fullName},
-        "phone" = ${phone},
-        "specialization" = ${specialization}::"CoachSpecialization"
-      WHERE "id" = ${existingCoach.id}
-    `;
+      await tx.coach.update({
+        where: { id: existingCoach.id },
+        data: {
+          fullName,
+          phone,
+          specialization,
+        },
+      });
+    });
   } else {
     if (existingUser?.coachProfile) {
       throw new Error("A coach with this email already exists.");
@@ -105,38 +136,31 @@ export async function saveCoach(input: SaveCoachInput) {
       throw new Error("A user with this email already exists. Use a different email.");
     }
 
-    const password = await bcrypt.hash("password123", 12);
+    assertValidPassword(initialPassword, "create");
+    const password = await bcrypt.hash(initialPassword, 12);
 
-    const createdUser = await prisma.user.create({
-      data: {
-        name: fullName,
-        email,
-        password,
-        role: "COACH",
-      },
-      select: {
-        id: true,
-      },
+    await prisma.$transaction(async (tx) => {
+      const createdUser = await tx.user.create({
+        data: {
+          name: fullName,
+          email,
+          password,
+          role: "COACH",
+        },
+        select: {
+          id: true,
+        },
+      });
+
+      await tx.coach.create({
+        data: {
+          fullName,
+          phone,
+          specialization,
+          userId: createdUser.id,
+        },
+      });
     });
-
-    await prisma.$executeRaw`
-      INSERT INTO "Coach" (
-        "id",
-        "fullName",
-        "phone",
-        "specialization",
-        "userId",
-        "createdAt"
-      )
-      VALUES (
-        ${randomUUID()},
-        ${fullName},
-        ${phone},
-        ${specialization}::"CoachSpecialization",
-        ${createdUser.id},
-        NOW()
-      )
-    `;
   }
 
   revalidatePath("/admin");
@@ -144,6 +168,7 @@ export async function saveCoach(input: SaveCoachInput) {
 }
 
 export async function deleteCoach(input: DeleteCoachInput) {
+  await requireRole(UserRole.ADMIN);
   const prisma = getPrisma();
 
   if (input.confirmationText.trim() !== "Delete") {
