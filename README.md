@@ -13,13 +13,15 @@ Set these in your local `.env`:
 
 ```bash
 DATABASE_URL="postgresql://..."
+DIRECT_URL="postgresql://..."
 AUTH_SECRET="replace-with-a-long-random-secret"
 APP_URL="http://localhost:3000"
 ```
 
 Notes:
 
-- `DATABASE_URL` should be your Neon connection string.
+- `DATABASE_URL` should be your pooled Neon connection string using the `-pooler` host and `sslmode=require`.
+- `DIRECT_URL` should be your direct Neon connection string without the `-pooler` host. Prisma CLI operations use this when present; the app runtime continues to use `DATABASE_URL`.
 - `AUTH_SECRET` is required for Auth.js session security.
 - `APP_URL` is used as the metadata base URL locally. If omitted, the app falls back to `http://localhost:3000`.
 - `AUTH_URL` or `NEXTAUTH_URL` is not required by default because host detection is handled through Auth.js with `trustHost: true`.
