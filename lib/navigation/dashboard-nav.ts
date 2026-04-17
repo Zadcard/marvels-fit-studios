@@ -9,6 +9,7 @@ import {
   ShieldUser,
   UserRound,
   Users,
+  UploadCloud,
 } from "lucide-react";
 import type { DashboardRole } from "@/lib/auth/authorization-policy";
 export type DashboardNavSection = "primary" | "secondary";
@@ -88,6 +89,14 @@ const dashboardNavConfig: Record<DashboardRole, DashboardNavItem[]> = {
       href: "/admin/join-requests",
       icon: ClipboardList,
       description: "Intake and conversion",
+      section: "primary",
+      available: true,
+    },
+    {
+      label: "Bulk Import",
+      href: "/admin/bulk-import",
+      icon: UploadCloud,
+      description: "CSV client import",
       section: "primary",
       available: true,
     },

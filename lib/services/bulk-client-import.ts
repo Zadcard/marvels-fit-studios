@@ -1,6 +1,10 @@
-import { getPrisma } from "@/lib/prisma";
+import "server-only";
+
 import { clientRegistrationService } from "@/lib/services/client-registration-service";
-import { clientIdGenerator } from "@/lib/services/client-id-generator";
+import {
+  clientRegistrationSchema,
+  normalizePhoneNumber,
+} from "@/lib/validators/id-auth";
 
 export interface ClientImportData {
   fullName: string;
@@ -18,229 +22,298 @@ export interface ImportResult {
   error?: string;
 }
 
-export interface BulkImportStats {
+export type BulkClientInput = {
+  fullName: string;
+  phone: string;
+};
+
+export type BulkClientPreviewRow = BulkClientInput & {
+  rowNumber: number;
+  valid: boolean;
+  reason?: string;
+};
+
+export type BulkClientImportSuccess = BulkClientInput & {
+  rowNumber: number;
+  clientId: string;
+  password: string;
+};
+
+export type BulkClientImportFailure = BulkClientInput & {
+  rowNumber: number;
+  reason: string;
+};
+
+export type BulkClientImportStats = {
   total: number;
   successful: number;
   failed: number;
   duplicatePhones: number;
   results: ImportResult[];
+  totalRecords: number;
+  successfulImports: BulkClientImportSuccess[];
+  failedImports: BulkClientImportFailure[];
+  successRate: number;
+};
+
+export type BulkClientImportReport = BulkClientImportStats & {
+  credentialsCsv: string;
+  summary: string;
+};
+
+function parseCsvLine(line: string) {
+  const values: string[] = [];
+  let current = "";
+  let inQuotes = false;
+
+  for (let index = 0; index < line.length; index += 1) {
+    const char = line[index];
+    const next = line[index + 1];
+
+    if (char === '"' && next === '"') {
+      current += '"';
+      index += 1;
+      continue;
+    }
+
+    if (char === '"') {
+      inQuotes = !inQuotes;
+      continue;
+    }
+
+    if (char === "," && !inQuotes) {
+      values.push(current.trim());
+      current = "";
+      continue;
+    }
+
+    current += char;
+  }
+
+  values.push(current.trim());
+  return values;
+}
+
+function toCsvValue(value: string | number) {
+  const text = String(value);
+  return /[",\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+}
+
+function createStats(
+  rows: BulkClientPreviewRow[],
+  successfulImports: BulkClientImportSuccess[],
+  failedImports: BulkClientImportFailure[]
+): BulkClientImportStats {
+  const totalRecords = rows.length;
+  const successRate =
+    totalRecords === 0
+      ? 0
+      : Math.round((successfulImports.length / totalRecords) * 10000) / 100;
+  const duplicatePhones = failedImports.filter((failure) =>
+    failure.reason.toLowerCase().includes("duplicate")
+  ).length;
+
+  return {
+    total: totalRecords,
+    successful: successfulImports.length,
+    failed: failedImports.length,
+    duplicatePhones,
+    results: [
+      ...successfulImports.map((client) => ({
+        success: true,
+        clientId: client.clientId,
+        temporaryPassword: client.password,
+        fullName: client.fullName,
+        phone: client.phone,
+      })),
+      ...failedImports.map((client) => ({
+        success: false,
+        clientId: "",
+        temporaryPassword: "",
+        fullName: client.fullName,
+        phone: client.phone,
+        error: client.reason,
+      })),
+    ],
+    totalRecords,
+    successfulImports,
+    failedImports,
+    successRate,
+  };
 }
 
 export class BulkClientImportService {
-  private prisma = getPrisma();
+  parseClientsFromCSV(csvContent: string): BulkClientPreviewRow[] {
+    const lines = csvContent
+      .replace(/^\uFEFF/, "")
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean);
+
+    if (lines.length === 0) {
+      return [];
+    }
+
+    const firstRow = parseCsvLine(lines[0]).map((value) =>
+      value.toLowerCase()
+    );
+    const hasHeader =
+      firstRow.includes("fullname") ||
+      firstRow.includes("full name") ||
+      firstRow.includes("name") ||
+      firstRow.includes("phone");
+    const fullNameIndex = Math.max(
+      firstRow.indexOf("fullname"),
+      firstRow.indexOf("full name"),
+      firstRow.indexOf("name")
+    );
+    const phoneIndex = firstRow.indexOf("phone");
+    const records = hasHeader ? lines.slice(1) : lines;
+    const seenPhones = new Map<string, number>();
+
+    if (
+      (hasHeader && (fullNameIndex < 0 || phoneIndex < 0)) ||
+      (!hasHeader && firstRow.length < 2)
+    ) {
+      return [
+        {
+          fullName: "",
+          phone: "",
+          rowNumber: 1,
+          valid: false,
+          reason: "CSV must have fullName and phone columns.",
+        },
+      ];
+    }
+
+    return records.map((line, index) => {
+      const values = parseCsvLine(line);
+      const fullName = hasHeader
+        ? values[fullNameIndex] ?? ""
+        : values[0] ?? "";
+      const phone = hasHeader ? values[phoneIndex] ?? "" : values[1] ?? "";
+      const normalizedInput = {
+        fullName: fullName.trim(),
+        phone: normalizePhoneNumber(phone),
+      };
+      const parsed = clientRegistrationSchema.safeParse(normalizedInput);
+      const rowNumber = hasHeader ? index + 2 : index + 1;
+
+      if (!parsed.success) {
+        return {
+          ...normalizedInput,
+          rowNumber,
+          valid: false,
+          reason: parsed.error.issues[0]?.message ?? "Invalid client record.",
+        };
+      }
+
+      const earlierRow = seenPhones.get(parsed.data.phone);
+      if (earlierRow) {
+        return {
+          ...parsed.data,
+          rowNumber,
+          valid: false,
+          reason: `Duplicate phone number from row ${earlierRow}.`,
+        };
+      }
+
+      seenPhones.set(parsed.data.phone, rowNumber);
+
+      return {
+        ...parsed.data,
+        rowNumber,
+        valid: true,
+      };
+    });
+  }
 
   async importClients(
     clientsData: ClientImportData[]
-  ): Promise<BulkImportStats> {
-    const stats: BulkImportStats = {
-      total: clientsData.length,
-      successful: 0,
-      failed: 0,
-      duplicatePhones: 0,
-      results: [],
-    };
+  ): Promise<BulkClientImportStats> {
+    const csv = [
+      "fullName,phone",
+      ...clientsData.map((client) =>
+        [client.fullName, client.phone].map(toCsvValue).join(",")
+      ),
+    ].join("\n");
 
-    const phoneTracker = new Set<string>();
+    return this.importClientsFromCSV(csv);
+  }
 
-    for (const clientData of clientsData) {
+  async importClientsFromCSV(
+    csvContent: string
+  ): Promise<BulkClientImportStats> {
+    const rows = this.parseClientsFromCSV(csvContent);
+    const successfulImports: BulkClientImportSuccess[] = [];
+    const failedImports: BulkClientImportFailure[] = [];
+
+    for (const row of rows) {
+      if (!row.valid) {
+        failedImports.push({
+          fullName: row.fullName,
+          phone: row.phone,
+          rowNumber: row.rowNumber,
+          reason: row.reason ?? "Invalid client record.",
+        });
+        continue;
+      }
+
       try {
-        const normalizedPhone = this.normalizePhone(clientData.phone);
-
-        if (phoneTracker.has(normalizedPhone)) {
-          stats.duplicatePhones++;
-          stats.failed++;
-          stats.results.push({
-            success: false,
-            clientId: "",
-            temporaryPassword: "",
-            fullName: clientData.fullName,
-            phone: clientData.phone,
-            error: "Duplicate phone in import batch",
-          });
-          continue;
-        }
-
-        const isAvailable = await clientRegistrationService.isPhoneAvailable(
-          normalizedPhone
+        const phoneAvailable = await clientRegistrationService.isPhoneAvailable(
+          row.phone
         );
 
-        if (!isAvailable) {
-          stats.duplicatePhones++;
-          stats.failed++;
-          stats.results.push({
-            success: false,
-            clientId: "",
-            temporaryPassword: "",
-            fullName: clientData.fullName,
-            phone: clientData.phone,
-            error: "Phone number already exists in system",
+        if (!phoneAvailable) {
+          failedImports.push({
+            fullName: row.fullName,
+            phone: row.phone,
+            rowNumber: row.rowNumber,
+            reason: "Phone number is already registered.",
           });
           continue;
         }
 
         const result = await clientRegistrationService.registerClient({
-          fullName: clientData.fullName,
-          phone: normalizedPhone,
-          email: clientData.email,
+          fullName: row.fullName,
+          phone: row.phone,
         });
 
-        phoneTracker.add(normalizedPhone);
-        stats.successful++;
-        stats.results.push({
-          success: true,
+        successfulImports.push({
+          fullName: row.fullName,
+          phone: row.phone,
+          rowNumber: row.rowNumber,
           clientId: result.clientId,
-          temporaryPassword: result.temporaryPassword,
-          fullName: clientData.fullName,
-          phone: clientData.phone,
+          password: result.temporaryPassword,
         });
       } catch (error) {
-        stats.failed++;
-        stats.results.push({
-          success: false,
-          clientId: "",
-          temporaryPassword: "",
-          fullName: clientData.fullName,
-          phone: clientData.phone,
-          error:
-            error instanceof Error ? error.message : "Unknown error occurred",
+        failedImports.push({
+          fullName: row.fullName,
+          phone: row.phone,
+          rowNumber: row.rowNumber,
+          reason: error instanceof Error ? error.message : "Import failed.",
         });
       }
     }
 
-    return stats;
+    return createStats(rows, successfulImports, failedImports);
   }
 
-  async importClientsFromCSV(csvContent: string): Promise<BulkImportStats> {
-    const lines = csvContent.trim().split("\n");
+  generateImportReport(stats: BulkClientImportStats): BulkClientImportReport {
+    const credentialsCsv = [
+      ["clientId", "fullName", "phone", "password"].join(","),
+      ...stats.successfulImports.map((client) =>
+        [client.clientId, client.fullName, client.phone, client.password]
+          .map(toCsvValue)
+          .join(",")
+      ),
+    ].join("\n");
 
-    if (lines.length < 2) {
-      return {
-        total: 0,
-        successful: 0,
-        failed: 0,
-        duplicatePhones: 0,
-        results: [],
-      };
-    }
-
-    const headerLine = lines[0];
-    const headers = this.parseCSVLine(headerLine.toLowerCase());
-
-    const fullNameIndex = Math.max(
-      headers.indexOf("fullname"),
-      headers.indexOf("name")
-    );
-    const phoneIndex = headers.indexOf("phone");
-    const emailIndex = headers.indexOf("email");
-    const groupIndex = headers.indexOf("group");
-
-    if (fullNameIndex === -1 || phoneIndex === -1) {
-      return {
-        total: 0,
-        successful: 0,
-        failed: 0,
-        duplicatePhones: 0,
-        results: [
-          {
-            success: false,
-            clientId: "",
-            temporaryPassword: "",
-            fullName: "",
-            phone: "",
-            error: "CSV must have fullName and phone columns",
-          },
-        ],
-      };
-    }
-
-    const clientsData: ClientImportData[] = [];
-
-    for (let i = 1; i < lines.length; i++) {
-      const line = lines[i].trim();
-      if (!line) continue;
-
-      const values = this.parseCSVLine(line);
-
-      clientsData.push({
-        fullName: values[fullNameIndex] || "",
-        phone: values[phoneIndex] || "",
-        email:
-          emailIndex >= 0 && values[emailIndex]
-            ? values[emailIndex]
-            : undefined,
-        groupName:
-          groupIndex >= 0 && values[groupIndex]
-            ? values[groupIndex]
-            : undefined,
-      });
-    }
-
-    return this.importClients(clientsData);
-  }
-
-  private normalizePhone(phone: string): string {
-    return phone.trim();
-  }
-
-  private parseCSVLine(line: string): string[] {
-    const result: string[] = [];
-    let current = "";
-    let inQuotes = false;
-
-    for (let i = 0; i < line.length; i++) {
-      const char = line[i];
-      const nextChar = line[i + 1];
-
-      if (char === '"') {
-        if (inQuotes && nextChar === '"') {
-          current += '"';
-          i++;
-        } else {
-          inQuotes = !inQuotes;
-        }
-      } else if (char === "," && !inQuotes) {
-        result.push(current.trim());
-        current = "";
-      } else {
-        current += char;
-      }
-    }
-
-    result.push(current.trim());
-    return result;
-  }
-
-  async generateImportReport(stats: BulkImportStats): Promise<string> {
-    const lines: string[] = [];
-
-    lines.push("=== BULK CLIENT IMPORT REPORT ===\n");
-    lines.push(`Total Records: ${stats.total}`);
-    lines.push(`Successful: ${stats.successful}`);
-    lines.push(`Failed: ${stats.failed}`);
-    lines.push(`Duplicate Phones: ${stats.duplicatePhones}`);
-    lines.push(`Success Rate: ${((stats.successful / stats.total) * 100).toFixed(1)}%\n`);
-
-    if (stats.successful > 0) {
-      lines.push("--- SUCCESSFUL IMPORTS ---");
-      for (const result of stats.results.filter((r) => r.success)) {
-        lines.push(
-          `${result.fullName} | Phone: ${result.phone} | ID: ${result.clientId} | Password: ${result.temporaryPassword}`
-        );
-      }
-      lines.push("");
-    }
-
-    if (stats.failed > 0) {
-      lines.push("--- FAILED IMPORTS ---");
-      for (const result of stats.results.filter((r) => !r.success)) {
-        lines.push(
-          `${result.fullName} | Phone: ${result.phone} | Error: ${result.error}`
-        );
-      }
-      lines.push("");
-    }
-
-    return lines.join("\n");
+    return {
+      ...stats,
+      credentialsCsv,
+      summary: `${stats.successfulImports.length}/${stats.totalRecords} clients imported (${stats.successRate}%).`,
+    };
   }
 }
 

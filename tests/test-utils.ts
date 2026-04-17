@@ -1,4 +1,4 @@
-import { vi } from 'vitest';
+import { expect, vi } from 'vitest';
 import type { PrismaClient } from '@prisma/client';
 
 /**
@@ -71,7 +71,7 @@ export function createMockPrisma(): Partial<PrismaClient> {
       update: vi.fn(),
       delete: vi.fn(),
     },
-  };
+  } as unknown as Partial<PrismaClient>;
 }
 
 /**

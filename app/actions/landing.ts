@@ -5,6 +5,7 @@ import { z } from "zod";
 
 import { getPrisma } from "@/lib/prisma";
 import { clientRegistrationService } from "@/lib/services/client-registration-service";
+import { clientRegistrationSchema } from "@/lib/validators/id-auth";
 import { type JoinNowActionState } from "./join-now-types";
 
 const joinNowSchema = z.object({
@@ -16,17 +17,6 @@ const joinNowSchema = z.object({
     .min(8, "Password must be at least 8 characters.")
     .regex(/[A-Za-z]/, "Password must include at least one letter.")
     .regex(/[0-9]/, "Password must include at least one number."),
-});
-
-const registerClientSchema = z.object({
-  fullName: z.string().trim().min(2, "Please enter your full name."),
-  phone: z.string().trim().min(8, "Please enter a valid phone number."),
-  email: z
-    .string()
-    .trim()
-    .email("Please enter a valid email address.")
-    .optional()
-    .or(z.literal("")),
 });
 
 export async function submitJoinNowLead(
@@ -105,10 +95,9 @@ export async function registerClientWithAutoCredentials(
   _previousState: JoinNowActionState,
   formData: FormData
 ): Promise<JoinNowActionState> {
-  const parsed = registerClientSchema.safeParse({
+  const parsed = clientRegistrationSchema.safeParse({
     fullName: formData.get("fullName"),
     phone: formData.get("phone"),
-    email: formData.get("email"),
   });
 
   if (!parsed.success) {
@@ -118,8 +107,6 @@ export async function registerClientWithAutoCredentials(
       fieldErrors: parsed.error.flatten().fieldErrors,
     };
   }
-
-  const prisma = getPrisma();
 
   const phoneAvailable = await clientRegistrationService.isPhoneAvailable(
     parsed.data.phone
@@ -135,36 +122,23 @@ export async function registerClientWithAutoCredentials(
     };
   }
 
-  if (parsed.data.email) {
-    const normalizedEmail = parsed.data.email.toLowerCase();
-    const existingUser = await prisma.user.findUnique({
-      where: { email: normalizedEmail },
-      select: { id: true },
-    });
-
-    if (existingUser) {
-      return {
-        status: "error",
-        message: "This email is already linked to an account.",
-        fieldErrors: {
-          email: ["This email is already linked to an account."],
-        },
-      };
-    }
-  }
-
   try {
     const result = await clientRegistrationService.registerClient({
       fullName: parsed.data.fullName,
       phone: parsed.data.phone,
-      email: parsed.data.email || undefined,
     });
 
     return {
       status: "success",
-      message: `Account created! Your Client ID: ${result.clientId} | Password: ${result.temporaryPassword}`,
+      message: "Account created. Save these credentials before closing this page.",
+      credentials: {
+        clientId: result.clientId,
+        password: result.temporaryPassword,
+        fullName: parsed.data.fullName,
+        phone: parsed.data.phone,
+      },
     };
-  } catch (error) {
+  } catch {
     return {
       status: "error",
       message:

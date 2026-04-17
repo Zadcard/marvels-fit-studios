@@ -28,7 +28,6 @@ function LoginForm() {
   const [capsLockOn, setCapsLockOn] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [formError, setFormError] = useState("");
-  const [helperMessage, setHelperMessage] = useState("");
   const [fieldErrors, setFieldErrors] = useState<{
     clientId?: string;
     email?: string;
@@ -89,7 +88,6 @@ function LoginForm() {
     async (event: FormEvent) => {
       event.preventDefault();
       setFormError("");
-      setHelperMessage("");
 
       if (!validateFields()) {
         triggerShake();
@@ -167,9 +165,6 @@ function LoginForm() {
       setFormError("");
     }
 
-    if (helperMessage) {
-      setHelperMessage("");
-    }
   };
 
   return (
@@ -387,25 +382,10 @@ function LoginForm() {
           <p className="login-trust-note">
             Secure portal access.
           </p>
-          <button
-            type="button"
-            className="login-forgot"
-            onClick={() =>
-              setHelperMessage(
-                "Need help? Contact the studio team on WhatsApp at +20 103 372 4777."
-              )
-            }
-            disabled={isLoading}
-          >
-            Need help signing in?
-          </button>
+          <Link href="/password-reset/request" className="login-forgot">
+            Forgot password?
+          </Link>
         </div>
-
-        {helperMessage ? (
-          <div className="login-helper-note" role="status">
-            {helperMessage}
-          </div>
-        ) : null}
 
         <button
           type="submit"

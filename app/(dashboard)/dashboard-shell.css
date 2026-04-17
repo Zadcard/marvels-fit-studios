@@ -618,6 +618,38 @@ body.dashboard-nav-open {
   font-size: 0.96rem;
 }
 
+.dashboard-import-dropzone {
+  width: 100%;
+  min-height: 180px;
+  display: grid;
+  place-items: center;
+  gap: 8px;
+  padding: 28px;
+  border: 1px dashed rgba(230, 36, 41, 0.38);
+  border-radius: 22px;
+  background: rgba(230, 36, 41, 0.06);
+  color: var(--mv-text);
+  text-align: center;
+  transition: border-color 0.18s ease, background-color 0.18s ease;
+}
+
+.dashboard-import-dropzone span {
+  color: var(--mv-muted-strong);
+  font-size: 0.86rem;
+}
+
+.dashboard-import-dropzone--over,
+.dashboard-import-dropzone:focus-visible {
+  outline: none;
+  border-color: rgba(230, 36, 41, 0.72);
+  background: rgba(230, 36, 41, 0.12);
+}
+
+.dashboard-import-dropzone:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
 .dashboard-route-state {
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 24px;
