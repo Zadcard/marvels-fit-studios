@@ -129,11 +129,23 @@ model StudioSettings {
 model User {
   id            String    @id @default(cuid())
   name          String?
+
+  // ===== ID-based authentication (NEW) =====
+  clientId      String?   @unique  // Format: YYMMXXX (e.g., 2605020)
+
+  // ===== Legacy email auth (optional, for backward compatibility) =====
   email         String?   @unique
   emailVerified DateTime?
   image         String?
-  password      String?   // Hashed with bcrypt
+
+  // ===== Authentication =====
+  password      String?   // Hashed with bcrypt (either from email or MFS_YYMMXXX)
   role          UserRole  @default(CLIENT)
+
+  // ===== Password reset =====
+  passwordResetToken    String?   @unique
+  passwordResetExpires  DateTime?
+  lastLoginAt           DateTime?
 
   // Auth.js Relations
   accounts      Account[]
@@ -151,6 +163,9 @@ model User {
 
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+
+  @@index([clientId])
+  @@index([email])
 }
 
 model Lead {
@@ -229,7 +244,7 @@ model Coach {
 model Client {
   id             String   @id @default(cuid())
   fullName       String
-  phone          String?
+  phone          String?  @unique  // Unique phone for client lookup
   dateOfBirth    DateTime?
 
   // Linked to global User account
@@ -244,6 +259,7 @@ model Client {
   status         ClientLifecycleStatus @default(PENDING)
 
   createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   // Which group this client belongs to
   groupId        String?
@@ -258,6 +274,8 @@ model Client {
   subscriptions  ClientSubscription[]
   preferences    ClientPreferences?
   scheduleBlocks ScheduleBlockClient[]
+
+  @@index([phone])
 }
 
 model ClientPreferences {
