@@ -15,9 +15,15 @@ export default {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        const authUser = user as typeof user & { role?: UserRole };
+        const authUser = user as typeof user & {
+          role?: UserRole;
+          clientId?: string;
+        };
         token.sub = user.id;
         token.role = authUser.role;
+        if (authUser.clientId) {
+          token.clientId = authUser.clientId;
+        }
       }
 
       return token;
@@ -29,6 +35,10 @@ export default {
 
       if (session.user && token.role) {
         session.user.role = token.role as UserRole;
+      }
+
+      if (session.user && token.clientId) {
+        session.user.clientId = token.clientId as string;
       }
 
       return session;
