@@ -119,7 +119,6 @@ export class AdminClientRepository {
         id: true,
         fullName: true,
         phone: true,
-        isPaid: true,
         paymentStatus: true,
         status: true,
         createdAt: true,
@@ -130,9 +129,27 @@ export class AdminClientRepository {
         },
         group: {
           select: {
+            id: true,
+            name: true,
             coach: {
               select: {
                 fullName: true,
+              },
+            },
+          },
+        },
+        scheduleBlocks: {
+          orderBy: {
+            scheduleBlock: {
+              startsOn: "asc",
+            },
+          },
+          take: 1,
+          select: {
+            scheduleBlock: {
+              select: {
+                id: true,
+                title: true,
               },
             },
           },
@@ -162,7 +179,6 @@ export class AdminClientRepository {
           take: 1,
           select: {
             amount: true,
-            currency: true,
             date: true,
           },
         },
@@ -190,22 +206,8 @@ export class AdminClientRepository {
                     fullName: true,
                   },
                 },
-                notes: {
-                  orderBy: [{ createdAt: "desc" }],
-                  take: 1,
-                  select: {
-                    content: true,
-                  },
-                },
               },
             },
-          },
-        },
-        workoutNotes: {
-          orderBy: [{ date: "desc" }],
-          take: 1,
-          select: {
-            content: true,
           },
         },
       },
@@ -230,13 +232,20 @@ export class AdminClientRepository {
           ? currencyFormatter.format(client.payments[0].amount)
           : "No payment yet",
         joinedDate: formatDate(client.createdAt),
+        primaryGroupId: client.group?.id ?? null,
+        primaryGroup: client.group?.name ?? "No group",
+        primaryBlockId: client.scheduleBlocks[0]?.scheduleBlock.id ?? null,
+        primaryBlock:
+          client.scheduleBlocks[0]?.scheduleBlock.title ?? "No recurring block",
         assignedCoach,
         nextSession: nextBooking
           ? `${formatDateTime(nextBooking.trainingSession.startsAt)}`
           : "Awaiting first session",
+        nextSessions: client.bookings.map(
+          (booking) =>
+            `${formatDateTime(booking.trainingSession.startsAt)} - ${booking.trainingSession.title}`
+        ),
         progressNote:
-          client.workoutNotes[0]?.content ??
-          nextBooking?.trainingSession.notes[0]?.content ??
           `Membership profile: ${titleCase(inferMembership(client))}`,
       };
     });

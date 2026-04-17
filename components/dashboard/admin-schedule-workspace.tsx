@@ -1,82 +1,33 @@
 "use client";
 
 import { useDeferredValue, useMemo, useState, useTransition } from "react";
-import { CalendarPlus2, LayoutGrid, Rows3 } from "lucide-react";
+import Link from "next/link";
+import { CalendarPlus2, XCircle, RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-import { saveAdminSession } from "@/app/actions/admin-sessions";
+import {
+  bulkUpdateAdminSessions,
+  cancelAdminSession,
+  saveAdminSession,
+} from "@/app/actions/admin-sessions";
+import { DashboardEmptyState } from "@/components/dashboard/dashboard-empty-state";
 import { DashboardManagementToolbar } from "@/components/dashboard/dashboard-management-toolbar";
-import { DashboardModal } from "@/components/dashboard/dashboard-modal";
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
 import { DashboardStatCard } from "@/components/dashboard/dashboard-stat-card";
 import { DashboardStatusBadge } from "@/components/dashboard/dashboard-status-badge";
-import { CoachOptionPicker } from "@/components/dashboard/coach-option-picker";
-import { SessionTypePicker } from "@/components/dashboard/session-type-picker";
 import type {
   AdminScheduleSessionRecord,
-  AdminScheduleSessionStatus,
-  AdminScheduleSessionType,
   AdminScheduleStat,
 } from "@/lib/dashboard/admin-schedule-data";
-import {
-  adminScheduleDayFilters,
-  adminScheduleSessionTypeFilters,
-  adminScheduleStatusFilters,
-} from "@/lib/dashboard/admin-schedule-data";
 import type { AdminSessionCoachOption } from "@/lib/repositories/admin-session-repository";
+import type {
+  AdminScheduleBlockOption,
+  AdminScheduleGroupOption,
+} from "@/lib/repositories/admin-schedule-repository";
 
-type ScheduleView = "week" | "day";
-type ScheduleDraftState = {
-  title: string;
-  sessionType: "GROUP" | "PRIVATE";
-  status: "SCHEDULED" | "DRAFT";
-  startsAt: string;
-  endsAt: string;
-  coachId: string;
-  location: string;
-  capacity: string;
-  description: string;
-};
+type BulkAction = "CANCEL" | "REASSIGN_COACH" | "UPDATE_LOCATION" | "UPDATE_CAPACITY";
 
-function toDateTimeLocalValue(value: string) {
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return "";
-  }
-
-  const offset = date.getTimezoneOffset();
-  const adjusted = new Date(date.getTime() - offset * 60 * 1000);
-  return adjusted.toISOString().slice(0, 16);
-}
-
-function createDefaultDraft(coachId: string): ScheduleDraftState {
-  const now = new Date();
-  const start = new Date(now);
-  start.setMinutes(0, 0, 0);
-  start.setHours(start.getHours() + 1);
-
-  const end = new Date(start);
-  end.setHours(end.getHours() + 1);
-
-  return {
-    title: "",
-    sessionType: "GROUP",
-    status: "SCHEDULED",
-    startsAt: toDateTimeLocalValue(start.toISOString()),
-    endsAt: toDateTimeLocalValue(end.toISOString()),
-    coachId,
-    location: "",
-    capacity: "12",
-    description: "",
-  };
-}
-
-function toIsoDateTime(value: string) {
-  return new Date(value).toISOString();
-}
-
-function getScheduleTone(status: AdminScheduleSessionStatus) {
+function getScheduleTone(status: AdminScheduleSessionRecord["status"]) {
   switch (status) {
     case "Confirmed":
       return "success";
@@ -89,213 +40,253 @@ function getScheduleTone(status: AdminScheduleSessionStatus) {
   }
 }
 
-function getSessionTypeTone(type: AdminScheduleSessionType) {
+function getSessionTypeTone(type: AdminScheduleSessionRecord["sessionType"]) {
   return type === "Group" ? "accent" : "neutral";
+}
+
+function getWeekdayOrder(day: string) {
+  return ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"].indexOf(
+    day
+  );
+}
+
+function formatHourLabel(hour: number) {
+  const value = hour % 12 === 0 ? 12 : hour % 12;
+  const suffix = hour >= 12 ? "PM" : "AM";
+  return `${value} ${suffix}`;
 }
 
 type AdminScheduleWorkspaceProps = {
   stats: AdminScheduleStat[];
   records: AdminScheduleSessionRecord[];
   coachOptions: AdminSessionCoachOption[];
+  blockOptions: AdminScheduleBlockOption[];
+  groupOptions: AdminScheduleGroupOption[];
 };
 
 export function AdminScheduleWorkspace({
   stats,
   records,
   coachOptions,
+  blockOptions,
+  groupOptions,
 }: AdminScheduleWorkspaceProps) {
   const router = useRouter();
   const [isSaving, startSaveTransition] = useTransition();
-  const [view, setView] = useState<ScheduleView>("week");
   const [searchTerm, setSearchTerm] = useState("");
   const deferredSearchTerm = useDeferredValue(searchTerm);
-  const [dayFilter, setDayFilter] =
-    useState<(typeof adminScheduleDayFilters)[number]>("All days");
   const [statusFilter, setStatusFilter] =
-    useState<(typeof adminScheduleStatusFilters)[number]>("All statuses");
-  const [sessionTypeFilter, setSessionTypeFilter] =
-    useState<(typeof adminScheduleSessionTypeFilters)[number]>("All types");
+    useState<AdminScheduleSessionRecord["status"] | "All">("All");
+  const [typeFilter, setTypeFilter] =
+    useState<AdminScheduleSessionRecord["sessionType"] | "All">("All");
+  const [coachFilter, setCoachFilter] = useState("all");
+  const [blockFilter, setBlockFilter] = useState("all");
+  const [groupFilter, setGroupFilter] = useState("all");
   const [selectedSessionId, setSelectedSessionId] = useState(records[0]?.id ?? "");
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [draftState, setDraftState] = useState<ScheduleDraftState>(
-    createDefaultDraft(coachOptions[0]?.id ?? "")
-  );
+  const [selectedSessionIds, setSelectedSessionIds] = useState<string[]>([]);
+  const [bulkAction, setBulkAction] = useState<BulkAction>("CANCEL");
+  const [bulkCoachId, setBulkCoachId] = useState(coachOptions[0]?.id ?? "");
+  const [bulkLocation, setBulkLocation] = useState("");
+  const [bulkCapacity, setBulkCapacity] = useState("12");
   const [errorMessage, setErrorMessage] = useState("");
+  const [isMutating, startMutatingTransition] = useTransition();
+  const [occurrenceCoachId, setOccurrenceCoachId] = useState(coachOptions[0]?.id ?? "");
 
-  const scheduleDays = useMemo(
-    () =>
-      adminScheduleDayFilters.filter(
-        (day): day is Exclude<(typeof adminScheduleDayFilters)[number], "All days"> =>
-          day !== "All days"
-      ),
-    []
-  );
-
-  const filteredSessions = records.filter((session) => {
-    const query = deferredSearchTerm.trim().toLowerCase();
-    const matchesSearch =
-      query.length === 0 ||
-      [
-        session.title,
-        session.dayLabel,
-        session.coachName,
-        session.location,
-        session.focus,
-      ]
-        .join(" ")
-        .toLowerCase()
-        .includes(query);
-    const matchesDay = dayFilter === "All days" || session.dayKey === dayFilter;
-    const matchesStatus =
-      statusFilter === "All statuses" || session.status === statusFilter;
-    const matchesType =
-      sessionTypeFilter === "All types" ||
-      session.sessionType === sessionTypeFilter;
-
-    return matchesSearch && matchesDay && matchesStatus && matchesType;
-  });
-
-  const focusedDay =
-    dayFilter === "All days" ? scheduleDays[0] ?? "Monday" : dayFilter;
-
-  const visibleDays =
-    view === "week"
-      ? scheduleDays.filter((day) => (dayFilter === "All days" ? true : day === focusedDay))
-      : [focusedDay];
-
-  const selectedSession =
-    filteredSessions.find((session) => session.id === selectedSessionId) ??
-    filteredSessions[0] ??
-    records[0];
-
-  const handleCreateSession = () => {
+  const handleCancelOccurrence = (sessionId: string) => {
     setErrorMessage("");
-
-    startSaveTransition(async () => {
+    startMutatingTransition(async () => {
       try {
-        await saveAdminSession({
-          title: draftState.title,
-          description: draftState.description,
-          type: draftState.sessionType,
-          status: draftState.status,
-          coachId: draftState.coachId,
-          location: draftState.location,
-          startsAt: toIsoDateTime(draftState.startsAt),
-          endsAt: toIsoDateTime(draftState.endsAt),
-          capacity:
-            draftState.sessionType === "PRIVATE"
-              ? 1
-              : draftState.capacity.trim() === ""
-                ? null
-                : Number(draftState.capacity),
-        });
-        setIsCreateModalOpen(false);
-        setDraftState(createDefaultDraft(coachOptions[0]?.id ?? ""));
+        await cancelAdminSession(sessionId);
         router.refresh();
       } catch (error) {
         setErrorMessage(
-          error instanceof Error ? error.message : "Could not create session."
+          error instanceof Error ? error.message : "Could not cancel occurrence."
         );
       }
     });
   };
 
+  const handleReassignOccurrenceCoach = (session: AdminScheduleSessionRecord) => {
+    if (!occurrenceCoachId || occurrenceCoachId === session.coachId) {
+      return;
+    }
+
+    setErrorMessage("");
+    startMutatingTransition(async () => {
+      try {
+        await saveAdminSession({
+          sessionId: session.id,
+          title: session.title,
+          type: session.sessionType === "Group" ? "GROUP" : "PRIVATE",
+          status:
+            session.status === "Confirmed" || session.status === "Waitlist"
+              ? "SCHEDULED"
+              : session.status === "Completed"
+                ? "COMPLETED"
+                : "DRAFT",
+          coachId: occurrenceCoachId,
+          location: session.location,
+          startsAt: session.startsAt,
+          endsAt: session.endsAt,
+          capacity: session.capacity,
+        });
+        router.refresh();
+      } catch (error) {
+        setErrorMessage(
+          error instanceof Error ? error.message : "Could not reassign coach."
+        );
+      }
+    });
+  };
+
+  const filteredRecords = useMemo(() => {
+    const query = deferredSearchTerm.trim().toLowerCase();
+
+    return records.filter((record) => {
+      const matchesQuery =
+        query.length === 0 ||
+        [
+          record.title,
+          record.coachName,
+          record.groupName,
+          record.scheduleBlockTitle,
+          record.focus,
+          record.location,
+        ]
+          .join(" ")
+          .toLowerCase()
+          .includes(query);
+
+      const matchesStatus = statusFilter === "All" || record.status === statusFilter;
+      const matchesType = typeFilter === "All" || record.sessionType === typeFilter;
+      const matchesCoach = coachFilter === "all" || record.coachId === coachFilter;
+      const matchesBlock =
+        blockFilter === "all" ||
+        (blockFilter === "manual"
+          ? record.scheduleBlockId === null
+          : record.scheduleBlockId === blockFilter);
+      const matchesGroup =
+        groupFilter === "all" ||
+        (groupFilter === "none"
+          ? record.groupName === "No linked group"
+          : record.groupName === groupOptions.find((group) => group.id === groupFilter)?.name);
+
+      return (
+        matchesQuery &&
+        matchesStatus &&
+        matchesType &&
+        matchesCoach &&
+        matchesBlock &&
+        matchesGroup
+      );
+    });
+  }, [
+    blockFilter,
+    coachFilter,
+    deferredSearchTerm,
+    groupFilter,
+    groupOptions,
+    records,
+    statusFilter,
+    typeFilter,
+  ]);
+
+  const weekDays = useMemo(() => {
+    const uniqueDays = Array.from(new Set(filteredRecords.map((record) => record.dayLabel)));
+    return uniqueDays.sort((left, right) => getWeekdayOrder(left) - getWeekdayOrder(right));
+  }, [filteredRecords]);
+
+  const selectedSession =
+    filteredRecords.find((record) => record.id === selectedSessionId) ?? filteredRecords[0];
+  const selectedBlockSessions = selectedSession?.scheduleBlockId
+    ? filteredRecords
+        .filter((record) => record.scheduleBlockId === selectedSession.scheduleBlockId)
+        .slice(0, 4)
+    : [];
+
+  const handleToggleSelection = (sessionId: string) => {
+    setSelectedSessionIds((current) =>
+      current.includes(sessionId)
+        ? current.filter((value) => value !== sessionId)
+        : [...current, sessionId]
+    );
+  };
+
+  const handleApplyBulkAction = () => {
+    if (selectedSessionIds.length === 0) {
+      return;
+    }
+
+    setErrorMessage("");
+
+    startSaveTransition(async () => {
+      try {
+        await bulkUpdateAdminSessions({
+          sessionIds: selectedSessionIds,
+          action: bulkAction,
+          coachId: bulkAction === "REASSIGN_COACH" ? bulkCoachId : undefined,
+          location: bulkAction === "UPDATE_LOCATION" ? bulkLocation : undefined,
+          capacity:
+            bulkAction === "UPDATE_CAPACITY"
+              ? Number(bulkCapacity)
+              : undefined,
+        });
+        setSelectedSessionIds([]);
+        router.refresh();
+      } catch (error) {
+        setErrorMessage(
+          error instanceof Error ? error.message : "Could not apply the bulk update."
+        );
+      }
+    });
+  };
+
+  const earliestHour = Math.max(
+    6,
+    Math.min(
+      22,
+      ...filteredRecords.map((record) => new Date(record.startsAt).getHours())
+    )
+  );
+  const latestHour = Math.min(
+    23,
+    Math.max(
+      earliestHour + 8,
+      ...filteredRecords.map((record) => new Date(record.endsAt).getHours() + 1)
+    )
+  );
+  const hourLabels = Array.from(
+    { length: latestHour - earliestHour + 1 },
+    (_, index) => earliestHour + index
+  );
+  const hourHeight = 72;
+
   return (
-    <div className="dashboard-stack">
+    <div className="dashboard-stack dashboard-stack--dense">
       <DashboardPageHeader
         eyebrow="Admin schedule"
         actions={
-          <button
-            type="button"
-            className="mv-btn mv-btn-primary"
-            onClick={() => {
-              setDraftState(createDefaultDraft(coachOptions[0]?.id ?? ""));
-              setErrorMessage("");
-              setIsCreateModalOpen(true);
-            }}
-          >
+          <Link href="/admin/blocks" className="mv-btn mv-btn-primary">
             <CalendarPlus2 size={16} />
             Create Block
-          </button>
+          </Link>
         }
       />
 
       <section className="dashboard-kpi-grid">
         {stats.map((stat) => (
-          <DashboardStatCard
-            key={stat.id}
-            label={stat.label}
-            value={stat.value}
-            change={stat.change}
-            detail={stat.detail}
-            note={stat.note}
-            icon={stat.icon}
-            tone={stat.tone}
-          />
+          <DashboardStatCard key={stat.id} {...stat} />
         ))}
       </section>
 
-      <section className="dashboard-panel dashboard-panel--accent">
-        <div className="dashboard-panel__header">
-          <div>
-            <span className="mv-eyebrow">Weekly board</span>
-            <h2>Session rhythm by day</h2>
-            <p>Staffing, occupancy, and timing by day.</p>
-          </div>
-
-          <div className="dashboard-segmented">
-            <button
-              type="button"
-              className={
-                view === "week"
-                  ? "dashboard-segmented__button dashboard-segmented__button--active"
-                  : "dashboard-segmented__button"
-              }
-              onClick={() => setView("week")}
-            >
-              <LayoutGrid size={14} />
-              Week board
-            </button>
-            <button
-              type="button"
-              className={
-                view === "day"
-                  ? "dashboard-segmented__button dashboard-segmented__button--active"
-                  : "dashboard-segmented__button"
-              }
-              onClick={() => setView("day")}
-            >
-              <Rows3 size={14} />
-              Focus day
-            </button>
-          </div>
-        </div>
-
+      <section className="dashboard-panel dashboard-panel--accent dashboard-panel--dense">
         <DashboardManagementToolbar
           searchValue={searchTerm}
           onSearchChange={setSearchTerm}
-          searchPlaceholder="Search by session, coach, focus, or location"
-          summary={`${filteredSessions.length} sessions matching the current view`}
+          searchPlaceholder="Search by session, coach, group, block, or location"
+          summary={`${filteredRecords.length} occurrences in the current view`}
           filters={
             <>
-              <label className="dashboard-filter-field">
-                <span>Type</span>
-                <select
-                  className="dashboard-select"
-                  value={sessionTypeFilter}
-                  onChange={(event) =>
-                    setSessionTypeFilter(
-                      event.target.value as (typeof adminScheduleSessionTypeFilters)[number]
-                    )
-                  }
-                >
-                  {adminScheduleSessionTypeFilters.map((filter) => (
-                    <option key={filter} value={filter}>
-                      {filter}
-                    </option>
-                  ))}
-                </select>
-              </label>
               <label className="dashboard-filter-field">
                 <span>Status</span>
                 <select
@@ -303,31 +294,80 @@ export function AdminScheduleWorkspace({
                   value={statusFilter}
                   onChange={(event) =>
                     setStatusFilter(
-                      event.target.value as (typeof adminScheduleStatusFilters)[number]
+                      event.target.value as AdminScheduleSessionRecord["status"] | "All"
                     )
                   }
                 >
-                  {adminScheduleStatusFilters.map((filter) => (
-                    <option key={filter} value={filter}>
-                      {filter}
+                  {["All", "Confirmed", "Waitlist", "Attention", "Completed"].map(
+                    (option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    )
+                  )}
+                </select>
+              </label>
+              <label className="dashboard-filter-field">
+                <span>Type</span>
+                <select
+                  className="dashboard-select"
+                  value={typeFilter}
+                  onChange={(event) =>
+                    setTypeFilter(
+                      event.target.value as AdminScheduleSessionRecord["sessionType"] | "All"
+                    )
+                  }
+                >
+                  {["All", "Group", "Private"].map((option) => (
+                    <option key={option} value={option}>
+                      {option}
                     </option>
                   ))}
                 </select>
               </label>
               <label className="dashboard-filter-field">
-                <span>Day</span>
+                <span>Coach</span>
                 <select
                   className="dashboard-select"
-                  value={dayFilter}
-                  onChange={(event) =>
-                    setDayFilter(
-                      event.target.value as (typeof adminScheduleDayFilters)[number]
-                    )
-                  }
+                  value={coachFilter}
+                  onChange={(event) => setCoachFilter(event.target.value)}
                 >
-                  {adminScheduleDayFilters.map((filter) => (
-                    <option key={filter} value={filter}>
-                      {filter}
+                  <option value="all">All coaches</option>
+                  {coachOptions.map((coach) => (
+                    <option key={coach.id} value={coach.id}>
+                      {coach.fullName}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="dashboard-filter-field">
+                <span>Block</span>
+                <select
+                  className="dashboard-select"
+                  value={blockFilter}
+                  onChange={(event) => setBlockFilter(event.target.value)}
+                >
+                  <option value="all">All blocks</option>
+                  <option value="manual">Manual sessions</option>
+                  {blockOptions.map((block) => (
+                    <option key={block.id} value={block.id}>
+                      {block.title}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="dashboard-filter-field">
+                <span>Group</span>
+                <select
+                  className="dashboard-select"
+                  value={groupFilter}
+                  onChange={(event) => setGroupFilter(event.target.value)}
+                >
+                  <option value="all">All groups</option>
+                  <option value="none">No linked group</option>
+                  {groupOptions.map((group) => (
+                    <option key={group.id} value={group.id}>
+                      {group.name}
                     </option>
                   ))}
                 </select>
@@ -336,298 +376,358 @@ export function AdminScheduleWorkspace({
           }
         />
 
-        <div className="dashboard-day-picker">
-          {scheduleDays.map((day) => (
-            <button
-              key={day}
-              type="button"
-              className={
-                focusedDay === day
-                  ? "dashboard-day-chip dashboard-day-chip--active"
-                  : "dashboard-day-chip"
-              }
-              onClick={() => {
-                setDayFilter(day);
-                setView("day");
-              }}
-            >
-              {day}
-            </button>
-          ))}
-        </div>
+        <div className="dashboard-schedule-grid">
+          <div className="dashboard-schedule-grid__hours">
+            {hourLabels.map((hour) => (
+              <div
+                key={hour}
+                className="dashboard-schedule-grid__hour"
+                style={{ height: `${hourHeight}px` }}
+              >
+                <span>{formatHourLabel(hour)}</span>
+              </div>
+            ))}
+          </div>
 
-        <div
-          className={
-            view === "week"
-              ? "dashboard-schedule-board"
-              : "dashboard-schedule-board dashboard-schedule-board--single"
-          }
-        >
-          {visibleDays.map((day) => {
-            const daySessions = filteredSessions.filter((session) => session.dayKey === day);
+          <div className="dashboard-schedule-grid__days">
+            {weekDays.map((day) => {
+              const dayRecords = filteredRecords.filter((record) => record.dayLabel === day);
 
-            return (
-              <section key={day} className="dashboard-schedule-day">
-                <header className="dashboard-schedule-day__header">
-                  <div>
-                    <span className="mv-eyebrow">{day}</span>
-                    <h3>{daySessions[0]?.dateLabel ?? "Upcoming"}</h3>
+              return (
+                <section key={day} className="dashboard-schedule-grid__day">
+                  <header className="dashboard-schedule-grid__day-header">
+                    <strong>{day}</strong>
+                    <span>{dayRecords.length} occurrences</span>
+                  </header>
+                  <div
+                    className="dashboard-schedule-grid__day-body"
+                    style={{ height: `${hourLabels.length * hourHeight}px` }}
+                  >
+                    {hourLabels.map((hour) => (
+                      <div
+                        key={`${day}-${hour}`}
+                        className="dashboard-schedule-grid__line"
+                        style={{ top: `${(hour - earliestHour) * hourHeight}px` }}
+                      />
+                    ))}
+
+                    {dayRecords.map((record) => {
+                      const start = new Date(record.startsAt);
+                      const end = new Date(record.endsAt);
+                      const startOffset =
+                        (start.getHours() - earliestHour) * hourHeight +
+                        (start.getMinutes() / 60) * hourHeight;
+                      const duration =
+                        (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+
+                      return (
+                        <button
+                          key={record.id}
+                          type="button"
+                          className={
+                            selectedSession?.id === record.id
+                              ? "dashboard-schedule-grid__event dashboard-schedule-grid__event--active"
+                              : "dashboard-schedule-grid__event"
+                          }
+                          style={{
+                            top: `${startOffset}px`,
+                            height: `${Math.max(duration * hourHeight, 52)}px`,
+                          }}
+                          onClick={() => setSelectedSessionId(record.id)}
+                        >
+                          <div className="dashboard-schedule-grid__event-top">
+                            <input
+                              type="checkbox"
+                              checked={selectedSessionIds.includes(record.id)}
+                              onChange={() => handleToggleSelection(record.id)}
+                              onClick={(event) => event.stopPropagation()}
+                            />
+                            <div className="dashboard-schedule-grid__event-badges">
+                              <DashboardStatusBadge
+                                label={record.sessionType}
+                                tone={getSessionTypeTone(record.sessionType)}
+                              />
+                              <DashboardStatusBadge
+                                label={record.status}
+                                tone={getScheduleTone(record.status)}
+                              />
+                            </div>
+                          </div>
+                          <strong>{record.title}</strong>
+                          <span>{record.timeRange}</span>
+                          <small>{record.coachName}</small>
+                          <small>{record.occupancyLabel}</small>
+                        </button>
+                      );
+                    })}
                   </div>
-                  <DashboardStatusBadge
-                    label={`${daySessions.length} blocks`}
-                    tone={daySessions.length > 0 ? "accent" : "neutral"}
-                  />
-                </header>
-
-                <div className="dashboard-schedule-day__list">
-                  {daySessions.length > 0 ? (
-                    daySessions.map((session) => (
-                      <button
-                        key={session.id}
-                        type="button"
-                        className={
-                          selectedSessionId === session.id
-                            ? "dashboard-schedule-session dashboard-schedule-session--active"
-                            : "dashboard-schedule-session"
-                        }
-                        onClick={() => setSelectedSessionId(session.id)}
-                      >
-                        <div className="dashboard-schedule-session__badges">
-                          <DashboardStatusBadge
-                            label={session.sessionType}
-                            tone={getSessionTypeTone(session.sessionType)}
-                          />
-                          <DashboardStatusBadge
-                            label={session.status}
-                            tone={getScheduleTone(session.status)}
-                          />
-                        </div>
-                        <div className="dashboard-schedule-session__topline">
-                          <strong>{session.title}</strong>
-                          <span>{session.timeRange}</span>
-                        </div>
-                        <p>{session.focus}</p>
-                        <div className="dashboard-schedule-session__meta">
-                          <span>{session.coachName}</span>
-                          <span>{session.location}</span>
-                          <span>{session.occupancyLabel}</span>
-                        </div>
-                        <small>{session.highlight}</small>
-                      </button>
-                    ))
-                  ) : (
-                    <div className="dashboard-empty-state">
-                      <strong>No sessions in this slice</strong>
-                      <p>Adjust the filters to bring sessions back into view.</p>
-                    </div>
-                  )}
-                </div>
-              </section>
-            );
-          })}
+                </section>
+              );
+            })}
+          </div>
         </div>
       </section>
 
-      {selectedSession ? (
-        <section className="dashboard-secondary-grid">
-          <article className="dashboard-panel">
-            <div className="dashboard-panel__header">
-              <div>
-                <span className="mv-eyebrow">Selected block</span>
-                <h2>{selectedSession.title}</h2>
-                <p>{selectedSession.highlight}</p>
-              </div>
+      <section className="dashboard-detail-layout">
+        <article className="dashboard-panel dashboard-panel--dense">
+          <div className="dashboard-panel__header dashboard-panel__header--tight">
+            <div>
+              <div className="mv-eyebrow">Occurrence detail</div>
+              <h2>{selectedSession?.title ?? "No session selected"}</h2>
+              <p>{selectedSession?.focus ?? "Pick an occurrence from the week grid."}</p>
             </div>
+            {selectedSession ? (
+              <div className="dashboard-badge-stack">
+                <DashboardStatusBadge
+                  label={selectedSession.sessionType}
+                  tone={getSessionTypeTone(selectedSession.sessionType)}
+                />
+                <DashboardStatusBadge
+                  label={selectedSession.status}
+                  tone={getScheduleTone(selectedSession.status)}
+                />
+                {selectedSession.waitlistCount > 0 ? (
+                  <DashboardStatusBadge label="Waitlist forming" tone="warning" />
+                ) : null}
+              </div>
+            ) : null}
+          </div>
 
-            <div className="dashboard-detail-grid">
-              <div className="dashboard-detail-stat">
-                <span className="dashboard-detail-stat__label">Coach</span>
-                <strong>{selectedSession.coachName}</strong>
-              </div>
-              <div className="dashboard-detail-stat">
-                <span className="dashboard-detail-stat__label">Timing</span>
-                <strong>{selectedSession.timeRange}</strong>
-              </div>
-              <div className="dashboard-detail-stat">
-                <span className="dashboard-detail-stat__label">Location</span>
-                <strong>{selectedSession.location}</strong>
-              </div>
-              <div className="dashboard-detail-stat">
-                <span className="dashboard-detail-stat__label">Occupancy</span>
-                <strong>{selectedSession.occupancyLabel}</strong>
-              </div>
+          {errorMessage ? (
+            <div className="dashboard-empty-state" role="alert">
+              <strong>Action blocked</strong>
+              <p>{errorMessage}</p>
             </div>
+          ) : null}
 
-            <div className="dashboard-contact-block">
-              <span className="dashboard-detail-stat__label">Admin note</span>
-              <p>{selectedSession.focus}</p>
-              <p>{selectedSession.attendanceNote}</p>
+          {selectedSession ? (
+            <>
+              <div className="dashboard-detail-grid">
+                <div className="dashboard-detail-stat">
+                  <span className="dashboard-detail-stat__label">Block</span>
+                  <strong>{selectedSession.scheduleBlockTitle}</strong>
+                  <small>{selectedSession.highlight}</small>
+                </div>
+                <div className="dashboard-detail-stat">
+                  <span className="dashboard-detail-stat__label">Group</span>
+                  <strong>{selectedSession.groupName}</strong>
+                  <small>{selectedSession.rosterCount} rostered</small>
+                </div>
+                <div className="dashboard-detail-stat">
+                  <span className="dashboard-detail-stat__label">Coach</span>
+                  <strong>{selectedSession.coachName}</strong>
+                  <small>{selectedSession.location}</small>
+                </div>
+                <div className="dashboard-detail-stat">
+                  <span className="dashboard-detail-stat__label">Occupancy</span>
+                  <strong>{selectedSession.occupancyLabel}</strong>
+                  <small>
+                    {selectedSession.bookedCount} booked · {selectedSession.waitlistCount} waitlist
+                  </small>
+                </div>
+              </div>
+
+              <div className="dashboard-form-section">
+                <div className="dashboard-form-section__header">
+                  <div>
+                    <div className="mv-eyebrow">This occurrence only</div>
+                    <h3>Quick actions</h3>
+                    <p>Changes here apply to this single occurrence, not the series.</p>
+                  </div>
+                </div>
+
+                <div className="dashboard-form-grid">
+                  <label className="dashboard-form-field">
+                    <span>Replace coach</span>
+                    <select
+                      className="dashboard-select"
+                      value={occurrenceCoachId}
+                      onChange={(event) => setOccurrenceCoachId(event.target.value)}
+                      disabled={isMutating}
+                    >
+                      {coachOptions.map((coach) => (
+                        <option key={coach.id} value={coach.id}>
+                          {coach.fullName}
+                          {coach.id === selectedSession.coachId ? " (current)" : ""}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+
+                <div className="dashboard-row-actions">
+                  <button
+                    type="button"
+                    className="mv-btn mv-btn-secondary"
+                    onClick={() => handleReassignOccurrenceCoach(selectedSession)}
+                    disabled={isMutating || occurrenceCoachId === selectedSession.coachId}
+                  >
+                    <RefreshCw size={16} />
+                    {isMutating ? "Saving..." : "Reassign coach"}
+                  </button>
+                  {selectedSession.status !== "Completed" ? (
+                    <button
+                      type="button"
+                      className="mv-btn mv-btn-danger"
+                      onClick={() => handleCancelOccurrence(selectedSession.id)}
+                      disabled={isMutating}
+                    >
+                      <XCircle size={16} />
+                      Cancel occurrence
+                    </button>
+                  ) : null}
+                  {selectedSession.scheduleBlockId ? (
+                    <Link
+                      href="/admin/blocks"
+                      className="mv-btn mv-btn-outline"
+                    >
+                      Open parent block
+                    </Link>
+                  ) : null}
+                </div>
+              </div>
+
+              <div className="dashboard-contact-block">
+                <span className="dashboard-detail-stat__label">Admin note</span>
+                <p>{selectedSession.attendanceNote}</p>
+              </div>
+
+              {selectedBlockSessions.length > 1 ? (
+                <div className="dashboard-summary-list">
+                  <div className="dashboard-summary-row">
+                    <strong>Linked block occurrences</strong>
+                    <span>Next occurrences from the same recurring block.</span>
+                  </div>
+                  {selectedBlockSessions.map((record) => (
+                    <div key={record.id} className="dashboard-summary-row">
+                      <strong>
+                        {record.dateLabel} · {record.timeRange}
+                      </strong>
+                      <span>
+                        {record.occupancyLabel} · {record.coachName}
+                      </span>
+                      <DashboardStatusBadge
+                        label={record.status}
+                        tone={getScheduleTone(record.status)}
+                      />
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </>
+          ) : (
+            <DashboardEmptyState
+              title="No occurrence available"
+              description="Adjust the filters or create a block to populate the board."
+            />
+          )}
+        </article>
+
+        <aside className="dashboard-panel dashboard-detail-panel dashboard-panel--dense">
+          <div className="dashboard-panel__header dashboard-panel__header--tight">
+            <div>
+              <div className="mv-eyebrow">Bulk actions</div>
+              <h2>{selectedSessionIds.length} selected</h2>
+              <p>Apply one operational change across multiple occurrences at once.</p>
             </div>
-          </article>
-        </section>
-      ) : null}
+          </div>
 
-      <DashboardModal
-        open={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-        title="Create schedule block"
-        description="This saves a real session to the database."
-        footer={
-          <>
-            <button
-              type="button"
-              className="mv-btn mv-btn-outline"
-              onClick={() => setIsCreateModalOpen(false)}
-              disabled={isSaving}
-            >
-              Cancel
-            </button>
+          {errorMessage ? (
+            <div className="dashboard-empty-state" role="alert">
+              <strong>Bulk update blocked</strong>
+              <p>{errorMessage}</p>
+            </div>
+          ) : null}
+
+          <div className="dashboard-form-grid">
+            <label className="dashboard-form-field">
+              <span>Action</span>
+              <select
+                className="dashboard-select"
+                value={bulkAction}
+                onChange={(event) => setBulkAction(event.target.value as BulkAction)}
+              >
+                <option value="CANCEL">Cancel selected</option>
+                <option value="REASSIGN_COACH">Replace coach</option>
+                <option value="UPDATE_LOCATION">Change location</option>
+                <option value="UPDATE_CAPACITY">Change capacity</option>
+              </select>
+            </label>
+
+            {bulkAction === "REASSIGN_COACH" ? (
+              <label className="dashboard-form-field">
+                <span>Coach</span>
+                <select
+                  className="dashboard-select"
+                  value={bulkCoachId}
+                  onChange={(event) => setBulkCoachId(event.target.value)}
+                >
+                  {coachOptions.map((coach) => (
+                    <option key={coach.id} value={coach.id}>
+                      {coach.fullName}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
+
+            {bulkAction === "UPDATE_LOCATION" ? (
+              <label className="dashboard-form-field">
+                <span>Location</span>
+                <input
+                  className="dashboard-input"
+                  value={bulkLocation}
+                  onChange={(event) => setBulkLocation(event.target.value)}
+                />
+              </label>
+            ) : null}
+
+            {bulkAction === "UPDATE_CAPACITY" ? (
+              <label className="dashboard-form-field">
+                <span>Capacity</span>
+                <input
+                  type="number"
+                  min={1}
+                  className="dashboard-input"
+                  value={bulkCapacity}
+                  onChange={(event) => setBulkCapacity(event.target.value)}
+                />
+              </label>
+            ) : null}
+          </div>
+
+          <div className="dashboard-row-actions">
             <button
               type="button"
               className="mv-btn mv-btn-primary"
-              onClick={handleCreateSession}
-              disabled={isSaving}
+              onClick={handleApplyBulkAction}
+              disabled={isSaving || selectedSessionIds.length === 0}
             >
-              {isSaving ? "Saving..." : "Save block"}
+              {isSaving ? "Applying..." : "Apply bulk action"}
             </button>
-          </>
-        }
-      >
-        {errorMessage ? (
-          <div className="dashboard-empty-state" role="alert">
-            <strong>Could not create session</strong>
-            <p>{errorMessage}</p>
           </div>
-        ) : null}
-        <div className="dashboard-form-grid">
-          <label className="dashboard-form-field">
-            <span>Title</span>
-            <input
-              className="dashboard-input"
-              value={draftState.title}
-              onChange={(event) =>
-                setDraftState((current) => ({
-                  ...current,
-                  title: event.target.value,
-                }))
-              }
+
+          {selectedSessionIds.length > 0 ? (
+            <div className="dashboard-summary-list">
+              {filteredRecords
+                .filter((record) => selectedSessionIds.includes(record.id))
+                .map((record) => (
+                  <div key={record.id} className="dashboard-summary-row">
+                    <strong>{record.title}</strong>
+                    <span>
+                      {record.dateLabel} · {record.timeRange} · {record.coachName}
+                    </span>
+                  </div>
+                ))}
+            </div>
+          ) : (
+            <DashboardEmptyState
+              title="No occurrences selected"
+              description="Use the checkboxes on the week grid to build a bulk edit set."
             />
-          </label>
-          <label className="dashboard-form-field">
-            <span>Session type</span>
-            <SessionTypePicker
-              value={draftState.sessionType}
-              onChange={(nextType) =>
-                setDraftState((current) => ({
-                  ...current,
-                  sessionType: nextType,
-                  capacity: nextType === "PRIVATE" ? "1" : current.capacity || "12",
-                }))
-              }
-            />
-          </label>
-          <label className="dashboard-form-field">
-            <span>Status</span>
-            <select
-              className="dashboard-select"
-              value={draftState.status}
-              onChange={(event) =>
-                setDraftState((current) => ({
-                  ...current,
-                  status: event.target.value as "SCHEDULED" | "DRAFT",
-                }))
-              }
-            >
-              <option value="SCHEDULED">Scheduled</option>
-              <option value="DRAFT">Draft</option>
-            </select>
-          </label>
-          <label className="dashboard-form-field">
-            <span>Starts at</span>
-            <input
-              type="datetime-local"
-              className="dashboard-input"
-              value={draftState.startsAt}
-              onChange={(event) =>
-                setDraftState((current) => ({
-                  ...current,
-                  startsAt: event.target.value,
-                }))
-              }
-            />
-          </label>
-          <label className="dashboard-form-field">
-            <span>Ends at</span>
-            <input
-              type="datetime-local"
-              className="dashboard-input"
-              value={draftState.endsAt}
-              onChange={(event) =>
-                setDraftState((current) => ({
-                  ...current,
-                  endsAt: event.target.value,
-                }))
-              }
-            />
-          </label>
-          <div className="dashboard-form-field dashboard-form-field--wide">
-            <span>Coach</span>
-            <CoachOptionPicker
-              value={draftState.coachId}
-              onChange={(coachId) =>
-                setDraftState((current) => ({
-                  ...current,
-                  coachId,
-                }))
-              }
-              options={coachOptions}
-            />
-          </div>
-          <label className="dashboard-form-field">
-            <span>Location</span>
-            <input
-              className="dashboard-input"
-              value={draftState.location}
-              onChange={(event) =>
-                setDraftState((current) => ({
-                  ...current,
-                  location: event.target.value,
-                }))
-              }
-            />
-          </label>
-          <label className="dashboard-form-field">
-            <span>Capacity</span>
-            <input
-              type="number"
-              min={1}
-              max={draftState.sessionType === "PRIVATE" ? 1 : 100}
-              disabled={draftState.sessionType === "PRIVATE"}
-              className="dashboard-input"
-              value={draftState.sessionType === "PRIVATE" ? "1" : draftState.capacity}
-              onChange={(event) =>
-                setDraftState((current) => ({
-                  ...current,
-                  capacity: event.target.value,
-                }))
-              }
-            />
-          </label>
-          <label className="dashboard-form-field">
-            <span>Description</span>
-            <input
-              className="dashboard-input"
-              value={draftState.description}
-              onChange={(event) =>
-                setDraftState((current) => ({
-                  ...current,
-                  description: event.target.value,
-                }))
-              }
-            />
-          </label>
-        </div>
-      </DashboardModal>
+          )}
+        </aside>
+      </section>
     </div>
   );
 }

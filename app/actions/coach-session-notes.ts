@@ -20,11 +20,7 @@ function revalidateSessionNoteViews() {
   revalidatePath("/coach");
   revalidatePath("/coach/sessions");
   revalidatePath("/coach/schedule");
-  revalidatePath("/client");
-  revalidatePath("/client/coach");
-  revalidatePath("/client/sessions");
   revalidatePath("/admin");
-  revalidatePath("/admin/clients");
   revalidatePath("/admin/sessions");
   revalidatePath("/admin/schedule");
 }

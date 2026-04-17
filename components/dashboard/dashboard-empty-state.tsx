@@ -1,3 +1,5 @@
+import { EmptyState } from "@/components/ui/empty-state";
+
 type DashboardEmptyStateProps = {
   title: string;
   description: string;
@@ -9,11 +11,5 @@ export function DashboardEmptyState({
   description,
   action,
 }: DashboardEmptyStateProps) {
-  return (
-    <div className="dashboard-empty-state" role="status" aria-live="polite">
-      <strong>{title}</strong>
-      <p>{description}</p>
-      {action ? <div className="dashboard-empty-state__action">{action}</div> : null}
-    </div>
-  );
+  return <EmptyState title={title} description={description} action={action} />;
 }

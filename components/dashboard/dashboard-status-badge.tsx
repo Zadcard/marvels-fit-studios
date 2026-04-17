@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils";
+import { StatusPill } from "@/components/ui/status-pill";
 
 type DashboardStatusBadgeProps = {
   label: string;
@@ -9,16 +9,5 @@ export function DashboardStatusBadge({
   label,
   tone = "neutral",
 }: DashboardStatusBadgeProps) {
-  return (
-    <span
-      className={cn(
-        "dashboard-badge",
-        tone === "accent" && "dashboard-badge--accent",
-        tone === "success" && "dashboard-badge--success",
-        tone === "warning" && "dashboard-badge--warning"
-      )}
-    >
-      {label}
-    </span>
-  );
+  return <StatusPill tone={tone}>{label}</StatusPill>;
 }

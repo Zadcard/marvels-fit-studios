@@ -22,10 +22,67 @@ function getSessionTone(status: ClientSessionStatus) {
   switch (status) {
     case "Check-in ready":
       return "success";
+    case "You attended":
+      return "success";
+    case "You missed":
+      return "warning";
     case "Booked":
+    case "Waitlist":
       return "accent";
     default:
       return "neutral";
+  }
+}
+
+function getStatusCopy(status: ClientSessionStatus) {
+  switch (status) {
+    case "You attended":
+      return "Admin recorded this booking as attended.";
+    case "You missed":
+      return "Admin recorded this booking as missed.";
+    case "Cancelled":
+      return "This booking was canceled and will not count toward attendance.";
+    case "Waitlist":
+      return "You are currently on the waitlist for this session.";
+    case "Check-in ready":
+      return "This booking is coming up soon and is ready for check-in.";
+    default:
+      return "Booking and attendance updates appear here.";
+  }
+}
+
+function getDetailStatusLabel(status: ClientSessionStatus) {
+  switch (status) {
+    case "You attended":
+    case "You missed":
+      return "Attendance outcome";
+    case "Cancelled":
+      return "Booking status";
+    default:
+      return "Current session status";
+  }
+}
+
+function getStatusSummaryLabel(status: ClientSessionStatus) {
+  switch (status) {
+    case "You attended":
+    case "You missed":
+      return "Attendance recorded";
+    case "Cancelled":
+      return "Booking update";
+    default:
+      return "Session note";
+  }
+}
+
+function getStatusSummaryCopy(status: ClientSessionStatus) {
+  switch (status) {
+    case "You attended":
+      return "You attended this session.";
+    case "You missed":
+      return "You missed this session.";
+    default:
+      return getStatusCopy(status);
   }
 }
 
@@ -190,6 +247,10 @@ export function ClientSessionsWorkspace({ records }: ClientSessionsWorkspaceProp
                     <span>{session.location}</span>
                   </div>
                   <p className="dashboard-record-card__note">{session.note}</p>
+                  <div className="dashboard-info-strip">
+                    <strong>{getStatusSummaryLabel(session.status)}</strong>
+                    <p>{getStatusSummaryCopy(session.status)}</p>
+                  </div>
                   <div className="dashboard-row-actions">
                     <button
                       type="button"
@@ -245,9 +306,11 @@ export function ClientSessionsWorkspace({ records }: ClientSessionsWorkspaceProp
                   <small>{selectedSession.period}</small>
                 </div>
                 <div className="dashboard-detail-stat">
-                  <span className="dashboard-detail-stat__label">Status</span>
+                  <span className="dashboard-detail-stat__label">
+                    {getDetailStatusLabel(selectedSession.status)}
+                  </span>
                   <strong>{selectedSession.status}</strong>
-                  <small>Current session status</small>
+                  <small>{getStatusCopy(selectedSession.status)}</small>
                 </div>
                 <div className="dashboard-detail-stat">
                   <span className="dashboard-detail-stat__label">Location</span>
@@ -262,8 +325,8 @@ export function ClientSessionsWorkspace({ records }: ClientSessionsWorkspaceProp
               </div>
 
               <div className="dashboard-info-strip">
-                <strong>Session note</strong>
-                <p>Booking and attendance updates appear here.</p>
+                <strong>{getStatusSummaryLabel(selectedSession.status)}</strong>
+                <p>{getStatusSummaryCopy(selectedSession.status)}</p>
               </div>
             </>
           ) : (

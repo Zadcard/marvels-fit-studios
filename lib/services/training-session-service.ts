@@ -8,6 +8,7 @@ import {
 
 import { getPrisma } from "@/lib/prisma";
 import type {
+  BulkUpdateTrainingSessionsInput,
   CancelTrainingSessionInput,
   CreateTrainingSessionInput,
   DeleteTrainingSessionInput,
@@ -212,5 +213,160 @@ export async function deleteTrainingSession(input: DeleteTrainingSessionInput) {
     select: {
       id: true,
     },
+  });
+}
+
+export async function bulkUpdateTrainingSessions(
+  input: BulkUpdateTrainingSessionsInput
+) {
+  const prisma = getPrisma();
+
+  const sessions = await prisma.trainingSession.findMany({
+    where: {
+      id: {
+        in: input.sessionIds,
+      },
+    },
+    select: {
+      id: true,
+      type: true,
+      status: true,
+      startsAt: true,
+      endsAt: true,
+      bookings: {
+        where: {
+          status: {
+            in: [BookingStatus.BOOKED, BookingStatus.ATTENDED, BookingStatus.WAITLIST],
+          },
+        },
+        select: {
+          id: true,
+        },
+      },
+    },
+  });
+
+  if (sessions.length !== input.sessionIds.length) {
+    throw new Error("One or more selected sessions were not found.");
+  }
+
+  if (input.action === "REASSIGN_COACH" && input.coachId) {
+    await ensureCoachExists(input.coachId);
+
+    const overlapping = await prisma.trainingSession.findMany({
+      where: {
+        coachId: input.coachId,
+        status: {
+          in: [TrainingSessionStatus.DRAFT, TrainingSessionStatus.SCHEDULED],
+        },
+        id: {
+          notIn: input.sessionIds,
+        },
+        OR: sessions.map((session) => ({
+          startsAt: {
+            lt: session.endsAt,
+          },
+          endsAt: {
+            gt: session.startsAt,
+          },
+        })),
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (overlapping.length > 0) {
+      throw new Error("Selected coach has overlapping sessions in this bulk selection.");
+    }
+  }
+
+  if (input.action === "UPDATE_CAPACITY" && input.capacity != null) {
+    for (const session of sessions) {
+      if (session.type === TrainingSessionType.PRIVATE) {
+        continue;
+      }
+
+      if (session.bookings.length > input.capacity) {
+        throw new Error("Capacity cannot be lower than the current active roster.");
+      }
+    }
+  }
+
+  return prisma.$transaction(async (tx) => {
+    if (input.action === "CANCEL") {
+      await tx.sessionBooking.updateMany({
+        where: {
+          trainingSessionId: {
+            in: input.sessionIds,
+          },
+          status: {
+            in: [BookingStatus.BOOKED, BookingStatus.ATTENDED, BookingStatus.WAITLIST],
+          },
+        },
+        data: {
+          status: BookingStatus.CANCELED,
+          canceledAt: new Date(),
+        },
+      });
+
+      return tx.trainingSession.updateMany({
+        where: {
+          id: {
+            in: input.sessionIds,
+          },
+        },
+        data: {
+          status: TrainingSessionStatus.CANCELED,
+        },
+      });
+    }
+
+    if (input.action === "REASSIGN_COACH" && input.coachId) {
+      return tx.trainingSession.updateMany({
+        where: {
+          id: {
+            in: input.sessionIds,
+          },
+        },
+        data: {
+          coachId: input.coachId,
+        },
+      });
+    }
+
+    if (input.action === "UPDATE_LOCATION" && input.location) {
+      return tx.trainingSession.updateMany({
+        where: {
+          id: {
+            in: input.sessionIds,
+          },
+        },
+        data: {
+          location: normalizeOptionalString(input.location),
+        },
+      });
+    }
+
+    if (input.action === "UPDATE_CAPACITY" && input.capacity != null) {
+      for (const session of sessions) {
+        if (session.type === TrainingSessionType.PRIVATE) {
+          continue;
+        }
+
+        await tx.trainingSession.update({
+          where: {
+            id: session.id,
+          },
+          data: {
+            capacity: input.capacity,
+          },
+        });
+      }
+
+      return { count: sessions.length };
+    }
+
+    throw new Error("Bulk action is incomplete.");
   });
 }

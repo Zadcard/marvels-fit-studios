@@ -6,6 +6,11 @@ import { revalidatePath } from "next/cache";
 
 import { requireRole } from "@/lib/auth/session";
 import { getPrisma } from "@/lib/prisma";
+import {
+  addClientToScheduleBlock,
+  moveClientBetweenScheduleBlocks,
+  removeClientFromScheduleBlock,
+} from "@/lib/services/schedule-block-service";
 
 type SaveAdminClientInput = {
   clientId?: string | null;
@@ -16,6 +21,8 @@ type SaveAdminClientInput = {
   status: "Active" | "Pending" | "Paused";
   paymentStatus: "Paid" | "Unpaid" | "Due soon";
   paymentAmount?: string;
+  groupId?: string;
+  blockId?: string;
 };
 
 type DeleteAdminClientInput = {
@@ -90,6 +97,8 @@ export async function saveAdminClient(input: SaveAdminClientInput) {
   const status = toClientStatus(input.status);
   const paymentStatus = toPaymentStatus(input.paymentStatus);
   const amount = parseAmount(input.paymentAmount);
+  const groupId = input.groupId?.trim() || null;
+  const targetBlockId = input.blockId?.trim() || null;
 
   if (!fullName) {
     throw new Error("Client full name is required.");
@@ -154,6 +163,7 @@ export async function saveAdminClient(input: SaveAdminClientInput) {
         data: {
           fullName,
           phone,
+          groupId,
           isPaid: paymentStatus === "PAID",
           paymentStatus,
           status,
@@ -205,6 +215,7 @@ export async function saveAdminClient(input: SaveAdminClientInput) {
         data: {
           fullName,
           phone,
+          groupId,
           status,
           isPaid: paymentStatus === "PAID",
           paymentStatus,
@@ -232,9 +243,56 @@ export async function saveAdminClient(input: SaveAdminClientInput) {
     });
   }
 
+  const updatedClient = await prisma.client.findFirst({
+    where: {
+      user: {
+        email,
+      },
+    },
+    select: {
+      id: true,
+      scheduleBlocks: {
+        take: 1,
+        select: {
+          scheduleBlockId: true,
+        },
+      },
+    },
+  });
+
+  if (!updatedClient) {
+    throw new Error("Client record could not be resolved after save.");
+  }
+
+  const currentBlockId = updatedClient.scheduleBlocks[0]?.scheduleBlockId ?? null;
+
+  if (currentBlockId && !targetBlockId) {
+    await removeClientFromScheduleBlock({
+      blockId: currentBlockId,
+      clientId: updatedClient.id,
+    });
+  } else if (!currentBlockId && targetBlockId) {
+    await addClientToScheduleBlock({
+      blockId: targetBlockId,
+      clientId: updatedClient.id,
+    });
+  } else if (
+    currentBlockId &&
+    targetBlockId &&
+    currentBlockId !== targetBlockId
+  ) {
+    await moveClientBetweenScheduleBlocks({
+      fromBlockId: currentBlockId,
+      toBlockId: targetBlockId,
+      clientId: updatedClient.id,
+    });
+  }
+
   revalidatePath("/admin");
   revalidatePath("/admin/clients");
+  revalidatePath("/admin/blocks");
   revalidatePath("/admin/subscriptions");
+  revalidatePath("/admin/schedule");
 }
 
 export async function deleteAdminClient(input: DeleteAdminClientInput) {
@@ -299,6 +357,7 @@ export async function deleteAdminClient(input: DeleteAdminClientInput) {
   revalidatePath("/admin");
   revalidatePath("/admin/clients");
   revalidatePath("/admin/subscriptions");
+  revalidatePath("/admin/schedule");
   revalidatePath("/coach/clients");
   revalidatePath("/coach/sessions");
   revalidatePath("/client");

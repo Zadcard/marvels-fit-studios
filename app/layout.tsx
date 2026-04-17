@@ -9,10 +9,10 @@ const appUrl = process.env.APP_URL ?? "http://localhost:3000";
 
 export const metadata: Metadata = {
   title: {
-    default: "Marvel's Studios",
-    template: "%s | Marvel's Studios",
+    default: "Marvel's Fit Studios",
+    template: "%s | Marvel's Fit Studios",
   },
-  description: "Marvel's Studios website and member portals.",
+  description: "Marvel's Fit Studios website and member portals.",
   metadataBase: new URL(appUrl),
 };
 

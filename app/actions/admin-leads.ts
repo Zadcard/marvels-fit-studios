@@ -14,6 +14,7 @@ export async function approveLeadAsClient(leadId: string) {
   });
 
   revalidatePath("/admin/leads");
+  revalidatePath("/admin/join-requests");
   revalidatePath("/admin/clients");
 
   return summary;

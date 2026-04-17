@@ -8,7 +8,6 @@ import {
   assignCoachClientToSession,
   removeCoachClientFromSession,
 } from "@/app/actions/coach-session-bookings";
-import { updateCoachAttendance } from "@/app/actions/coach-attendance";
 import { saveCoachSessionNote } from "@/app/actions/coach-session-notes";
 import { DashboardManagementToolbar } from "@/components/dashboard/dashboard-management-toolbar";
 import { DashboardEmptyState } from "@/components/dashboard/dashboard-empty-state";
@@ -68,7 +67,6 @@ export function CoachSessionsWorkspace({
   clientOptions,
 }: CoachSessionsWorkspaceProps) {
   const router = useRouter();
-  const [isUpdatingAttendance, startAttendanceTransition] = useTransition();
   const [isManagingRoster, startRosterTransition] = useTransition();
   const [isSavingNote, startNoteTransition] = useTransition();
   const [searchTerm, setSearchTerm] = useState("");
@@ -159,32 +157,6 @@ export function CoachSessionsWorkspace({
     });
   };
 
-  const handleAttendanceUpdate = (
-    trainingSessionId: string,
-    clientId: string,
-    status: "ATTENDED" | "MISSED"
-  ) => {
-    setFeedbackMessage("");
-
-    startAttendanceTransition(async () => {
-      try {
-        await updateCoachAttendance(trainingSessionId, clientId, status);
-        setFeedbackMessage(
-          status === "ATTENDED"
-            ? "Attendance marked successfully."
-            : "Client marked as missed."
-        );
-        router.refresh();
-      } catch (error) {
-        setFeedbackMessage(
-          error instanceof Error
-            ? error.message
-            : "Attendance update did not complete."
-        );
-      }
-    });
-  };
-
   const handleAssignClient = () => {
     if (!selectedSession || !resolvedSelectedClientId) {
       return;
@@ -253,7 +225,7 @@ export function CoachSessionsWorkspace({
       <DashboardSurfaceNote
         eyebrow="Sessions"
         title="Track the sessions you are responsible for."
-        description="Filter the list, open a session, and update attendance from the roster."
+        description="Filter the list, open a session, and keep the roster current while admin records attendance."
         items={[`${readySessions} ready sessions.`, `${groupSessions} group sessions.`]}
       />
 
@@ -324,7 +296,7 @@ export function CoachSessionsWorkspace({
 
           {feedbackMessage ? (
             <div className="dashboard-info-strip">
-              <strong>Attendance update</strong>
+              <strong>Session update</strong>
               <p>{feedbackMessage}</p>
             </div>
           ) : null}
@@ -576,67 +548,43 @@ export function CoachSessionsWorkspace({
                     <div>
                       <div className="mv-eyebrow">Attendance</div>
                       <h2>Session roster</h2>
-                      <p>Mark each booked client as attended or missed.</p>
+                      <p>Attendance is recorded by admin. Coaches can review status here.</p>
                     </div>
                   </div>
 
                   {selectedSession.bookings.length > 0 ? (
-                    <div className="dashboard-mobile-list">
-                      {selectedSession.bookings.map((booking) => (
-                        <article key={booking.clientId} className="dashboard-record-card">
-                          <div className="dashboard-record-card__header">
-                            <div>
-                              <h3>{booking.fullName}</h3>
-                              <p>Session participant</p>
+                    <>
+                      <div className="dashboard-selection-summary">
+                        <strong>Attendance recorded by admin</strong>
+                        <p>Roster status is visible here after the front desk updates it.</p>
+                      </div>
+                      <div className="dashboard-mobile-list">
+                        {selectedSession.bookings.map((booking) => (
+                          <article key={booking.clientId} className="dashboard-record-card">
+                            <div className="dashboard-record-card__header">
+                              <div>
+                                <h3>{booking.fullName}</h3>
+                                <p>Session participant</p>
+                              </div>
+                              <DashboardStatusBadge
+                                label={booking.status}
+                                tone={getBookingTone(booking.status)}
+                              />
                             </div>
-                            <DashboardStatusBadge
-                              label={booking.status}
-                              tone={getBookingTone(booking.status)}
-                            />
-                          </div>
-                          <div className="dashboard-row-actions">
-                            <button
-                              type="button"
-                              className="dashboard-inline-button"
-                              onClick={() =>
-                                handleAttendanceUpdate(
-                                  selectedSession.id,
-                                  booking.clientId,
-                                  "ATTENDED"
-                                )
-                              }
-                              disabled={
-                                isUpdatingAttendance || booking.status === "Attended"
-                              }
-                            >
-                              Mark attended
-                            </button>
-                            <button
-                              type="button"
-                              className="dashboard-inline-button"
-                              onClick={() =>
-                                handleAttendanceUpdate(
-                                  selectedSession.id,
-                                  booking.clientId,
-                                  "MISSED"
-                                )
-                              }
-                              disabled={isUpdatingAttendance || booking.status === "Missed"}
-                            >
-                              Mark missed
-                            </button>
-                            <button
-                              type="button"
-                              className="dashboard-inline-button"
-                              onClick={() => handleRemoveClient(booking.clientId)}
-                              disabled={isManagingRoster}
-                            >
-                              Unassign
-                            </button>
-                          </div>
-                        </article>
-                      ))}
-                    </div>
+                            <div className="dashboard-row-actions">
+                              <button
+                                type="button"
+                                className="dashboard-inline-button"
+                                onClick={() => handleRemoveClient(booking.clientId)}
+                                disabled={isManagingRoster}
+                              >
+                                Unassign
+                              </button>
+                            </div>
+                          </article>
+                        ))}
+                      </div>
+                    </>
                   ) : (
                     <DashboardEmptyState
                       title="No active bookings yet"

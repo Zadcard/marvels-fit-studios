@@ -13,7 +13,11 @@
       "Bash(cmd.exe:*)",
       "Bash(powershell.exe:*)",
       "Bash(git check-ignore:*)",
-      "Bash(python3 .claude/skills/ui-ux-pro-max/scripts/search.py \"fitness studio dashboard dark premium\" --design-system -f markdown)"
+      "Bash(python3 .claude/skills/ui-ux-pro-max/scripts/search.py \"fitness studio dashboard dark premium\" --design-system -f markdown)",
+      "Bash(npx tsc:*)",
+      "Bash(npx next:*)",
+      "Bash(git stash:*)",
+      "Bash(npx prisma:*)"
     ]
   }
 }

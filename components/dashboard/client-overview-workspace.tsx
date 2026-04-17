@@ -44,7 +44,7 @@ export function ClientOverviewWorkspace({ data }: ClientOverviewWorkspaceProps) 
 
       <DashboardSurfaceNote
         eyebrow="Overview"
-        title="Your next sessions, coach updates, and plan status stay in one place."
+        title="Your next sessions, coach details, and plan status stay in one place."
         description="Use this page as a quick read before you open details."
         items={[
           `${bookedThisWeek} upcoming sessions in view.`,
@@ -147,7 +147,7 @@ export function ClientOverviewWorkspace({ data }: ClientOverviewWorkspaceProps) 
               <span>{data.coachSnapshot.nextTouchpoint}</span>
             </div>
             <div className="dashboard-summary-row">
-              <strong>Coach note</strong>
+              <strong>Support summary</strong>
               <span>{data.coachSnapshot.note}</span>
             </div>
           </div>

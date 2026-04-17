@@ -1,12 +1,9 @@
-import { AdminLeadsWorkspace } from "@/components/dashboard/admin-leads-workspace";
-import { adminLeadRepository } from "@/lib/repositories/admin-lead-repository";
+import { redirect } from "next/navigation";
 
 export const metadata = {
-  title: "Leads Management",
+  title: "Redirecting to Join Requests",
 };
 
 export default async function AdminLeadsPage() {
-  const records = await adminLeadRepository.list();
-
-  return <AdminLeadsWorkspace records={records} />;
+  redirect("/admin/join-requests");
 }

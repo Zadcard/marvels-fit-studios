@@ -14,19 +14,19 @@ import "./landing.css";
 
 export const metadata: Metadata = {
   title: {
-    absolute: "Marvel's Studios | Premium Performance Training in Giza",
+    absolute: "Marvel's Fit Studios | Premium Performance Training in Giza",
   },
   description:
-    "Marvel's Studios is a premium performance training studio in Giza, Egypt with group training, private coaching, expert trainers, and a structured membership experience.",
+    "Marvel's Fit Studios is a premium performance training studio in Giza, Egypt with group training, private coaching, expert trainers, and a structured membership experience.",
   openGraph: {
-    title: "Marvel's Studios | Premium Performance Training in Giza",
+    title: "Marvel's Fit Studios | Premium Performance Training in Giza",
     description:
       "Join a structured, premium training experience with expert coaches, private support, and measurable progress.",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Marvel's Studios | Premium Performance Training in Giza",
+    title: "Marvel's Fit Studios | Premium Performance Training in Giza",
     description:
       "Group training, private coaching, and a premium membership experience designed for real progress.",
   },
@@ -58,7 +58,7 @@ export default function LandingPage() {
                   {" "}and clear progress.
                 </h1>
                 <p className="hero-text">
-                  Marvel&apos;s Studios gives beginners and committed athletes a
+                  Marvel&apos;s Fit Studios gives beginners and committed athletes a
                   premium training experience built around clarity and results.
                 </p>
                 <div className="hero-actions">
@@ -87,7 +87,7 @@ export default function LandingPage() {
                 A membership built around coaching quality.
               </h2>
               <p>
-                Marvel&apos;s Studios was built to make training feel more
+                Marvel&apos;s Fit Studios was built to make training feel more
                 organized, more personal, and easier to trust.
               </p>
             </div>
@@ -102,11 +102,11 @@ export default function LandingPage() {
 
               <aside
                 className="panel logo-panel"
-                aria-label="Marvel's Studios mark"
+                aria-label="Marvel's Fit Studios mark"
               >
                 <img
                   src="/img/Logo-3.png"
-                  alt="Marvel's Studios brand mark"
+                  alt="Marvel's Fit Studios brand mark"
                   width="2000"
                   height="985"
                   sizes="(max-width: 640px) 180px, (max-width: 1024px) 220px, 260px"

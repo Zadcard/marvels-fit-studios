@@ -162,6 +162,63 @@ async function main() {
   });
   console.log("Client subscription created for client@test.com");
 
+  const scheduleBlock = await prisma.scheduleBlock.upsert({
+    where: { id: "seed-block-strength-foundations" },
+    update: {
+      title: "Strength Foundations",
+      description: "Recurring intro block for new members to learn the weekly movement pattern.",
+      sessionType: "GROUP",
+      status: "ACTIVE",
+      recurrenceType: "WEEKLY",
+      recurrenceDays: ["SUNDAY", "TUESDAY", "THURSDAY"],
+      startsOn: new Date("2026-04-01T00:00:00.000Z"),
+      endsOn: new Date("2026-05-01T00:00:00.000Z"),
+      startTime: "18:00",
+      endTime: "19:00",
+      timezone: "Africa/Cairo",
+      capacity: 12,
+      location: "Main Floor",
+      coachId: coach.id,
+      groupId: group.id,
+      createdById: coachUser.id,
+    },
+    create: {
+      id: "seed-block-strength-foundations",
+      title: "Strength Foundations",
+      description: "Recurring intro block for new members to learn the weekly movement pattern.",
+      sessionType: "GROUP",
+      status: "ACTIVE",
+      recurrenceType: "WEEKLY",
+      recurrenceDays: ["SUNDAY", "TUESDAY", "THURSDAY"],
+      startsOn: new Date("2026-04-01T00:00:00.000Z"),
+      endsOn: new Date("2026-05-01T00:00:00.000Z"),
+      startTime: "18:00",
+      endTime: "19:00",
+      timezone: "Africa/Cairo",
+      capacity: 12,
+      location: "Main Floor",
+      coachId: coach.id,
+      groupId: group.id,
+      createdById: coachUser.id,
+    },
+  });
+  console.log("Schedule block created: Strength Foundations");
+
+  await prisma.scheduleBlockClient.upsert({
+    where: {
+      scheduleBlockId_clientId: {
+        scheduleBlockId: scheduleBlock.id,
+        clientId: client.id,
+      },
+    },
+    update: {},
+    create: {
+      scheduleBlockId: scheduleBlock.id,
+      clientId: client.id,
+    },
+  });
+  console.log("Client added to recurring block");
+
   const trainingSession = await prisma.trainingSession.upsert({
     where: { id: "seed-strength-foundations-session" },
     update: {
@@ -175,6 +232,7 @@ async function main() {
       location: "Main Floor",
       coachId: coach.id,
       groupId: group.id,
+      scheduleBlockId: scheduleBlock.id,
       createdById: coachUser.id,
     },
     create: {
@@ -189,6 +247,7 @@ async function main() {
       location: "Main Floor",
       coachId: coach.id,
       groupId: group.id,
+      scheduleBlockId: scheduleBlock.id,
       createdById: coachUser.id,
     },
   });
@@ -203,11 +262,13 @@ async function main() {
     },
     update: {
       status: "BOOKED",
+      source: "BLOCK",
     },
     create: {
       trainingSessionId: trainingSession.id,
       clientId: client.id,
       status: "BOOKED",
+      source: "BLOCK",
     },
   });
   console.log("Session booking created for client@test.com");

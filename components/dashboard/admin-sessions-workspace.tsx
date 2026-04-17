@@ -4,6 +4,7 @@ import { useDeferredValue, useEffect, useMemo, useState, useTransition } from "r
 import { useRouter } from "next/navigation";
 import { CalendarPlus, Pencil } from "lucide-react";
 
+import { markAttendance } from "@/app/actions/admin-attendance";
 import {
   cancelAdminSession,
   deleteAdminSession,
@@ -41,6 +42,8 @@ type SessionLifecycleStatus =
   | "SCHEDULED"
   | "COMPLETED"
   | "CANCELED";
+type AdminSessionBookingStatus =
+  AdminSessionEditorRecord["bookedClients"][number]["status"];
 
 type SessionFormState = {
   title: string;
@@ -156,6 +159,32 @@ function getSessionTone(status: AdminSessionStatus) {
   }
 }
 
+function getBookingTone(status: AdminSessionBookingStatus) {
+  switch (status) {
+    case "ATTENDED":
+      return "success";
+    case "MISSED":
+      return "warning";
+    case "WAITLIST":
+      return "accent";
+    default:
+      return "neutral";
+  }
+}
+
+function getBookingLabel(status: AdminSessionBookingStatus) {
+  switch (status) {
+    case "ATTENDED":
+      return "Attended";
+    case "MISSED":
+      return "Missed";
+    case "WAITLIST":
+      return "Waitlist";
+    default:
+      return "Booked";
+  }
+}
+
 function isClientAssigned(clientName: string) {
   return clientName !== "Unassigned";
 }
@@ -249,6 +278,7 @@ export function AdminSessionsWorkspace({
   const [isCanceling, startCancelTransition] = useTransition();
   const [isDeleting, startDeleteTransition] = useTransition();
   const [isAssigningClient, startAssignClientTransition] = useTransition();
+  const [isUpdatingAttendance, startAttendanceTransition] = useTransition();
   const [view, setView] = useState<SessionView>("group");
   const [searchTerm, setSearchTerm] = useState("");
   const deferredSearchTerm = useDeferredValue(searchTerm);
@@ -552,6 +582,7 @@ export function AdminSessionsWorkspace({
                     {
                       id: selectedClient.id,
                       fullName: selectedClient.fullName,
+                      status: "BOOKED",
                     },
                   ]
                 : []
@@ -563,6 +594,7 @@ export function AdminSessionsWorkspace({
                     {
                       id: selectedClient.id,
                       fullName: selectedClient.fullName,
+                      status: "BOOKED",
                     },
                   ]
                 : record.bookedClients,
@@ -622,6 +654,41 @@ export function AdminSessionsWorkspace({
       } catch (error) {
         setErrorMessage(
           error instanceof Error ? error.message : "Could not remove client."
+        );
+      }
+    });
+  };
+
+  const handleAttendanceUpdate = (
+    clientId: string,
+    status: AdminSessionBookingStatus
+  ) => {
+    if (!editingSessionId) {
+      return;
+    }
+
+    setErrorMessage("");
+
+    startAttendanceTransition(async () => {
+      try {
+        await markAttendance(editingSessionId, clientId, status);
+        syncSessionViews(editingSessionId, (record) => ({
+          ...record,
+          bookedClients: record.bookedClients.map((client) =>
+            client.id === clientId
+              ? {
+                  ...client,
+                  status,
+                }
+              : client
+          ),
+        }));
+        router.refresh();
+      } catch (error) {
+        setErrorMessage(
+          error instanceof Error
+            ? error.message
+            : "Could not update attendance."
         );
       }
     });
@@ -1183,7 +1250,7 @@ export function AdminSessionsWorkspace({
                     {editingRecord?.bookedClients.length ?? 0} client
                     {(editingRecord?.bookedClients.length ?? 0) === 1 ? "" : "s"} assigned
                   </h2>
-                  <p>Unassign clients here whenever the roster changes.</p>
+                  <p>Attendance and roster changes save directly to this session.</p>
                 </div>
               </div>
 
@@ -1231,7 +1298,7 @@ export function AdminSessionsWorkspace({
                       )?.fullName
                     }
                   </strong>
-                  <p>Selected booking ready to be removed from this session.</p>
+                  <p>Selected booking ready for attendance updates or removal.</p>
                 </div>
               ) : null}
 
@@ -1249,6 +1316,61 @@ export function AdminSessionsWorkspace({
                   {isAssigningClient ? "Saving..." : "Unassign client"}
                 </button>
               </div>
+
+              {filteredBookedClients.length > 0 ? (
+                <div className="dashboard-mobile-list">
+                  {filteredBookedClients.map((client) => (
+                    <article key={client.id} className="dashboard-record-card">
+                      <div className="dashboard-record-card__header">
+                        <div>
+                          <h3>{client.fullName}</h3>
+                          <p>Attendance updates save immediately</p>
+                        </div>
+                        <DashboardStatusBadge
+                          label={getBookingLabel(client.status)}
+                          tone={getBookingTone(client.status)}
+                        />
+                      </div>
+                      <div className="dashboard-row-actions">
+                        <button
+                          type="button"
+                          className="dashboard-inline-button"
+                          onClick={() => handleAttendanceUpdate(client.id, "ATTENDED")}
+                          disabled={isUpdatingAttendance || client.status === "ATTENDED"}
+                        >
+                          Mark attended
+                        </button>
+                        <button
+                          type="button"
+                          className="dashboard-inline-button"
+                          onClick={() => handleAttendanceUpdate(client.id, "MISSED")}
+                          disabled={isUpdatingAttendance || client.status === "MISSED"}
+                        >
+                          Mark missed
+                        </button>
+                        {formState.type !== "PRIVATE" ? (
+                          <button
+                            type="button"
+                            className="dashboard-inline-button"
+                            onClick={() => handleAttendanceUpdate(client.id, "WAITLIST")}
+                            disabled={isUpdatingAttendance || client.status === "WAITLIST"}
+                          >
+                            Mark waitlist
+                          </button>
+                        ) : null}
+                        <button
+                          type="button"
+                          className="dashboard-inline-button"
+                          onClick={() => handleAttendanceUpdate(client.id, "BOOKED")}
+                          disabled={isUpdatingAttendance || client.status === "BOOKED"}
+                        >
+                          Reset to booked
+                        </button>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              ) : null}
 
               {editingRecord?.bookedClients.length && filteredBookedClients.length === 0 ? (
                 <DashboardEmptyState

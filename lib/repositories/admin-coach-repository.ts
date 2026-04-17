@@ -54,6 +54,24 @@ export class AdminCoachRepository {
           select: {
             type: true,
             startsAt: true,
+            endsAt: true,
+          },
+        },
+        scheduleBlocks: {
+          where: {
+            status: {
+              in: ["ACTIVE", "PAUSED"],
+            },
+          },
+          select: {
+            id: true,
+            title: true,
+            recurrenceDays: true,
+            roster: {
+              select: {
+                clientId: true,
+              },
+            },
           },
         },
       },
@@ -67,6 +85,28 @@ export class AdminCoachRepository {
       const sessionsThisWeek = coach.trainingSessions.filter(
         (session) => session.startsAt >= now && session.startsAt <= weekEnd
       ).length;
+      const sessionsByDay = new Map<string, number>();
+      const weeklySessions = coach.trainingSessions.filter(
+        (session) => session.startsAt >= now && session.startsAt <= weekEnd
+      );
+
+      for (const session of weeklySessions) {
+        const day = session.startsAt.toLocaleDateString("en-US", {
+          weekday: "short",
+        });
+        sessionsByDay.set(day, (sessionsByDay.get(day) ?? 0) + 1);
+      }
+
+      const conflicts = weeklySessions.reduce((total, session, index) => {
+        const overlaps = weeklySessions.some(
+          (otherSession, otherIndex) =>
+            otherIndex !== index &&
+            otherSession.startsAt < session.endsAt &&
+            session.startsAt < otherSession.endsAt
+        );
+        return total + (overlaps ? 1 : 0);
+      }, 0);
+      const openSlots = Math.max(0, 12 - sessionsThisWeek);
 
       return {
         id: coach.id,
@@ -74,11 +114,26 @@ export class AdminCoachRepository {
         specialization: toAdminCoachSpecialization(coach.specialization),
         activeClients,
         sessionsThisWeek,
+        recurringBlocks: coach.scheduleBlocks.length,
+        conflicts,
+        openSlots,
+        weeklyLoad: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => ({
+          day,
+          sessions: sessionsByDay.get(day) ?? 0,
+        })),
+        blockAssignments: coach.scheduleBlocks.map((block) => ({
+          id: block.id,
+          title: block.title,
+          recurrenceSummary: block.recurrenceDays
+            .map((day) => `${day.charAt(0)}${day.slice(1).toLowerCase()}`)
+            .join(", "),
+          rosterCount: block.roster.length,
+        })),
         email: coach.user.email ?? "No email",
         phone: coach.phone ?? "No phone",
         summary:
           activeClients > 0
-            ? `${coach.fullName} is currently supporting ${activeClients} client${activeClients === 1 ? "" : "s"}.`
+            ? `${coach.fullName} is currently supporting ${activeClients} client${activeClients === 1 ? "" : "s"} across ${coach.scheduleBlocks.length} recurring block${coach.scheduleBlocks.length === 1 ? "" : "s"}.`
             : `${coach.fullName} has no assigned clients yet.`,
       };
     });

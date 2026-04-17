@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { LoaderCircle, LogOut, X } from "lucide-react";
 import type { ComponentType } from "react";
@@ -15,6 +14,8 @@ import {
   isDashboardNavItemActive,
 } from "@/lib/navigation/dashboard-nav";
 import type { DashboardRole } from "@/lib/auth/authorization-policy";
+import { BrandLockup } from "@/components/ui/brand-lockup";
+import { StatusPill } from "@/components/ui/status-pill";
 import { cn } from "@/lib/utils";
 
 type DashboardSidebarProps = {
@@ -72,21 +73,13 @@ export function DashboardSidebar({
       aria-label={`${role} portal navigation`}
     >
       <div className="dashboard-sidebar__brand">
-        <span className="dashboard-sidebar__brand-mark">
-          <Image
-            src="/img/Logo-2.png"
-            alt="Marvel's Studios"
-            width={36}
-            height={36}
-            priority
-            className="dashboard-sidebar__brand-image"
-          />
-        </span>
-
-        <div className="dashboard-sidebar__brand-copy">
-          <p>Marvel&apos;s Studios</p>
-          <strong>{roleLabel} workspace</strong>
-        </div>
+        <BrandLockup
+          className="min-w-0 flex-1"
+          eyebrow="Premium performance training"
+          contextLabel={`${roleLabel} workspace`}
+          priority
+          imageAlt="Marvel's Fit Studios logo"
+        />
 
         <button
           type="button"
@@ -159,7 +152,7 @@ export function DashboardSidebar({
 
       <div className="dashboard-sidebar__account">
         <div className="dashboard-sidebar__account-copy">
-          <span className="dashboard-badge dashboard-badge--accent">{roleLabel}</span>
+          <StatusPill tone="accent">{roleLabel}</StatusPill>
           <strong>{displayName}</strong>
           <p>{displaySubtitle}</p>
         </div>

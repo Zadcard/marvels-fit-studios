@@ -92,7 +92,13 @@ export type ClientSubscriptionRecord = {
   }>;
 };
 
-export type ClientSessionStatus = "Booked" | "Check-in ready" | "Completed";
+export type ClientSessionStatus =
+  | "Booked"
+  | "Check-in ready"
+  | "Waitlist"
+  | "You attended"
+  | "You missed"
+  | "Cancelled";
 export type ClientSessionType = "Group" | "Private";
 export type ClientSessionPeriod = "Upcoming" | "Past";
 

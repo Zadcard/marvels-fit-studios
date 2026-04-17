@@ -423,8 +423,8 @@ p {
   gap: 10px;
 }
 
-.brand img,
-.footer-brand img {
+.brand > img,
+.footer-brand > img {
   width: 150px;
   height: 78px;
   padding: 0;
@@ -433,14 +433,14 @@ p {
   object-fit: contain;
 }
 
-.brand img {
+.brand > img {
   width: 88px;
   height: 52px;
   background: transparent;
   filter: brightness(0) invert(1);
 }
 
-.brand span {
+.brand > span {
   color: #ffffff;
 }
 
@@ -451,14 +451,14 @@ p {
   margin-left: -6px;
 }
 
-.brand span,
-.footer-brand strong {
+.brand > span,
+.footer-brand > strong {
   font-family: var(--font-display), "Space Grotesk", sans-serif;
   font-weight: 700;
   letter-spacing: -0.02em;
 }
 
-.brand span {
+.brand > span {
   font-size: 0.95rem;
   line-height: 1.1;
 }
@@ -1791,12 +1791,12 @@ min-width: 135px;
     gap: 12px;
   }
 
-  .brand img {
+  .brand > img {
     width: 96px;
     height: 58px;
   }
   
-  .brand span {
+  .brand > span {
     font-size: 1.04rem;
   }
 

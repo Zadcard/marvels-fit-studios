@@ -6,6 +6,7 @@ import type {
   AdminSubscriptionRecord,
   AdminSubscriptionStatus,
 } from "@/lib/mocks/admin-subscriptions";
+import { isMissingCustomPriceColumn } from "@/lib/custom-price-compat";
 import { getPrisma } from "@/lib/prisma";
 
 const currencyFormatter = new Intl.NumberFormat("en-US", {
@@ -109,6 +110,77 @@ function mapBillingCycleLabel(value: string) {
 export class AdminSubscriptionRepository {
   private prisma = getPrisma();
 
+  private async getSubscriptions(includeCustomPrice: boolean) {
+    return this.prisma.clientSubscription.findMany({
+      orderBy: [{ startsAt: "desc" }],
+      select: {
+        id: true,
+        status: true,
+        renewsAt: true,
+        ...(includeCustomPrice ? { customPrice: true } : {}),
+        plan: {
+          select: {
+            id: true,
+            name: true,
+            billingCycle: true,
+            price: true,
+          },
+        },
+        client: {
+          select: {
+            id: true,
+            fullName: true,
+            isPaid: true,
+            group: {
+              select: {
+                coach: {
+                  select: {
+                    fullName: true,
+                  },
+                },
+              },
+            },
+            bookings: {
+              where: {
+                status: {
+                  in: ["BOOKED", "ATTENDED", "MISSED", "WAITLIST"],
+                },
+                trainingSession: {
+                  status: {
+                    not: "CANCELED",
+                  },
+                },
+              },
+              select: {
+                trainingSession: {
+                  select: {
+                    type: true,
+                    coach: {
+                      select: {
+                        fullName: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        payments: {
+          orderBy: [{ date: "desc" }],
+          take: 5,
+          select: {
+            id: true,
+            amount: true,
+            currency: true,
+            date: true,
+            note: true,
+          },
+        },
+      },
+    });
+  }
+
   private async ensureDefaultPlans() {
     const existingPlanCount = await this.prisma.subscriptionPlan.count();
 
@@ -199,73 +271,12 @@ export class AdminSubscriptionRepository {
       plans,
     ] =
       await Promise.all([
-        this.prisma.clientSubscription.findMany({
-          orderBy: [{ startsAt: "desc" }],
-          select: {
-            id: true,
-            status: true,
-            renewsAt: true,
-            customPrice: true,
-            plan: {
-              select: {
-                id: true,
-                name: true,
-                billingCycle: true,
-                price: true,
-              },
-            },
-            client: {
-              select: {
-                id: true,
-                fullName: true,
-                isPaid: true,
-                group: {
-                  select: {
-                    coach: {
-                      select: {
-                        fullName: true,
-                      },
-                    },
-                  },
-                },
-                bookings: {
-                  where: {
-                    status: {
-                      in: ["BOOKED", "ATTENDED", "MISSED", "WAITLIST"],
-                    },
-                    trainingSession: {
-                      status: {
-                        not: "CANCELED",
-                      },
-                    },
-                  },
-                  select: {
-                    trainingSession: {
-                      select: {
-                        type: true,
-                        coach: {
-                          select: {
-                            fullName: true,
-                          },
-                        },
-                      },
-                    },
-                  },
-                },
-              },
-            },
-            payments: {
-              orderBy: [{ date: "desc" }],
-              take: 5,
-              select: {
-                id: true,
-                amount: true,
-                currency: true,
-                date: true,
-                note: true,
-              },
-            },
-          },
+        this.getSubscriptions(true).catch((error) => {
+          if (isMissingCustomPriceColumn(error)) {
+            return this.getSubscriptions(false);
+          }
+
+          throw error;
         }),
         this.prisma.clientSubscription.count({
           where: { status: "ACTIVE" },
@@ -329,7 +340,9 @@ export class AdminSubscriptionRepository {
         subscription.renewsAt
       );
       const paymentStatus = mapPaymentStatus(subscription);
-      const effectiveAmount = subscription.customPrice ?? subscription.plan.price;
+      const effectiveAmount =
+        ("customPrice" in subscription ? subscription.customPrice : null) ??
+        subscription.plan.price;
 
       return {
         id: subscription.id,

@@ -2,9 +2,15 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Plus } from "lucide-react";
+import Link from "next/link";
+import { ArrowRightLeft, Plus, UserMinus, UserPlus } from "lucide-react";
 
 import { deleteAdminClient, saveAdminClient } from "@/app/actions/admin-clients";
+import {
+  addClientToAdminScheduleBlock,
+  removeClientFromAdminScheduleBlock,
+  moveClientBetweenAdminScheduleBlocks,
+} from "@/app/actions/admin-schedule-blocks";
 import { DashboardManagementToolbar } from "@/components/dashboard/dashboard-management-toolbar";
 import { DashboardEmptyState } from "@/components/dashboard/dashboard-empty-state";
 import { DashboardMiniStat } from "@/components/dashboard/dashboard-mini-stat";
@@ -25,6 +31,14 @@ import {
 
 type AdminClientsWorkspaceProps = {
   records: AdminClientRecord[];
+  blockOptions: Array<{
+    id: string;
+    title: string;
+  }>;
+  groupOptions: Array<{
+    id: string;
+    name: string;
+  }>;
 };
 
 function getPaymentTone(status: AdminClientRecord["paymentStatus"]) {
@@ -38,7 +52,11 @@ function getPaymentTone(status: AdminClientRecord["paymentStatus"]) {
   }
 }
 
-export function AdminClientsWorkspace({ records }: AdminClientsWorkspaceProps) {
+export function AdminClientsWorkspace({
+  records,
+  blockOptions,
+  groupOptions,
+}: AdminClientsWorkspaceProps) {
   const router = useRouter();
   const [isSaving, startTransition] = useTransition();
   const [isDeleting, startDeleteTransition] = useTransition();
@@ -68,6 +86,57 @@ export function AdminClientsWorkspace({ records }: AdminClientsWorkspaceProps) {
     } satisfies AdminClientWorkspaceFilters,
   });
 
+  const [selectedClientId, setSelectedClientId] = useState(records[0]?.id ?? "");
+  const [isMutating, startMutatingTransition] = useTransition();
+  const [moveTargetBlockId, setMoveTargetBlockId] = useState(blockOptions[0]?.id ?? "");
+  const [assignBlockId, setAssignBlockId] = useState(blockOptions[0]?.id ?? "");
+
+  const selectedClient =
+    filteredRecords.find((client) => client.id === selectedClientId) ?? filteredRecords[0];
+
+  const handleAssignBlock = () => {
+    if (!selectedClient || !assignBlockId) return;
+    setErrorMessage("");
+    startMutatingTransition(async () => {
+      try {
+        await addClientToAdminScheduleBlock(assignBlockId, selectedClient.id);
+        router.refresh();
+      } catch (error) {
+        setErrorMessage(error instanceof Error ? error.message : "Could not assign block.");
+      }
+    });
+  };
+
+  const handleRemoveFromBlock = () => {
+    if (!selectedClient?.primaryBlockId) return;
+    setErrorMessage("");
+    startMutatingTransition(async () => {
+      try {
+        await removeClientFromAdminScheduleBlock(selectedClient.primaryBlockId!, selectedClient.id);
+        router.refresh();
+      } catch (error) {
+        setErrorMessage(error instanceof Error ? error.message : "Could not remove from block.");
+      }
+    });
+  };
+
+  const handleMoveBlock = () => {
+    if (!selectedClient?.primaryBlockId || !moveTargetBlockId) return;
+    setErrorMessage("");
+    startMutatingTransition(async () => {
+      try {
+        await moveClientBetweenAdminScheduleBlocks(
+          selectedClient.primaryBlockId!,
+          moveTargetBlockId,
+          selectedClient.id
+        );
+        router.refresh();
+      } catch (error) {
+        setErrorMessage(error instanceof Error ? error.message : "Could not move client.");
+      }
+    });
+  };
+
   const activeClients = filteredRecords.filter((client) => client.status === "Active").length;
   const paymentAttentionCount = filteredRecords.filter(
     (client) => client.paymentStatus !== "Paid"
@@ -80,6 +149,10 @@ export function AdminClientsWorkspace({ records }: AdminClientsWorkspaceProps) {
   ).length;
 
   const getRowActions = (): WorkspaceRowAction<AdminClientRecord>[] => [
+    {
+      label: "Inspect",
+      onClick: (client) => setSelectedClientId(client.id),
+    },
     {
       label: "Edit",
       onClick: openEditModal,
@@ -100,6 +173,8 @@ export function AdminClientsWorkspace({ records }: AdminClientsWorkspaceProps) {
           status: formState.status,
           paymentStatus: formState.paymentStatus,
           paymentAmount: formState.paymentAmount,
+          groupId: formState.groupId,
+          blockId: formState.blockId,
         });
         setIsModalOpen(false);
         router.refresh();
@@ -191,7 +266,8 @@ export function AdminClientsWorkspace({ records }: AdminClientsWorkspaceProps) {
         />
       </section>
 
-      <section className="dashboard-panel dashboard-panel--accent dashboard-panel--dense">
+      <section className="dashboard-detail-layout">
+        <article className="dashboard-panel dashboard-panel--accent dashboard-panel--dense">
         <DashboardManagementToolbar
           searchValue={searchTerm}
           onSearchChange={setSearchTerm}
@@ -236,7 +312,7 @@ export function AdminClientsWorkspace({ records }: AdminClientsWorkspaceProps) {
                     <tr>
                       <th>Client</th>
                       <th>Payment</th>
-                      <th>Readiness</th>
+                      <th>Assignment</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
@@ -275,8 +351,18 @@ export function AdminClientsWorkspace({ records }: AdminClientsWorkspaceProps) {
                         <td>
                           <div className="dashboard-client-table__readiness">
                             <strong>{client.assignedCoach}</strong>
-                            <span>{client.nextSession}</span>
-                            <small>{client.progressNote}</small>
+                            <span>{client.primaryGroup}</span>
+                            <div className="dashboard-badge-stack">
+                              {client.primaryBlockId ? (
+                                <DashboardStatusBadge label={client.primaryBlock} tone="neutral" />
+                              ) : (
+                                <DashboardStatusBadge label="No block" tone="accent" />
+                              )}
+                              {client.nextSession === "Awaiting first session" ? (
+                                <DashboardStatusBadge label="Awaiting session" tone="warning" />
+                              ) : null}
+                            </div>
+                            <small>{client.nextSessions[0] ?? client.nextSession}</small>
                           </div>
                         </td>
                         <td>
@@ -320,9 +406,22 @@ export function AdminClientsWorkspace({ records }: AdminClientsWorkspaceProps) {
                     </div>
                     <div className="dashboard-record-card__meta">
                       <span>{client.paymentStatus}</span>
-                      <span>{client.paymentAmountLabel}</span>
                       <span>{client.assignedCoach}</span>
-                      <span>{client.nextSession}</span>
+                      <span>{client.primaryGroup}</span>
+                    </div>
+                    <div className="dashboard-badge-stack">
+                      <DashboardStatusBadge
+                        label={client.paymentStatus}
+                        tone={getPaymentTone(client.paymentStatus)}
+                      />
+                      {client.primaryBlockId ? (
+                        <DashboardStatusBadge label={client.primaryBlock} tone="neutral" />
+                      ) : (
+                        <DashboardStatusBadge label="No block" tone="accent" />
+                      )}
+                      {client.nextSession === "Awaiting first session" ? (
+                        <DashboardStatusBadge label="Awaiting session" tone="warning" />
+                      ) : null}
                     </div>
                     <p className="dashboard-record-card__note">{client.progressNote}</p>
                     <div className="dashboard-row-actions">
@@ -348,6 +447,188 @@ export function AdminClientsWorkspace({ records }: AdminClientsWorkspaceProps) {
             />
           )}
         </div>
+        </article>
+
+        <aside className="dashboard-panel dashboard-detail-panel dashboard-panel--dense">
+          {selectedClient ? (
+            <>
+              <div className="dashboard-panel__header dashboard-panel__header--tight">
+                <div>
+                  <div className="mv-eyebrow">Client detail</div>
+                  <h2>{selectedClient.fullName}</h2>
+                  <p>{selectedClient.progressNote}</p>
+                </div>
+                <div className="dashboard-badge-stack">
+                  <DashboardStatusBadge
+                    label={selectedClient.status}
+                    tone={adminClientToneByStatus[selectedClient.status]}
+                  />
+                  <DashboardStatusBadge
+                    label={selectedClient.paymentStatus}
+                    tone={getPaymentTone(selectedClient.paymentStatus)}
+                  />
+                </div>
+              </div>
+
+              {errorMessage ? (
+                <div className="dashboard-empty-state" role="alert">
+                  <strong>Action blocked</strong>
+                  <p>{errorMessage}</p>
+                </div>
+              ) : null}
+
+              <div className="dashboard-detail-grid">
+                <div className="dashboard-detail-stat">
+                  <span className="dashboard-detail-stat__label">Coach</span>
+                  <strong>{selectedClient.assignedCoach}</strong>
+                </div>
+                <div className="dashboard-detail-stat">
+                  <span className="dashboard-detail-stat__label">Group</span>
+                  <strong>{selectedClient.primaryGroup}</strong>
+                </div>
+                <div className="dashboard-detail-stat">
+                  <span className="dashboard-detail-stat__label">Block</span>
+                  <strong>{selectedClient.primaryBlock}</strong>
+                </div>
+                <div className="dashboard-detail-stat">
+                  <span className="dashboard-detail-stat__label">Membership</span>
+                  <strong>{selectedClient.membership}</strong>
+                  <small>{selectedClient.paymentAmountLabel}</small>
+                </div>
+              </div>
+
+              <div className="dashboard-form-section">
+                <div className="dashboard-form-section__header">
+                  <div>
+                    <div className="mv-eyebrow">Sessions</div>
+                    <h3>Upcoming schedule</h3>
+                    <p>Next booked sessions for this client.</p>
+                  </div>
+                </div>
+                {selectedClient.nextSessions.length > 0 ? (
+                  <div className="dashboard-summary-list">
+                    {selectedClient.nextSessions.slice(0, 3).map((session, index) => (
+                      <div key={index} className="dashboard-summary-row">
+                        <strong>{session}</strong>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <DashboardEmptyState
+                    title="No upcoming sessions"
+                    description={selectedClient.nextSession}
+                  />
+                )}
+              </div>
+
+              <div className="dashboard-form-section">
+                <div className="dashboard-form-section__header">
+                  <div>
+                    <div className="mv-eyebrow">Block assignment</div>
+                    <h3>Recurring structure</h3>
+                    <p>Assign, move, or remove from a recurring block.</p>
+                  </div>
+                </div>
+
+                {selectedClient.primaryBlockId ? (
+                  <div className="dashboard-row-actions">
+                    <Link href="/admin/blocks" className="mv-btn mv-btn-outline">
+                      Open block
+                    </Link>
+                    <button
+                      type="button"
+                      className="mv-btn mv-btn-danger"
+                      onClick={handleRemoveFromBlock}
+                      disabled={isMutating}
+                    >
+                      <UserMinus size={16} />
+                      Remove from block
+                    </button>
+                  </div>
+                ) : null}
+
+                {selectedClient.primaryBlockId ? (
+                  <>
+                    <div className="dashboard-form-grid">
+                      <label className="dashboard-form-field">
+                        <span>Move to block</span>
+                        <select
+                          className="dashboard-select"
+                          value={moveTargetBlockId}
+                          onChange={(event) => setMoveTargetBlockId(event.target.value)}
+                          disabled={isMutating}
+                        >
+                          {blockOptions
+                            .filter((block) => block.id !== selectedClient.primaryBlockId)
+                            .map((block) => (
+                              <option key={block.id} value={block.id}>
+                                {block.title}
+                              </option>
+                            ))}
+                        </select>
+                      </label>
+                    </div>
+                    <div className="dashboard-row-actions">
+                      <button
+                        type="button"
+                        className="mv-btn mv-btn-secondary"
+                        onClick={handleMoveBlock}
+                        disabled={isMutating || !moveTargetBlockId}
+                      >
+                        <ArrowRightLeft size={16} />
+                        {isMutating ? "Moving..." : "Move to block"}
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="dashboard-form-grid">
+                      <label className="dashboard-form-field">
+                        <span>Assign to block</span>
+                        <select
+                          className="dashboard-select"
+                          value={assignBlockId}
+                          onChange={(event) => setAssignBlockId(event.target.value)}
+                          disabled={isMutating}
+                        >
+                          {blockOptions.map((block) => (
+                            <option key={block.id} value={block.id}>
+                              {block.title}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    </div>
+                    <div className="dashboard-row-actions">
+                      <button
+                        type="button"
+                        className="mv-btn mv-btn-primary"
+                        onClick={handleAssignBlock}
+                        disabled={isMutating || !assignBlockId}
+                      >
+                        <UserPlus size={16} />
+                        {isMutating ? "Assigning..." : "Assign to block"}
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              <button
+                type="button"
+                className="mv-btn mv-btn-secondary"
+                onClick={() => openEditModal(selectedClient)}
+              >
+                Edit Client
+              </button>
+            </>
+          ) : (
+            <DashboardEmptyState
+              title="No client selected"
+              description="Choose a client to view their assignment chain and quick actions."
+            />
+          )}
+        </aside>
       </section>
 
       <DashboardModal
@@ -461,9 +742,39 @@ export function AdminClientsWorkspace({ records }: AdminClientsWorkspaceProps) {
                     updateFormField(field.key, event.target.value)
                   }
                 />
-              )}
-            </label>
-          ))}
+                )}
+              </label>
+            ))}
+          <label className="dashboard-form-field">
+            <span>Primary group</span>
+            <select
+              className="dashboard-select"
+              value={formState.groupId}
+              onChange={(event) => updateFormField("groupId", event.target.value)}
+            >
+              <option value="">No group</option>
+              {groupOptions.map((group) => (
+                <option key={group.id} value={group.id}>
+                  {group.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="dashboard-form-field">
+            <span>Recurring block</span>
+            <select
+              className="dashboard-select"
+              value={formState.blockId}
+              onChange={(event) => updateFormField("blockId", event.target.value)}
+            >
+              <option value="">No recurring block</option>
+              {blockOptions.map((block) => (
+                <option key={block.id} value={block.id}>
+                  {block.title}
+                </option>
+              ))}
+            </select>
+          </label>
         </div>
       </DashboardModal>
 

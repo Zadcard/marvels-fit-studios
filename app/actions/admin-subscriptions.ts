@@ -8,6 +8,7 @@ import type {
   AdminSubscriptionStatus,
 } from "@/lib/mocks/admin-subscriptions";
 import { requireRole } from "@/lib/auth/session";
+import { isMissingCustomPriceColumn } from "@/lib/custom-price-compat";
 import { getPrisma } from "@/lib/prisma";
 
 type SaveAdminSubscriptionInput = {
@@ -26,6 +27,7 @@ function revalidateSubscriptionViews() {
   revalidatePath("/admin");
   revalidatePath("/admin/clients");
   revalidatePath("/admin/subscriptions");
+  revalidatePath("/admin/schedule");
   revalidatePath("/client");
   revalidatePath("/client/subscription");
 }
@@ -180,141 +182,145 @@ export async function saveAdminSubscription(input: SaveAdminSubscriptionInput) {
   const clientPaymentStatus = toClientPaymentStatus(input.paymentStatus);
   const isPaid = clientPaymentStatus === "PAID";
 
-  const result = await prisma.$transaction(async (tx) => {
-    const existingConflict = await tx.clientSubscription.findFirst({
-      where: {
-        clientId,
-        planId,
-        ...(input.subscriptionId ? { NOT: { id: input.subscriptionId } } : {}),
-      },
-      select: { id: true },
-    });
-
-    if (existingConflict) {
-      throw new Error("This client already has that subscription plan.");
-    }
-
-    const plan = await tx.subscriptionPlan.findUnique({
-      where: { id: planId },
-      select: {
-        id: true,
-        price: true,
-        sessionsIncluded: true,
-      },
-    });
-
-    if (!plan) {
-      throw new Error("Subscription plan not found.");
-    }
-
-    const existingSubscription = input.subscriptionId
-      ? await tx.clientSubscription.findUnique({
-          where: { id: input.subscriptionId },
-          select: {
-            id: true,
-            startsAt: true,
-          },
-        })
-      : null;
-
-    const startsAt = existingSubscription?.startsAt ?? new Date();
-
-    const subscription = existingSubscription
-      ? await tx.clientSubscription.update({
-          where: { id: existingSubscription.id },
-          data: {
-            clientId,
-            planId,
-            status: targetStatus,
-            startsAt,
-            renewsAt,
-            endsAt: targetStatus === "PAUSED" ? renewsAt : null,
-            customPrice: amount,
-            sessionsTotal: plan.sessionsIncluded,
-            isAutoRenew: targetStatus !== "PAUSED",
-          },
-          select: { id: true },
-        })
-      : await tx.clientSubscription.create({
-          data: {
-            clientId,
-            planId,
-            status: targetStatus,
-            startsAt,
-            renewsAt,
-            endsAt: targetStatus === "PAUSED" ? renewsAt : null,
-            customPrice: amount,
-            sessionsTotal: plan.sessionsIncluded,
-            isAutoRenew: targetStatus !== "PAUSED",
-          },
-          select: { id: true },
-        });
-
-    await tx.client.update({
-      where: { id: clientId },
-      data: {
-        isPaid,
-        paymentStatus: clientPaymentStatus,
-      },
-    });
-
-    if (isPaid) {
-      const existingPayments = await tx.payment.findMany({
+  const runSave = async (includeCustomPrice: boolean) =>
+    prisma.$transaction(async (tx) => {
+      const existingConflict = await tx.clientSubscription.findFirst({
         where: {
-          clientSubscriptionId: subscription.id,
+          clientId,
+          planId,
+          ...(input.subscriptionId ? { NOT: { id: input.subscriptionId } } : {}),
         },
-        orderBy: [{ createdAt: "desc" }],
+        select: { id: true },
+      });
+
+      if (existingConflict) {
+        throw new Error("This client already has that subscription plan.");
+      }
+
+      const plan = await tx.subscriptionPlan.findUnique({
+        where: { id: planId },
         select: {
           id: true,
+          price: true,
+          sessionsIncluded: true,
         },
       });
 
-      if (existingPayments[0]) {
-        await tx.payment.update({
-          where: { id: existingPayments[0].id },
-          data: {
-            amount,
-            currency: "EGP",
-            note: "Updated from the admin subscriptions dashboard.",
-            date: new Date(),
+      if (!plan) {
+        throw new Error("Subscription plan not found.");
+      }
+
+      const existingSubscription = input.subscriptionId
+        ? await tx.clientSubscription.findUnique({
+            where: { id: input.subscriptionId },
+            select: {
+              id: true,
+              startsAt: true,
+            },
+          })
+        : null;
+
+      const startsAt = existingSubscription?.startsAt ?? new Date();
+      const subscriptionData = {
+        clientId,
+        planId,
+        status: targetStatus,
+        startsAt,
+        renewsAt,
+        endsAt: targetStatus === "PAUSED" ? renewsAt : null,
+        sessionsTotal: plan.sessionsIncluded,
+        isAutoRenew: targetStatus !== "PAUSED",
+        ...(includeCustomPrice ? { customPrice: amount } : {}),
+      };
+
+      const subscription = existingSubscription
+        ? await tx.clientSubscription.update({
+            where: { id: existingSubscription.id },
+            data: subscriptionData,
+            select: { id: true },
+          })
+        : await tx.clientSubscription.create({
+            data: subscriptionData,
+            select: { id: true },
+          });
+
+      await tx.client.update({
+        where: { id: clientId },
+        data: {
+          isPaid,
+          paymentStatus: clientPaymentStatus,
+        },
+      });
+
+      if (isPaid) {
+        const existingPayments = await tx.payment.findMany({
+          where: {
+            clientSubscriptionId: subscription.id,
+          },
+          orderBy: [{ createdAt: "desc" }],
+          select: {
+            id: true,
           },
         });
 
-        if (existingPayments.length > 1) {
-          await tx.payment.deleteMany({
-            where: {
-              id: {
-                in: existingPayments.slice(1).map((payment) => payment.id),
+        if (existingPayments[0]) {
+          await tx.payment.update({
+            where: { id: existingPayments[0].id },
+            data: {
+              amount,
+              currency: "EGP",
+              note: "Updated from the admin subscriptions dashboard.",
+              date: new Date(),
+            },
+          });
+
+          if (existingPayments.length > 1) {
+            await tx.payment.deleteMany({
+              where: {
+                id: {
+                  in: existingPayments.slice(1).map((payment) => payment.id),
+                },
               },
+            });
+          }
+        } else {
+          await tx.payment.create({
+            data: {
+              amount,
+              currency: "EGP",
+              note: existingSubscription
+                ? "Updated from the admin subscriptions dashboard."
+                : "Created from the admin subscriptions dashboard.",
+              date: new Date(),
+              clientId,
+              clientSubscriptionId: subscription.id,
             },
           });
         }
-      } else {
-        await tx.payment.create({
-          data: {
-            amount,
-            currency: "EGP",
-            note: existingSubscription
-              ? "Updated from the admin subscriptions dashboard."
-              : "Created from the admin subscriptions dashboard.",
-            date: new Date(),
-            clientId,
-            clientSubscriptionId: subscription.id,
-          },
-        });
       }
+
+      return {
+        id: subscription.id,
+        clientId,
+        planId,
+        renewsAt: renewsAt.toISOString(),
+        amount,
+        paymentStatus: input.paymentStatus,
+        subscriptionStatus: input.subscriptionStatus,
+      };
+    });
+
+  let result;
+
+  try {
+    result = await runSave(true);
+  } catch (error) {
+    if (!isMissingCustomPriceColumn(error)) {
+      throw error;
     }
 
-    return {
-      id: subscription.id,
-      clientId,
-      planId,
-      renewsAt: renewsAt.toISOString(),
-      amount,
-      paymentStatus: input.paymentStatus,
-      subscriptionStatus: input.subscriptionStatus,
-    };
-  });
+    result = await runSave(false);
+  }
 
   revalidateSubscriptionViews();
 
@@ -333,70 +339,140 @@ export async function mutateAdminSubscriptionLifecycle(
     throw new Error("Subscription id is required.");
   }
 
-  const result = await prisma.$transaction(async (tx) => {
-    const subscription = await tx.clientSubscription.findUnique({
-      where: { id: trimmedSubscriptionId },
-      select: {
-        id: true,
-        clientId: true,
-        startsAt: true,
-        renewsAt: true,
-        endsAt: true,
-        customPrice: true,
-        status: true,
-        sessionsTotal: true,
-        plan: {
-          select: {
-            price: true,
-            currency: true,
-            billingCycle: true,
-          },
-        },
-      },
-    });
-
-    if (!subscription) {
-      throw new Error("Subscription not found.");
-    }
-
-    const amount = subscription.customPrice ?? subscription.plan.price;
-
-    if (action === "pause") {
-      if (subscription.status === "CANCELED") {
-        throw new Error("Canceled subscriptions cannot be paused.");
-      }
-
-      if (subscription.status === "PAUSED") {
-        throw new Error("This subscription is already paused.");
-      }
-
-      const pauseEndsAt = subscription.renewsAt ?? new Date();
-      const updated = await tx.clientSubscription.update({
-        where: { id: subscription.id },
-        data: {
-          status: "PAUSED",
-          endsAt: pauseEndsAt,
-          isAutoRenew: false,
-        },
+  const runMutation = async (includeCustomPrice: boolean) =>
+    prisma.$transaction(async (tx) => {
+      const subscription = await tx.clientSubscription.findUnique({
+        where: { id: trimmedSubscriptionId },
         select: {
-          status: true,
+          id: true,
+          clientId: true,
+          startsAt: true,
           renewsAt: true,
+          endsAt: true,
+          ...(includeCustomPrice ? { customPrice: true } : {}),
+          status: true,
+          sessionsTotal: true,
+          plan: {
+            select: {
+              price: true,
+              currency: true,
+              billingCycle: true,
+            },
+          },
         },
       });
 
-      return {
-        subscriptionStatus: toAdminSubscriptionStatus(updated.status, updated.renewsAt),
-        paymentStatus: "Manual review" as AdminPaymentStatus,
-      };
-    }
-
-    if (action === "resume") {
-      if (subscription.status === "CANCELED") {
-        throw new Error("Canceled subscriptions cannot be resumed.");
+      if (!subscription) {
+        throw new Error("Subscription not found.");
       }
 
-      if (subscription.status !== "PAUSED" && subscription.status !== "EXPIRED") {
-        throw new Error("Only paused subscriptions can be resumed.");
+      const amount =
+        ("customPrice" in subscription ? subscription.customPrice : null) ??
+        subscription.plan.price;
+
+      if (action === "pause") {
+        if (subscription.status === "CANCELED") {
+          throw new Error("Canceled subscriptions cannot be paused.");
+        }
+
+        if (subscription.status === "PAUSED") {
+          throw new Error("This subscription is already paused.");
+        }
+
+        const pauseEndsAt = subscription.renewsAt ?? new Date();
+        const updated = await tx.clientSubscription.update({
+          where: { id: subscription.id },
+          data: {
+            status: "PAUSED",
+            endsAt: pauseEndsAt,
+            isAutoRenew: false,
+          },
+          select: {
+            status: true,
+            renewsAt: true,
+          },
+        });
+
+        return {
+          subscriptionStatus: toAdminSubscriptionStatus(updated.status, updated.renewsAt),
+          paymentStatus: "Manual review" as AdminPaymentStatus,
+        };
+      }
+
+      if (action === "resume") {
+        if (subscription.status === "CANCELED") {
+          throw new Error("Canceled subscriptions cannot be resumed.");
+        }
+
+        if (subscription.status !== "PAUSED" && subscription.status !== "EXPIRED") {
+          throw new Error("Only paused subscriptions can be resumed.");
+        }
+
+        const nextRenewal = getNextRenewalDate(subscription);
+        const updated = await tx.clientSubscription.update({
+          where: { id: subscription.id },
+          data: {
+            status: "ACTIVE",
+            endsAt: null,
+            renewsAt: nextRenewal,
+            isAutoRenew: true,
+          },
+          select: {
+            status: true,
+            renewsAt: true,
+          },
+        });
+
+        await tx.client.update({
+          where: { id: subscription.clientId },
+          data: {
+            isPaid: false,
+            paymentStatus: "DUE_SOON",
+          },
+        });
+
+        return {
+          subscriptionStatus: toAdminSubscriptionStatus(updated.status, updated.renewsAt),
+          paymentStatus: "Due soon" as AdminPaymentStatus,
+        };
+      }
+
+      if (action === "cancel") {
+        if (subscription.status === "CANCELED") {
+          throw new Error("This subscription is already canceled.");
+        }
+
+        const now = new Date();
+        const updated = await tx.clientSubscription.update({
+          where: { id: subscription.id },
+          data: {
+            status: "CANCELED",
+            endsAt: now,
+            renewsAt: null,
+            isAutoRenew: false,
+          },
+          select: {
+            status: true,
+            renewsAt: true,
+          },
+        });
+
+        await tx.client.update({
+          where: { id: subscription.clientId },
+          data: {
+            isPaid: false,
+            paymentStatus: "UNPAID",
+          },
+        });
+
+        return {
+          subscriptionStatus: toAdminSubscriptionStatus(updated.status, updated.renewsAt),
+          paymentStatus: "Manual review" as AdminPaymentStatus,
+        };
+      }
+
+      if (subscription.status === "CANCELED") {
+        throw new Error("Canceled subscriptions cannot be renewed.");
       }
 
       const nextRenewal = getNextRenewalDate(subscription);
@@ -406,6 +482,8 @@ export async function mutateAdminSubscriptionLifecycle(
           status: "ACTIVE",
           endsAt: null,
           renewsAt: nextRenewal,
+          sessionsUsed: 0,
+          sessionsTotal: subscription.sessionsTotal,
           isAutoRenew: true,
         },
         select: {
@@ -417,96 +495,39 @@ export async function mutateAdminSubscriptionLifecycle(
       await tx.client.update({
         where: { id: subscription.clientId },
         data: {
-          isPaid: false,
-          paymentStatus: "DUE_SOON",
+          isPaid: true,
+          paymentStatus: "PAID",
+        },
+      });
+
+      await tx.payment.create({
+        data: {
+          amount,
+          currency: subscription.plan.currency,
+          note: "Renewed from the admin subscriptions dashboard.",
+          date: new Date(),
+          clientId: subscription.clientId,
+          clientSubscriptionId: subscription.id,
         },
       });
 
       return {
         subscriptionStatus: toAdminSubscriptionStatus(updated.status, updated.renewsAt),
-        paymentStatus: "Due soon" as AdminPaymentStatus,
+        paymentStatus: "Paid" as AdminPaymentStatus,
       };
-    }
-
-    if (action === "cancel") {
-      if (subscription.status === "CANCELED") {
-        throw new Error("This subscription is already canceled.");
-      }
-
-      const now = new Date();
-      const updated = await tx.clientSubscription.update({
-        where: { id: subscription.id },
-        data: {
-          status: "CANCELED",
-          endsAt: now,
-          renewsAt: null,
-          isAutoRenew: false,
-        },
-        select: {
-          status: true,
-          renewsAt: true,
-        },
-      });
-
-      await tx.client.update({
-        where: { id: subscription.clientId },
-        data: {
-          isPaid: false,
-          paymentStatus: "UNPAID",
-        },
-      });
-
-      return {
-        subscriptionStatus: toAdminSubscriptionStatus(updated.status, updated.renewsAt),
-        paymentStatus: "Manual review" as AdminPaymentStatus,
-      };
-    }
-
-    if (subscription.status === "CANCELED") {
-      throw new Error("Canceled subscriptions cannot be renewed.");
-    }
-
-    const nextRenewal = getNextRenewalDate(subscription);
-    const updated = await tx.clientSubscription.update({
-      where: { id: subscription.id },
-      data: {
-        status: "ACTIVE",
-        endsAt: null,
-        renewsAt: nextRenewal,
-        sessionsUsed: 0,
-        sessionsTotal: subscription.sessionsTotal,
-        isAutoRenew: true,
-      },
-      select: {
-        status: true,
-        renewsAt: true,
-      },
     });
 
-    await tx.client.update({
-      where: { id: subscription.clientId },
-      data: {
-        isPaid: true,
-        paymentStatus: "PAID",
-      },
-    });
+  let result;
 
-    await tx.payment.create({
-      data: {
-        amount,
-        currency: subscription.plan.currency,
-        note: "Renewed from the admin subscriptions dashboard.",
-        date: new Date(),
-        clientId: subscription.clientId,
-        clientSubscriptionId: subscription.id,
-      },
-    });
+  try {
+    result = await runMutation(true);
+  } catch (error) {
+    if (!isMissingCustomPriceColumn(error)) {
+      throw error;
+    }
 
-    return {
-      subscriptionStatus: toAdminSubscriptionStatus(updated.status, updated.renewsAt),
-      paymentStatus: "Paid" as AdminPaymentStatus,
-    };
-  });
+    result = await runMutation(false);
+  }
 
   revalidateSubscriptionViews();
 

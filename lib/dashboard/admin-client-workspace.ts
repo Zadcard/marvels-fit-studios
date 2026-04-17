@@ -19,6 +19,8 @@ export type ClientFormState = {
   status: AdminClientStatus;
   paymentStatus: AdminPaymentStatus;
   paymentAmount: string;
+  groupId: string;
+  blockId: string;
 };
 
 export type AdminClientWorkspaceFilters = {
@@ -125,6 +127,8 @@ export const adminClientWorkspaceDefinition: WorkspaceDefinition<
     status: "Pending",
     paymentStatus: "Unpaid",
     paymentAmount: "",
+    groupId: "",
+    blockId: "",
   }),
   toFormState: (record) => ({
     fullName: record.fullName,
@@ -137,5 +141,7 @@ export const adminClientWorkspaceDefinition: WorkspaceDefinition<
       record.paymentAmountLabel === "No payment yet"
         ? ""
         : record.paymentAmountLabel.replace(/^EGP\s*/, ""),
+    groupId: record.primaryGroupId ?? "",
+    blockId: record.primaryBlockId ?? "",
   }),
 };
