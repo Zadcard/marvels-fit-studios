@@ -41,6 +41,7 @@ export function createMockPrisma(): Partial<PrismaClient> {
       create: vi.fn(),
       update: vi.fn(),
       delete: vi.fn(),
+      count: vi.fn(),
     },
     scheduleBlock: {
       findUnique: vi.fn(),
@@ -63,12 +64,18 @@ export function createMockPrisma(): Partial<PrismaClient> {
       update: vi.fn(),
       delete: vi.fn(),
     },
+    clientSubscription: {
+      findUnique: vi.fn(),
+      findMany: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+    },
   };
 }
 
 /**
- * Mock implementation of getPrisma for testing
- * Usage: vi.mock('@/lib/prisma', () => ({ getPrisma: mockGetPrisma }));
+ * Mock getPrisma function for use in vi.mock
  */
 export const mockGetPrisma = vi.fn(() => createMockPrisma());
 
