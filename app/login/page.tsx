@@ -18,19 +18,24 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl");
 
+  const [loginMethod, setLoginMethod] = useState<"clientId" | "email">(
+    "clientId"
+  );
+  const [clientId, setClientId] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [capsLockOn, setCapsLockOn] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [formError, setFormError] = useState("");
-  const [helperMessage, setHelperMessage] = useState("");
   const [fieldErrors, setFieldErrors] = useState<{
+    clientId?: string;
     email?: string;
     password?: string;
   }>({});
   const [shakeForm, setShakeForm] = useState(false);
 
+  const clientIdInputRef = useRef<HTMLInputElement>(null);
   const emailInputRef = useRef<HTMLInputElement>(null);
   const passwordInputRef = useRef<HTMLInputElement>(null);
 
@@ -40,15 +45,30 @@ function LoginForm() {
   }, []);
 
   const validateFields = useCallback((): boolean => {
-    const errors: { email?: string; password?: string } = {};
+    const errors: {
+      clientId?: string;
+      email?: string;
+      password?: string;
+    } = {};
     let firstInvalidField: HTMLInputElement | null = null;
 
-    if (!email.trim()) {
-      errors.email = "Please enter your email address";
-      firstInvalidField = emailInputRef.current;
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      errors.email = "Please enter a valid email address";
-      firstInvalidField = emailInputRef.current;
+    if (loginMethod === "clientId") {
+      if (!clientId.trim()) {
+        errors.clientId = "Please enter your 7-digit Client ID";
+        firstInvalidField = clientIdInputRef.current;
+      } else if (!/^\d{7}$/.test(clientId.trim())) {
+        errors.clientId =
+          "Client ID must be exactly 7 digits (e.g., 2605020)";
+        firstInvalidField = clientIdInputRef.current;
+      }
+    } else {
+      if (!email.trim()) {
+        errors.email = "Please enter your email address";
+        firstInvalidField = emailInputRef.current;
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+        errors.email = "Please enter a valid email address";
+        firstInvalidField = emailInputRef.current;
+      }
     }
 
     if (!password) {
@@ -62,13 +82,12 @@ function LoginForm() {
     setFieldErrors(errors);
     firstInvalidField?.focus();
     return Object.keys(errors).length === 0;
-  }, [email, password]);
+  }, [clientId, email, password, loginMethod]);
 
   const handleSubmit = useCallback(
     async (event: FormEvent) => {
       event.preventDefault();
       setFormError("");
-      setHelperMessage("");
 
       if (!validateFields()) {
         triggerShake();
@@ -78,9 +97,19 @@ function LoginForm() {
       setIsLoading(true);
 
       try {
+        const credentials =
+          loginMethod === "clientId"
+            ? {
+                clientId: clientId.trim(),
+                password,
+              }
+            : {
+                email,
+                password,
+              };
+
         const result = await signIn("credentials", {
-          email,
-          password,
+          ...credentials,
           redirect: false,
           callbackUrl:
             callbackUrl?.startsWith("/") && !callbackUrl.startsWith("//")
@@ -90,8 +119,11 @@ function LoginForm() {
 
         if (result?.error) {
           if (result.error === "CredentialsSignin" || result.error === "Credentials") {
-            setFormError("Invalid email or password.");
-            passwordInputRef.current?.focus();
+            const identifier =
+              loginMethod === "clientId" ? "Client ID" : "email";
+            setFormError(`Invalid ${identifier} or password.`);
+            (loginMethod === "clientId" ? passwordInputRef : passwordInputRef)
+              .current?.focus();
           } else {
             setFormError("Something went wrong. Try again.");
           }
@@ -113,14 +145,16 @@ function LoginForm() {
         setIsLoading(false);
       }
     },
-    [callbackUrl, email, password, triggerShake, validateFields]
+    [callbackUrl, clientId, email, password, loginMethod, triggerShake, validateFields]
   );
 
   const handlePasswordKeyState = (event: KeyboardEvent<HTMLInputElement>) => {
     setCapsLockOn(event.getModifierState("CapsLock"));
   };
 
-  const clearFieldError = (field: "email" | "password") => {
+  const clearFieldError = (
+    field: "clientId" | "email" | "password"
+  ) => {
     setFieldErrors((prev) => {
       const next = { ...prev };
       delete next[field];
@@ -131,20 +165,17 @@ function LoginForm() {
       setFormError("");
     }
 
-    if (helperMessage) {
-      setHelperMessage("");
-    }
   };
 
   return (
     <div className="login-form-panel">
-        <div className="login-form-header">
-          <div className="mv-eyebrow">Member Access</div>
-          <h2 className="login-form-title">Welcome back</h2>
-          <p className="login-form-subtitle">
-            Sign in to access your dashboard and sessions.
-          </p>
-        </div>
+      <div className="login-form-header">
+        <div className="mv-eyebrow">Member Access</div>
+        <h2 className="login-form-title">Welcome back</h2>
+        <p className="login-form-subtitle">
+          Sign in to access your dashboard and sessions.
+        </p>
+      </div>
 
       {callbackUrl ? (
         <div className="login-callout" role="status">
@@ -175,33 +206,102 @@ function LoginForm() {
         onSubmit={handleSubmit}
         noValidate
       >
-        <div className="login-field-group">
-          <label className="login-field-label" htmlFor="login-email">
-            Email address
-          </label>
-          <input
-            ref={emailInputRef}
-            id="login-email"
-            name="email"
-            type="email"
-            className={`mv-field ${fieldErrors.email ? "field-error" : ""}`}
-            value={email}
-            onChange={(event) => {
-              setEmail(event.target.value);
-              clearFieldError("email");
+        <div className="login-method-tabs" role="tablist">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={loginMethod === "clientId"}
+            onClick={() => {
+              setLoginMethod("clientId");
+              setFieldErrors({});
+              setFormError("");
             }}
-            placeholder="name@example.com"
-            autoComplete="email"
-            inputMode="email"
-            spellCheck={false}
+            className={`login-method-tab ${
+              loginMethod === "clientId" ? "active" : ""
+            }`}
             disabled={isLoading}
-          />
-          {fieldErrors.email ? (
-            <div className="login-field-error" role="alert">
-              {fieldErrors.email}
-            </div>
-          ) : null}
+          >
+            Client ID
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={loginMethod === "email"}
+            onClick={() => {
+              setLoginMethod("email");
+              setFieldErrors({});
+              setFormError("");
+            }}
+            className={`login-method-tab ${
+              loginMethod === "email" ? "active" : ""
+            }`}
+            disabled={isLoading}
+          >
+            Email
+          </button>
         </div>
+
+        {loginMethod === "clientId" && (
+          <div className="login-field-group">
+            <label className="login-field-label" htmlFor="login-client-id">
+              Client ID (7 digits)
+            </label>
+            <input
+              ref={clientIdInputRef}
+              id="login-client-id"
+              name="clientId"
+              type="text"
+              className={`mv-field ${
+                fieldErrors.clientId ? "field-error" : ""
+              }`}
+              value={clientId}
+              onChange={(event) => {
+                const value = event.target.value.replace(/\D/g, "").slice(0, 7);
+                setClientId(value);
+                clearFieldError("clientId");
+              }}
+              placeholder="e.g., 2605020"
+              inputMode="numeric"
+              autoComplete="off"
+              disabled={isLoading}
+            />
+            {fieldErrors.clientId ? (
+              <div className="login-field-error" role="alert">
+                {fieldErrors.clientId}
+              </div>
+            ) : null}
+          </div>
+        )}
+
+        {loginMethod === "email" && (
+          <div className="login-field-group">
+            <label className="login-field-label" htmlFor="login-email">
+              Email address
+            </label>
+            <input
+              ref={emailInputRef}
+              id="login-email"
+              name="email"
+              type="email"
+              className={`mv-field ${fieldErrors.email ? "field-error" : ""}`}
+              value={email}
+              onChange={(event) => {
+                setEmail(event.target.value);
+                clearFieldError("email");
+              }}
+              placeholder="name@example.com"
+              autoComplete="email"
+              inputMode="email"
+              spellCheck={false}
+              disabled={isLoading}
+            />
+            {fieldErrors.email ? (
+              <div className="login-field-error" role="alert">
+                {fieldErrors.email}
+              </div>
+            ) : null}
+          </div>
+        )}
 
         <div className="login-field-group">
           <label className="login-field-label" htmlFor="login-password">
@@ -282,25 +382,10 @@ function LoginForm() {
           <p className="login-trust-note">
             Secure portal access.
           </p>
-          <button
-            type="button"
-            className="login-forgot"
-            onClick={() =>
-              setHelperMessage(
-                "Need help? Contact the studio team on WhatsApp at +20 103 372 4777."
-              )
-            }
-            disabled={isLoading}
-          >
-            Need help signing in?
-          </button>
+          <Link href="/password-reset/request" className="login-forgot">
+            Forgot password?
+          </Link>
         </div>
-
-        {helperMessage ? (
-          <div className="login-helper-note" role="status">
-            {helperMessage}
-          </div>
-        ) : null}
 
         <button
           type="submit"

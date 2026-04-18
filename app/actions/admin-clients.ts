@@ -6,16 +6,25 @@ import { revalidatePath } from "next/cache";
 
 import { requireRole } from "@/lib/auth/session";
 import { getPrisma } from "@/lib/prisma";
+import { clientIdGenerator } from "@/lib/services/client-id-generator";
+import { passwordGenerator } from "@/lib/services/password-generator";
+import {
+  addClientToScheduleBlock,
+  moveClientBetweenScheduleBlocks,
+  removeClientFromScheduleBlock,
+} from "@/lib/services/schedule-block-service";
 
 type SaveAdminClientInput = {
   clientId?: string | null;
   fullName: string;
-  email: string;
+  email?: string;
   phone?: string;
   initialPassword?: string;
   status: "Active" | "Pending" | "Paused";
   paymentStatus: "Paid" | "Unpaid" | "Due soon";
   paymentAmount?: string;
+  groupId?: string;
+  blockId?: string;
 };
 
 type DeleteAdminClientInput = {
@@ -62,6 +71,11 @@ function normalizePassword(value: string | undefined) {
   return value?.trim() ?? "";
 }
 
+function normalizeEmail(value: string | undefined) {
+  const normalized = value?.trim().toLowerCase() ?? "";
+  return normalized.length > 0 ? normalized : null;
+}
+
 function assertValidPassword(password: string, mode: "create" | "reset") {
   if (!password) {
     if (mode === "create") {
@@ -80,36 +94,59 @@ function assertValidPassword(password: string, mode: "create" | "reset") {
   }
 }
 
+async function generateUniqueClientId() {
+  const prisma = getPrisma();
+  const nextClientNumber = await clientIdGenerator.getNextClientNumber();
+
+  for (let offset = 0; offset < 1000; offset += 1) {
+    const candidate = clientIdGenerator.generateId({
+      clientNumber: nextClientNumber + offset,
+    });
+    const existing = await prisma.user.findUnique({
+      where: { clientId: candidate },
+      select: { id: true },
+    });
+
+    if (!existing) {
+      return candidate;
+    }
+  }
+
+  throw new Error("Could not generate a unique client ID. Please try again.");
+}
+
 export async function saveAdminClient(input: SaveAdminClientInput) {
   await requireRole(UserRole.ADMIN);
   const prisma = getPrisma();
   const fullName = input.fullName.trim();
-  const email = input.email.trim().toLowerCase();
+  const email = normalizeEmail(input.email);
   const phone = input.phone?.trim() || null;
   const initialPassword = normalizePassword(input.initialPassword);
   const status = toClientStatus(input.status);
   const paymentStatus = toPaymentStatus(input.paymentStatus);
   const amount = parseAmount(input.paymentAmount);
+  const groupId = input.groupId?.trim() || null;
+  const targetBlockId = input.blockId?.trim() || null;
 
   if (!fullName) {
     throw new Error("Client full name is required.");
   }
 
-  if (!email) {
-    throw new Error("Client email is required.");
-  }
-
-  const existingUser = await prisma.user.findUnique({
-    where: { email },
-    select: {
-      id: true,
-      clientProfile: {
+  const existingUser = email
+    ? await prisma.user.findUnique({
+        where: { email },
         select: {
           id: true,
+          clientProfile: {
+            select: {
+              id: true,
+            },
+          },
         },
-      },
-    },
-  });
+      })
+    : null;
+
+  let savedClientId = input.clientId ?? null;
 
   if (input.clientId) {
     const client = await prisma.client.findUnique({
@@ -131,7 +168,7 @@ export async function saveAdminClient(input: SaveAdminClientInput) {
       throw new Error("Client not found.");
     }
 
-    if (existingUser && existingUser.id !== client.userId) {
+    if (email && existingUser && existingUser.id !== client.userId) {
       throw new Error("Another user already uses this email.");
     }
 
@@ -154,6 +191,7 @@ export async function saveAdminClient(input: SaveAdminClientInput) {
         data: {
           fullName,
           phone,
+          groupId,
           isPaid: paymentStatus === "PAID",
           paymentStatus,
           status,
@@ -176,22 +214,28 @@ export async function saveAdminClient(input: SaveAdminClientInput) {
         });
       }
     });
+
+    savedClientId = client.id;
   } else {
-    if (existingUser?.clientProfile) {
+    if (email && existingUser?.clientProfile) {
       throw new Error("A client with this email already exists.");
     }
 
-    if (existingUser && !existingUser.clientProfile) {
+    if (email && existingUser && !existingUser.clientProfile) {
       throw new Error("A user with this email already exists. Use a different email.");
     }
 
-    assertValidPassword(initialPassword, "create");
-    const password = await bcrypt.hash(initialPassword, 12);
+    const generatedClientId = await generateUniqueClientId();
+    const resolvedPassword =
+      initialPassword || passwordGenerator.generatePassword(generatedClientId);
+    assertValidPassword(resolvedPassword, "create");
+    const password = await bcrypt.hash(resolvedPassword, 12);
 
     await prisma.$transaction(async (tx) => {
       const createdUser = await tx.user.create({
         data: {
           name: fullName,
+          clientId: generatedClientId,
           email,
           password,
           role: "CLIENT",
@@ -205,6 +249,7 @@ export async function saveAdminClient(input: SaveAdminClientInput) {
         data: {
           fullName,
           phone,
+          groupId,
           status,
           isPaid: paymentStatus === "PAID",
           paymentStatus,
@@ -229,12 +274,63 @@ export async function saveAdminClient(input: SaveAdminClientInput) {
           },
         });
       }
+
+      savedClientId = createdClient.id;
+    });
+  }
+
+  if (!savedClientId) {
+    throw new Error("Client record could not be resolved after save.");
+  }
+
+  const updatedClient = await prisma.client.findUnique({
+    where: {
+      id: savedClientId,
+    },
+    select: {
+      id: true,
+      scheduleBlocks: {
+        take: 1,
+        select: {
+          scheduleBlockId: true,
+        },
+      },
+    },
+  });
+
+  if (!updatedClient) {
+    throw new Error("Client record could not be resolved after save.");
+  }
+
+  const currentBlockId = updatedClient.scheduleBlocks[0]?.scheduleBlockId ?? null;
+
+  if (currentBlockId && !targetBlockId) {
+    await removeClientFromScheduleBlock({
+      blockId: currentBlockId,
+      clientId: updatedClient.id,
+    });
+  } else if (!currentBlockId && targetBlockId) {
+    await addClientToScheduleBlock({
+      blockId: targetBlockId,
+      clientId: updatedClient.id,
+    });
+  } else if (
+    currentBlockId &&
+    targetBlockId &&
+    currentBlockId !== targetBlockId
+  ) {
+    await moveClientBetweenScheduleBlocks({
+      fromBlockId: currentBlockId,
+      toBlockId: targetBlockId,
+      clientId: updatedClient.id,
     });
   }
 
   revalidatePath("/admin");
   revalidatePath("/admin/clients");
+  revalidatePath("/admin/blocks");
   revalidatePath("/admin/subscriptions");
+  revalidatePath("/admin/schedule");
 }
 
 export async function deleteAdminClient(input: DeleteAdminClientInput) {
@@ -299,6 +395,7 @@ export async function deleteAdminClient(input: DeleteAdminClientInput) {
   revalidatePath("/admin");
   revalidatePath("/admin/clients");
   revalidatePath("/admin/subscriptions");
+  revalidatePath("/admin/schedule");
   revalidatePath("/coach/clients");
   revalidatePath("/coach/sessions");
   revalidatePath("/client");

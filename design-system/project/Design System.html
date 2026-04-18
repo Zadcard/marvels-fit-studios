@@ -1,0 +1,1885 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Marvel's Fit Studios — Design System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Archivo+Black&display=swap" rel="stylesheet">
+<style>
+  /* =====================================================
+     MARVEL'S FIT STUDIOS — DESIGN SYSTEM
+     "Training Floor" edition. Brutalist sport editorial.
+     ===================================================== */
+
+  :root{
+    /* brand tokens, lifted from globals.css */
+    --mv-bg:#000000;
+    --mv-bg-soft:#0a0a0a;
+    --mv-surface:#111111;
+    --mv-surface-strong:#1a1a1a;
+    --mv-text:#ffffff;
+    --mv-muted:#a0a0a0;
+    --mv-muted-strong:#cccccc;
+    --mv-line:#333333;
+    --mv-line-strong:#444444;
+    --mv-primary:#e62429;
+    --mv-primary-deep:#b91c21;
+    --mv-primary-soft:#2d1011;
+    --mv-accent:#ff0000;
+    --mv-success:#25d366;
+    --mv-warning:#f59e0b;
+    --mv-danger:#ef4444;
+
+    --font-display:"Space Grotesk", ui-sans-serif, system-ui;
+    --font-body:"Manrope", ui-sans-serif, system-ui;
+    --font-mono:"JetBrains Mono", ui-monospace, monospace;
+    --font-stencil:"Archivo Black", "Space Grotesk", sans-serif;
+
+    --lane:1px solid var(--mv-line);
+    --lane-strong:1px solid var(--mv-line-strong);
+  }
+
+  *,*::before,*::after{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background:
+      radial-gradient(ellipse at 8% 12%, rgba(230,36,41,.18) 0%, transparent 32%),
+      radial-gradient(ellipse at 92% 38%, rgba(200,20,28,.13) 0%, transparent 30%),
+      radial-gradient(ellipse at 50% 78%, rgba(220,30,38,.14) 0%, transparent 35%),
+      linear-gradient(180deg,#050505 0%, #0a0a0a 100%);
+    color:var(--mv-text);
+    font-family:var(--font-body);
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+    overflow-x:hidden;
+  }
+
+  /* subtle grain overlay */
+  body::before{
+    content:"";
+    position:fixed; inset:0; pointer-events:none; z-index:100;
+    background-image:
+      radial-gradient(rgba(255,255,255,.025) 1px, transparent 1px);
+    background-size:3px 3px;
+    mix-blend-mode:overlay;
+    opacity:.5;
+  }
+
+  ::selection{ background:rgba(230,36,41,.4); color:#fff; }
+
+  /* =========== SHELL =========== */
+  .shell{
+    max-width:1320px;
+    margin:0 auto;
+    padding:0 28px;
+  }
+
+  /* =========== MASTHEAD =========== */
+  .masthead{
+    border-bottom:var(--lane-strong);
+    padding:28px 0 24px;
+    display:grid;
+    grid-template-columns: auto 1fr auto;
+    gap:32px;
+    align-items:center;
+    font-family:var(--font-mono);
+    font-size:.72rem;
+    text-transform:uppercase;
+    letter-spacing:.14em;
+    color:var(--mv-muted);
+  }
+  .mast-lockup{
+    display:flex; align-items:center; gap:14px;
+  }
+  .mast-lockup img{
+    width:44px; height:44px; object-fit:contain;
+    filter:brightness(0) invert(1);
+  }
+  .mast-lockup .wm{
+    display:grid; gap:2px;
+  }
+  .mast-lockup .wm strong{
+    font-family:var(--font-display);
+    font-size:1.02rem; font-weight:700;
+    color:#fff; letter-spacing:-.02em;
+    text-transform:none;
+  }
+  .mast-lockup .wm span{
+    font-size:.62rem; letter-spacing:.22em;
+  }
+  .mast-meta{
+    display:flex; gap:28px; justify-content:center;
+    color:var(--mv-muted-strong);
+  }
+  .mast-meta b{ color:#fff; font-weight:700; }
+  .mast-right{
+    display:flex; align-items:center; gap:14px;
+  }
+  .mast-dot{
+    width:8px; height:8px; border-radius:50%;
+    background:var(--mv-primary);
+    box-shadow:0 0 0 4px rgba(230,36,41,.18);
+    animation:pulseDot 2s ease-in-out infinite;
+  }
+  @keyframes pulseDot{
+    0%,100%{ box-shadow:0 0 0 4px rgba(230,36,41,.18); }
+    50%{ box-shadow:0 0 0 8px rgba(230,36,41,.04); }
+  }
+
+  /* =========== HERO BAND =========== */
+  .hero{
+    padding:72px 0 64px;
+    border-bottom:var(--lane-strong);
+    position:relative;
+  }
+  .hero-grid{
+    display:grid;
+    grid-template-columns: 1fr auto;
+    gap:48px;
+    align-items:end;
+  }
+  .hero-tag{
+    font-family:var(--font-mono);
+    font-size:.74rem;
+    color:var(--mv-primary);
+    letter-spacing:.22em;
+    text-transform:uppercase;
+    margin-bottom:24px;
+    display:inline-flex; align-items:center; gap:12px;
+  }
+  .hero-tag::before{
+    content:""; width:40px; height:1px; background:currentColor;
+  }
+  .hero-title{
+    font-family:var(--font-stencil);
+    font-size:clamp(72px, 11vw, 168px);
+    line-height:.82;
+    letter-spacing:-.035em;
+    color:#fff;
+    text-transform:uppercase;
+    margin:0;
+  }
+  .hero-title em{
+    font-style:normal;
+    color:transparent;
+    -webkit-text-stroke:2px rgba(255,255,255,.42);
+  }
+  .hero-title .slash{
+    color:var(--mv-primary);
+    font-style:normal;
+    display:inline-block;
+    transform:skewX(-8deg);
+  }
+  .hero-side{
+    display:grid;
+    gap:14px;
+    min-width:280px;
+    padding-bottom:14px;
+  }
+  .hero-side p{
+    margin:0;
+    color:var(--mv-muted-strong);
+    font-size:.95rem;
+    line-height:1.6;
+    max-width:34ch;
+  }
+  .hero-stats{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:0;
+    margin-top:40px;
+    border-top:var(--lane);
+    border-bottom:var(--lane);
+  }
+  .hero-stat{
+    padding:18px 20px;
+    border-right:var(--lane);
+    display:grid;
+    gap:4px;
+  }
+  .hero-stat:last-child{ border-right:0; }
+  .hero-stat .k{
+    font-family:var(--font-mono);
+    font-size:.62rem; letter-spacing:.22em;
+    color:var(--mv-muted);
+    text-transform:uppercase;
+  }
+  .hero-stat .v{
+    font-family:var(--font-stencil);
+    font-size:1.7rem;
+    letter-spacing:-.02em;
+    color:#fff;
+  }
+  .hero-stat .v em{
+    font-style:normal;
+    color:var(--mv-primary);
+  }
+
+  /* =========== SECTION CHASSIS =========== */
+  .sec{
+    padding:64px 0;
+    border-bottom:var(--lane-strong);
+    position:relative;
+  }
+  .sec-head{
+    display:grid;
+    grid-template-columns: 64px 1fr auto;
+    gap:24px;
+    align-items:baseline;
+    margin-bottom:40px;
+    padding-bottom:16px;
+    border-bottom:var(--lane);
+  }
+  .sec-num{
+    font-family:var(--font-stencil);
+    font-size:2.4rem;
+    color:var(--mv-primary);
+    line-height:1;
+    letter-spacing:-.04em;
+  }
+  .sec-title{
+    font-family:var(--font-display);
+    font-size:2rem;
+    font-weight:700;
+    letter-spacing:-.03em;
+    margin:0;
+    color:#fff;
+  }
+  .sec-title em{
+    font-style:normal;
+    color:var(--mv-muted);
+  }
+  .sec-tag{
+    font-family:var(--font-mono);
+    font-size:.7rem;
+    letter-spacing:.2em;
+    text-transform:uppercase;
+    color:var(--mv-muted);
+    align-self:center;
+  }
+
+  /* eyebrow */
+  .eyebrow{
+    display:inline-flex; align-items:center; gap:10px;
+    color:var(--mv-primary);
+    font-family:var(--font-mono);
+    font-size:.7rem;
+    font-weight:700;
+    letter-spacing:.2em;
+    text-transform:uppercase;
+  }
+  .eyebrow::before{
+    content:""; width:24px; height:1px; background:currentColor;
+  }
+  .eyebrow.muted{ color:var(--mv-muted); }
+
+  /* =========== COLORS =========== */
+  .colorwall{
+    display:grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+    gap:0;
+    border:var(--lane);
+    overflow:hidden;
+  }
+  .swatch{
+    padding:28px 22px;
+    min-height:240px;
+    display:flex; flex-direction:column;
+    justify-content:space-between;
+    border-right:var(--lane);
+    position:relative;
+  }
+  .swatch:last-child{ border-right:0; }
+  .swatch .name{
+    font-family:var(--font-display);
+    font-size:1.2rem;
+    font-weight:700;
+    letter-spacing:-.02em;
+    color:#fff;
+  }
+  .swatch .role{
+    font-family:var(--font-mono);
+    font-size:.62rem;
+    letter-spacing:.2em;
+    text-transform:uppercase;
+    opacity:.7;
+    margin-top:6px;
+  }
+  .swatch .hex{
+    font-family:var(--font-mono);
+    font-size:.82rem;
+    letter-spacing:.04em;
+    opacity:.8;
+  }
+  .swatch .dot{
+    position:absolute; top:20px; right:20px;
+    width:10px; height:10px; border-radius:50%;
+    background:currentColor; opacity:.9;
+  }
+  .sw-primary{ background:var(--mv-primary); color:#fff; }
+  .sw-primary .name{ color:#fff; }
+  .sw-deep{ background:var(--mv-primary-deep); color:#fff; }
+  .sw-soft{ background:var(--mv-primary-soft); color:#fff; }
+  .sw-bg{ background:var(--mv-bg); color:#fff; border-right-color:var(--mv-line); }
+  .sw-bg .name{ color:#fff; }
+  .sw-surface{ background:var(--mv-surface); color:#fff; }
+  .sw-surface-strong{ background:var(--mv-surface-strong); color:#fff; }
+
+  /* neutrals and semantics row */
+  .stacks{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap:0;
+    margin-top:0;
+    border:var(--lane); border-top:0;
+  }
+  .stack{
+    padding:24px;
+    border-right:var(--lane);
+  }
+  .stack:last-child{ border-right:0; }
+  .stack h4{
+    font-family:var(--font-mono);
+    font-size:.7rem;
+    letter-spacing:.2em;
+    text-transform:uppercase;
+    color:var(--mv-muted);
+    margin:0 0 18px;
+  }
+  .stack-row{
+    display:grid;
+    grid-template-columns: auto 1fr auto;
+    gap:14px;
+    align-items:center;
+    padding:12px 0;
+    border-bottom:1px dashed var(--mv-line);
+  }
+  .stack-row:last-child{ border-bottom:0; }
+  .stack-chip{
+    width:42px; height:42px;
+    border:1px solid rgba(255,255,255,.1);
+  }
+  .stack-name{
+    font-family:var(--font-display);
+    font-size:.95rem;
+    font-weight:600;
+    letter-spacing:-.01em;
+  }
+  .stack-name small{
+    display:block;
+    font-family:var(--font-body);
+    font-weight:500;
+    color:var(--mv-muted);
+    font-size:.78rem;
+    margin-top:2px;
+    letter-spacing:0;
+  }
+  .stack-hex{
+    font-family:var(--font-mono);
+    font-size:.78rem;
+    color:var(--mv-muted-strong);
+  }
+
+  /* =========== TYPE =========== */
+  .type-grid{
+    display:grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap:0;
+    border:var(--lane);
+  }
+  .type-showcase{
+    padding:40px;
+    border-right:var(--lane);
+    display:grid; gap:32px;
+    background:linear-gradient(180deg, rgba(20,20,20,.4), rgba(5,5,5,.4));
+  }
+  .type-spec{
+    padding:40px;
+    display:grid;
+    grid-auto-rows:min-content;
+    gap:0;
+  }
+  .tspec-row{
+    padding:18px 0;
+    border-bottom:var(--lane);
+    display:grid;
+    grid-template-columns: 1fr auto;
+    gap:10px;
+    align-items:baseline;
+  }
+  .tspec-row:first-child{ padding-top:0; }
+  .tspec-row:last-child{ border-bottom:0; }
+  .tspec-label{
+    font-family:var(--font-mono);
+    font-size:.68rem;
+    letter-spacing:.2em;
+    text-transform:uppercase;
+    color:var(--mv-muted);
+  }
+  .tspec-value{
+    font-family:var(--font-mono);
+    font-size:.82rem;
+    color:#fff;
+  }
+  .t-display{
+    font-family:var(--font-stencil);
+    font-size:6.5rem;
+    line-height:.88;
+    letter-spacing:-.035em;
+    color:#fff;
+    text-transform:uppercase;
+    margin:0;
+  }
+  .t-display .accent{ color:var(--mv-primary); }
+  .t-h1{
+    font-family:var(--font-display);
+    font-size:3rem;
+    font-weight:700;
+    letter-spacing:-.035em;
+    color:#fff;
+    line-height:1;
+    margin:0;
+  }
+  .t-h2{
+    font-family:var(--font-display);
+    font-size:1.8rem;
+    font-weight:700;
+    letter-spacing:-.03em;
+    color:#fff;
+    margin:0;
+  }
+  .t-body{
+    font-family:var(--font-body);
+    font-size:1rem;
+    line-height:1.7;
+    color:var(--mv-muted-strong);
+    margin:0;
+    max-width:50ch;
+  }
+  .t-mono{
+    font-family:var(--font-mono);
+    font-size:.82rem;
+    color:var(--mv-primary);
+    letter-spacing:.04em;
+  }
+  .t-label{
+    display:block;
+    font-family:var(--font-mono);
+    font-size:.62rem;
+    letter-spacing:.24em;
+    text-transform:uppercase;
+    color:var(--mv-muted);
+    margin-bottom:10px;
+  }
+
+  /* =========== BUTTONS =========== */
+  .btns-grid{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    border:var(--lane);
+  }
+  .btns-cell{
+    padding:32px;
+    border-right:var(--lane);
+    display:grid;
+    gap:18px;
+    align-content:start;
+  }
+  .btns-cell:last-child{ border-right:0; }
+  .btns-cell h5{
+    font-family:var(--font-mono);
+    font-size:.68rem;
+    letter-spacing:.22em;
+    text-transform:uppercase;
+    color:var(--mv-muted);
+    margin:0 0 6px;
+  }
+
+  .mv-btn{
+    min-height:52px;
+    display:inline-flex;
+    align-items:center; justify-content:center;
+    gap:10px;
+    padding:0 26px;
+    border:1px solid transparent;
+    border-radius:999px;
+    font-family:var(--font-body);
+    font-size:.78rem;
+    font-weight:800;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    cursor:pointer;
+    transition:transform .18s ease, background .18s ease, box-shadow .18s ease, border-color .18s ease;
+    color:#fff;
+  }
+  .mv-btn:hover{ transform:translateY(-1px); }
+  .mv-btn-primary{
+    background:linear-gradient(135deg, var(--mv-primary) 0%, #ff4f54 100%);
+    box-shadow:0 16px 30px rgba(230,36,41,.32);
+  }
+  .mv-btn-primary:hover{
+    background:linear-gradient(135deg, var(--mv-primary-deep) 0%, #d92b30 100%);
+  }
+  .mv-btn-secondary{
+    background:rgba(30,30,30,.92);
+    border-color:var(--mv-line-strong);
+  }
+  .mv-btn-outline{
+    background:transparent;
+    border-color:var(--mv-line-strong);
+    color:var(--mv-muted-strong);
+  }
+  .mv-btn-outline:hover{
+    color:#fff; border-color:var(--mv-muted);
+    background:rgba(255,255,255,.04);
+  }
+  .mv-btn-ghost{
+    background:transparent;
+    color:var(--mv-muted-strong);
+  }
+  .mv-btn-ghost:hover{
+    background:rgba(255,255,255,.05); color:#fff;
+  }
+  .mv-btn-danger{
+    background:linear-gradient(135deg, #b91c1c 0%, #ef4444 100%);
+    box-shadow:0 16px 30px rgba(185,28,28,.28);
+  }
+  .mv-btn-small{ min-height:38px; padding:0 16px; font-size:.7rem; }
+  .mv-btn-large{ min-height:60px; padding:0 36px; font-size:.86rem; }
+  .mv-btn-icon{
+    width:44px; height:44px; padding:0; border-radius:50%;
+    background:rgba(255,255,255,.06);
+    border-color:rgba(255,255,255,.12);
+  }
+  .mv-btn[disabled]{ opacity:.5; cursor:not-allowed; transform:none; }
+
+  /* =========== FORMS =========== */
+  .forms-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:0;
+    border:var(--lane);
+  }
+  .forms-cell{
+    padding:32px;
+    border-right:var(--lane);
+    display:grid;
+    gap:18px;
+    align-content:start;
+  }
+  .forms-cell:last-child{ border-right:0; }
+  .field-row{ display:grid; gap:8px; }
+  .field-label{
+    font-family:var(--font-mono);
+    font-size:.66rem;
+    letter-spacing:.2em;
+    text-transform:uppercase;
+    color:var(--mv-muted-strong);
+  }
+  .field{
+    width:100%;
+    min-height:52px;
+    padding:0 16px;
+    border:1px solid var(--mv-line);
+    border-radius:14px;
+    background:var(--mv-surface);
+    color:#fff;
+    font-family:var(--font-body);
+    font-size:.94rem;
+    transition:border-color .18s ease, box-shadow .18s ease;
+  }
+  .field::placeholder{ color:#555; }
+  .field:focus{
+    outline:none;
+    border-color:var(--mv-primary);
+    box-shadow:0 0 0 3px rgba(230,36,41,.2);
+  }
+  .field-focus{
+    border-color:var(--mv-primary);
+    box-shadow:0 0 0 3px rgba(230,36,41,.2);
+  }
+  .field-error{
+    border-color:var(--mv-danger);
+    box-shadow:0 0 0 3px rgba(239,68,68,.18);
+  }
+  textarea.field{
+    min-height:96px; padding:14px 16px; resize:vertical;
+  }
+  .field-help{
+    font-family:var(--font-mono);
+    font-size:.68rem;
+    color:var(--mv-muted);
+    letter-spacing:.04em;
+  }
+  .field-help.err{ color:var(--mv-danger); }
+
+  .check-row{
+    display:flex; align-items:center; gap:12px;
+  }
+  .check{
+    width:20px; height:20px;
+    border:1.5px solid var(--mv-line-strong);
+    border-radius:5px;
+    background:transparent;
+    display:inline-grid; place-items:center;
+  }
+  .check.on{
+    background:var(--mv-primary);
+    border-color:var(--mv-primary);
+  }
+  .check.on::after{
+    content:""; width:10px; height:5px;
+    border-left:2px solid #fff; border-bottom:2px solid #fff;
+    transform:rotate(-45deg) translate(1px,-1px);
+  }
+  .switch{
+    width:42px; height:24px; border-radius:999px;
+    background:var(--mv-surface-strong);
+    border:1px solid var(--mv-line-strong);
+    position:relative; cursor:pointer;
+  }
+  .switch::after{
+    content:""; position:absolute;
+    width:18px; height:18px; border-radius:50%;
+    background:#fff; top:2px; left:2px;
+    transition:.18s ease;
+  }
+  .switch.on{ background:var(--mv-primary); border-color:var(--mv-primary); }
+  .switch.on::after{ left:20px; }
+
+  /* =========== BADGES / PILLS =========== */
+  .pills{
+    display:flex; flex-wrap:wrap; gap:10px;
+  }
+  .pill{
+    display:inline-flex; align-items:center; gap:6px;
+    min-height:28px;
+    padding:0 12px;
+    border-radius:999px;
+    font-family:var(--font-body);
+    font-size:.72rem;
+    font-weight:700;
+    letter-spacing:.04em;
+    border:1px solid transparent;
+  }
+  .pill-neutral{
+    background:rgba(30,30,30,.9);
+    border-color:var(--mv-line);
+    color:var(--mv-muted-strong);
+  }
+  .pill-accent{
+    background:rgba(230,36,41,.12);
+    border-color:rgba(230,36,41,.4);
+    color:var(--mv-primary);
+  }
+  .pill-success{
+    background:rgba(37,211,102,.12);
+    border-color:rgba(37,211,102,.35);
+    color:var(--mv-success);
+  }
+  .pill-warning{
+    background:rgba(245,158,11,.12);
+    border-color:rgba(245,158,11,.35);
+    color:var(--mv-warning);
+  }
+  .pill-danger{
+    background:rgba(239,68,68,.12);
+    border-color:rgba(239,68,68,.35);
+    color:var(--mv-danger);
+  }
+  .pill-dot::before{
+    content:""; width:6px; height:6px; border-radius:50%;
+    background:currentColor;
+  }
+  .pill-solid{
+    background:var(--mv-primary); color:#fff; border-color:var(--mv-primary);
+  }
+
+  /* =========== CARDS / PANELS =========== */
+  .components-grid{
+    display:grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap:20px;
+  }
+
+  .panel{
+    border:1px solid var(--mv-line);
+    border-radius:22px;
+    background:linear-gradient(180deg, rgba(30,30,30,.5), rgba(15,15,15,.5));
+    padding:28px;
+  }
+  .panel-accent{
+    background:
+      radial-gradient(circle at 88% 12%, rgba(230,36,41,.18), transparent 40%),
+      linear-gradient(180deg, #1a1a1a 0%, #101010 100%);
+    border-color:rgba(230,36,41,.35);
+  }
+  .panel-strong{
+    background:linear-gradient(180deg, rgba(40,40,40,.5), rgba(20,20,20,.5)), var(--mv-surface-strong);
+  }
+
+  /* class card — signature */
+  .class-card{
+    position:relative; overflow:hidden;
+    padding:28px;
+    display:grid; gap:18px;
+  }
+  .class-card .top{
+    display:flex; justify-content:space-between; align-items:flex-start;
+    gap:12px;
+  }
+  .class-card h4{
+    font-family:var(--font-display);
+    font-size:1.5rem; font-weight:700;
+    letter-spacing:-.02em; margin:0;
+    color:#fff;
+    max-width:16ch;
+    text-wrap:balance;
+  }
+  .class-card .when{
+    font-family:var(--font-mono);
+    font-size:.72rem;
+    letter-spacing:.16em;
+    text-transform:uppercase;
+    color:var(--mv-muted);
+  }
+  .class-card .mid{
+    display:grid;
+    grid-template-columns:1fr 1fr 1fr;
+    gap:0;
+    border-top:var(--lane);
+    border-bottom:var(--lane);
+    padding:14px 0;
+  }
+  .class-card .mid > div{
+    border-right:var(--lane);
+    padding:0 16px;
+  }
+  .class-card .mid > div:first-child{ padding-left:0; }
+  .class-card .mid > div:last-child{ border-right:0; }
+  .class-card .mid .k{
+    font-family:var(--font-mono);
+    font-size:.6rem;
+    letter-spacing:.22em;
+    text-transform:uppercase;
+    color:var(--mv-muted);
+    margin-bottom:4px;
+  }
+  .class-card .mid .v{
+    font-family:var(--font-display);
+    font-weight:700;
+    color:#fff;
+    font-size:1rem;
+  }
+  .class-card .foot{
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+  }
+  .class-card .coach{
+    display:flex; align-items:center; gap:10px;
+  }
+  .avatar{
+    width:32px; height:32px; border-radius:50%;
+    display:inline-grid; place-items:center;
+    font-family:var(--font-display);
+    font-size:.78rem; font-weight:700;
+    color:#fff;
+    background:linear-gradient(135deg, var(--mv-primary), #ff4f54);
+    flex-shrink:0;
+  }
+  .avatar.b{ background:linear-gradient(135deg,#3b82f6,#8b5cf6); }
+  .avatar.c{ background:linear-gradient(135deg,#f59e0b,#ef4444); }
+  .avatar.d{ background:linear-gradient(135deg,#059669,#3b82f6); }
+  .coach-name{
+    font-size:.85rem; font-weight:600; color:#fff;
+  }
+  .coach-name small{
+    display:block;
+    color:var(--mv-muted);
+    font-family:var(--font-mono);
+    font-size:.64rem;
+    letter-spacing:.16em;
+    text-transform:uppercase;
+    margin-top:2px;
+  }
+
+  /* stat tile */
+  .stat-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:14px;
+  }
+  .stat{
+    padding:22px;
+    border:var(--lane);
+    border-radius:18px;
+    background:rgba(20,20,20,.72);
+    display:grid; gap:10px;
+  }
+  .stat .label{
+    font-family:var(--font-mono);
+    font-size:.64rem;
+    letter-spacing:.22em;
+    text-transform:uppercase;
+    color:var(--mv-muted);
+  }
+  .stat .value{
+    font-family:var(--font-stencil);
+    font-size:2.4rem;
+    line-height:.95;
+    letter-spacing:-.03em;
+    color:#fff;
+  }
+  .stat .value em{ color:var(--mv-primary); font-style:normal; }
+  .stat .trend{
+    font-family:var(--font-mono);
+    font-size:.72rem;
+    color:var(--mv-success);
+  }
+  .stat .trend.down{ color:var(--mv-danger); }
+
+  /* progress */
+  .bar{
+    position:relative;
+    height:10px;
+    background:var(--mv-surface-strong);
+    border:1px solid var(--mv-line);
+    border-radius:999px;
+    overflow:hidden;
+  }
+  .bar > i{
+    display:block; height:100%;
+    background:linear-gradient(90deg, var(--mv-primary), #ff6b6f);
+    border-radius:999px;
+  }
+
+  /* alert */
+  .alert{
+    display:grid;
+    grid-template-columns:auto 1fr auto;
+    gap:14px;
+    padding:16px 18px;
+    border-radius:14px;
+    align-items:center;
+  }
+  .alert-icon{
+    width:32px; height:32px;
+    border-radius:50%;
+    display:grid; place-items:center;
+    font-weight:800;
+    font-family:var(--font-display);
+    flex-shrink:0;
+  }
+  .alert-success{ background:rgba(37,211,102,.08); border:1px solid rgba(37,211,102,.3); }
+  .alert-success .alert-icon{ background:var(--mv-success); color:#06351a; }
+  .alert-danger{ background:rgba(239,68,68,.08); border:1px solid rgba(239,68,68,.3); }
+  .alert-danger .alert-icon{ background:var(--mv-danger); color:#fff; }
+  .alert-warning{ background:rgba(245,158,11,.08); border:1px solid rgba(245,158,11,.3); }
+  .alert-warning .alert-icon{ background:var(--mv-warning); color:#3a2702; }
+  .alert-info{ background:rgba(230,36,41,.08); border:1px solid rgba(230,36,41,.3); }
+  .alert-info .alert-icon{ background:var(--mv-primary); color:#fff; }
+  .alert-copy strong{ color:#fff; font-size:.92rem; }
+  .alert-copy p{ margin:2px 0 0; color:var(--mv-muted-strong); font-size:.84rem; }
+  .alert-close{
+    width:24px; height:24px; border-radius:50%;
+    border:1px solid var(--mv-line-strong);
+    background:transparent; color:var(--mv-muted);
+    display:grid; place-items:center;
+    cursor:pointer;
+  }
+
+  /* =========== SPACING / RADII =========== */
+  .spec-grid{
+    display:grid;
+    grid-template-columns:1.3fr 1fr 1fr;
+    gap:0;
+    border:var(--lane);
+  }
+  .spec-col{
+    padding:32px;
+    border-right:var(--lane);
+  }
+  .spec-col:last-child{ border-right:0; }
+  .spec-col h4{
+    font-family:var(--font-mono);
+    font-size:.7rem;
+    letter-spacing:.22em;
+    text-transform:uppercase;
+    color:var(--mv-muted);
+    margin:0 0 22px;
+  }
+  .space-row{
+    display:grid;
+    grid-template-columns: 70px 1fr auto;
+    gap:14px;
+    align-items:center;
+    padding:10px 0;
+  }
+  .space-row .tok{
+    font-family:var(--font-mono);
+    font-size:.72rem;
+    color:#fff;
+    letter-spacing:.08em;
+  }
+  .space-bar{
+    height:14px;
+    background:var(--mv-primary);
+    border-radius:2px;
+  }
+  .space-val{
+    font-family:var(--font-mono);
+    font-size:.72rem;
+    color:var(--mv-muted);
+  }
+
+  .radius-grid{
+    display:grid; grid-template-columns:1fr 1fr; gap:14px;
+  }
+  .radius-cell{
+    padding:14px;
+    text-align:center;
+  }
+  .radius-demo{
+    width:100%; aspect-ratio:1.2/1;
+    background:linear-gradient(135deg, var(--mv-primary), #ff4f54);
+    border:1px solid rgba(255,255,255,.1);
+    margin-bottom:10px;
+  }
+  .radius-cell .tok{
+    font-family:var(--font-mono);
+    font-size:.7rem;
+    color:#fff;
+  }
+  .radius-cell small{
+    display:block;
+    font-family:var(--font-mono);
+    font-size:.64rem;
+    color:var(--mv-muted);
+    margin-top:2px;
+  }
+
+  .shadow-grid{
+    display:grid; gap:18px;
+  }
+  .shadow-cell{
+    display:grid;
+    grid-template-columns: 80px 1fr;
+    gap:18px; align-items:center;
+  }
+  .shadow-demo{
+    height:62px; width:80px;
+    background:#1a1a1a;
+    border-radius:14px;
+    border:1px solid var(--mv-line);
+  }
+  .shadow-sm{ box-shadow:0 14px 28px rgba(12,16,24,.35); }
+  .shadow-md{ box-shadow:0 28px 54px rgba(12,16,24,.5); }
+  .shadow-glow{ box-shadow:0 16px 30px rgba(230,36,41,.42); border-color:rgba(230,36,41,.3); }
+  .shadow-name{
+    font-family:var(--font-mono);
+    font-size:.72rem; color:#fff; letter-spacing:.08em;
+  }
+  .shadow-name small{
+    display:block; color:var(--mv-muted); margin-top:3px;
+  }
+
+  /* =========== IN-THE-WILD MOCKUP =========== */
+  .wild{
+    display:grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap:22px;
+  }
+  .membership{
+    position:relative;
+    padding:32px;
+    overflow:hidden;
+    border:1px solid rgba(230,36,41,.35);
+    border-radius:24px;
+    background:
+      radial-gradient(circle at 90% 10%, rgba(230,36,41,.22), transparent 45%),
+      linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%);
+  }
+  .membership::before{
+    content:""; position:absolute;
+    top:-60px; right:-60px;
+    width:220px; height:220px;
+    border-radius:50%;
+    background:radial-gradient(circle, rgba(230,36,41,.35), transparent 70%);
+    filter:blur(30px);
+    pointer-events:none;
+  }
+  .membership-head{
+    display:flex; justify-content:space-between; align-items:flex-start;
+    gap:12px;
+    margin-bottom:26px;
+    position:relative;
+  }
+  .plan-tag{
+    font-family:var(--font-mono);
+    font-size:.66rem;
+    letter-spacing:.24em;
+    text-transform:uppercase;
+    color:var(--mv-primary);
+  }
+  .plan-title{
+    font-family:var(--font-stencil);
+    font-size:3rem;
+    line-height:.9;
+    letter-spacing:-.03em;
+    margin:10px 0 6px;
+    color:#fff;
+  }
+  .plan-price{
+    font-family:var(--font-display);
+    color:#fff;
+    font-size:.98rem;
+    font-weight:700;
+    display:flex; gap:8px; align-items:baseline;
+    margin-top:6px;
+  }
+  .plan-price .big{
+    font-family:var(--font-stencil);
+    font-size:2.3rem;
+    line-height:1;
+  }
+  .plan-price small{
+    color:var(--mv-muted);
+    font-family:var(--font-mono);
+    font-size:.72rem;
+    letter-spacing:.1em;
+  }
+  .plan-list{
+    list-style:none;
+    padding:22px 0 0;
+    margin:22px 0 0;
+    display:grid; gap:14px;
+    border-top:var(--lane);
+  }
+  .plan-list li{
+    position:relative;
+    padding-left:26px;
+    color:var(--mv-muted-strong);
+    font-size:.92rem;
+    line-height:1.5;
+  }
+  .plan-list li::before{
+    content:"";
+    position:absolute; left:0; top:6px;
+    width:14px; height:14px;
+    border-radius:50%;
+    background:rgba(230,36,41,.2);
+    border:1.5px solid var(--mv-primary);
+  }
+  .plan-list li::after{
+    content:"";
+    position:absolute; left:4px; top:10px;
+    width:6px; height:3px;
+    border-left:1.5px solid var(--mv-primary);
+    border-bottom:1.5px solid var(--mv-primary);
+    transform:rotate(-45deg);
+  }
+  .plan-cta{
+    margin-top:28px;
+    display:flex; gap:10px;
+    position:relative;
+  }
+
+  /* schedule list */
+  .schedule{
+    border:var(--lane);
+    border-radius:22px;
+    background:rgba(14,14,14,.65);
+    overflow:hidden;
+  }
+  .schedule-head{
+    padding:20px 24px;
+    border-bottom:var(--lane);
+    display:flex; justify-content:space-between; align-items:center;
+    gap:12px;
+  }
+  .schedule-head h4{
+    font-family:var(--font-display);
+    font-size:1.2rem;
+    font-weight:700;
+    color:#fff;
+    margin:0;
+    letter-spacing:-.02em;
+  }
+  .schedule-nav{
+    display:flex; gap:6px;
+  }
+  .nav-btn{
+    width:32px; height:32px;
+    border-radius:8px;
+    border:1px solid var(--mv-line-strong);
+    background:rgba(255,255,255,.05);
+    color:#fff;
+    display:grid; place-items:center;
+    cursor:pointer;
+  }
+  .sched-row{
+    display:grid;
+    grid-template-columns: 96px 1fr auto;
+    gap:16px;
+    padding:18px 24px;
+    border-bottom:var(--lane);
+    align-items:center;
+  }
+  .sched-row:last-child{ border-bottom:0; }
+  .sched-time{
+    font-family:var(--font-mono);
+    font-size:.88rem;
+    color:#fff;
+    letter-spacing:.06em;
+  }
+  .sched-time small{
+    display:block;
+    font-size:.6rem;
+    letter-spacing:.22em;
+    color:var(--mv-muted);
+    margin-top:3px;
+  }
+  .sched-class{
+    display:grid; gap:4px;
+  }
+  .sched-class strong{
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:1rem;
+    color:#fff;
+    letter-spacing:-.01em;
+  }
+  .sched-class span{
+    font-family:var(--font-mono);
+    font-size:.68rem;
+    letter-spacing:.16em;
+    text-transform:uppercase;
+    color:var(--mv-muted);
+  }
+  .sched-row.active{
+    background:linear-gradient(90deg, rgba(230,36,41,.08), transparent);
+    border-left:3px solid var(--mv-primary);
+    padding-left:21px;
+  }
+
+  /* =========== COMPONENTS 3-COL =========== */
+  .threes{
+    display:grid; grid-template-columns:repeat(3,1fr);
+    gap:20px;
+  }
+
+  /* =========== FOOT =========== */
+  .foot{
+    padding:44px 0 64px;
+    font-family:var(--font-mono);
+    font-size:.68rem;
+    letter-spacing:.2em;
+    text-transform:uppercase;
+    color:var(--mv-muted);
+    display:flex; justify-content:space-between; gap:24px;
+    flex-wrap:wrap;
+  }
+  .foot b{ color:#fff; font-weight:700; }
+
+  /* clean up small-screen fallbacks */
+  @media (max-width: 960px){
+    .hero-grid{ grid-template-columns:1fr; }
+    .hero-stats{ grid-template-columns:repeat(3, 1fr); }
+    .colorwall{ grid-template-columns:1fr 1fr; }
+    .stacks, .type-grid, .btns-grid, .forms-grid, .spec-grid, .wild, .components-grid, .threes{
+      grid-template-columns:1fr;
+    }
+    .swatch, .stack, .type-showcase, .type-spec, .btns-cell, .forms-cell, .spec-col{
+      border-right:0;
+      border-bottom:var(--lane);
+    }
+    .sec-head{ grid-template-columns:48px 1fr; }
+    .sec-head .sec-tag{ grid-column:2; }
+  }
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- ========== MASTHEAD ========== -->
+  <header class="masthead">
+    <div class="mast-lockup">
+      <img src="assets/Logo-3.png" alt="Marvel's Fit Studios">
+      <div class="wm">
+        <strong>Marvel's Fit Studios</strong>
+        <span>Performance Training · Giza</span>
+      </div>
+    </div>
+    <div class="mast-meta">
+      <span>Design System <b>v1.0</b></span>
+      <span>Updated <b>Apr 2026</b></span>
+      <span>Locale <b>EN / AR</b></span>
+    </div>
+    <div class="mast-right">
+      <span class="mast-dot"></span>
+      <span>Training Floor · Live</span>
+    </div>
+  </header>
+
+  <!-- ========== HERO ========== -->
+  <section class="hero">
+    <div class="hero-grid">
+      <div>
+        <div class="hero-tag">The Marvel's system · file 01</div>
+        <h1 class="hero-title">
+          TRAIN<br>
+          <em>LIKE YOU</em><span class="slash">/</span><br>
+          MEAN&nbsp;IT.
+        </h1>
+      </div>
+      <aside class="hero-side">
+        <span class="eyebrow">Design language</span>
+        <p>
+          A brutalist sport system for a premium training floor. Oxblood red on near-black. 
+          Stencil display type, monospaced field notes, pill-shaped actions — built for 
+          high-stakes moments and everyday reps alike.
+        </p>
+      </aside>
+    </div>
+
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <span class="k">Primary hue</span>
+        <span class="v">#E6<em>2429</em></span>
+      </div>
+      <div class="hero-stat">
+        <span class="k">Typefaces</span>
+        <span class="v">03<em>/</em>Grotesk · Manrope · Mono</span>
+      </div>
+      <div class="hero-stat">
+        <span class="k">Components</span>
+        <span class="v">42<em>+</em></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 01 · COLOR ========== -->
+  <section class="sec" id="color">
+    <div class="sec-head">
+      <div class="sec-num">01</div>
+      <h2 class="sec-title">Palette <em>/ the stain of effort</em></h2>
+      <div class="sec-tag">Tokens · Hex · RGB</div>
+    </div>
+
+    <div class="colorwall">
+      <div class="swatch sw-primary">
+        <div>
+          <div class="name">Marvel's Red</div>
+          <div class="role">Primary · CTA</div>
+        </div>
+        <div class="hex">#E62429</div>
+      </div>
+      <div class="swatch sw-deep">
+        <div>
+          <div class="name">Deep Red</div>
+          <div class="role">Primary / Hover</div>
+        </div>
+        <div class="hex">#B91C21</div>
+      </div>
+      <div class="swatch sw-soft">
+        <div>
+          <div class="name">Bruise</div>
+          <div class="role">Primary / Soft</div>
+        </div>
+        <div class="hex">#2D1011</div>
+      </div>
+      <div class="swatch sw-surface">
+        <div>
+          <div class="name">Surface</div>
+          <div class="role">Card / Panel</div>
+        </div>
+        <div class="hex">#111111</div>
+      </div>
+      <div class="swatch sw-bg">
+        <div>
+          <div class="name">Black</div>
+          <div class="role">Background</div>
+        </div>
+        <div class="hex">#000000</div>
+      </div>
+    </div>
+
+    <div class="stacks">
+      <div class="stack">
+        <h4>Neutrals · the concrete floor</h4>
+        <div class="stack-row">
+          <div class="stack-chip" style="background:#000"></div>
+          <div class="stack-name">Background <small>--mv-bg</small></div>
+          <div class="stack-hex">#000000</div>
+        </div>
+        <div class="stack-row">
+          <div class="stack-chip" style="background:#0a0a0a"></div>
+          <div class="stack-name">Background soft <small>--mv-bg-soft</small></div>
+          <div class="stack-hex">#0A0A0A</div>
+        </div>
+        <div class="stack-row">
+          <div class="stack-chip" style="background:#111"></div>
+          <div class="stack-name">Surface <small>--mv-surface</small></div>
+          <div class="stack-hex">#111111</div>
+        </div>
+        <div class="stack-row">
+          <div class="stack-chip" style="background:#1a1a1a"></div>
+          <div class="stack-name">Surface strong <small>--mv-surface-strong</small></div>
+          <div class="stack-hex">#1A1A1A</div>
+        </div>
+        <div class="stack-row">
+          <div class="stack-chip" style="background:#333"></div>
+          <div class="stack-name">Line <small>--mv-line</small></div>
+          <div class="stack-hex">#333333</div>
+        </div>
+        <div class="stack-row">
+          <div class="stack-chip" style="background:#a0a0a0"></div>
+          <div class="stack-name">Muted <small>--mv-muted</small></div>
+          <div class="stack-hex">#A0A0A0</div>
+        </div>
+        <div class="stack-row">
+          <div class="stack-chip" style="background:#cccccc"></div>
+          <div class="stack-name">Muted strong <small>--mv-muted-strong</small></div>
+          <div class="stack-hex">#CCCCCC</div>
+        </div>
+        <div class="stack-row">
+          <div class="stack-chip" style="background:#fff"></div>
+          <div class="stack-name">Text <small>--mv-text</small></div>
+          <div class="stack-hex">#FFFFFF</div>
+        </div>
+      </div>
+      <div class="stack">
+        <h4>Semantic · status flags</h4>
+        <div class="stack-row">
+          <div class="stack-chip" style="background:#25D366"></div>
+          <div class="stack-name">Success <small>Cleared · Paid · Checked-in</small></div>
+          <div class="stack-hex">#25D366</div>
+        </div>
+        <div class="stack-row">
+          <div class="stack-chip" style="background:#f59e0b"></div>
+          <div class="stack-name">Warning <small>Pending · Expiring · Low credits</small></div>
+          <div class="stack-hex">#F59E0B</div>
+        </div>
+        <div class="stack-row">
+          <div class="stack-chip" style="background:#ef4444"></div>
+          <div class="stack-name">Danger <small>Overdue · Cancelled · Failed</small></div>
+          <div class="stack-hex">#EF4444</div>
+        </div>
+        <div class="stack-row">
+          <div class="stack-chip" style="background:#e62429"></div>
+          <div class="stack-name">Primary action <small>Book · Join · Renew</small></div>
+          <div class="stack-hex">#E62429</div>
+        </div>
+        <div class="stack-row">
+          <div class="stack-chip" style="background:linear-gradient(135deg,#e62429,#ff4f54)"></div>
+          <div class="stack-name">Red gradient <small>135° · primary → #FF4F54</small></div>
+          <div class="stack-hex">CTA glow</div>
+        </div>
+        <div class="stack-row">
+          <div class="stack-chip" style="background:radial-gradient(circle at 30% 30%, #b91c21, #2d1011)"></div>
+          <div class="stack-name">Bruise radial <small>Panel accents</small></div>
+          <div class="stack-hex">ambient</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 02 · TYPE ========== -->
+  <section class="sec" id="type">
+    <div class="sec-head">
+      <div class="sec-num">02</div>
+      <h2 class="sec-title">Type system <em>/ stencil &amp; sans</em></h2>
+      <div class="sec-tag">3 families · 8 roles</div>
+    </div>
+
+    <div class="type-grid">
+      <div class="type-showcase">
+        <div>
+          <span class="t-label">Display · Archivo Black</span>
+          <h1 class="t-display">PUSH <span class="accent">/</span> PULL</h1>
+        </div>
+        <div>
+          <span class="t-label">H1 · Space Grotesk 700</span>
+          <h2 class="t-h1">Train with structure and proof.</h2>
+        </div>
+        <div>
+          <span class="t-label">H2 · Space Grotesk 700</span>
+          <h3 class="t-h2">A membership built around coaching quality.</h3>
+        </div>
+        <div>
+          <span class="t-label">Body · Manrope 500 · 1.72 line-height</span>
+          <p class="t-body">Marvel's Fit Studios gives beginners and committed athletes a premium training experience built around clarity, measurable progress, and a coach who actually knows your name.</p>
+        </div>
+        <div>
+          <span class="t-label">Mono · JetBrains Mono · Session log</span>
+          <p class="t-mono">› 08:30 · HIIT-Floor-B · 12 reps × 4 · load 45kg · RPE 8</p>
+        </div>
+      </div>
+      <div class="type-spec">
+        <div class="tspec-row"><span class="tspec-label">Display family</span><span class="tspec-value">Archivo Black</span></div>
+        <div class="tspec-row"><span class="tspec-label">Heading family</span><span class="tspec-value">Space Grotesk</span></div>
+        <div class="tspec-row"><span class="tspec-label">Body family</span><span class="tspec-value">Manrope</span></div>
+        <div class="tspec-row"><span class="tspec-label">Mono family</span><span class="tspec-value">JetBrains Mono</span></div>
+        <div class="tspec-row"><span class="tspec-label">Display size</span><span class="tspec-value">72 – 168 px</span></div>
+        <div class="tspec-row"><span class="tspec-label">H1 / H2 size</span><span class="tspec-value">48 / 32 px</span></div>
+        <div class="tspec-row"><span class="tspec-label">Body size</span><span class="tspec-value">16 / 1.58–1.72</span></div>
+        <div class="tspec-row"><span class="tspec-label">Eyebrow</span><span class="tspec-value">12px · 0.2em · UPPER</span></div>
+        <div class="tspec-row"><span class="tspec-label">Tracking · display</span><span class="tspec-value">-0.035em</span></div>
+        <div class="tspec-row"><span class="tspec-label">Tracking · body</span><span class="tspec-value">0</span></div>
+        <div class="tspec-row"><span class="tspec-label">Tracking · mono</span><span class="tspec-value">+0.04em</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 03 · BUTTONS ========== -->
+  <section class="sec" id="buttons">
+    <div class="sec-head">
+      <div class="sec-num">03</div>
+      <h2 class="sec-title">Buttons <em>/ pill-shaped, uppercase, decisive</em></h2>
+      <div class="sec-tag">6 variants · 3 sizes</div>
+    </div>
+
+    <div class="btns-grid">
+      <div class="btns-cell">
+        <h5>Primary · calls to action</h5>
+        <button class="mv-btn mv-btn-primary mv-btn-large">Start Membership →</button>
+        <button class="mv-btn mv-btn-primary">Book a session</button>
+        <button class="mv-btn mv-btn-primary mv-btn-small">Renew</button>
+        <button class="mv-btn mv-btn-primary" disabled>Processing…</button>
+      </div>
+      <div class="btns-cell">
+        <h5>Secondary · supporting actions</h5>
+        <button class="mv-btn mv-btn-secondary mv-btn-large">View schedule</button>
+        <button class="mv-btn mv-btn-outline">Download receipt</button>
+        <button class="mv-btn mv-btn-ghost">Cancel</button>
+        <div style="display:flex; gap:10px;">
+          <button class="mv-btn mv-btn-icon" aria-label="Prev">‹</button>
+          <button class="mv-btn mv-btn-icon" aria-label="Next">›</button>
+          <button class="mv-btn mv-btn-icon" aria-label="Menu">≡</button>
+        </div>
+      </div>
+      <div class="btns-cell">
+        <h5>Destructive · end-of-line</h5>
+        <button class="mv-btn mv-btn-danger mv-btn-large">Cancel membership</button>
+        <button class="mv-btn mv-btn-danger">Remove client</button>
+        <button class="mv-btn mv-btn-danger mv-btn-small">Delete</button>
+        <div style="margin-top:10px;">
+          <span class="eyebrow muted">Token · min-height 52 · radius 999</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 04 · FORMS + PILLS ========== -->
+  <section class="sec" id="forms">
+    <div class="sec-head">
+      <div class="sec-num">04</div>
+      <h2 class="sec-title">Inputs &amp; status flags</h2>
+      <div class="sec-tag">Fields · Pills · Switches</div>
+    </div>
+
+    <div class="forms-grid">
+      <div class="forms-cell">
+        <div class="field-row">
+          <label class="field-label">Full name</label>
+          <input class="field" value="Laila Mansour">
+          <span class="field-help">Required · as on national ID</span>
+        </div>
+        <div class="field-row">
+          <label class="field-label">Email address</label>
+          <input class="field field-focus" value="laila@studio.mv" placeholder="you@email.com">
+          <span class="field-help">Focused state · red ring</span>
+        </div>
+        <div class="field-row">
+          <label class="field-label">Phone number</label>
+          <input class="field field-error" value="01x xxx">
+          <span class="field-help err">Must be 11 digits · starting with 01</span>
+        </div>
+        <div class="field-row">
+          <label class="field-label">Goals (optional)</label>
+          <textarea class="field" placeholder="Build strength, return from injury, cut weight…">Return to full strength after a knee tweak. 3 sessions a week.</textarea>
+        </div>
+      </div>
+      <div class="forms-cell">
+        <div class="field-row">
+          <label class="field-label">Preferences</label>
+          <div class="check-row"><span class="check on"></span><span>Email reminders 24h before session</span></div>
+          <div class="check-row"><span class="check on"></span><span>WhatsApp check-ins from my coach</span></div>
+          <div class="check-row"><span class="check"></span><span>Share progress with nutritionist</span></div>
+        </div>
+        <div class="field-row">
+          <label class="field-label">Session type</label>
+          <div class="check-row"><span class="switch on"></span><span>Group training · Unlimited</span></div>
+          <div class="check-row"><span class="switch"></span><span>Private coaching · Add-on</span></div>
+        </div>
+        <div class="field-row" style="margin-top:8px;">
+          <label class="field-label">Status flags</label>
+          <div class="pills">
+            <span class="pill pill-neutral">Draft</span>
+            <span class="pill pill-accent pill-dot">Active</span>
+            <span class="pill pill-success pill-dot">Checked-in</span>
+            <span class="pill pill-warning pill-dot">Expiring</span>
+            <span class="pill pill-danger pill-dot">Overdue</span>
+            <span class="pill pill-solid">Featured</span>
+          </div>
+        </div>
+        <div class="field-row" style="margin-top:8px;">
+          <label class="field-label">Member tier</label>
+          <div class="pills">
+            <span class="pill pill-neutral">Trial</span>
+            <span class="pill pill-accent">Essential</span>
+            <span class="pill pill-accent">Elite 12</span>
+            <span class="pill pill-solid">Marvel's Pro</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 05 · COMPONENTS IN USE ========== -->
+  <section class="sec" id="components">
+    <div class="sec-head">
+      <div class="sec-num">05</div>
+      <h2 class="sec-title">Components <em>/ on the training floor</em></h2>
+      <div class="sec-tag">Cards · Stats · Alerts</div>
+    </div>
+
+    <div class="components-grid">
+
+      <!-- class card + alerts -->
+      <div style="display:grid; gap:20px;">
+        <article class="panel panel-accent class-card">
+          <div class="top">
+            <div>
+              <span class="plan-tag">HIIT · Floor B</span>
+              <h4>Conditioning<br>&amp; Core Blast</h4>
+            </div>
+            <span class="when">Today<br>08:30</span>
+          </div>
+          <div class="mid">
+            <div>
+              <div class="k">Duration</div>
+              <div class="v">55 min</div>
+            </div>
+            <div>
+              <div class="k">Intensity</div>
+              <div class="v">High · 8/10</div>
+            </div>
+            <div>
+              <div class="k">Spots left</div>
+              <div class="v">4 of 12</div>
+            </div>
+          </div>
+          <div class="foot">
+            <div class="coach">
+              <span class="avatar">KH</span>
+              <span class="coach-name">Coach Khaled<br><small>Head of programming</small></span>
+            </div>
+            <button class="mv-btn mv-btn-primary mv-btn-small">Book</button>
+          </div>
+        </article>
+
+        <div class="alert alert-info">
+          <span class="alert-icon">i</span>
+          <div class="alert-copy">
+            <strong>Your coach assigned a new program.</strong>
+            <p>Week 3 of the Return-to-Squat protocol is ready to view.</p>
+          </div>
+          <button class="alert-close">×</button>
+        </div>
+        <div class="alert alert-success">
+          <span class="alert-icon">✓</span>
+          <div class="alert-copy">
+            <strong>Checked in at 08:29.</strong>
+            <p>You're one minute early. Warmup area is open.</p>
+          </div>
+          <button class="alert-close">×</button>
+        </div>
+        <div class="alert alert-warning">
+          <span class="alert-icon">!</span>
+          <div class="alert-copy">
+            <strong>Membership renews in 4 days.</strong>
+            <p>Card ending 4481 will be charged on May 3.</p>
+          </div>
+          <button class="alert-close">×</button>
+        </div>
+        <div class="alert alert-danger">
+          <span class="alert-icon">×</span>
+          <div class="alert-copy">
+            <strong>Session cancelled by the studio.</strong>
+            <p>Floor B maintenance. Credit restored automatically.</p>
+          </div>
+          <button class="alert-close">×</button>
+        </div>
+      </div>
+
+      <!-- stats + progress -->
+      <div style="display:grid; gap:20px;">
+        <div class="stat-grid">
+          <div class="stat">
+            <span class="label">Sessions · Apr</span>
+            <span class="value">12<em>/</em>16</span>
+            <span class="trend">▲ 3 vs last month</span>
+          </div>
+          <div class="stat">
+            <span class="label">Avg intensity</span>
+            <span class="value">7<em>.</em>4</span>
+            <span class="trend">▲ 0.6 pts</span>
+          </div>
+          <div class="stat">
+            <span class="label">Streak</span>
+            <span class="value">9<em>d</em></span>
+            <span class="trend">Personal best</span>
+          </div>
+          <div class="stat">
+            <span class="label">Body comp</span>
+            <span class="value">-2<em>.</em>1kg</span>
+            <span class="trend down">▼ trending down</span>
+          </div>
+        </div>
+
+        <div class="panel" style="padding:24px;">
+          <span class="eyebrow">Monthly progress</span>
+          <div style="display:grid; gap:18px; margin-top:18px;">
+            <div style="display:grid; gap:8px;">
+              <div style="display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:.72rem; color:var(--mv-muted-strong);">
+                <span>Attendance</span><span>75<span style="color:var(--mv-muted);">%</span></span>
+              </div>
+              <div class="bar"><i style="width:75%"></i></div>
+            </div>
+            <div style="display:grid; gap:8px;">
+              <div style="display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:.72rem; color:var(--mv-muted-strong);">
+                <span>Strength target</span><span>62<span style="color:var(--mv-muted);">%</span></span>
+              </div>
+              <div class="bar"><i style="width:62%"></i></div>
+            </div>
+            <div style="display:grid; gap:8px;">
+              <div style="display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:.72rem; color:var(--mv-muted-strong);">
+                <span>Mobility reps</span><span>48<span style="color:var(--mv-muted);">%</span></span>
+              </div>
+              <div class="bar"><i style="width:48%"></i></div>
+            </div>
+          </div>
+        </div>
+
+        <article class="panel" style="padding:24px;">
+          <span class="eyebrow muted">Today's coaches on floor</span>
+          <div style="display:grid; gap:14px; margin-top:18px;">
+            <div style="display:flex; align-items:center; gap:14px;">
+              <span class="avatar">KH</span>
+              <div style="flex:1;">
+                <div style="font-weight:600; color:#fff;">Khaled Habib</div>
+                <div style="font-family:var(--font-mono); font-size:.68rem; letter-spacing:.14em; text-transform:uppercase; color:var(--mv-muted);">Head coach · Floor B</div>
+              </div>
+              <span class="pill pill-success pill-dot">On floor</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:14px;">
+              <span class="avatar b">MS</span>
+              <div style="flex:1;">
+                <div style="font-weight:600; color:#fff;">Mariam Soliman</div>
+                <div style="font-family:var(--font-mono); font-size:.68rem; letter-spacing:.14em; text-transform:uppercase; color:var(--mv-muted);">Mobility · Private</div>
+              </div>
+              <span class="pill pill-warning pill-dot">Session</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:14px;">
+              <span class="avatar c">YF</span>
+              <div style="flex:1;">
+                <div style="font-weight:600; color:#fff;">Youssef Fathi</div>
+                <div style="font-family:var(--font-mono); font-size:.68rem; letter-spacing:.14em; text-transform:uppercase; color:var(--mv-muted);">Strength · Floor A</div>
+              </div>
+              <span class="pill pill-neutral">Break</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:14px;">
+              <span class="avatar d">NR</span>
+              <div style="flex:1;">
+                <div style="font-weight:600; color:#fff;">Nour Rashad</div>
+                <div style="font-family:var(--font-mono); font-size:.68rem; letter-spacing:.14em; text-transform:uppercase; color:var(--mv-muted);">Conditioning · Floor B</div>
+              </div>
+              <span class="pill pill-success pill-dot">On floor</span>
+            </div>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 06 · SPACING / RADII / SHADOWS ========== -->
+  <section class="sec" id="space">
+    <div class="sec-head">
+      <div class="sec-num">06</div>
+      <h2 class="sec-title">Spacing, radii &amp; lift</h2>
+      <div class="sec-tag">Fluid · responsive · clamped</div>
+    </div>
+
+    <div class="spec-grid">
+      <div class="spec-col">
+        <h4>Spacing scale · fluid</h4>
+        <div class="space-row"><span class="tok">--2xs</span><span class="space-bar" style="width:8px;"></span><span class="space-val">6 → 8 px</span></div>
+        <div class="space-row"><span class="tok">--xs</span><span class="space-bar" style="width:14px;"></span><span class="space-val">10 → 14 px</span></div>
+        <div class="space-row"><span class="tok">--sm</span><span class="space-bar" style="width:22px;"></span><span class="space-val">14 → 18 px</span></div>
+        <div class="space-row"><span class="tok">--md</span><span class="space-bar" style="width:32px;"></span><span class="space-val">18 → 24 px</span></div>
+        <div class="space-row"><span class="tok">--lg</span><span class="space-bar" style="width:46px;"></span><span class="space-val">24 → 34 px</span></div>
+        <div class="space-row"><span class="tok">--xl</span><span class="space-bar" style="width:68px;"></span><span class="space-val">34 → 50 px</span></div>
+        <div class="space-row"><span class="tok">--2xl</span><span class="space-bar" style="width:108px;"></span><span class="space-val">46 → 80 px</span></div>
+      </div>
+
+      <div class="spec-col">
+        <h4>Radii</h4>
+        <div class="radius-grid">
+          <div class="radius-cell">
+            <div class="radius-demo" style="border-radius:14px;"></div>
+            <span class="tok">--radius-sm</span>
+            <small>14px · fields, chips</small>
+          </div>
+          <div class="radius-cell">
+            <div class="radius-demo" style="border-radius:22px;"></div>
+            <span class="tok">--radius-md</span>
+            <small>22px · panels</small>
+          </div>
+          <div class="radius-cell">
+            <div class="radius-demo" style="border-radius:30px;"></div>
+            <span class="tok">--radius-lg</span>
+            <small>30px · hero cards</small>
+          </div>
+          <div class="radius-cell">
+            <div class="radius-demo" style="border-radius:999px;"></div>
+            <span class="tok">--radius-xl</span>
+            <small>999px · buttons, pills</small>
+          </div>
+        </div>
+      </div>
+
+      <div class="spec-col">
+        <h4>Shadows &amp; lift</h4>
+        <div class="shadow-grid">
+          <div class="shadow-cell">
+            <div class="shadow-demo shadow-sm"></div>
+            <div class="shadow-name">--shadow-sm <small>0 14 28 / 0.35</small></div>
+          </div>
+          <div class="shadow-cell">
+            <div class="shadow-demo shadow-md"></div>
+            <div class="shadow-name">--shadow-md <small>0 28 54 / 0.50</small></div>
+          </div>
+          <div class="shadow-cell">
+            <div class="shadow-demo shadow-glow"></div>
+            <div class="shadow-name">--shadow-glow <small>red bloom · CTA</small></div>
+          </div>
+        </div>
+        <div style="margin-top:22px; padding-top:22px; border-top:var(--lane);">
+          <span class="eyebrow muted">Container</span>
+          <p style="font-family:var(--font-mono); font-size:.78rem; color:var(--mv-muted-strong); line-height:1.7; margin-top:10px;">
+            min(1180px, 100% − 28px)<br>
+            card-pad: clamp(20, 3.8vw, 30)<br>
+            content-max: 66ch
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 07 · IN THE WILD ========== -->
+  <section class="sec" id="wild">
+    <div class="sec-head">
+      <div class="sec-num">07</div>
+      <h2 class="sec-title">In the wild <em>/ a membership plan &amp; a week</em></h2>
+      <div class="sec-tag">Assembled</div>
+    </div>
+
+    <div class="wild">
+      <article class="membership">
+        <div class="membership-head">
+          <div>
+            <span class="plan-tag">Flagship membership</span>
+            <div class="plan-title">ELITE<br>TWELVE</div>
+          </div>
+          <span class="pill pill-accent pill-dot">Most chosen</span>
+        </div>
+        <p style="color:var(--mv-muted-strong); font-size:.94rem; line-height:1.7; max-width:42ch; position:relative;">
+          Twelve sessions a month across group and private coaching. Structured blocks, 
+          measurable progress reviews, and a direct line to your head coach.
+        </p>
+        <div class="plan-price">
+          <span class="big">3,400</span> EGP <small>/ month</small>
+        </div>
+        <ul class="plan-list">
+          <li>12 sessions — mix group &amp; private freely</li>
+          <li>Quarterly assessment with written programming</li>
+          <li>Priority booking window · 7 days ahead</li>
+          <li>Nutrition check-ins with the studio nutritionist</li>
+          <li>Freeze up to 14 days per block, no fee</li>
+        </ul>
+        <div class="plan-cta">
+          <button class="mv-btn mv-btn-primary mv-btn-large">Start Membership →</button>
+          <button class="mv-btn mv-btn-outline">Compare plans</button>
+        </div>
+      </article>
+
+      <div class="schedule">
+        <div class="schedule-head">
+          <div>
+            <h4>This week · Floor B</h4>
+            <span class="eyebrow muted" style="margin-top:4px; display:inline-flex;">Tue · Apr 21</span>
+          </div>
+          <div class="schedule-nav">
+            <button class="nav-btn">‹</button>
+            <button class="nav-btn">›</button>
+          </div>
+        </div>
+
+        <div class="sched-row active">
+          <div class="sched-time">08:30<small>55 MIN</small></div>
+          <div class="sched-class">
+            <strong>Conditioning &amp; Core</strong>
+            <span>HIIT · Khaled H.</span>
+          </div>
+          <span class="pill pill-success pill-dot">Booked</span>
+        </div>
+        <div class="sched-row">
+          <div class="sched-time">10:00<small>60 MIN</small></div>
+          <div class="sched-class">
+            <strong>Strength Block — Legs</strong>
+            <span>Private · Youssef F.</span>
+          </div>
+          <span class="pill pill-accent">4 spots</span>
+        </div>
+        <div class="sched-row">
+          <div class="sched-time">12:15<small>45 MIN</small></div>
+          <div class="sched-class">
+            <strong>Mobility &amp; Flow</strong>
+            <span>Group · Mariam S.</span>
+          </div>
+          <span class="pill pill-warning pill-dot">Almost full</span>
+        </div>
+        <div class="sched-row">
+          <div class="sched-time">17:30<small>55 MIN</small></div>
+          <div class="sched-class">
+            <strong>Marvel's MetCon</strong>
+            <span>Group · Nour R.</span>
+          </div>
+          <span class="pill pill-neutral">Open</span>
+        </div>
+        <div class="sched-row">
+          <div class="sched-time">19:00<small>60 MIN</small></div>
+          <div class="sched-class">
+            <strong>Boxing Conditioning</strong>
+            <span>Group · Khaled H.</span>
+          </div>
+          <span class="pill pill-danger pill-dot">Full</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== FOOT ========== -->
+  <footer class="foot">
+    <span>Marvel's Fit Studios · Design System · <b>v1.0</b></span>
+    <span>7 sections · 42+ components · 1 red</span>
+    <span>Giza · <b>EGYPT</b></span>
+  </footer>
+
+</div>
+
+</body>
+</html>

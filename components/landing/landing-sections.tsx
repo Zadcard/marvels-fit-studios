@@ -1,6 +1,8 @@
 /* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
 
+import { BrandLockup } from "@/components/ui/brand-lockup";
+
 type ServiceCard = {
   id: string;
   icon: string;
@@ -152,15 +154,15 @@ export function LandingHeader() {
     <>
       <header className="site-header">
         <nav className="site-nav" aria-label="Primary navigation">
-          <a href="#main" className="brand" aria-label="Marvel's Studios home">
-            <img
-              src="/img/Logo-2.png"
-              alt="Marvel's Studios logo"
-              width="2000"
-              height="748"
-              sizes="(max-width: 640px) 42px, (max-width: 1024px) 52px, 58px"
-              decoding="async"
-              fetchPriority="high"
+          <a
+            href="#main"
+            className="brand"
+            aria-label="Marvel's Fit Studios home"
+          >
+            <BrandLockup
+              size="compact"
+              priority
+              imageAlt="Marvel's Fit Studios logo"
             />
           </a>
 
@@ -278,7 +280,7 @@ export function LandingFooter() {
       <div className="footer-cta-band">
         <img
           src="/img/Logo-1.png"
-          alt="Marvel's Studios"
+          alt="Marvel's Fit Studios"
           className="footer-cta-logo"
           width="220"
           loading="lazy"
@@ -287,7 +289,7 @@ export function LandingFooter() {
           Ready to Start Training?
         </h2>
         <p className="footer-cta-desc">
-          Join Marvel&apos;s Studios for structured coaching, clear progress,
+          Join Marvel&apos;s Fit Studios for structured coaching, clear progress,
           and a premium training experience in Giza.
         </p>
         <div className="footer-cta-actions">
@@ -310,13 +312,10 @@ export function LandingFooter() {
       <div className="footer-grid">
         <div className="footer-col footer-col-brand">
           <div className="footer-brand">
-            <img
-              src="/img/Logo-2.png"
-              alt="Marvel's Studios mark"
-              width="36"
-              height="36"
-              loading="lazy"
-              style={{ filter: "brightness(0) invert(1)" }}
+            <BrandLockup
+              size="compact"
+              eyebrow="Premium performance training"
+              imageAlt="Marvel's Fit Studios logo"
             />
           </div>
           <p>Premium performance training in Giza, Egypt.</p>
@@ -365,7 +364,7 @@ export function LandingFooter() {
 
       <div className="footer-bottom">
         <div className="footer-copyright">
-          Marvel&apos;s Studios &copy; 2020. All rights reserved.
+          Marvel&apos;s Fit Studios &copy; 2020. All rights reserved.
         </div>
         <div className="footer-social-circ">
           <a

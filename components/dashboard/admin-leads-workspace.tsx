@@ -40,7 +40,9 @@ export function AdminLeadsWorkspace({ records }: AdminLeadsWorkspaceProps) {
   const [isPending, startTransition] = useTransition();
   const [searchTerm, setSearchTerm] = useState("");
   const deferredSearchTerm = useDeferredValue(searchTerm);
-  const [statusFilter, setStatusFilter] = useState<"All" | AdminLeadStatus>("All");
+  const [statusFilter, setStatusFilter] = useState<"All" | AdminLeadStatus>(
+    "All"
+  );
   const [actionMessage, setActionMessage] = useState("");
 
   const filteredRecords = useMemo(() => {
@@ -52,17 +54,25 @@ export function AdminLeadsWorkspace({ records }: AdminLeadsWorkspaceProps) {
           .join(" ")
           .toLowerCase()
           .includes(query);
-      const matchesStatus = statusFilter === "All" || lead.status === statusFilter;
+      const matchesStatus =
+        statusFilter === "All" || lead.status === statusFilter;
 
       return matchesSearch && matchesStatus;
     });
   }, [deferredSearchTerm, records, statusFilter]);
 
-  const pendingLeads = filteredRecords.filter((lead) => lead.status !== "Converted").length;
+  const pendingLeads = filteredRecords.filter(
+    (lead) => lead.status !== "Converted"
+  ).length;
   const newLeads = filteredRecords.filter((lead) => lead.status === "New").length;
-  const contactedLeads = filteredRecords.filter((lead) => lead.status === "Contacted").length;
-  const convertedLeads = filteredRecords.filter((lead) => lead.status === "Converted").length;
-  const hasActiveFilters = searchTerm.trim().length > 0 || statusFilter !== "All";
+  const contactedLeads = filteredRecords.filter(
+    (lead) => lead.status === "Contacted"
+  ).length;
+  const convertedLeads = filteredRecords.filter(
+    (lead) => lead.status === "Converted"
+  ).length;
+  const hasActiveFilters =
+    searchTerm.trim().length > 0 || statusFilter !== "All";
 
   const resetFilters = () => {
     setSearchTerm("");
@@ -74,11 +84,15 @@ export function AdminLeadsWorkspace({ records }: AdminLeadsWorkspaceProps) {
     startTransition(async () => {
       try {
         const summary = await approveLeadAsClient(leadId);
-        const promoted = summary.results.find((result) => result.outcome === "promoted");
-        setActionMessage(promoted?.details ?? "Lead approved as client.");
+        const promoted = summary.results.find(
+          (result) => result.outcome === "promoted"
+        );
+        setActionMessage(promoted?.details ?? "Request approved as client.");
         router.refresh();
       } catch (error) {
-        setActionMessage(error instanceof Error ? error.message : "Approval failed.");
+        setActionMessage(
+          error instanceof Error ? error.message : "Approval failed."
+        );
       }
     });
   };
@@ -86,7 +100,7 @@ export function AdminLeadsWorkspace({ records }: AdminLeadsWorkspaceProps) {
   return (
     <div className="dashboard-stack dashboard-stack--dense">
       <DashboardPageHeader
-        eyebrow="Admin leads"
+        eyebrow="Join requests"
         actions={
           <Link href="/admin/clients" className="mv-btn mv-btn-outline">
             <UserRoundPlus size={16} />
@@ -96,23 +110,23 @@ export function AdminLeadsWorkspace({ records }: AdminLeadsWorkspaceProps) {
       />
 
       <DashboardSurfaceNote
-        eyebrow="Lead queue"
+        eyebrow="Join request queue"
         title={
           pendingLeads > 0
-            ? `${pendingLeads} leads still need a decision in this view.`
-            : "All visible leads are already resolved or converted."
+            ? `${pendingLeads} requests still need a decision in this view.`
+            : "All visible requests are already resolved or converted."
         }
-        description="Work new inquiries first, move contacted leads to a decision, and only create clients when the lead is ready."
+        description="Work new inquiries first, move contacted requests to a decision, and only create clients when the request is ready."
         items={[
-          `${newLeads} new leads need first contact.`,
-          `${contactedLeads} contacted leads are waiting on a decision.`,
-          `${convertedLeads} converted leads stay here as history.`,
+          `${newLeads} new requests need first contact.`,
+          `${contactedLeads} contacted requests are waiting on a decision.`,
+          `${convertedLeads} converted requests stay here as history.`,
         ]}
       />
 
       <section
         className="dashboard-mini-grid dashboard-admin-priority-grid"
-        aria-label="Lead highlights"
+        aria-label="Join request highlights"
       >
         <DashboardMiniStat
           tone={newLeads > 0 ? "accent" : "success"}
@@ -138,8 +152,8 @@ export function AdminLeadsWorkspace({ records }: AdminLeadsWorkspaceProps) {
         <DashboardManagementToolbar
           searchValue={searchTerm}
           onSearchChange={setSearchTerm}
-          searchPlaceholder="Search by lead, email, phone, or message"
-          summary={`${filteredRecords.length} leads in view • ${pendingLeads} still need action`}
+          searchPlaceholder="Search by request, email, phone, or message"
+          summary={`${filteredRecords.length} requests in view • ${pendingLeads} still need action`}
           isFiltered={hasActiveFilters}
           onReset={resetFilters}
           filters={
@@ -182,7 +196,7 @@ export function AdminLeadsWorkspace({ records }: AdminLeadsWorkspaceProps) {
                 <table className="dashboard-table dashboard-lead-table">
                   <thead>
                     <tr>
-                      <th>Lead</th>
+                      <th>Request</th>
                       <th>Queue</th>
                       <th>Message</th>
                       <th>Decision</th>
@@ -193,7 +207,9 @@ export function AdminLeadsWorkspace({ records }: AdminLeadsWorkspaceProps) {
                       <tr
                         key={lead.id}
                         className={
-                          lead.status === "Converted" ? "dashboard-lead-row--converted" : undefined
+                          lead.status === "Converted"
+                            ? "dashboard-lead-row--converted"
+                            : undefined
                         }
                       >
                         <td>
@@ -216,11 +232,16 @@ export function AdminLeadsWorkspace({ records }: AdminLeadsWorkspaceProps) {
                           </div>
                         </td>
                         <td>
-                          <p className="dashboard-lead-table__message">{lead.message}</p>
+                          <p className="dashboard-lead-table__message">
+                            {lead.message}
+                          </p>
                         </td>
                         <td className="dashboard-lead-table__action">
                           {lead.status === "Converted" ? (
-                            <DashboardStatusBadge label="Client created" tone="success" />
+                            <DashboardStatusBadge
+                              label="Client created"
+                              tone="success"
+                            />
                           ) : (
                             <button
                               type="button"
@@ -251,7 +272,9 @@ export function AdminLeadsWorkspace({ records }: AdminLeadsWorkspaceProps) {
                   >
                     <div className="dashboard-record-card__header">
                       <div>
-                        <span className="dashboard-record-card__eyebrow">{lead.source}</span>
+                        <span className="dashboard-record-card__eyebrow">
+                          {lead.source}
+                        </span>
                         <h3>{lead.fullName}</h3>
                         <p>{lead.email}</p>
                       </div>
@@ -267,7 +290,10 @@ export function AdminLeadsWorkspace({ records }: AdminLeadsWorkspaceProps) {
                     <p className="dashboard-record-card__note">{lead.message}</p>
                     <div className="dashboard-row-actions">
                       {lead.status === "Converted" ? (
-                        <DashboardStatusBadge label="Client created" tone="success" />
+                        <DashboardStatusBadge
+                          label="Client created"
+                          tone="success"
+                        />
                       ) : (
                         <button
                           type="button"
@@ -286,7 +312,7 @@ export function AdminLeadsWorkspace({ records }: AdminLeadsWorkspaceProps) {
             </>
           ) : (
             <DashboardEmptyState
-              title="No leads match these filters"
+              title="No join requests match these filters"
               description="Try a different search or reset the filters."
               action={
                 hasActiveFilters ? (

@@ -5,12 +5,14 @@ import { UserRole } from "@prisma/client";
 
 import { requireRole } from "@/lib/auth/session";
 import {
+  bulkUpdateTrainingSessions,
   cancelTrainingSession,
   createTrainingSession,
   deleteTrainingSession,
   updateTrainingSession,
 } from "@/lib/services/training-session-service";
 import {
+  bulkUpdateTrainingSessionsSchema,
   cancelTrainingSessionSchema,
   createTrainingSessionSchema,
   deleteTrainingSessionSchema,
@@ -99,5 +101,24 @@ export async function deleteAdminSession(sessionId: string) {
   }
 
   await deleteTrainingSession(parsed.data);
+  revalidateSessionViews();
+}
+
+export async function bulkUpdateAdminSessions(input: {
+  sessionIds: string[];
+  action: "CANCEL" | "REASSIGN_COACH" | "UPDATE_LOCATION" | "UPDATE_CAPACITY";
+  coachId?: string;
+  location?: string;
+  capacity?: number | null;
+}) {
+  await requireRole(UserRole.ADMIN);
+
+  const parsed = bulkUpdateTrainingSessionsSchema.safeParse(input);
+
+  if (!parsed.success) {
+    throw new Error(parsed.error.issues[0]?.message ?? "Invalid bulk session update.");
+  }
+
+  await bulkUpdateTrainingSessions(parsed.data);
   revalidateSessionViews();
 }

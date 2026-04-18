@@ -47,3 +47,4 @@ seed_error.log
 next-env.d.ts
 
 /lib/generated/prisma
+.claude/worktrees/sad-kapitsa-9239dd/

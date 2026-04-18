@@ -19,10 +19,10 @@ export function ClientCoachWorkspace({ data }: ClientCoachWorkspaceProps) {
       <DashboardSurfaceNote
         eyebrow="Coach"
         title="Your coach details and next touchpoint stay in one place."
-        description="Contact details and coaching focus are easy to review here."
+        description="Contact details and session timing are easy to review here."
         items={[
           "Direct contact details.",
-          "Current coaching note.",
+          "Next planned touchpoint.",
         ]}
       />
 
@@ -99,7 +99,7 @@ export function ClientCoachWorkspace({ data }: ClientCoachWorkspaceProps) {
               <span>{sanitizedNextSession}</span>
             </div>
             <div className="dashboard-summary-row">
-              <strong>Current note</strong>
+              <strong>Support summary</strong>
               <span>{data.coachingNote}</span>
             </div>
             <div className="dashboard-summary-row">
@@ -126,7 +126,7 @@ export function ClientCoachWorkspace({ data }: ClientCoachWorkspaceProps) {
             <div className="dashboard-contact-card">
               <MessageSquareMore size={18} />
               <div>
-                <strong>Current coaching focus</strong>
+                <strong>Next support detail</strong>
                 <span>{data.coachingNote}</span>
               </div>
             </div>

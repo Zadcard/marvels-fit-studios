@@ -317,6 +317,49 @@
   gap: 12px;
 }
 
+.login-method-tabs {
+  display: flex;
+  gap: 2px;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 4px;
+  border-radius: 12px;
+  margin-bottom: 6px;
+}
+
+.login-method-tab {
+  flex: 1;
+  padding: 10px 14px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--mv-muted);
+  font-size: 0.86rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.login-method-tab:hover:not(:disabled) {
+  color: var(--mv-text);
+}
+
+.login-method-tab.active {
+  background: var(--mv-surface);
+  color: var(--mv-primary);
+  border: 1px solid rgba(230, 36, 41, 0.2);
+}
+
+.login-method-tab:focus-visible {
+  outline: 2px solid var(--mv-primary);
+  outline-offset: -2px;
+}
+
+.login-method-tab:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 @media (min-width: 860px) {
   .login-form-panel {
     padding: 48px 40px;

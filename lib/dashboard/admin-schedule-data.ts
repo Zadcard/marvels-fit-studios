@@ -23,6 +23,9 @@ export type AdminScheduleSessionRecord = {
   title: string;
   sessionType: AdminScheduleSessionType;
   status: AdminScheduleSessionStatus;
+  scheduleBlockId: string | null;
+  scheduleBlockTitle: string;
+  groupName: string;
   dayKey: string;
   dayLabel: string;
   dateLabel: string;
@@ -31,6 +34,9 @@ export type AdminScheduleSessionRecord = {
   coachName: string;
   location: string;
   occupancyLabel: string;
+  rosterCount: number;
+  bookedCount: number;
+  waitlistCount: number;
   attendanceNote: string;
   focus: string;
   highlight: string;

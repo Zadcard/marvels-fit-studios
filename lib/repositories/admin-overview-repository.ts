@@ -240,7 +240,7 @@ export class AdminOverviewRepository {
         id: "members",
         label: "Members",
         value: numberFormatter.format(totalMembers),
-        change: `${activeLeadCount} in lead queue`,
+        change: `${activeLeadCount} in join requests`,
         detail: "Clients currently active in the roster.",
         note: "Roster live",
         icon: Users,
@@ -342,10 +342,10 @@ export class AdminOverviewRepository {
       ? [
           {
             id: "action-1",
-            label: "Clear lead queue",
-            description: "Review waiting leads and convert the ready ones.",
+            label: "Clear join requests",
+            description: "Review waiting requests and convert the ready ones.",
             ctaLabel: "Review",
-            href: "/admin/leads",
+            href: "/admin/join-requests",
             icon: ClipboardPlus,
             emphasis: "primary",
           },
@@ -407,10 +407,10 @@ export class AdminOverviewRepository {
           },
           {
             id: "action-4",
-            label: "Review subscriptions",
-            description: "Check renewal pressure before the next billing cycle.",
+            label: "Review package pressure",
+            description: "Check renewal pressure before client sessions run out.",
             ctaLabel: "Open",
-            href: "/admin/subscriptions",
+            href: "/admin/clients",
             icon: CircleDollarSign,
             emphasis: "secondary",
           },
@@ -429,7 +429,7 @@ export class AdminOverviewRepository {
         id: "snapshot-1",
         label: "Onboarding queue",
         value: numberFormatter.format(activeLeadCount),
-        description: "Leads waiting for follow-up or approval.",
+        description: "Join requests waiting for follow-up or approval.",
       },
       {
         id: "snapshot-2",
@@ -446,10 +446,10 @@ export class AdminOverviewRepository {
       {
         id: "snapshot-4",
         label: "Focus next",
-        value: activeLeadCount > 0 ? "Leads" : "Sessions",
+        value: activeLeadCount > 0 ? "Requests" : "Sessions",
         description:
           activeLeadCount > 0
-            ? "Clear the waiting lead queue before opening more capacity."
+            ? "Clear the waiting join requests before opening more capacity."
             : "Sessions are the main operational surface right now.",
       },
     ];

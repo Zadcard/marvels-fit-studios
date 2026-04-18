@@ -13,12 +13,13 @@ import {
 
 export type ClientFormState = {
   fullName: string;
-  email: string;
   phone: string;
   initialPassword: string;
   status: AdminClientStatus;
   paymentStatus: AdminPaymentStatus;
   paymentAmount: string;
+  groupId: string;
+  blockId: string;
 };
 
 export type AdminClientWorkspaceFilters = {
@@ -67,11 +68,6 @@ export const adminClientWorkspaceDefinition: WorkspaceDefinition<
       kind: "text",
     },
     {
-      key: "email",
-      label: "Email",
-      kind: "email",
-    },
-    {
       key: "phone",
       label: "Phone",
       kind: "tel",
@@ -102,7 +98,7 @@ export const adminClientWorkspaceDefinition: WorkspaceDefinition<
   getSearchValue: (record) =>
     [
       record.fullName,
-      record.email,
+      record.clientId,
       record.assignedCoach,
       record.membership,
     ].join(" "),
@@ -119,16 +115,16 @@ export const adminClientWorkspaceDefinition: WorkspaceDefinition<
   },
   createEmptyForm: () => ({
     fullName: "",
-    email: "",
     phone: "",
     initialPassword: "",
     status: "Pending",
     paymentStatus: "Unpaid",
     paymentAmount: "",
+    groupId: "",
+    blockId: "",
   }),
   toFormState: (record) => ({
     fullName: record.fullName,
-    email: record.email,
     phone: record.phone,
     initialPassword: "",
     status: record.status,
@@ -137,5 +133,7 @@ export const adminClientWorkspaceDefinition: WorkspaceDefinition<
       record.paymentAmountLabel === "No payment yet"
         ? ""
         : record.paymentAmountLabel.replace(/^EGP\s*/, ""),
+    groupId: record.primaryGroupId ?? "",
+    blockId: record.primaryBlockId ?? "",
   }),
 };

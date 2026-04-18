@@ -1,0 +1,1058 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Marvel's Fit Studios | Premium Performance Training in Giza</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ─── Tokens ─── */
+:root{
+  --bg:#000000;
+  --bg-soft:#0a0a0a;
+  --surface:#111111;
+  --surface-strong:#1a1a1a;
+  --text:#ffffff;
+  --muted:#a0a0a0;
+  --muted-strong:#cccccc;
+  --line:#333333;
+  --line-strong:#444444;
+  --primary:#e62429;
+  --primary-deep:#b91c21;
+  --primary-soft:#2d1011;
+  --accent:#ff0000;
+  --success:#25d366;
+  --warning:#f59e0b;
+  --radius-sm:14px;
+  --radius-md:22px;
+  --radius-lg:30px;
+  --space-2xs:clamp(6px,.8vw,8px);
+  --space-xs:clamp(10px,1.2vw,14px);
+  --space-sm:clamp(14px,1.8vw,18px);
+  --space-md:clamp(18px,2.6vw,24px);
+  --space-lg:clamp(24px,3.4vw,34px);
+  --space-xl:clamp(34px,4.8vw,50px);
+  --space-2xl:clamp(46px,6.4vw,80px);
+  --container:min(1180px,calc(100% - 28px));
+  --nav-height:72px;
+  --card-pad:clamp(20px,3.8vw,30px);
+  --font-display:'Space Grotesk',ui-sans-serif,system-ui;
+  --font-body:'Manrope',ui-sans-serif,system-ui;
+}
+
+*,*::before,*::after{box-sizing:border-box;}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;}
+body{
+  margin:0;min-width:320px;overflow-x:hidden;
+  color:var(--text);
+  font-family:var(--font-body);
+  font-size:clamp(.97rem,.2vw + .95rem,1.04rem);
+  line-height:1.58;
+  background:
+    radial-gradient(ellipse at 8% 12%,rgba(230,36,41,.22) 0%,transparent 32%),
+    radial-gradient(ellipse at 92% 38%,rgba(200,20,28,.17) 0%,transparent 30%),
+    radial-gradient(ellipse at 50% 68%,rgba(220,30,38,.2) 0%,transparent 35%),
+    radial-gradient(ellipse at 18% 88%,rgba(185,10,18,.15) 0%,transparent 28%),
+    radial-gradient(circle at 75% 92%,rgba(230,36,41,.12) 0%,transparent 24%),
+    radial-gradient(circle at 50% 2%,rgba(255,255,255,.08) 0%,transparent 28%),
+    linear-gradient(180deg,#050505 0%,#0a0a0a 100%);
+  -webkit-font-smoothing:antialiased;
+}
+body.nav-open,body.modal-open{overflow:hidden;}
+a{color:inherit;text-decoration:none;}
+img{display:block;max-width:100%;}
+button,input,select,textarea{font:inherit;}
+button{cursor:pointer;}
+h1,h2,h3{margin:0;color:var(--text);font-family:var(--font-display);letter-spacing:-.03em;}
+p{margin:0;color:var(--muted);line-height:1.72;}
+::selection{background:rgba(230,36,41,.3);color:#fff;}
+
+/* Skip */
+.skip-link{position:absolute;left:14px;top:-48px;z-index:100;padding:10px 14px;border-radius:999px;color:#fff;background:var(--primary);transition:top .2s ease;}
+.skip-link:focus{top:14px;}
+
+/* ─── Announcement bar ─── */
+.announcement-bar{
+  width:100%;display:flex;align-items:center;justify-content:center;gap:12px;
+  padding:10px clamp(16px,3vw,32px);
+  background:var(--primary);
+  font-size:.78rem;font-weight:700;color:#fff;letter-spacing:.02em;
+}
+.announcement-bar a{color:#fff;font-weight:800;text-decoration:underline;text-underline-offset:3px;opacity:.9;}
+.announcement-bar a:hover{opacity:1;}
+
+/* ─── Nav ─── */
+.site-header{position:sticky;top:0;z-index:30;}
+.site-nav{
+  position:relative;
+  width:min(1320px,calc(100% - 24px));
+  min-height:var(--nav-height);
+  margin-inline:auto;
+  padding:8px 14px;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto auto;
+  gap:10px;
+  align-items:center;
+  border:1px solid rgba(255,255,255,.08);
+  border-top:0;
+  border-radius:0 0 28px 28px;
+  background:rgba(14,14,14,.96);
+  box-shadow:0 10px 28px rgba(0,0,0,.5);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+}
+.brand{display:inline-flex;align-items:center;gap:10px;}
+.brand img{width:88px;height:52px;object-fit:contain;filter:brightness(0) invert(1);}
+.nav-toggle{
+  width:44px;height:44px;padding:0;
+  border:1px solid rgba(255,255,255,.15);
+  border-radius:50%;
+  background:rgba(255,255,255,.06);
+  display:grid;place-items:center;
+}
+.nav-toggle-inner{display:flex;flex-direction:column;gap:5px;align-items:center;}
+.nav-toggle-inner span{display:block;width:18px;height:2px;border-radius:999px;background:#fff;transition:.2s ease;}
+.nav-toggle[aria-expanded="true"] .nav-toggle-inner span:nth-child(1){transform:translateY(7px) rotate(45deg);}
+.nav-toggle[aria-expanded="true"] .nav-toggle-inner span:nth-child(2){opacity:0;}
+.nav-toggle[aria-expanded="true"] .nav-toggle-inner span:nth-child(3){transform:translateY(-7px) rotate(-45deg);}
+.nav-links-wrap{
+  display:none;
+  position:absolute;top:calc(100% + 10px);left:0;right:0;z-index:5;
+  flex-direction:column;align-items:stretch;gap:4px;
+  padding:14px;
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:18px;
+  background:rgba(14,14,14,.97);
+  box-shadow:0 8px 32px rgba(0,0,0,.5);
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+}
+.nav-links-wrap.open{display:flex;}
+.nav-links-wrap a,.nav-links-wrap button{
+  min-height:48px;padding:10px 16px;border-radius:12px;
+  display:flex;align-items:center;
+  color:var(--text);font-size:.95rem;font-weight:700;
+  border:0;background:transparent;text-align:left;
+  letter-spacing:0;text-transform:none;
+}
+.nav-links-wrap a:hover,.nav-links-wrap button:hover{color:var(--primary);background:rgba(230,36,41,.06);}
+.nav-actions{display:none;}
+
+/* Desktop nav */
+@media(min-width:860px){
+  .site-nav{grid-template-columns:1fr auto 1fr;gap:16px;padding:10px 18px;border-radius:0 0 34px 34px;}
+  .brand{justify-self:start;}
+  .nav-toggle{display:none;}
+  .nav-links-wrap{
+    position:static;display:flex!important;flex-direction:row;align-items:center;justify-content:center;
+    justify-self:center;gap:44px;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;
+  }
+  .nav-links-wrap a,.nav-links-wrap button{
+    min-height:auto;padding:0;border-radius:0;background:transparent;
+    font-size:.9rem;color:rgba(255,255,255,.82);
+    transition:color .2s ease;
+  }
+  .nav-links-wrap a:hover,.nav-links-wrap button:hover{color:var(--primary);background:transparent;}
+  .nav-actions{display:inline-flex;align-items:center;gap:12px;justify-self:end;}
+  .nav-actions .btn{min-height:40px;padding:0 16px;font-size:.82rem;}
+  .nav-mobile-only{display:none!important;}
+}
+
+/* ─── Buttons ─── */
+.btn{
+  min-height:52px;display:inline-flex;align-items:center;justify-content:center;gap:10px;
+  padding:0 24px;border:1px solid transparent;border-radius:999px;
+  font-size:.82rem;font-weight:800;letter-spacing:.075em;text-transform:uppercase;
+  cursor:pointer;
+  transition:transform .18s ease,border-color .18s ease,background .18s ease,box-shadow .18s ease;
+  -webkit-user-select:none;user-select:none;
+}
+.btn:hover:not(:disabled),.btn:focus-visible:not(:disabled){transform:translateY(-1px);}
+.btn:focus-visible{outline:2px solid var(--primary);outline-offset:3px;}
+.btn:disabled{opacity:.64;cursor:not-allowed;transform:none;box-shadow:none;}
+.btn-primary{
+  color:#fff;
+  background:linear-gradient(135deg,var(--primary) 0%,#ff4f54 100%);
+  box-shadow:0 16px 30px rgba(230,36,41,.25);
+}
+.btn-primary:hover:not(:disabled){background:linear-gradient(135deg,var(--primary-deep) 0%,#d92b30 100%);}
+.btn-secondary{color:var(--text);background:rgba(30,30,30,.9);border-color:var(--line-strong);}
+.btn-nav-login{color:#fff;background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.18);}
+.btn-nav-login:hover:not(:disabled){background:rgba(255,255,255,.14);}
+.btn-outline{color:var(--muted-strong);background:transparent;border-color:var(--line-strong);}
+.btn-outline:hover:not(:disabled){color:var(--text);border-color:var(--muted);background:rgba(255,255,255,.04);}
+.btn-large{min-height:58px;font-size:.9rem;padding:0 34px;}
+.btn-sm{min-height:42px;padding:0 18px;font-size:.76rem;}
+.btn-submit{width:100%;}
+
+/* ─── Shell ─── */
+.section-shell{width:var(--container);margin-inline:auto;padding-bottom:clamp(24px,3.2vw,36px);}
+.section-grid{display:grid;gap:var(--space-lg);}
+main [id]{scroll-margin-top:calc(var(--nav-height) + 24px);}
+
+/* ─── Panel ─── */
+.panel{
+  border:1px solid var(--line);border-radius:var(--radius-md);
+  background:linear-gradient(180deg,rgba(30,30,30,.5),rgba(15,15,15,.5));
+  box-shadow:0 14px 28px rgba(12,16,24,.08);
+}
+.panel-strong{background:linear-gradient(180deg,rgba(40,40,40,.5),rgba(20,20,20,.5)),var(--surface-strong);}
+.panel-accent{
+  background:radial-gradient(circle at 88% 12%,rgba(230,36,41,.15),transparent 36%),
+    linear-gradient(180deg,#1a1a1a 0%,#101010 100%);
+  border-color:rgba(230,36,41,.3);
+}
+
+/* ─── Eyebrow ─── */
+.eyebrow{
+  display:inline-flex;align-items:center;gap:10px;
+  color:var(--primary);font-size:.74rem;font-weight:800;
+  letter-spacing:.11em;text-transform:uppercase;
+}
+.eyebrow::before{content:"";width:28px;height:1px;background:currentColor;}
+
+/* ─── Gradient title ─── */
+.landing-title{
+  background:linear-gradient(180deg,#ffffff 25%,rgba(255,255,255,.38) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+
+/* ─── Hero ─── */
+.hero{
+  display:grid;gap:var(--space-sm);
+  padding-top:clamp(56px,9vw,110px);
+  padding-bottom:clamp(56px,9vw,110px);
+  position:relative;
+}
+.hero-layout{display:flex;flex-direction:column;align-items:center;gap:var(--space-sm);}
+.hero-copy{
+  display:flex;flex-direction:column;align-items:center;
+  text-align:center;gap:var(--space-sm);
+  max-width:860px;width:100%;
+}
+.hero-copy .eyebrow{
+  padding:5px 14px 5px 10px;border-radius:999px;
+  border:1px solid rgba(230,36,41,.35);
+  background:rgba(230,36,41,.1);
+  backdrop-filter:blur(4px);
+}
+.hero-copy .eyebrow::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--primary);flex-shrink:0;}
+.hero-badges{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:4px 0;}
+.hero-badge{
+  display:inline-flex;align-items:center;min-height:32px;padding:0 14px;
+  border-radius:999px;border:1px solid var(--line);
+  background:rgba(30,30,30,.78);color:var(--muted-strong);
+  font-size:.82rem;font-weight:700;
+}
+.hero h1{
+  max-width:none;font-size:clamp(2.9rem,9vw,6rem);
+  line-height:1.0;text-wrap:balance;
+}
+.hero-h1-dim{color:rgba(255,255,255,.3);-webkit-text-fill-color:rgba(255,255,255,.3);}
+.hero-text{max-width:52ch;font-size:.96rem;line-height:1.65;text-align:center;}
+.hero-actions{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin-top:8px;}
+.hero-actions .btn-primary{
+  box-shadow:0 0 56px rgba(230,36,41,.45),0 16px 30px rgba(230,36,41,.22);
+  padding:0 42px;
+}
+.hero-scroll{
+  display:flex;align-items:center;gap:10px;margin-top:28px;
+  font-size:.74rem;font-weight:700;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--muted);
+}
+.hero-scroll::before,.hero-scroll::after{content:"";flex:1;height:1px;background:var(--line);}
+
+/* ─── About ─── */
+.about-layout{display:grid;gap:var(--space-xs);}
+@media(min-width:760px){.about-layout{grid-template-columns:minmax(0,1.12fr) minmax(260px,.88fr);}}
+.about-layout .panel{padding:var(--card-pad);}
+.about-layout .panel p+p{margin-top:var(--space-sm);}
+.logo-panel{
+  position:relative;min-height:220px;place-items:center;display:grid;
+  overflow:hidden;background:transparent;border:none;box-shadow:none;
+}
+.logo-panel img{width:min(90%,400px);max-height:340px;object-fit:contain;filter:brightness(0) invert(1);opacity:.86;}
+
+/* ─── Section heading ─── */
+.section-heading{display:grid;gap:var(--space-xs);}
+.section-heading h2{max-width:15ch;font-size:clamp(1.7rem,6vw,2.5rem);line-height:1.02;text-wrap:balance;}
+.section-heading p,.split-heading p{max-width:66ch;}
+.split-heading{display:flex;flex-direction:column;gap:var(--space-sm);align-items:flex-start;}
+@media(min-width:860px){.split-heading{flex-direction:row;justify-content:space-between;align-items:flex-end;}}
+
+/* ─── Carousel ─── */
+.carousel-shell{display:grid;gap:var(--space-sm);}
+.carousel-header{display:flex;flex-direction:column;gap:var(--space-sm);}
+@media(min-width:860px){.carousel-header{flex-direction:row;align-items:center;justify-content:space-between;}}
+.carousel-label{font-size:.74rem;font-weight:800;letter-spacing:.11em;text-transform:uppercase;color:var(--primary);}
+.carousel-track{
+  display:grid;grid-auto-flow:column;
+  gap:14px;overflow-x:auto;padding:2px 2px 10px;
+  scroll-snap-type:x mandatory;scrollbar-width:none;
+  -webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;
+  cursor:grab;
+}
+.carousel-track::-webkit-scrollbar{display:none;}
+.carousel-track:active{cursor:grabbing;}
+.carousel-track>*{scroll-snap-align:start;}
+.service-track{grid-auto-columns:82%;}
+.review-track{grid-auto-columns:88%;}
+@media(min-width:640px){
+  .service-track{grid-auto-columns:minmax(260px,calc((100% - 14px) / 2));}
+  .review-track{grid-auto-columns:minmax(280px,calc((100% - 14px) / 2));}
+}
+@media(min-width:860px){
+  .carousel-track{grid-auto-flow:row;overflow-x:visible;padding-bottom:0;cursor:default;}
+  .service-track{grid-template-columns:repeat(4,1fr);}
+  .review-track{grid-template-columns:repeat(3,1fr);}
+}
+
+/* ─── Service card ─── */
+.service-card{min-height:100%;display:flex;flex-direction:column;padding:clamp(18px,3.6vw,24px);}
+.service-icon{
+  width:52px;height:52px;display:inline-grid;place-items:center;border-radius:16px;
+  margin-bottom:16px;color:var(--primary-deep);background:var(--primary-soft);
+  font-family:var(--font-display);font-weight:700;font-size:1rem;
+}
+.service-card h3{font-size:clamp(1.1rem,3.6vw,1.26rem);}
+.service-card p{margin-top:10px;}
+
+/* ─── Reviews ─── */
+.impact-band{
+  margin:4px 0 var(--space-2xl);
+  padding:clamp(52px,11vw,74px) 0;
+}
+.review-card{
+  min-height:100%;display:flex;flex-direction:column;justify-content:space-between;
+  padding:clamp(18px,3.6vw,24px);
+}
+.review-stars{color:var(--primary);letter-spacing:.14em;font-size:1.1rem;}
+.review-card p{margin-top:12px;font-size:.94rem;line-height:1.65;font-style:italic;color:var(--muted-strong);}
+.review-person{display:grid;gap:4px;margin-top:20px;}
+.review-person strong{color:var(--text);font-size:.96rem;}
+.review-person span{font-size:.84rem;color:var(--muted);}
+
+/* ─── FAQ ─── */
+#faq.section-grid{gap:var(--space-sm);}
+.faq-list{display:grid;gap:10px;align-items:start;}
+@media(min-width:860px){.faq-list{grid-template-columns:1fr 1fr;gap:var(--space-md);}}
+.faq-col{display:flex;flex-direction:column;gap:10px;}
+.faq-item{overflow:hidden;}
+.faq-question{
+  width:100%;min-height:58px;
+  display:flex;align-items:center;justify-content:space-between;gap:14px;
+  padding:clamp(16px,2vw,20px) clamp(18px,2.5vw,24px);
+  border:0;background:transparent;color:var(--text);text-align:left;
+  font-family:var(--font-display);font-size:.9rem;line-height:1.3;font-weight:500;
+}
+.faq-icon{
+  width:30px;height:30px;display:inline-grid;place-items:center;
+  border-radius:50%;flex-shrink:0;
+  background:var(--primary-soft);color:var(--primary);
+  font-size:1.1rem;line-height:1;
+  transition:transform .22s ease;
+}
+.faq-question[aria-expanded="true"] .faq-icon{transform:rotate(45deg);}
+.faq-answer{
+  display:grid;grid-template-rows:0fr;
+  transition:grid-template-rows .28s ease;
+}
+.faq-answer.open{grid-template-rows:1fr;}
+.faq-answer-inner{
+  overflow:hidden;
+  padding:0 clamp(18px,2.5vw,24px);
+  font-size:.88rem;line-height:1.65;color:var(--muted-strong);
+}
+.faq-answer.open .faq-answer-inner{padding-bottom:clamp(18px,2.5vw,24px);}
+.btn-faq-cta{min-height:44px;margin-top:16px;padding:0 22px;font-size:.76rem;}
+
+/* ─── Footer ─── */
+.site-footer{background:transparent;padding:0 0 40px;width:100%;display:flex;flex-direction:column;gap:0;}
+.footer-cta-band{
+  width:100%;padding:clamp(48px,8vw,96px) clamp(24px,4vw,48px);
+  display:flex;flex-direction:column;align-items:center;text-align:center;gap:20px;
+  border-top:1px solid var(--line);
+}
+.footer-cta-logo{display:block;max-width:190px;width:100%;filter:brightness(0) invert(1);opacity:.75;margin-bottom:4px;}
+.footer-cta-title{font-size:clamp(2rem,6vw,3.8rem);line-height:1;letter-spacing:-.03em;max-width:680px;}
+.footer-cta-desc{max-width:480px;color:var(--muted);font-size:.97rem;line-height:1.68;}
+.footer-cta-actions{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:6px;}
+.footer-grid{
+  display:flex;flex-direction:column;gap:40px;
+  max-width:1180px;margin:0 auto;width:100%;
+  padding:clamp(40px,6vw,52px) clamp(24px,4vw,48px);
+  border-top:1px solid var(--line);
+}
+@media(min-width:860px){
+  .footer-grid{
+    display:grid;
+    grid-template-columns:1.5fr 1fr 1fr 1fr;
+    gap:48px;align-items:start;
+  }
+}
+.footer-col{display:flex;flex-direction:column;gap:4px;align-items:flex-start;}
+.footer-col-brand p{font-size:.94rem;line-height:1.6;color:var(--muted-strong);margin-top:8px;}
+.footer-heading{color:var(--text);font-size:1.1rem;letter-spacing:-.01em;margin-bottom:8px;font-weight:700;}
+.footer-nav{display:flex;flex-direction:column;gap:12px;}
+.footer-nav a{color:var(--muted-strong);font-size:.94rem;font-weight:500;transition:color .18s ease;}
+.footer-nav a:hover{color:var(--primary);}
+.footer-link-btn{
+  padding:0;border:0;background:transparent;color:var(--muted-strong);
+  font-size:.94rem;font-weight:500;letter-spacing:0;text-transform:none;
+  min-height:auto;display:inline;width:fit-content;text-align:left;
+  cursor:pointer;transition:color .18s ease;
+}
+.footer-link-btn:hover{color:var(--primary);}
+.footer-bottom{
+  max-width:1180px;margin:0 auto;width:100%;
+  padding:24px clamp(24px,4vw,48px) 0;
+  border-top:1px solid var(--line);
+  display:flex;flex-direction:column;align-items:center;text-align:center;gap:20px;
+}
+@media(min-width:860px){.footer-bottom{flex-direction:row;justify-content:space-between;text-align:left;}}
+.footer-copyright{font-size:.84rem;color:var(--muted);}
+.footer-social{display:flex;gap:12px;}
+.footer-social a{
+  width:40px;height:40px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--surface-strong);color:var(--text);
+  border:1px solid transparent;
+  transition:all .2s ease;box-shadow:0 4px 12px rgba(0,0,0,.2);
+}
+.footer-social a:hover{transform:translateY(-2px);}
+.soc-fb:hover{color:#1877f2;background:#f0f7ff;border-color:rgba(24,119,242,.3);}
+.soc-ig:hover{color:#c13584;background:#fff3f8;border-color:rgba(193,53,132,.3);}
+.soc-tt:hover{color:#ee1d52;background:#fff4f7;border-color:rgba(238,29,82,.3);}
+.soc-wa:hover{color:#25d366;background:#eefff3;border-color:rgba(37,211,102,.3);}
+
+/* ─── Join Modal ─── */
+.join-modal-overlay{
+  position:fixed;inset:0;z-index:60;
+  display:none;place-items:center;padding:20px;
+}
+.join-modal-overlay.open{display:grid;}
+.join-modal-backdrop{
+  position:absolute;inset:0;border:0;
+  background:rgba(0,0,0,.76);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  cursor:pointer;
+}
+.join-modal-panel{
+  position:relative;z-index:1;
+  width:min(720px,calc(100vw - 32px));
+  max-height:calc(100vh - 40px);overflow-y:auto;
+  border-radius:var(--radius-md);
+  border:1px solid var(--line-strong);
+  background:linear-gradient(180deg,rgba(30,30,30,.6),rgba(15,15,15,.6));
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  box-shadow:0 40px 100px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.04);
+  padding:var(--card-pad);
+  transform:translateY(24px) scale(.97);opacity:0;
+  transition:transform .35s cubic-bezier(.16,1,.3,1),opacity .25s ease;
+}
+.join-modal-overlay.open .join-modal-panel{transform:translateY(0) scale(1);opacity:1;}
+.modal-header{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:20px;align-items:start;margin-bottom:var(--card-pad);}
+.modal-copy{display:grid;gap:12px;}
+.modal-copy p{max-width:52ch;font-size:.93rem;}
+.modal-close{
+  min-height:40px;padding:0 14px;
+  border:1px solid var(--line-strong);background:rgba(255,255,255,.04);
+  color:var(--muted-strong);font-size:.78rem;font-weight:800;letter-spacing:.07em;text-transform:uppercase;
+  border-radius:999px;cursor:pointer;transition:.18s ease;
+  white-space:nowrap;
+}
+.modal-close:hover{background:rgba(255,255,255,.08);color:var(--text);}
+.join-form{display:grid;gap:var(--space-sm);}
+.field-grid{display:grid;gap:16px;}
+@media(min-width:520px){.field-grid{grid-template-columns:1fr 1fr;}}
+.join-form label{display:flex;flex-direction:column;gap:8px;color:var(--muted-strong);font-size:.92rem;font-weight:700;}
+.field{
+  width:100%;min-height:56px;padding:0 16px;
+  border:1px solid var(--line);border-radius:16px;
+  background:#111;color:var(--text);font-size:.95rem;
+  transition:border-color .18s ease,box-shadow .18s ease;
+}
+.field::placeholder{color:#555;}
+.field:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(230,36,41,.2);}
+.field[aria-invalid="true"]{border-color:#ef4444;box-shadow:0 0 0 3px rgba(239,68,68,.15);}
+.field-error{color:#ff9b9b;font-size:.82rem;font-weight:700;display:none;}
+.field-error.show{display:block;}
+.form-success{
+  display:none;padding:16px 18px;border-radius:14px;
+  border:1px solid rgba(37,211,102,.4);background:rgba(37,211,102,.1);
+  color:#7ee8a2;font-size:.9rem;font-weight:700;line-height:1.6;
+}
+.form-success.show{display:block;}
+.form-err-msg{
+  display:none;padding:14px 16px;border-radius:14px;
+  border:1px solid rgba(230,36,41,.4);background:rgba(230,36,41,.1);
+  color:#ffb7b7;font-size:.9rem;font-weight:700;
+}
+.form-err-msg.show{display:block;}
+.modal-reassurance{
+  display:grid;gap:6px;padding:16px 18px;
+  border:1px solid rgba(255,255,255,.06);border-radius:16px;
+  background:rgba(255,255,255,.03);margin-top:8px;
+}
+.modal-reassurance strong{color:var(--text);font-size:.92rem;}
+.modal-reassurance p{font-size:.84rem;margin:0;}
+
+/* ─── Page-load entrance ─── */
+@keyframes fadeInUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+.fade-up{opacity:0;animation:fadeInUp .65s ease both;}
+.fade-up-1{animation-delay:.1s;}
+.fade-up-2{animation-delay:.22s;}
+.fade-up-3{animation-delay:.34s;}
+.fade-up-4{animation-delay:.46s;}
+.fade-up-5{animation-delay:.58s;}
+
+/* ─── Intersection observer reveal ─── */
+.reveal{opacity:0;transform:translateY(28px);transition:opacity .6s ease,transform .6s ease;}
+.reveal.in{opacity:1;transform:translateY(0);}
+
+/* ─── Reduced motion ─── */
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto;}
+  *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important;}
+}
+</style>
+</head>
+<body>
+
+<a href="#main" class="skip-link">Skip to main content</a>
+
+<!-- Announcement bar -->
+<div class="announcement-bar" role="banner" aria-label="Announcement">
+  <span>🔥 New morning slots just opened — <a href="#" onclick="openJoin();return false;">reserve yours today</a></span>
+</div>
+
+<!-- ─── Header ─── -->
+<header class="site-header">
+  <nav class="site-nav" aria-label="Primary navigation">
+    <a href="#main" class="brand" aria-label="Marvel's Fit Studios home">
+      <img src="assets/Logo-3.png" alt="Marvel's Fit Studios" width="200" height="99">
+    </a>
+
+    <button class="nav-toggle" id="navToggle" type="button"
+      aria-expanded="false" aria-controls="navLinks" aria-label="Toggle navigation">
+      <span class="nav-toggle-inner" aria-hidden="true">
+        <span></span><span></span><span></span>
+      </span>
+    </button>
+
+    <div class="nav-links-wrap" id="navLinks" role="list">
+      <a href="#about" role="listitem">About</a>
+      <a href="#services" role="listitem">Services</a>
+      <a href="#reviews" role="listitem">Reviews</a>
+      <a href="#faq" role="listitem">FAQ</a>
+      <a href="#" class="btn btn-nav-login nav-mobile-only" style="margin-top:4px;" role="listitem">Login</a>
+      <button class="btn btn-primary nav-mobile-only" type="button" onclick="openJoin()" style="border-radius:12px;" role="listitem">Join Now</button>
+    </div>
+
+    <div class="nav-actions" aria-label="Account actions">
+      <a href="#" class="btn btn-nav-login">Login</a>
+      <button class="btn btn-primary" type="button" onclick="openJoin()">Join Now</button>
+    </div>
+  </nav>
+</header>
+
+<!-- ─── Main ─── -->
+<main id="main">
+
+  <!-- HERO -->
+  <section class="hero section-shell" aria-labelledby="hero-title">
+    <div class="hero-layout">
+      <div class="hero-copy">
+        <div class="eyebrow fade-up fade-up-1">Premium performance training</div>
+        <div class="hero-badges fade-up fade-up-2" aria-label="Studio highlights">
+          <span class="hero-badge">Giza, Egypt</span>
+          <span class="hero-badge">3k+ sessions</span>
+          <span class="hero-badge">Group &amp; private</span>
+        </div>
+        <h1 id="hero-title" class="landing-title fade-up fade-up-3">
+          Train with structure,
+          <span class="hero-h1-dim">better coaching,</span>
+          and clear progress.
+        </h1>
+        <p class="hero-text fade-up fade-up-4">
+          Marvel's Fit Studios gives beginners and committed athletes a
+          premium training experience built around clarity and results.
+        </p>
+        <div class="hero-actions fade-up fade-up-5">
+          <button class="btn btn-primary btn-large" type="button" onclick="openJoin()">
+            Start Membership
+          </button>
+          <a href="#about" class="btn btn-secondary btn-large">Learn more</a>
+        </div>
+      </div>
+
+      <div class="hero-scroll reveal" aria-hidden="true">scroll to explore</div>
+    </div>
+  </section>
+
+  <!-- ABOUT -->
+  <section class="section-shell section-grid" id="about" aria-labelledby="about-title">
+    <div class="section-heading reveal">
+      <div class="eyebrow">About the studio</div>
+      <h2 id="about-title" class="landing-title">A membership built around coaching quality.</h2>
+      <p>Marvel's Fit Studios was built to make training feel more organized, more personal, and easier to trust.</p>
+    </div>
+
+    <div class="about-layout reveal">
+      <article class="panel" style="padding:var(--card-pad);display:grid;gap:var(--space-sm);">
+        <p>We combine hands-on coaching with a cleaner member journey and a higher standard for every session.</p>
+        <p>From your first session to your 200th, the structure stays consistent — so your progress can compound instead of starting over.</p>
+        <div style="display:flex;gap:32px;padding-top:var(--space-sm);border-top:1px solid var(--line);">
+          <div>
+            <div style="font-family:var(--font-display);font-size:2rem;font-weight:700;color:var(--text);">3k<span style="color:var(--primary);">+</span></div>
+            <div style="font-size:.82rem;color:var(--muted);font-weight:600;letter-spacing:.06em;text-transform:uppercase;">Sessions completed</div>
+          </div>
+          <div>
+            <div style="font-family:var(--font-display);font-size:2rem;font-weight:700;color:var(--text);">100<span style="color:var(--primary);">%</span></div>
+            <div style="font-size:.82rem;color:var(--muted);font-weight:600;letter-spacing:.06em;text-transform:uppercase;">Coached, always</div>
+          </div>
+          <div>
+            <div style="font-family:var(--font-display);font-size:2rem;font-weight:700;color:var(--text);">2020</div>
+            <div style="font-size:.82rem;color:var(--muted);font-weight:600;letter-spacing:.06em;text-transform:uppercase;">Founded in Giza</div>
+          </div>
+        </div>
+      </article>
+      <aside class="logo-panel panel" aria-label="Marvel's Fit Studios mark">
+        <img src="assets/Logo-3.png" alt="Marvel's Fit Studios brand mark" width="2000" height="985">
+      </aside>
+    </div>
+  </section>
+
+  <!-- SERVICES -->
+  <section class="section-shell section-grid" id="services" aria-labelledby="services-title">
+    <div class="section-heading split-heading reveal">
+      <div>
+        <div class="eyebrow">What you get</div>
+        <h2 id="services-title" class="landing-title">Services built to feel clear and premium.</h2>
+      </div>
+    </div>
+
+    <div class="carousel-shell reveal">
+      <div class="carousel-header">
+        <p class="carousel-label">Membership features</p>
+      </div>
+      <div class="carousel-track service-track" tabindex="0" aria-label="Membership feature cards" role="list">
+        <article class="service-card panel" role="listitem">
+          <span class="service-icon" aria-hidden="true">01</span>
+          <h3 class="landing-title">Group training</h3>
+          <p>High-energy sessions with coach attention and clear structure for every participant.</p>
+        </article>
+        <article class="service-card panel" role="listitem">
+          <span class="service-icon" aria-hidden="true">02</span>
+          <h3 class="landing-title">Private coaching</h3>
+          <p>One-to-one coaching with more tailored support, feedback, and programming.</p>
+        </article>
+        <article class="service-card panel" role="listitem">
+          <span class="service-icon" aria-hidden="true">03</span>
+          <h3 class="landing-title">Progress tracking</h3>
+          <p>A member dashboard that keeps your sessions, milestones, and progress fully visible.</p>
+        </article>
+        <article class="service-card panel" role="listitem">
+          <span class="service-icon" aria-hidden="true">04</span>
+          <h3 class="landing-title">Training files</h3>
+          <p>Plans and programming guidance shared in a format that's actually easy to follow.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- REVIEWS (impact band) -->
+  <div class="impact-band">
+    <section class="section-shell section-grid" id="reviews" aria-labelledby="reviews-title">
+      <div class="section-heading split-heading reveal">
+        <div>
+          <div class="eyebrow">Member feedback</div>
+          <h2 id="reviews-title" class="landing-title">What members notice once the system gets better.</h2>
+        </div>
+      </div>
+
+      <div class="carousel-shell reveal">
+        <div class="carousel-header">
+          <p class="carousel-label">Testimonials</p>
+        </div>
+        <div class="carousel-track review-track" tabindex="0" aria-label="Member reviews" role="list">
+          <article class="review-card panel" role="listitem">
+            <div>
+              <div class="review-stars" aria-label="5 out of 5 stars">★★★★★</div>
+              <p>"The coaches keep you focused. The whole experience feels more organized and easier to stay consistent with."</p>
+            </div>
+            <div class="review-person">
+              <strong>Ahmed K.</strong>
+              <span>Member since 2024</span>
+            </div>
+          </article>
+          <article class="review-card panel" role="listitem">
+            <div>
+              <div class="review-stars" aria-label="5 out of 5 stars">★★★★★</div>
+              <p>"Private coaching gave me clarity I didn't know I was missing. My sessions feel genuinely intentional now."</p>
+            </div>
+            <div class="review-person">
+              <strong>Sara M.</strong>
+              <span>Member since 2024</span>
+            </div>
+          </article>
+          <article class="review-card panel" role="listitem">
+            <div>
+              <div class="review-stars" aria-label="5 out of 5 stars">★★★★★</div>
+              <p>"Group training has real structure here. The coaching standard is what makes the whole thing feel premium."</p>
+            </div>
+            <div class="review-person">
+              <strong>Mohamed H.</strong>
+              <span>Member since 2025</span>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- FAQ -->
+  <section class="section-shell section-grid" id="faq" aria-labelledby="faq-title">
+    <div class="section-heading split-heading reveal">
+      <div>
+        <div class="eyebrow">Common questions</div>
+        <h2 id="faq-title" class="landing-title">Everything important, made clear.</h2>
+      </div>
+    </div>
+
+    <div class="support-layout">
+      <div class="faq-list">
+        <div class="faq-col">
+          <article class="faq-item panel reveal">
+            <button class="faq-question" type="button" aria-expanded="false" aria-controls="faq-1">
+              How does the monthly membership work?
+              <span class="faq-icon" aria-hidden="true">+</span>
+            </button>
+            <div class="faq-answer" id="faq-1" role="region">
+              <div class="faq-answer-inner">
+                One membership covers 12 sessions each month. The structure is designed to feel simple and predictable, with your training activity easier to follow and track.
+              </div>
+            </div>
+          </article>
+
+          <article class="faq-item panel reveal">
+            <button class="faq-question" type="button" aria-expanded="false" aria-controls="faq-2">
+              What happens if I miss a session?
+              <span class="faq-icon" aria-hidden="true">+</span>
+            </button>
+            <div class="faq-answer" id="faq-2" role="region">
+              <div class="faq-answer-inner">
+                If you miss a session for a valid reason, the team can review it and help restore the right balance to your membership where appropriate.
+              </div>
+            </div>
+          </article>
+
+          <article class="faq-item panel reveal">
+            <button class="faq-question" type="button" aria-expanded="false" aria-controls="faq-3">
+              Can I freeze my membership?
+              <span class="faq-icon" aria-hidden="true">+</span>
+            </button>
+            <div class="faq-answer" id="faq-3" role="region">
+              <div class="faq-answer-inner">
+                Yes. Memberships can be frozen for up to 14 days per block with no fee. Speak to your coach or the admin team to arrange it.
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <div class="faq-col">
+          <article class="faq-item panel reveal">
+            <button class="faq-question" type="button" aria-expanded="false" aria-controls="faq-4">
+              Is the studio right for beginners?
+              <span class="faq-icon" aria-hidden="true">+</span>
+            </button>
+            <div class="faq-answer" id="faq-4" role="region">
+              <div class="faq-answer-inner">
+                Yes. The environment is structured for both ambitious beginners and experienced members, with coaching that meets you at the right level from day one.
+              </div>
+            </div>
+          </article>
+
+          <article class="faq-item panel reveal">
+            <button class="faq-question" type="button" aria-expanded="false" aria-controls="faq-5">
+              What's included in private coaching?
+              <span class="faq-icon" aria-hidden="true">+</span>
+            </button>
+            <div class="faq-answer" id="faq-5" role="region">
+              <div class="faq-answer-inner">
+                Private coaching includes one-to-one time with your assigned coach, a tailored program, regular check-ins, and progress notes after every session.
+              </div>
+            </div>
+          </article>
+
+          <article class="faq-item panel reveal">
+            <button class="faq-question" type="button" aria-expanded="false" aria-controls="faq-6">
+              How do I join?
+              <span class="faq-icon" aria-hidden="true">+</span>
+            </button>
+            <div class="faq-answer" id="faq-6" role="region">
+              <div class="faq-answer-inner">
+                <p>Open the join form and share your details. The studio team will contact you within 24 hours to complete the next step.</p>
+                <button class="btn btn-primary btn-faq-cta" type="button" onclick="openJoin()">Join Now →</button>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ─── Footer ─── -->
+<footer class="site-footer" aria-label="Site footer">
+  <div class="footer-cta-band">
+    <img src="assets/Logo-3.png" alt="Marvel's Fit Studios" class="footer-cta-logo" width="220" loading="lazy">
+    <h2 class="footer-cta-title landing-title">Ready to Start Training?</h2>
+    <p class="footer-cta-desc">
+      Join Marvel's Fit Studios for structured coaching, clear progress,
+      and a premium training experience in Giza.
+    </p>
+    <div class="footer-cta-actions">
+      <button class="btn btn-primary btn-large" type="button" onclick="openJoin()">Start Membership</button>
+      <a href="#" class="btn btn-secondary btn-large">Member Login</a>
+    </div>
+  </div>
+
+  <div class="footer-grid">
+    <div class="footer-col footer-col-brand">
+      <img src="assets/Logo-3.png" alt="Marvel's Fit Studios" style="width:100px;filter:brightness(0) invert(1);opacity:.7;margin-bottom:8px;" loading="lazy">
+      <p>Premium performance training in Giza, Egypt.</p>
+    </div>
+    <div class="footer-col">
+      <strong class="footer-heading">Training</strong>
+      <nav class="footer-nav" aria-label="Training links">
+        <a href="#services">Group Training</a>
+        <a href="#services">Private Coaching</a>
+        <a href="#services">Progress Tracking</a>
+      </nav>
+    </div>
+    <div class="footer-col">
+      <strong class="footer-heading">Studio</strong>
+      <nav class="footer-nav" aria-label="Studio links">
+        <a href="#about">About</a>
+        <a href="#reviews">Reviews</a>
+        <a href="#faq">FAQ</a>
+      </nav>
+    </div>
+    <div class="footer-col">
+      <strong class="footer-heading">Connect</strong>
+      <div class="footer-nav">
+        <a href="tel:+201033724777">+20 103 372 4777</a>
+        <a href="https://maps.app.goo.gl/iNgTgoWc1qBnxoVN8" target="_blank" rel="noopener noreferrer">Giza, Egypt</a>
+        <button class="footer-link-btn" type="button" onclick="openJoin()">Start Membership</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <div class="footer-copyright">Marvel's Fit Studios © 2020. All rights reserved.</div>
+    <div class="footer-social" aria-label="Social media links">
+      <a href="https://facebook.com/share/1CP9fjSoF8/" target="_blank" rel="noopener noreferrer" aria-label="Facebook" class="soc-fb">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M13.25 22v-8.03h2.7l.4-3.13h-3.1V8.84c0-.9.25-1.52 1.55-1.52h1.66V4.51c-.29-.04-1.27-.11-2.41-.11-2.39 0-4.03 1.46-4.03 4.14v2.3H7.3v3.13h2.72V22h3.23Z"/></svg>
+      </a>
+      <a href="https://instagram.com/marvelsfitstudios" target="_blank" rel="noopener noreferrer" aria-label="Instagram" class="soc-ig">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M7.75 2h8.5A5.75 5.75 0 0 1 22 7.75v8.5A5.75 5.75 0 0 1 16.25 22h-8.5A5.75 5.75 0 0 1 2 16.25v-8.5A5.75 5.75 0 0 1 7.75 2m0 1.8A3.95 3.95 0 0 0 3.8 7.75v8.5A3.95 3.95 0 0 0 7.75 20.2h8.5a3.95 3.95 0 0 0 3.95-3.95v-8.5a3.95 3.95 0 0 0-3.95-3.95h-8.5M17.7 5.35a.95.95 0 1 1 0 1.9.95.95 0 0 1 0-1.9M12 6.85A5.15 5.15 0 1 1 6.85 12 5.16 5.16 0 0 1 12 6.85m0 1.8A3.35 3.35 0 1 0 15.35 12 3.35 3.35 0 0 0 12 8.65"/></svg>
+      </a>
+      <a href="https://tiktok.com/@marvelsfitstudios" target="_blank" rel="noopener noreferrer" aria-label="TikTok" class="soc-tt">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M14.5 3c.42 1.64 1.38 2.95 2.88 3.93 1.08.7 2.23 1.07 3.45 1.11v3.12a9.42 9.42 0 0 1-3.7-.74v5.86c0 1.56-.55 2.89-1.66 4-1.1 1.09-2.43 1.64-3.98 1.64s-2.88-.55-3.99-1.64A5.43 5.43 0 0 1 5.85 16.3c0-1.56.55-2.9 1.65-4 .99-.98 2.17-1.53 3.55-1.63v3.22a2.33 2.33 0 0 0-1.2.67c-.47.46-.7 1.03-.7 1.72 0 .69.23 1.26.7 1.73.47.47 1.05.7 1.74.7.68 0 1.26-.23 1.72-.7.47-.47.7-1.04.7-1.73V3h3.19Z"/></svg>
+      </a>
+      <a href="https://wa.me/201033724777" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp" class="soc-wa">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+      </a>
+    </div>
+  </div>
+</footer>
+
+<!-- ─── Join Modal ─── -->
+<div class="join-modal-overlay" id="joinModal" role="dialog" aria-modal="true" aria-labelledby="join-title" aria-describedby="join-desc">
+  <button class="join-modal-backdrop" type="button" onclick="closeJoin()" aria-label="Close join form"></button>
+  <div class="join-modal-panel" id="joinPanel" tabindex="-1">
+    <div class="modal-header">
+      <div class="modal-copy">
+        <div class="eyebrow">Join now</div>
+        <h2 id="join-title" class="landing-title">Start your membership request.</h2>
+        <p id="join-desc">Share your name and phone number. The studio team will contact you within 24 hours to complete the next step.</p>
+      </div>
+      <button class="modal-close" type="button" onclick="closeJoin()">Close</button>
+    </div>
+
+    <form class="join-form" id="joinForm" onsubmit="handleJoinSubmit(event)" novalidate>
+      <div class="field-grid">
+        <label>
+          Full name
+          <input class="field" id="f-name" name="fullName" type="text"
+            placeholder="Enter your full name" autocomplete="name" required>
+          <span class="field-error" id="err-name">Please enter your full name.</span>
+        </label>
+        <label>
+          Phone number
+          <input class="field" id="f-phone" name="phone" type="tel"
+            placeholder="+20 1XX XXX XXXX" autocomplete="tel" inputmode="tel" required>
+          <span class="field-error" id="err-phone">Please enter a valid Egyptian phone number.</span>
+        </label>
+      </div>
+
+      <button class="btn btn-primary btn-submit" id="joinSubmit" type="submit">Create Account →</button>
+
+      <div class="form-success" id="joinSuccess" role="alert">
+        <strong>You're on the list! 🎉</strong><br>
+        We'll reach out within 24 hours to confirm your membership and get you booked in.
+      </div>
+      <div class="form-err-msg" id="joinErrMsg" role="alert">
+        Something went wrong — please try again or call us directly on +20 103 372 4777.
+      </div>
+
+      <div class="modal-reassurance">
+        <strong>No payment required yet.</strong>
+        <p>We'll contact you to walk through options before anything is confirmed.</p>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  /* ─── Nav toggle ─── */
+  const navToggle = document.getElementById('navToggle');
+  const navLinks  = document.getElementById('navLinks');
+
+  navToggle.addEventListener('click', () => {
+    const isOpen = navLinks.classList.toggle('open');
+    navToggle.setAttribute('aria-expanded', String(isOpen));
+    document.body.classList.toggle('nav-open', isOpen);
+  });
+
+  // Close on nav link click (mobile)
+  navLinks.querySelectorAll('a, button').forEach(el => {
+    el.addEventListener('click', () => {
+      navLinks.classList.remove('open');
+      navToggle.setAttribute('aria-expanded', 'false');
+      document.body.classList.remove('nav-open');
+    });
+  });
+
+  /* ─── FAQ accordion ─── */
+  document.querySelectorAll('.faq-question').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const expanded = btn.getAttribute('aria-expanded') === 'true';
+      const answerId = btn.getAttribute('aria-controls');
+      const answer   = document.getElementById(answerId);
+
+      // Close all others
+      document.querySelectorAll('.faq-question').forEach(b => {
+        if (b !== btn) {
+          b.setAttribute('aria-expanded', 'false');
+          const a = document.getElementById(b.getAttribute('aria-controls'));
+          a?.classList.remove('open');
+        }
+      });
+
+      btn.setAttribute('aria-expanded', String(!expanded));
+      answer?.classList.toggle('open', !expanded);
+    });
+  });
+
+  /* ─── Join modal ─── */
+  function openJoin() {
+    document.getElementById('joinModal').classList.add('open');
+    document.body.classList.add('modal-open');
+    setTimeout(() => document.getElementById('joinPanel').focus(), 50);
+    // Reset form state
+    document.getElementById('joinSuccess').classList.remove('show');
+    document.getElementById('joinErrMsg').classList.remove('show');
+    document.getElementById('joinSubmit').disabled = false;
+    document.getElementById('joinSubmit').textContent = 'Create Account →';
+  }
+
+  function closeJoin() {
+    document.getElementById('joinModal').classList.remove('open');
+    document.body.classList.remove('modal-open');
+  }
+
+  // Escape key closes modal
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeJoin();
+  });
+
+  /* ─── Join form ─── */
+  function handleJoinSubmit(e) {
+    e.preventDefault();
+    const name  = document.getElementById('f-name');
+    const phone = document.getElementById('f-phone');
+    let valid = true;
+
+    // Reset
+    [name, phone].forEach(f => {
+      f.removeAttribute('aria-invalid');
+      document.getElementById('err-' + f.id.slice(2)).classList.remove('show');
+    });
+
+    if (!name.value.trim() || name.value.trim().length < 2) {
+      name.setAttribute('aria-invalid', 'true');
+      document.getElementById('err-name').classList.add('show');
+      valid = false;
+    }
+
+    const phoneVal = phone.value.replace(/\s+/g, '');
+    if (!phoneVal || !/^(\+20|0)?1[0-9]{9}$/.test(phoneVal)) {
+      phone.setAttribute('aria-invalid', 'true');
+      document.getElementById('err-phone').classList.add('show');
+      valid = false;
+    }
+
+    if (!valid) return;
+
+    const btn = document.getElementById('joinSubmit');
+    btn.disabled = true;
+    btn.textContent = 'Sending…';
+
+    // Simulate submission (no real backend in this mockup)
+    setTimeout(() => {
+      document.getElementById('joinSuccess').classList.add('show');
+      btn.style.display = 'none';
+      document.getElementById('joinForm').querySelector('.modal-reassurance').style.display = 'none';
+    }, 900);
+  }
+
+  /* ─── Carousel drag scroll ─── */
+  document.querySelectorAll('.carousel-track').forEach(track => {
+    let isDown = false, startX = 0, scrollLeft = 0;
+
+    track.addEventListener('mousedown', e => {
+      isDown = true; startX = e.pageX - track.offsetLeft;
+      scrollLeft = track.scrollLeft;
+    });
+    track.addEventListener('mouseleave', () => isDown = false);
+    track.addEventListener('mouseup',    () => isDown = false);
+    track.addEventListener('mousemove',  e => {
+      if (!isDown) return;
+      e.preventDefault();
+      const x    = e.pageX - track.offsetLeft;
+      const walk = (x - startX) * 1.4;
+      track.scrollLeft = scrollLeft - walk;
+    });
+  });
+
+  /* ─── Intersection observer reveal ─── */
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(en => {
+      if (en.isIntersecting) {
+        en.target.classList.add('in');
+        observer.unobserve(en.target);
+      }
+    });
+  }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+
+</body>
+</html>

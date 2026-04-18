@@ -1,13 +1,6 @@
 import Link from "next/link";
-import {
-  ArrowRight,
-  CirclePlus,
-  UserPlus,
-} from "lucide-react";
 
 import { DashboardActivityFeed } from "@/components/dashboard/dashboard-activity-feed";
-import { DashboardEmptyState } from "@/components/dashboard/dashboard-empty-state";
-import { DashboardMiniStat } from "@/components/dashboard/dashboard-mini-stat";
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
 import { DashboardStatCard } from "@/components/dashboard/dashboard-stat-card";
 import { DashboardStatusBadge } from "@/components/dashboard/dashboard-status-badge";
@@ -18,183 +11,131 @@ export const metadata = {
   title: "Admin Dashboard",
 };
 
-function getSessionStatusTone(status: "On track" | "Waitlist forming" | "Needs follow-up") {
+function getSessionStatusTone(status: string) {
   switch (status) {
     case "On track":
       return "success";
     case "Waitlist forming":
       return "warning";
-    default:
+    case "Needs follow-up":
       return "accent";
+    default:
+      return "neutral";
   }
-}
-
-function getSessionTypeTone(type: "Group" | "Private") {
-  return type === "Private" ? "neutral" : "warning";
-}
-
-function getSnapshotTone(label: string) {
-  if (label === "Onboarding queue") {
-    return "accent";
-  }
-
-  if (label === "Plan demand") {
-    return "warning";
-  }
-
-  if (label === "Energy note") {
-    return "success";
-  }
-
-  return "neutral";
-}
-
-function getSnapshotImplication(label: string) {
-  if (label === "Onboarding queue") {
-    return "Clear today";
-  }
-
-  if (label === "Plan demand") {
-    return "Watch capacity";
-  }
-
-  if (label === "Energy note") {
-    return "Attendance pace";
-  }
-
-  return "Next focus";
 }
 
 export default async function AdminOverviewPage() {
-  const adminOverviewData = await adminOverviewRepository.getOverview();
-  const onboardingQueue =
-    adminOverviewData.studioSnapshot.find((item) => item.label === "Onboarding queue")
-      ?.value ?? "0";
-  const waitlistRiskCount = adminOverviewData.upcomingSessions.filter(
-    (session) => session.status === "Waitlist forming"
-  ).length;
-  const followUpCount = adminOverviewData.upcomingSessions.filter(
-    (session) => session.status === "Needs follow-up"
-  ).length;
-  const onboardingQueueCount = Number(onboardingQueue.replaceAll(",", ""));
-  const watchCount = waitlistRiskCount + followUpCount;
-  const priorityAction = adminOverviewData.quickActions.find(
-    (action) => action.emphasis === "primary"
-  );
+  const { stats, upcomingSessions, recentActivity, quickActions, studioSnapshot } =
+    await adminOverviewRepository.getOverview();
+
+  const atCapacity = upcomingSessions.filter((s) => s.status === "Waitlist forming").length;
+  const needsFollowUp = upcomingSessions.filter((s) => s.status === "Needs follow-up").length;
 
   return (
-    <div className="dashboard-stack dashboard-stack--dense">
+    <div className="dashboard-stack">
       <DashboardPageHeader
-        eyebrow="Admin overview"
+        eyebrow="Admin operations"
         actions={
           <>
             <Link href="/admin/sessions" className="mv-btn mv-btn-secondary">
-              <CirclePlus size={16} />
-              Create Session
+              View sessions
             </Link>
             <Link href="/admin/clients" className="mv-btn mv-btn-primary">
-              <UserPlus size={16} />
               Add Client
             </Link>
           </>
         }
       />
 
-      <DashboardSurfaceNote
-        eyebrow="Admin briefing"
-        title={
-          onboardingQueueCount > 0
-            ? `${onboardingQueue} leads need review before the next session block.`
-            : "The lead queue is clear enough to focus on sessions and coverage."
-        }
-        description="Scan the queue, protect at-risk sessions, then move to coverage or billing."
-        action={
-          <DashboardStatusBadge
-            label={watchCount > 0 ? `${watchCount} watch items` : "Operationally clear"}
-            tone={watchCount > 0 ? "warning" : "success"}
+      <section className="dashboard-kpi-grid" aria-label="Key metrics">
+        {stats.map((stat) => (
+          <DashboardStatCard
+            key={stat.id}
+            label={stat.label}
+            value={stat.value}
+            change={stat.change}
+            detail={stat.detail}
+            note={stat.note}
+            icon={stat.icon}
+            tone={stat.tone}
           />
-        }
-        items={[
-          `${adminOverviewData.upcomingSessions.length} sessions scheduled in the next 48 hours.`,
-          `${followUpCount} sessions still need booking follow-up.`,
-          `${adminOverviewData.recentActivity.length} recent changes landed since the last review.`,
-        ]}
-      />
-
-      <section
-        className="dashboard-mini-grid dashboard-admin-priority-grid"
-        aria-label="Admin priorities"
-      >
-        <DashboardMiniStat
-          tone={onboardingQueueCount > 0 ? "accent" : "success"}
-          label="Lead queue"
-          value={onboardingQueue}
-          description="Leads waiting for contact or approval."
-        />
-        <DashboardMiniStat
-          tone={waitlistRiskCount > 0 ? "warning" : "success"}
-          label="Waitlist risk"
-          value={waitlistRiskCount}
-          description="Sessions that may need overflow handling."
-        />
-        <DashboardMiniStat
-          tone={followUpCount > 0 ? "accent" : "success"}
-          label="Booking follow-up"
-          value={followUpCount}
-          description="Sessions still missing early booking signal."
-        />
-      </section>
-
-      <section className="dashboard-kpi-grid" aria-label="Admin overview stats">
-        {adminOverviewData.stats.map((stat) => (
-          <DashboardStatCard key={stat.id} {...stat} />
         ))}
       </section>
 
-      <section
-        className="dashboard-overview-grid dashboard-overview-grid--admin"
-        aria-label="Upcoming sessions and recent activity"
-      >
+      <DashboardSurfaceNote
+        eyebrow="Studio pulse"
+        title={
+          atCapacity > 0
+            ? `${atCapacity} upcoming session${atCapacity === 1 ? "" : "s"} ${atCapacity === 1 ? "is" : "are"} filling up — check capacity before the day starts.`
+            : needsFollowUp > 0
+              ? `${needsFollowUp} session${needsFollowUp === 1 ? "" : "s"} still need follow-up before they fill.`
+              : "Sessions are on track — focus on billing follow-up and coach coverage."
+        }
+        description="Use this board to move through sessions, clear billing pressure, and handle incoming requests without leaving the admin workspace."
+        items={[
+          `${upcomingSessions.length} sessions scheduled in the next 48 hours.`,
+          `${recentActivity.length} recent activity items across leads, payments, and notes.`,
+          `${quickActions.length} recommended actions based on current studio state.`,
+        ]}
+      />
+
+      <section className="dashboard-overview-grid dashboard-overview-grid--admin">
         <article className="dashboard-panel dashboard-panel--accent dashboard-panel--dense">
-          <div className="dashboard-panel__header dashboard-panel__header--tight">
+          <div className="dashboard-panel__header">
             <div>
-              <div className="mv-eyebrow">Next 48 hours</div>
-              <h2>Sessions needing visibility</h2>
-              <p>Time, coach coverage, and booking signal in one pass.</p>
+              <div className="mv-eyebrow">Upcoming</div>
+              <h2>Sessions today &amp; tomorrow</h2>
+              <p>Live schedule view. Open a session to manage it.</p>
             </div>
-            <DashboardStatusBadge
-              label={`${adminOverviewData.upcomingSessions.length} scheduled`}
-              tone="accent"
-            />
+            <Link href="/admin/sessions" className="mv-btn mv-btn-outline">
+              All sessions
+            </Link>
           </div>
 
-          <div className="dashboard-panel__meta-strip">
-            <span>{waitlistRiskCount} waitlist risks</span>
-            <span>{followUpCount} need follow-up</span>
-          </div>
-
-          {adminOverviewData.upcomingSessions.length > 0 ? (
-            <div className="dashboard-session-list dashboard-session-list--dense">
-              {adminOverviewData.upcomingSessions.map((session) => {
-                const occupancy = Math.round(
-                  (session.bookedSeats / session.capacity) * 100
-                );
-
+          {upcomingSessions.length > 0 ? (
+            <div className="dashboard-session-list">
+              {upcomingSessions.map((session) => {
+                const fill =
+                  session.capacity > 0
+                    ? Math.round((session.bookedSeats / session.capacity) * 100)
+                    : 0;
                 return (
                   <article
                     key={session.id}
                     className="dashboard-session-card dashboard-session-card--admin"
                   >
                     <div className="dashboard-session-card__topline">
-                      <div className="dashboard-session-card__meta">
-                        <DashboardStatusBadge
-                          label={session.sessionType}
-                          tone={getSessionTypeTone(session.sessionType)}
-                        />
-                        <DashboardStatusBadge
-                          label={session.status}
-                          tone={getSessionStatusTone(session.status)}
-                        />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div className="dashboard-session-card__meta" style={{ marginBottom: 8 }}>
+                          <DashboardStatusBadge
+                            label={session.sessionType}
+                            tone={session.sessionType === "Private" ? "accent" : "neutral"}
+                          />
+                          <DashboardStatusBadge
+                            label={session.status}
+                            tone={getSessionStatusTone(session.status)}
+                          />
+                        </div>
+                        <strong
+                          style={{
+                            display: "block",
+                            fontSize: "1rem",
+                            letterSpacing: "-0.01em",
+                            color: "#fff",
+                          }}
+                        >
+                          {session.name}
+                        </strong>
+                        <span
+                          style={{
+                            fontSize: "0.82rem",
+                            color: "rgba(255,255,255,0.55)",
+                            marginTop: 2,
+                            display: "block",
+                          }}
+                        >
+                          {session.coachName} · {session.location}
+                        </span>
                       </div>
                       <div className="dashboard-session-card__time-block">
                         <span>{session.dayLabel}</span>
@@ -202,155 +143,133 @@ export default async function AdminOverviewPage() {
                       </div>
                     </div>
 
-                    <div className="dashboard-session-card__headline">
-                      <h3 className="dashboard-session-card__name">{session.name}</h3>
-                      <span className="dashboard-session-card__location">
-                        {session.location}
-                      </span>
-                    </div>
-
-                    <p className="dashboard-session-card__detail">
-                      Coach {session.coachName}
-                    </p>
-
-                    <div className="dashboard-session-card__footer dashboard-session-card__footer--admin">
-                      <span className="dashboard-session-card__occupancy">
-                        {session.bookedSeats}/{session.capacity} booked
-                      </span>
-                      <div className="dashboard-session-card__progress-block">
-                        <span className="dashboard-session-card__progress-label">
-                          {occupancy}% full
+                    {session.sessionType === "Group" && (
+                      <div className="dashboard-session-card__footer dashboard-session-card__footer--admin">
+                        <span className="dashboard-session-card__occupancy">
+                          {session.bookedSeats} / {session.capacity}
                         </span>
-                        <div className="dashboard-progress" aria-hidden="true">
-                          <span style={{ width: `${occupancy}%` }} />
+                        <div className="dashboard-session-card__progress-block">
+                          <div className="dashboard-session-card__progress-label">
+                            {fill}% booked
+                          </div>
+                          <div className="dashboard-progress">
+                            <span
+                              style={{
+                                width: `${fill}%`,
+                                background:
+                                  fill >= 100
+                                    ? "var(--mv-warning)"
+                                    : "linear-gradient(90deg, var(--mv-primary), #ff6b6f)",
+                              }}
+                            />
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    )}
                   </article>
                 );
               })}
             </div>
           ) : (
-            <DashboardEmptyState
-              title="No sessions need review in the next 48 hours."
-              description="Create a session block or reopen the schedule when new capacity is needed."
-              action={
+            <div className="dashboard-empty-state">
+              <strong>No sessions in the next 48 hours</strong>
+              <p>Create or schedule sessions from the sessions workspace.</p>
+              <div className="dashboard-empty-state__action">
                 <Link href="/admin/sessions" className="mv-btn mv-btn-outline">
-                  Open Sessions
+                  Open sessions
                 </Link>
-              }
-            />
-          )}
-        </article>
-
-        <article className="dashboard-panel dashboard-panel--dense">
-          <div className="dashboard-panel__header dashboard-panel__header--tight">
-            <div>
-              <div className="mv-eyebrow">Today&apos;s movement</div>
-              <h2>Recent activity</h2>
-              <p>Roster, billing, and coaching changes worth noticing now.</p>
+              </div>
             </div>
-            <DashboardStatusBadge
-              label={`${adminOverviewData.recentActivity.length} items`}
-            />
-          </div>
-
-          {adminOverviewData.recentActivity.length > 0 ? (
-            <DashboardActivityFeed items={adminOverviewData.recentActivity} />
-          ) : (
-            <DashboardEmptyState
-              title="No new operational changes yet."
-              description="This feed updates when leads, payments, or session notes change."
-            />
           )}
         </article>
+
+        <div style={{ display: "grid", gap: 16, alignContent: "start" }}>
+          <article className="dashboard-panel dashboard-panel--dense">
+            <div className="dashboard-panel__header">
+              <div>
+                <div className="mv-eyebrow">Activity</div>
+                <h2>Recent updates</h2>
+              </div>
+            </div>
+            {recentActivity.length > 0 ? (
+              <DashboardActivityFeed items={recentActivity} />
+            ) : (
+              <div className="dashboard-empty-state">
+                <strong>No recent activity</strong>
+                <p>Activity from leads, payments, and session notes will surface here.</p>
+              </div>
+            )}
+          </article>
+
+          <article className="dashboard-panel dashboard-panel--accent dashboard-panel--dense">
+            <div className="dashboard-panel__header">
+              <div>
+                <div className="mv-eyebrow">Quick actions</div>
+                <h2>Common tasks</h2>
+              </div>
+            </div>
+            <div className="dashboard-admin-action-list">
+              {quickActions.map((action) => {
+                const Icon = action.icon;
+                return (
+                  <div
+                    key={action.id}
+                    className={`dashboard-admin-action-row${action.emphasis === "primary" ? " dashboard-admin-action-row--primary" : ""}`}
+                  >
+                    <span className="dashboard-admin-action-row__icon" aria-hidden="true">
+                      <Icon size={20} />
+                    </span>
+                    <div className="dashboard-admin-action-row__content">
+                      <strong>{action.label}</strong>
+                      <p>{action.description}</p>
+                    </div>
+                    <div className="dashboard-admin-action-row__cta">
+                      <Link
+                        href={action.href}
+                        className={
+                          action.emphasis === "primary"
+                            ? "mv-btn mv-btn-primary"
+                            : "mv-btn mv-btn-outline"
+                        }
+                      >
+                        {action.ctaLabel}
+                      </Link>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </article>
+        </div>
       </section>
 
-      <section
-        className="dashboard-secondary-grid dashboard-secondary-grid--admin"
-        aria-label="Quick actions and studio status"
-      >
-        <article className="dashboard-panel dashboard-panel--dense">
-          <div className="dashboard-panel__header dashboard-panel__header--tight">
-            <div>
-              <div className="mv-eyebrow">Operational shortcuts</div>
-              <h2>Quick actions</h2>
-              <p>Start with the priority action, then move through routine control work.</p>
+      <section className="dashboard-panel dashboard-panel--dense">
+        <div className="dashboard-panel__header dashboard-panel__header--tight">
+          <div>
+            <div className="mv-eyebrow">Studio snapshot</div>
+            <h2>Right now</h2>
+          </div>
+        </div>
+        <div className="dashboard-snapshot-list">
+          {studioSnapshot.map((item) => (
+            <div key={item.id} className="dashboard-snapshot-item">
+              <span
+                style={{
+                  display: "block",
+                  fontSize: "0.72rem",
+                  fontWeight: 800,
+                  letterSpacing: "0.16em",
+                  textTransform: "uppercase",
+                  color: "rgba(255,255,255,0.48)",
+                }}
+              >
+                {item.label}
+              </span>
+              <strong>{item.value}</strong>
+              <p>{item.description}</p>
             </div>
-            <DashboardStatusBadge
-              label={priorityAction ? "1 priority action" : "Actions ready"}
-              tone="accent"
-            />
-          </div>
-
-          <div className="dashboard-admin-action-list">
-            {adminOverviewData.quickActions.map((action) => {
-              const Icon = action.icon;
-
-              return (
-                <div
-                  key={action.id}
-                  className={
-                    action.emphasis === "primary"
-                      ? "dashboard-admin-action-row dashboard-admin-action-row--primary"
-                      : "dashboard-admin-action-row"
-                  }
-                >
-                  <span className="dashboard-admin-action-row__icon">
-                    <Icon size={20} />
-                  </span>
-                  <div className="dashboard-admin-action-row__content">
-                    <span className="dashboard-admin-action-row__eyebrow">
-                      {action.emphasis === "primary" ? "Start here" : "Routine"}
-                    </span>
-                    <strong>{action.label}</strong>
-                    <p>{action.description}</p>
-                  </div>
-                  <Link
-                    href={action.href}
-                    className={
-                      action.emphasis === "primary"
-                        ? "mv-btn mv-btn-primary dashboard-admin-action-row__cta"
-                        : "mv-btn mv-btn-outline dashboard-admin-action-row__cta"
-                    }
-                  >
-                    {action.ctaLabel}
-                    <ArrowRight size={16} />
-                  </Link>
-                </div>
-              );
-            })}
-          </div>
-        </article>
-
-        <article className="dashboard-panel dashboard-panel--accent dashboard-panel--dense">
-          <div className="dashboard-panel__header dashboard-panel__header--tight">
-            <div>
-              <div className="mv-eyebrow">Studio snapshot</div>
-              <h2>Health of the week</h2>
-              <p>Queue, demand, and attendance signals with their next implication.</p>
-            </div>
-            <DashboardStatusBadge label="Weekly read" tone="accent" />
-          </div>
-
-          <div className="dashboard-summary-list">
-            {adminOverviewData.studioSnapshot.map((item) => (
-              <div key={item.id} className="dashboard-admin-snapshot-row">
-                <div className="dashboard-admin-snapshot-row__header">
-                  <div className="dashboard-admin-snapshot-row__meta">
-                    <DashboardStatusBadge
-                      label={item.label}
-                      tone={getSnapshotTone(item.label)}
-                    />
-                    <small>{getSnapshotImplication(item.label)}</small>
-                  </div>
-                  <strong>{item.value}</strong>
-                </div>
-                <p>{item.description}</p>
-              </div>
-            ))}
-          </div>
-        </article>
+          ))}
+        </div>
       </section>
     </div>
   );

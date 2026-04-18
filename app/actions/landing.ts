@@ -4,6 +4,8 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 
 import { getPrisma } from "@/lib/prisma";
+import { clientRegistrationService } from "@/lib/services/client-registration-service";
+import { clientRegistrationSchema } from "@/lib/validators/id-auth";
 import { type JoinNowActionState } from "./join-now-types";
 
 const joinNowSchema = z.object({
@@ -87,4 +89,60 @@ export async function submitJoinNowLead(
     message:
       "Your request has been received. The studio team will contact you soon.",
   };
+}
+
+export async function registerClientWithAutoCredentials(
+  _previousState: JoinNowActionState,
+  formData: FormData
+): Promise<JoinNowActionState> {
+  const parsed = clientRegistrationSchema.safeParse({
+    fullName: formData.get("fullName"),
+    phone: formData.get("phone"),
+  });
+
+  if (!parsed.success) {
+    return {
+      status: "error",
+      message: "Please fix the highlighted fields and try again.",
+      fieldErrors: parsed.error.flatten().fieldErrors,
+    };
+  }
+
+  const phoneAvailable = await clientRegistrationService.isPhoneAvailable(
+    parsed.data.phone
+  );
+
+  if (!phoneAvailable) {
+    return {
+      status: "error",
+      message: "This phone number is already registered.",
+      fieldErrors: {
+        phone: ["This phone number is already registered."],
+      },
+    };
+  }
+
+  try {
+    const result = await clientRegistrationService.registerClient({
+      fullName: parsed.data.fullName,
+      phone: parsed.data.phone,
+    });
+
+    return {
+      status: "success",
+      message: "Account created. Save these credentials before closing this page.",
+      credentials: {
+        clientId: result.clientId,
+        password: result.temporaryPassword,
+        fullName: parsed.data.fullName,
+        phone: parsed.data.phone,
+      },
+    };
+  } catch {
+    return {
+      status: "error",
+      message:
+        "An error occurred while creating your account. Please try again.",
+    };
+  }
 }

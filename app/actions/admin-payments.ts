@@ -80,4 +80,5 @@ export async function saveClientPaymentStatus(input: SaveClientPaymentInput) {
   revalidatePath("/admin");
   revalidatePath("/admin/clients");
   revalidatePath("/admin/subscriptions");
+  revalidatePath("/admin/schedule");
 }

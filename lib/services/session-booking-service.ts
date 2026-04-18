@@ -1,6 +1,7 @@
 import "server-only";
 
 import {
+  BookingSource,
   BookingStatus,
   TrainingSessionStatus,
   TrainingSessionType,
@@ -121,6 +122,7 @@ export async function createSessionBooking(input: CreateSessionBookingInput) {
       },
       data: {
         status: BookingStatus.BOOKED,
+        source: BookingSource.MANUAL,
         bookedAt: new Date(),
         attendedAt: null,
         canceledAt: null,
@@ -136,6 +138,7 @@ export async function createSessionBooking(input: CreateSessionBookingInput) {
       trainingSessionId: input.trainingSessionId,
       clientId: input.clientId,
       status: BookingStatus.BOOKED,
+      source: BookingSource.MANUAL,
     },
     select: {
       id: true,

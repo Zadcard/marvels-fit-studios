@@ -8,6 +8,7 @@ export type AdminPaymentStatus = "Paid" | "Unpaid" | "Due soon";
 export type AdminClientRecord = {
   id: string;
   fullName: string;
+  clientId: string;
   email: string;
   phone: string;
   membership: AdminClientMembership;
@@ -15,8 +16,13 @@ export type AdminClientRecord = {
   paymentStatus: AdminPaymentStatus;
   paymentAmountLabel: string;
   joinedDate: string;
+  primaryGroupId: string | null;
+  primaryGroup: string;
+  primaryBlockId: string | null;
+  primaryBlock: string;
   assignedCoach: string;
   nextSession: string;
+  nextSessions: string[];
   progressNote: string;
 };
 

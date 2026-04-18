@@ -83,6 +83,48 @@ export const deleteTrainingSessionSchema = z.object({
   sessionId: z.string().trim().min(1, "Session id is required."),
 });
 
+export const bulkUpdateTrainingSessionsSchema = z
+  .object({
+    sessionIds: z
+      .array(z.string().trim().min(1, "Session id is required."))
+      .min(1, "Select at least one session."),
+    action: z.enum(["CANCEL", "REASSIGN_COACH", "UPDATE_LOCATION", "UPDATE_CAPACITY"]),
+    coachId: z.string().trim().optional(),
+    location: z.string().trim().optional(),
+    capacity: z
+      .number()
+      .int("Capacity must be a whole number.")
+      .positive("Capacity must be greater than zero.")
+      .max(100, "Capacity is too large.")
+      .nullable()
+      .optional(),
+  })
+  .superRefine((value, context) => {
+    if (value.action === "REASSIGN_COACH" && !value.coachId?.trim()) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["coachId"],
+        message: "Coach is required for reassignment.",
+      });
+    }
+
+    if (value.action === "UPDATE_LOCATION" && !value.location?.trim()) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["location"],
+        message: "Location is required for bulk location updates.",
+      });
+    }
+
+    if (value.action === "UPDATE_CAPACITY" && value.capacity == null) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["capacity"],
+        message: "Capacity is required for bulk capacity updates.",
+      });
+    }
+  });
+
 export type CreateTrainingSessionInput = z.infer<
   typeof createTrainingSessionSchema
 >;
@@ -94,4 +136,7 @@ export type CancelTrainingSessionInput = z.infer<
 >;
 export type DeleteTrainingSessionInput = z.infer<
   typeof deleteTrainingSessionSchema
+>;
+export type BulkUpdateTrainingSessionsInput = z.infer<
+  typeof bulkUpdateTrainingSessionsSchema
 >;

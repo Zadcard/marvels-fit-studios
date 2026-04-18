@@ -12,8 +12,16 @@
     "start": "next start",
     "lint": "eslint",
     "check:backend": "node scripts/backend-smoke-check.cjs",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:watch": "vitest --watch",
     "test:analytics": "node tests/analytics-event-catalog.test.mjs",
     "test:design-system": "node tests/dashboard-mini-stat-adoption.test.mjs",
+    "audit:admin-data": "node scripts/admin-data-audit.cjs",
+    "repair:admin-data": "node scripts/admin-data-repair.cjs --apply",
+    "repair:admin-data:dry": "node scripts/admin-data-repair.cjs",
     "promote:leads": "node scripts/promote-leads-to-clients.cjs"
   },
   "dependencies": {
@@ -43,11 +51,16 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitest/coverage-v8": "^4.1.4",
+    "@vitest/ui": "^4.1.4",
     "eslint": "^9",
     "eslint-config-next": "^16.2.1",
+    "happy-dom": "^20.9.0",
+    "pdf-parse": "^2.4.5",
     "prisma": "^7.6.0",
     "tailwindcss": "^4",
     "ts-node": "^10.9.2",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.4"
   }
 }

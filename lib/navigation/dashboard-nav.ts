@@ -9,6 +9,7 @@ import {
   ShieldUser,
   UserRound,
   Users,
+  UploadCloud,
 } from "lucide-react";
 import type { DashboardRole } from "@/lib/auth/authorization-policy";
 export type DashboardNavSection = "primary" | "secondary";
@@ -52,14 +53,6 @@ const dashboardNavConfig: Record<DashboardRole, DashboardNavItem[]> = {
       exact: true,
     },
     {
-      label: "Leads",
-      href: "/admin/leads",
-      icon: ClipboardList,
-      description: "Queue and approval",
-      section: "primary",
-      available: true,
-    },
-    {
       label: "Clients",
       href: "/admin/clients",
       icon: Users,
@@ -87,15 +80,23 @@ const dashboardNavConfig: Record<DashboardRole, DashboardNavItem[]> = {
       label: "Schedule",
       href: "/admin/schedule",
       icon: CalendarRange,
-      description: "Week planning",
+      description: "Recurring sessions",
       section: "primary",
       available: true,
     },
     {
-      label: "Subscriptions",
-      href: "/admin/subscriptions",
-      icon: CreditCard,
-      description: "Plans and renewals",
+      label: "Join Requests",
+      href: "/admin/join-requests",
+      icon: ClipboardList,
+      description: "Intake and conversion",
+      section: "primary",
+      available: true,
+    },
+    {
+      label: "Bulk Import",
+      href: "/admin/bulk-import",
+      icon: UploadCloud,
+      description: "CSV client import",
       section: "primary",
       available: true,
     },
@@ -215,7 +216,7 @@ const dashboardRoleUiConfig: Record<DashboardRole, DashboardRoleUiMeta> = {
       subtitle: "Studio director",
       initials: "LM",
     },
-    searchPrompt: "Search leads, clients, or sessions",
+    searchPrompt: "Search requests, clients, or sessions",
     profileHref: "/admin/profile",
   },
   coach: {

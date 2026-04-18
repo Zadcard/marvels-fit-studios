@@ -3,7 +3,7 @@
 import { useActionState, useEffect, useRef } from "react";
 import { useFormStatus } from "react-dom";
 
-import { submitJoinNowLead } from "@/app/actions/landing";
+import { registerClientWithAutoCredentials } from "@/app/actions/landing";
 import {
   initialJoinNowState,
   type JoinNowActionState,
@@ -21,7 +21,7 @@ function SubmitButton() {
       aria-busy={pending}
       disabled={pending}
     >
-      {pending ? "Sending request..." : "Request Membership"}
+      {pending ? "Creating account..." : "Create Account"}
     </button>
   );
 }
@@ -39,14 +39,10 @@ function FieldError({ errors }: FieldErrorProps) {
 }
 
 function classifyJoinNowFailure(state: JoinNowActionState) {
-  const emailErrors = state.fieldErrors?.email ?? [];
+  const phoneErrors = state.fieldErrors?.phone ?? [];
 
-  if (emailErrors.some((error) => error.includes("already linked to an account"))) {
-    return "existing_account";
-  }
-
-  if (emailErrors.some((error) => error.includes("already been submitted"))) {
-    return "duplicate_lead";
+  if (phoneErrors.some((error) => error.includes("already registered"))) {
+    return "duplicate_phone";
   }
 
   if (state.fieldErrors && Object.keys(state.fieldErrors).length > 0) {
@@ -62,7 +58,7 @@ export function JoinNowForm() {
   const trackedSubmissionIdRef = useRef<number | null>(null);
   const submissionCounterRef = useRef(0);
   const [state, formAction] = useActionState(
-    submitJoinNowLead,
+    registerClientWithAutoCredentials,
     initialJoinNowState
   );
 
@@ -123,14 +119,14 @@ export function JoinNowForm() {
           <input
             className="field"
             id="cf-name"
-            name="name"
+            name="fullName"
             type="text"
             placeholder="Enter your full name"
             autoComplete="name"
-            aria-invalid={state.fieldErrors?.name ? "true" : undefined}
+            aria-invalid={state.fieldErrors?.fullName ? "true" : undefined}
             required
           />
-          <FieldError errors={state.fieldErrors?.name} />
+          <FieldError errors={state.fieldErrors?.fullName} />
         </label>
         <label>
           <span>Phone number</span>
@@ -148,49 +144,19 @@ export function JoinNowForm() {
           />
           <FieldError errors={state.fieldErrors?.phone} />
         </label>
-        <label>
-          <span>Email address</span>
-          <input
-            className="field"
-            id="cf-email"
-            name="email"
-            type="email"
-            placeholder="Enter your email"
-            autoComplete="email"
-            inputMode="email"
-            enterKeyHint="next"
-            aria-invalid={state.fieldErrors?.email ? "true" : undefined}
-            required
-          />
-          <FieldError errors={state.fieldErrors?.email} />
-        </label>
-        <label>
-          <span>Password</span>
-          <input
-            className="field"
-            id="cf-password"
-            name="password"
-            type="password"
-            placeholder="Create a password"
-            autoComplete="new-password"
-            enterKeyHint="done"
-            aria-invalid={state.fieldErrors?.password ? "true" : undefined}
-            required
-          />
-          <FieldError errors={state.fieldErrors?.password} />
-        </label>
       </div>
 
       <SubmitButton />
 
-      <p
-        className={state.status === "success" ? "form-success show" : "form-success"}
-        id="join-success"
-        role="alert"
-        aria-live="polite"
-      >
-        {state.status === "success" ? state.message : ""}
-      </p>
+      {state.status === "success" && state.credentials ? (
+        <div className="form-success show" id="join-success" role="alert">
+          <strong>Save these credentials!</strong>
+          <span>Client ID: {state.credentials.clientId}</span>
+          <span>Password: {state.credentials.password}</span>
+        </div>
+      ) : (
+        <p className="form-success" id="join-success" aria-live="polite" />
+      )}
 
       {state.status === "error" && state.message ? (
         <p className="form-error" role="alert" aria-live="polite">

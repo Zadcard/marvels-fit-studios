@@ -41,6 +41,26 @@ enum TrainingSessionStatus {
   CANCELED
 }
 
+enum ScheduleBlockStatus {
+  ACTIVE
+  PAUSED
+  ARCHIVED
+}
+
+enum ScheduleRecurrenceType {
+  WEEKLY
+}
+
+enum ScheduleDay {
+  SUNDAY
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+}
+
 enum CoachSpecialization {
   STRENGTH
   CONDITIONING
@@ -54,6 +74,11 @@ enum BookingStatus {
   MISSED
   CANCELED
   WAITLIST
+}
+
+enum BookingSource {
+  BLOCK
+  MANUAL
 }
 
 enum SubscriptionStatus {
@@ -104,11 +129,23 @@ model StudioSettings {
 model User {
   id            String    @id @default(cuid())
   name          String?
+
+  // ===== ID-based authentication (NEW) =====
+  clientId      String?   @unique  // Format: YYMMXXX (e.g., 2605020)
+
+  // ===== Legacy email auth (optional, for backward compatibility) =====
   email         String?   @unique
   emailVerified DateTime?
   image         String?
-  password      String?   // Hashed with bcrypt
+
+  // ===== Authentication =====
+  password      String?   // Hashed with bcrypt (either from email or MFS_YYMMXXX)
   role          UserRole  @default(CLIENT)
+
+  // ===== Password reset =====
+  passwordResetToken    String?   @unique
+  passwordResetExpires  DateTime?
+  lastLoginAt           DateTime?
 
   // Auth.js Relations
   accounts      Account[]
@@ -118,6 +155,7 @@ model User {
   coachProfile  Coach?
   clientProfile Client?
   createdTrainingSessions TrainingSession[] @relation("TrainingSessionCreatedBy")
+  createdScheduleBlocks   ScheduleBlock[]   @relation("ScheduleBlockCreatedBy")
   sessionNotesAuthored    SessionNote[]
 
   // Admin Actions
@@ -125,6 +163,9 @@ model User {
 
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+
+  @@index([clientId])
+  @@index([email])
 }
 
 model Lead {
@@ -194,6 +235,7 @@ model Coach {
   // One coach can manage many groups
   groups    Group[]
   trainingSessions TrainingSession[]
+  scheduleBlocks ScheduleBlock[]
 }
 
 // ---------------------------------------------
@@ -202,7 +244,7 @@ model Coach {
 model Client {
   id             String   @id @default(cuid())
   fullName       String
-  phone          String?
+  phone          String?  @unique  // Unique phone for client lookup
   dateOfBirth    DateTime?
 
   // Linked to global User account
@@ -217,6 +259,7 @@ model Client {
   status         ClientLifecycleStatus @default(PENDING)
 
   createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   // Which group this client belongs to
   groupId        String?
@@ -230,6 +273,9 @@ model Client {
   bookings       SessionBooking[]
   subscriptions  ClientSubscription[]
   preferences    ClientPreferences?
+  scheduleBlocks ScheduleBlockClient[]
+
+  @@index([phone])
 }
 
 model ClientPreferences {
@@ -264,6 +310,7 @@ model Group {
   clients   Client[]
   files     File[]
   trainingSessions TrainingSession[]
+  scheduleBlocks ScheduleBlock[]
 }
 
 enum GroupType {
@@ -355,20 +402,70 @@ model TrainingSession {
   location    String?
   coachId     String
   groupId     String?
+  scheduleBlockId String?
   createdById String
   createdAt   DateTime              @default(now())
   updatedAt   DateTime              @updatedAt
 
   coach       Coach                 @relation(fields: [coachId], references: [id])
   group       Group?                @relation(fields: [groupId], references: [id])
+  scheduleBlock ScheduleBlock?      @relation(fields: [scheduleBlockId], references: [id], onDelete: SetNull)
   createdBy   User                  @relation("TrainingSessionCreatedBy", fields: [createdById], references: [id])
   bookings    SessionBooking[]
   notes       SessionNote[]
 
   @@index([coachId])
   @@index([groupId])
+  @@index([scheduleBlockId])
   @@index([createdById])
   @@index([startsAt])
+}
+
+model ScheduleBlock {
+  id             String                 @id @default(cuid())
+  title          String
+  description    String?
+  sessionType    TrainingSessionType
+  status         ScheduleBlockStatus    @default(ACTIVE)
+  recurrenceType ScheduleRecurrenceType @default(WEEKLY)
+  recurrenceDays ScheduleDay[]
+  startsOn       DateTime
+  endsOn         DateTime
+  startTime      String
+  endTime        String
+  timezone       String                 @default("Africa/Cairo")
+  capacity       Int?
+  location       String?
+  coachId        String
+  groupId        String?
+  createdById    String
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+
+  coach          Coach                  @relation(fields: [coachId], references: [id])
+  group          Group?                 @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  createdBy      User                   @relation("ScheduleBlockCreatedBy", fields: [createdById], references: [id])
+  sessions       TrainingSession[]
+  roster         ScheduleBlockClient[]
+
+  @@index([coachId])
+  @@index([groupId])
+  @@index([status])
+  @@index([startsOn])
+  @@index([endsOn])
+}
+
+model ScheduleBlockClient {
+  id              String        @id @default(cuid())
+  scheduleBlockId String
+  clientId        String
+  createdAt       DateTime      @default(now())
+
+  scheduleBlock   ScheduleBlock @relation(fields: [scheduleBlockId], references: [id], onDelete: Cascade)
+  client          Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@unique([scheduleBlockId, clientId])
+  @@index([clientId])
 }
 
 model SessionBooking {
@@ -376,6 +473,7 @@ model SessionBooking {
   trainingSessionId String
   clientId          String
   status            BookingStatus @default(BOOKED)
+  source            BookingSource @default(MANUAL)
   bookedAt          DateTime      @default(now())
   attendedAt        DateTime?
   canceledAt        DateTime?

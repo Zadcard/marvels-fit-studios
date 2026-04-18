@@ -241,13 +241,24 @@ const checks = [
       SELECT COUNT(*)::int AS count
       FROM "Lead" l
       WHERE l."status" = 'CONVERTED'
-        AND l."email" IS NOT NULL
         AND NOT EXISTS (
           SELECT 1
-          FROM "User" u
-          INNER JOIN "Client" c ON c."userId" = u."id"
-          WHERE u."email" = lower(trim(l."email"))
-            AND u."role" = 'CLIENT'
+          FROM "Client" c
+          INNER JOIN "User" u ON c."userId" = u."id"
+          WHERE u."role" = 'CLIENT'
+            AND (
+              (
+                l."email" IS NOT NULL
+                AND u."email" IS NOT NULL
+                AND u."email" = lower(trim(l."email"))
+              )
+              OR (
+                regexp_replace(COALESCE(c."phone", ''), '\\D', '', 'g') <> ''
+                AND regexp_replace(COALESCE(l."phone", ''), '\\D', '', 'g') <> ''
+                AND right(regexp_replace(c."phone", '\\D', '', 'g'), 10)
+                  = right(regexp_replace(l."phone", '\\D', '', 'g'), 10)
+              )
+            )
         )
     `,
     failWhen: (count) => count > 0,
