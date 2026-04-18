@@ -8,6 +8,7 @@ export type AdminPaymentStatus = "Paid" | "Unpaid" | "Due soon";
 export type AdminClientRecord = {
   id: string;
   fullName: string;
+  clientId: string;
   email: string;
   phone: string;
   membership: AdminClientMembership;

@@ -19,6 +19,9 @@
     "test:watch": "vitest --watch",
     "test:analytics": "node tests/analytics-event-catalog.test.mjs",
     "test:design-system": "node tests/dashboard-mini-stat-adoption.test.mjs",
+    "audit:admin-data": "node scripts/admin-data-audit.cjs",
+    "repair:admin-data": "node scripts/admin-data-repair.cjs --apply",
+    "repair:admin-data:dry": "node scripts/admin-data-repair.cjs",
     "promote:leads": "node scripts/promote-leads-to-clients.cjs"
   },
   "dependencies": {

@@ -167,7 +167,6 @@ export function AdminClientsWorkspace({
         await saveAdminClient({
           clientId: editingRecordId,
           fullName: formState.fullName,
-          email: formState.email,
           phone: formState.phone,
           initialPassword: formState.initialPassword,
           status: formState.status,
@@ -322,7 +321,7 @@ export function AdminClientsWorkspace({
                         <td>
                           <div className="dashboard-table__identity">
                             <strong>{client.fullName}</strong>
-                            <span>{client.email}</span>
+                            <span>ID {client.clientId}</span>
                             <small>{client.phone}</small>
                           </div>
                           <div className="dashboard-client-table__program">
@@ -397,7 +396,7 @@ export function AdminClientsWorkspace({
                           {client.membership}
                         </span>
                         <h3>{client.fullName}</h3>
-                        <p>{client.email}</p>
+                        <p>ID {client.clientId}</p>
                       </div>
                       <DashboardStatusBadge
                         label={client.status}
@@ -478,6 +477,10 @@ export function AdminClientsWorkspace({
               ) : null}
 
               <div className="dashboard-detail-grid">
+                <div className="dashboard-detail-stat">
+                  <span className="dashboard-detail-stat__label">Client ID</span>
+                  <strong>{selectedClient.clientId}</strong>
+                </div>
                 <div className="dashboard-detail-stat">
                   <span className="dashboard-detail-stat__label">Coach</span>
                   <strong>{selectedClient.assignedCoach}</strong>

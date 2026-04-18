@@ -124,6 +124,7 @@ export class AdminClientRepository {
         createdAt: true,
         user: {
           select: {
+            clientId: true,
             email: true,
           },
         },
@@ -223,6 +224,7 @@ export class AdminClientRepository {
       return {
         id: client.id,
         fullName: client.fullName,
+        clientId: client.user.clientId ?? "Not assigned",
         email: client.user.email ?? "No email",
         phone: client.phone ?? "No phone",
         membership: inferMembership(client),

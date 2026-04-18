@@ -1,8 +1,8 @@
 "use client";
 
-import { useDeferredValue, useMemo, useState, useTransition } from "react";
+import { useDeferredValue, useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
-import { CalendarPlus2, XCircle, RefreshCw } from "lucide-react";
+import { CalendarPlus2, XCircle, RefreshCw, ChevronDown, ChevronUp } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import {
@@ -44,16 +44,46 @@ function getSessionTypeTone(type: AdminScheduleSessionRecord["sessionType"]) {
   return type === "Group" ? "accent" : "neutral";
 }
 
-function getWeekdayOrder(day: string) {
-  return ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"].indexOf(
-    day
-  );
+const cairoDayKeyFormatter = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "Africa/Cairo",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+
+const cairoDayCircleFormatter = new Intl.DateTimeFormat("en-US", {
+  timeZone: "Africa/Cairo",
+  weekday: "short",
+  month: "short",
+  day: "numeric",
+});
+
+const cairoDayHeadingFormatter = new Intl.DateTimeFormat("en-US", {
+  timeZone: "Africa/Cairo",
+  weekday: "long",
+  month: "long",
+  day: "numeric",
+});
+
+function getCairoDayKey(dateValue: string) {
+  return cairoDayKeyFormatter.format(new Date(dateValue));
 }
 
-function formatHourLabel(hour: number) {
-  const value = hour % 12 === 0 ? 12 : hour % 12;
-  const suffix = hour >= 12 ? "PM" : "AM";
-  return `${value} ${suffix}`;
+function getDayCircleParts(dateValue: string) {
+  const parts = cairoDayCircleFormatter
+    .formatToParts(new Date(dateValue))
+    .reduce<Record<string, string>>((acc, part) => {
+      if (part.type !== "literal") {
+        acc[part.type] = part.value;
+      }
+      return acc;
+    }, {});
+
+  return {
+    weekday: parts.weekday ?? "",
+    month: parts.month ?? "",
+    day: parts.day ?? "",
+  };
 }
 
 type AdminScheduleWorkspaceProps = {
@@ -91,6 +121,8 @@ export function AdminScheduleWorkspace({
   const [errorMessage, setErrorMessage] = useState("");
   const [isMutating, startMutatingTransition] = useTransition();
   const [occurrenceCoachId, setOccurrenceCoachId] = useState(coachOptions[0]?.id ?? "");
+  const [selectedDayKey, setSelectedDayKey] = useState("");
+  const [collapsedDays, setCollapsedDays] = useState<string[]>([]);
 
   const handleCancelOccurrence = (sessionId: string) => {
     setErrorMessage("");
@@ -191,24 +223,98 @@ export function AdminScheduleWorkspace({
     typeFilter,
   ]);
 
-  const weekDays = useMemo(() => {
-    const uniqueDays = Array.from(new Set(filteredRecords.map((record) => record.dayLabel)));
-    return uniqueDays.sort((left, right) => getWeekdayOrder(left) - getWeekdayOrder(right));
+  const dayBuckets = useMemo(() => {
+    const grouped = new Map<string, AdminScheduleSessionRecord[]>();
+
+    for (const record of filteredRecords) {
+      const dayKey = getCairoDayKey(record.startsAt);
+      const existing = grouped.get(dayKey);
+      if (existing) {
+        existing.push(record);
+      } else {
+        grouped.set(dayKey, [record]);
+      }
+    }
+
+    return Array.from(grouped.entries())
+      .map(([key, dayRecords]) => {
+        const sortedRecords = [...dayRecords].sort(
+          (left, right) =>
+            new Date(left.startsAt).getTime() - new Date(right.startsAt).getTime()
+        );
+
+        const firstRecord = sortedRecords[0];
+        const circleParts = getDayCircleParts(firstRecord.startsAt);
+
+        return {
+          key,
+          label: cairoDayHeadingFormatter.format(new Date(firstRecord.startsAt)),
+          weekdayShort: circleParts.weekday,
+          monthShort: circleParts.month,
+          dayNumber: circleParts.day,
+          records: sortedRecords,
+        };
+      })
+      .sort((left, right) => left.key.localeCompare(right.key));
   }, [filteredRecords]);
 
   const selectedSession =
     filteredRecords.find((record) => record.id === selectedSessionId) ?? filteredRecords[0];
+  const selectedDayBucket =
+    dayBuckets.find((bucket) => bucket.key === selectedDayKey) ?? dayBuckets[0];
+  const selectedDayRecords = useMemo(
+    () => selectedDayBucket?.records ?? [],
+    [selectedDayBucket]
+  );
+  const recordsByDay = new Map<string, AdminScheduleSessionRecord[]>();
+  const weekDays: string[] = [];
+  const isAllCollapsed = false;
   const selectedBlockSessions = selectedSession?.scheduleBlockId
     ? filteredRecords
         .filter((record) => record.scheduleBlockId === selectedSession.scheduleBlockId)
         .slice(0, 4)
-    : [];
+      : [];
+
+  useEffect(() => {
+    if (selectedSession?.coachId) {
+      setOccurrenceCoachId(selectedSession.coachId);
+    }
+  }, [selectedSession?.id, selectedSession?.coachId]);
+
+  useEffect(() => {
+    if (dayBuckets.length === 0) {
+      setSelectedDayKey("");
+      return;
+    }
+
+    if (!dayBuckets.some((bucket) => bucket.key === selectedDayKey)) {
+      setSelectedDayKey(dayBuckets[0].key);
+    }
+  }, [dayBuckets, selectedDayKey]);
+
+  useEffect(() => {
+    if (!selectedDayBucket || selectedDayRecords.length === 0) {
+      return;
+    }
+
+    if (!selectedDayRecords.some((record) => record.id === selectedSessionId)) {
+      setSelectedSessionId(selectedDayRecords[0].id);
+    }
+  }, [selectedDayBucket, selectedDayRecords, selectedSessionId]);
 
   const handleToggleSelection = (sessionId: string) => {
     setSelectedSessionIds((current) =>
       current.includes(sessionId)
         ? current.filter((value) => value !== sessionId)
         : [...current, sessionId]
+    );
+  };
+
+  const handleToggleDay = (day: string) => {
+    setCollapsedDays((current) =>
+      current.includes(day)
+        ? current.filter((value) => value !== day)
+        : [...current, day]
     );
   };
 
@@ -240,26 +346,6 @@ export function AdminScheduleWorkspace({
       }
     });
   };
-
-  const earliestHour = Math.max(
-    6,
-    Math.min(
-      22,
-      ...filteredRecords.map((record) => new Date(record.startsAt).getHours())
-    )
-  );
-  const latestHour = Math.min(
-    23,
-    Math.max(
-      earliestHour + 8,
-      ...filteredRecords.map((record) => new Date(record.endsAt).getHours() + 1)
-    )
-  );
-  const hourLabels = Array.from(
-    { length: latestHour - earliestHour + 1 },
-    (_, index) => earliestHour + index
-  );
-  const hourHeight = 72;
 
   return (
     <div className="dashboard-stack dashboard-stack--dense">
@@ -376,96 +462,205 @@ export function AdminScheduleWorkspace({
           }
         />
 
-        <div className="dashboard-schedule-grid">
-          <div className="dashboard-schedule-grid__hours">
-            {hourLabels.map((hour) => (
-              <div
-                key={hour}
-                className="dashboard-schedule-grid__hour"
-                style={{ height: `${hourHeight}px` }}
-              >
-                <span>{formatHourLabel(hour)}</span>
-              </div>
-            ))}
-          </div>
+        {filteredRecords.length > 0 ? (
+          <div className="dashboard-schedule-dayline">
+            <div className="dashboard-schedule-dayline__actions">
+              <p>
+                {dayBuckets.length} days - {filteredRecords.length} occurrences
+              </p>
+              <span>{selectedDayBucket?.label ?? "Select a day"}</span>
+            </div>
 
-          <div className="dashboard-schedule-grid__days">
-            {weekDays.map((day) => {
-              const dayRecords = filteredRecords.filter((record) => record.dayLabel === day);
+            <div className="dashboard-schedule-dayline__days" role="tablist" aria-label="Schedule days">
+              {dayBuckets.map((day) => {
+                const isActive = selectedDayBucket?.key === day.key;
 
-              return (
-                <section key={day} className="dashboard-schedule-grid__day">
-                  <header className="dashboard-schedule-grid__day-header">
-                    <strong>{day}</strong>
-                    <span>{dayRecords.length} occurrences</span>
-                  </header>
-                  <div
-                    className="dashboard-schedule-grid__day-body"
-                    style={{ height: `${hourLabels.length * hourHeight}px` }}
+                return (
+                  <button
+                    key={day.key}
+                    type="button"
+                    role="tab"
+                    aria-selected={isActive}
+                    className={
+                      isActive
+                        ? "dashboard-schedule-dayline__day dashboard-schedule-dayline__day--active"
+                        : "dashboard-schedule-dayline__day"
+                    }
+                    onClick={() => setSelectedDayKey(day.key)}
                   >
-                    {hourLabels.map((hour) => (
-                      <div
-                        key={`${day}-${hour}`}
-                        className="dashboard-schedule-grid__line"
-                        style={{ top: `${(hour - earliestHour) * hourHeight}px` }}
-                      />
-                    ))}
+                    <small>{day.weekdayShort}</small>
+                    <strong>{day.dayNumber}</strong>
+                    <span>{day.monthShort}</span>
+                  </button>
+                );
+              })}
+            </div>
 
-                    {dayRecords.map((record) => {
-                      const start = new Date(record.startsAt);
-                      const end = new Date(record.endsAt);
-                      const startOffset =
-                        (start.getHours() - earliestHour) * hourHeight +
-                        (start.getMinutes() / 60) * hourHeight;
-                      const duration =
-                        (end.getTime() - start.getTime()) / (1000 * 60 * 60);
-
-                      return (
-                        <button
-                          key={record.id}
-                          type="button"
-                          className={
-                            selectedSession?.id === record.id
-                              ? "dashboard-schedule-grid__event dashboard-schedule-grid__event--active"
-                              : "dashboard-schedule-grid__event"
-                          }
-                          style={{
-                            top: `${startOffset}px`,
-                            height: `${Math.max(duration * hourHeight, 52)}px`,
-                          }}
-                          onClick={() => setSelectedSessionId(record.id)}
+            <div className="dashboard-schedule-dayline__lane-wrap">
+              {selectedDayRecords.length > 0 ? (
+                <div className="dashboard-schedule-dayline__lane">
+                  {selectedDayRecords.map((record) => (
+                    <button
+                      key={record.id}
+                      type="button"
+                      className={
+                        selectedSession?.id === record.id
+                          ? "dashboard-schedule-dayline__event dashboard-schedule-dayline__event--active"
+                          : "dashboard-schedule-dayline__event"
+                      }
+                      onClick={() => setSelectedSessionId(record.id)}
+                    >
+                      <div className="dashboard-schedule-dayline__event-head">
+                        <label
+                          className="dashboard-schedule-dayline__check"
+                          onClick={(event) => event.stopPropagation()}
                         >
-                          <div className="dashboard-schedule-grid__event-top">
-                            <input
-                              type="checkbox"
-                              checked={selectedSessionIds.includes(record.id)}
-                              onChange={() => handleToggleSelection(record.id)}
-                              onClick={(event) => event.stopPropagation()}
-                            />
-                            <div className="dashboard-schedule-grid__event-badges">
-                              <DashboardStatusBadge
-                                label={record.sessionType}
-                                tone={getSessionTypeTone(record.sessionType)}
-                              />
-                              <DashboardStatusBadge
-                                label={record.status}
-                                tone={getScheduleTone(record.status)}
-                              />
-                            </div>
-                          </div>
-                          <strong>{record.title}</strong>
-                          <span>{record.timeRange}</span>
-                          <small>{record.coachName}</small>
-                          <small>{record.occupancyLabel}</small>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </section>
-              );
-            })}
+                          <input
+                            type="checkbox"
+                            checked={selectedSessionIds.includes(record.id)}
+                            onChange={() => handleToggleSelection(record.id)}
+                          />
+                        </label>
+                        <div className="dashboard-schedule-dayline__event-badges">
+                          <DashboardStatusBadge
+                            label={record.sessionType}
+                            tone={getSessionTypeTone(record.sessionType)}
+                          />
+                          <DashboardStatusBadge
+                            label={record.status}
+                            tone={getScheduleTone(record.status)}
+                          />
+                        </div>
+                      </div>
+
+                      <strong>{record.title}</strong>
+
+                      <div className="dashboard-schedule-dayline__event-meta">
+                        <span>{record.timeRange}</span>
+                        <span>{record.coachName}</span>
+                        <span>{record.location}</span>
+                      </div>
+
+                      <small>{record.occupancyLabel}</small>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <DashboardEmptyState
+                  title="No sessions on this day"
+                  description="Pick another date chip or adjust filters."
+                />
+              )}
+            </div>
           </div>
-        </div>
+        ) : (
+          <DashboardEmptyState
+            title="No sessions in this schedule view"
+            description="Try another filter combination or create a session/block."
+          />
+        )}
+
+        {false ? (
+          <>
+            <div className="dashboard-schedule-planner__actions">
+              <p>
+                {weekDays.length} days · {filteredRecords.length} occurrences
+              </p>
+              <button
+                type="button"
+                className="mv-btn mv-btn-outline"
+                onClick={() => setCollapsedDays(isAllCollapsed ? [] : [...weekDays])}
+              >
+                {isAllCollapsed ? "Expand all days" : "Collapse all days"}
+              </button>
+            </div>
+
+            <div className="dashboard-schedule-planner">
+              {weekDays.map((day) => {
+                const dayRecords = recordsByDay.get(day) ?? [];
+                const isCollapsed = collapsedDays.includes(day);
+                const firstRecord = dayRecords[0];
+
+                return (
+                  <section key={day} className="dashboard-schedule-planner__day">
+                    <header className="dashboard-schedule-planner__day-header">
+                      <div>
+                        <strong>{day}</strong>
+                        <span>{dayRecords.length} occurrences</span>
+                      </div>
+                      <button
+                        type="button"
+                        className="dashboard-schedule-planner__day-toggle"
+                        onClick={() => handleToggleDay(day)}
+                        aria-expanded={!isCollapsed}
+                        aria-label={isCollapsed ? `Expand ${day}` : `Collapse ${day}`}
+                      >
+                        {isCollapsed ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
+                        {isCollapsed ? "Expand" : "Collapse"}
+                      </button>
+                    </header>
+
+                    {isCollapsed ? (
+                      <p className="dashboard-schedule-planner__collapsed-copy">
+                        {firstRecord
+                          ? `${firstRecord.timeRange} · ${firstRecord.title}`
+                          : "No sessions"}
+                      </p>
+                    ) : (
+                      <div className="dashboard-schedule-planner__day-body">
+                        {dayRecords.map((record) => (
+                          <button
+                            key={record.id}
+                            type="button"
+                            className={
+                              selectedSession?.id === record.id
+                                ? "dashboard-schedule-planner__event dashboard-schedule-planner__event--active"
+                                : "dashboard-schedule-planner__event"
+                            }
+                            onClick={() => setSelectedSessionId(record.id)}
+                          >
+                            <div className="dashboard-schedule-planner__event-head">
+                              <label
+                                className="dashboard-schedule-planner__check"
+                                onClick={(event) => event.stopPropagation()}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={selectedSessionIds.includes(record.id)}
+                                  onChange={() => handleToggleSelection(record.id)}
+                                />
+                              </label>
+                              <div className="dashboard-schedule-planner__event-badges">
+                                <DashboardStatusBadge
+                                  label={record.sessionType}
+                                  tone={getSessionTypeTone(record.sessionType)}
+                                />
+                                <DashboardStatusBadge
+                                  label={record.status}
+                                  tone={getScheduleTone(record.status)}
+                                />
+                              </div>
+                            </div>
+
+                            <strong>{record.title}</strong>
+
+                            <div className="dashboard-schedule-planner__event-meta">
+                              <span>{record.timeRange}</span>
+                              <span>{record.coachName}</span>
+                              <span>{record.location}</span>
+                            </div>
+
+                            <small>{record.occupancyLabel}</small>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </section>
+                );
+              })}
+            </div>
+          </>
+        ) : null}
       </section>
 
       <section className="dashboard-detail-layout">
@@ -474,7 +669,7 @@ export function AdminScheduleWorkspace({
             <div>
               <div className="mv-eyebrow">Occurrence detail</div>
               <h2>{selectedSession?.title ?? "No session selected"}</h2>
-              <p>{selectedSession?.focus ?? "Pick an occurrence from the week grid."}</p>
+              <p>{selectedSession?.focus ?? "Pick an occurrence from the day timeline."}</p>
             </div>
             {selectedSession ? (
               <div className="dashboard-badge-stack">
@@ -723,7 +918,7 @@ export function AdminScheduleWorkspace({
           ) : (
             <DashboardEmptyState
               title="No occurrences selected"
-              description="Use the checkboxes on the week grid to build a bulk edit set."
+              description="Use the checkboxes on the day timeline to build a bulk edit set."
             />
           )}
         </aside>

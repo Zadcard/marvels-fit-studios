@@ -6,6 +6,8 @@ import { revalidatePath } from "next/cache";
 
 import { requireRole } from "@/lib/auth/session";
 import { getPrisma } from "@/lib/prisma";
+import { clientIdGenerator } from "@/lib/services/client-id-generator";
+import { passwordGenerator } from "@/lib/services/password-generator";
 import {
   addClientToScheduleBlock,
   moveClientBetweenScheduleBlocks,
@@ -15,7 +17,7 @@ import {
 type SaveAdminClientInput = {
   clientId?: string | null;
   fullName: string;
-  email: string;
+  email?: string;
   phone?: string;
   initialPassword?: string;
   status: "Active" | "Pending" | "Paused";
@@ -69,6 +71,11 @@ function normalizePassword(value: string | undefined) {
   return value?.trim() ?? "";
 }
 
+function normalizeEmail(value: string | undefined) {
+  const normalized = value?.trim().toLowerCase() ?? "";
+  return normalized.length > 0 ? normalized : null;
+}
+
 function assertValidPassword(password: string, mode: "create" | "reset") {
   if (!password) {
     if (mode === "create") {
@@ -87,11 +94,32 @@ function assertValidPassword(password: string, mode: "create" | "reset") {
   }
 }
 
+async function generateUniqueClientId() {
+  const prisma = getPrisma();
+  const nextClientNumber = await clientIdGenerator.getNextClientNumber();
+
+  for (let offset = 0; offset < 1000; offset += 1) {
+    const candidate = clientIdGenerator.generateId({
+      clientNumber: nextClientNumber + offset,
+    });
+    const existing = await prisma.user.findUnique({
+      where: { clientId: candidate },
+      select: { id: true },
+    });
+
+    if (!existing) {
+      return candidate;
+    }
+  }
+
+  throw new Error("Could not generate a unique client ID. Please try again.");
+}
+
 export async function saveAdminClient(input: SaveAdminClientInput) {
   await requireRole(UserRole.ADMIN);
   const prisma = getPrisma();
   const fullName = input.fullName.trim();
-  const email = input.email.trim().toLowerCase();
+  const email = normalizeEmail(input.email);
   const phone = input.phone?.trim() || null;
   const initialPassword = normalizePassword(input.initialPassword);
   const status = toClientStatus(input.status);
@@ -104,21 +132,21 @@ export async function saveAdminClient(input: SaveAdminClientInput) {
     throw new Error("Client full name is required.");
   }
 
-  if (!email) {
-    throw new Error("Client email is required.");
-  }
-
-  const existingUser = await prisma.user.findUnique({
-    where: { email },
-    select: {
-      id: true,
-      clientProfile: {
+  const existingUser = email
+    ? await prisma.user.findUnique({
+        where: { email },
         select: {
           id: true,
+          clientProfile: {
+            select: {
+              id: true,
+            },
+          },
         },
-      },
-    },
-  });
+      })
+    : null;
+
+  let savedClientId = input.clientId ?? null;
 
   if (input.clientId) {
     const client = await prisma.client.findUnique({
@@ -140,7 +168,7 @@ export async function saveAdminClient(input: SaveAdminClientInput) {
       throw new Error("Client not found.");
     }
 
-    if (existingUser && existingUser.id !== client.userId) {
+    if (email && existingUser && existingUser.id !== client.userId) {
       throw new Error("Another user already uses this email.");
     }
 
@@ -186,22 +214,28 @@ export async function saveAdminClient(input: SaveAdminClientInput) {
         });
       }
     });
+
+    savedClientId = client.id;
   } else {
-    if (existingUser?.clientProfile) {
+    if (email && existingUser?.clientProfile) {
       throw new Error("A client with this email already exists.");
     }
 
-    if (existingUser && !existingUser.clientProfile) {
+    if (email && existingUser && !existingUser.clientProfile) {
       throw new Error("A user with this email already exists. Use a different email.");
     }
 
-    assertValidPassword(initialPassword, "create");
-    const password = await bcrypt.hash(initialPassword, 12);
+    const generatedClientId = await generateUniqueClientId();
+    const resolvedPassword =
+      initialPassword || passwordGenerator.generatePassword(generatedClientId);
+    assertValidPassword(resolvedPassword, "create");
+    const password = await bcrypt.hash(resolvedPassword, 12);
 
     await prisma.$transaction(async (tx) => {
       const createdUser = await tx.user.create({
         data: {
           name: fullName,
+          clientId: generatedClientId,
           email,
           password,
           role: "CLIENT",
@@ -240,14 +274,18 @@ export async function saveAdminClient(input: SaveAdminClientInput) {
           },
         });
       }
+
+      savedClientId = createdClient.id;
     });
   }
 
-  const updatedClient = await prisma.client.findFirst({
+  if (!savedClientId) {
+    throw new Error("Client record could not be resolved after save.");
+  }
+
+  const updatedClient = await prisma.client.findUnique({
     where: {
-      user: {
-        email,
-      },
+      id: savedClientId,
     },
     select: {
       id: true,
