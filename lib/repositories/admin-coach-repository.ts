@@ -27,6 +27,9 @@ export class AdminCoachRepository {
   async list(): Promise<AdminCoachRecord[]> {
     const now = new Date();
     const weekEnd = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const scheduleBlockDelegate = this.prisma.scheduleBlock as
+      | typeof this.prisma.scheduleBlock
+      | undefined;
 
     const coaches = await this.prisma.coach.findMany({
       orderBy: { fullName: "asc" },
@@ -57,7 +60,11 @@ export class AdminCoachRepository {
             endsAt: true,
           },
         },
-        scheduleBlocks: {
+      },
+    });
+
+    const scheduleBlocks = scheduleBlockDelegate
+      ? await scheduleBlockDelegate.findMany({
           where: {
             status: {
               in: ["ACTIVE", "PAUSED"],
@@ -65,6 +72,7 @@ export class AdminCoachRepository {
           },
           select: {
             id: true,
+            coachId: true,
             title: true,
             recurrenceDays: true,
             roster: {
@@ -73,22 +81,28 @@ export class AdminCoachRepository {
               },
             },
           },
-        },
-      },
-    });
+        })
+      : [];
+
+    const blocksByCoachId = new Map<string, typeof scheduleBlocks>();
+
+    for (const block of scheduleBlocks) {
+      const existingBlocks = blocksByCoachId.get(block.coachId) ?? [];
+      existingBlocks.push(block);
+      blocksByCoachId.set(block.coachId, existingBlocks);
+    }
 
     return coaches.map((coach) => {
+      const coachScheduleBlocks = blocksByCoachId.get(coach.id) ?? [];
       const activeClients = coach.groups.reduce(
         (total, group) => total + group._count.clients,
         0
       );
-      const sessionsThisWeek = coach.trainingSessions.filter(
-        (session) => session.startsAt >= now && session.startsAt <= weekEnd
-      ).length;
-      const sessionsByDay = new Map<string, number>();
       const weeklySessions = coach.trainingSessions.filter(
         (session) => session.startsAt >= now && session.startsAt <= weekEnd
       );
+      const sessionsThisWeek = weeklySessions.length;
+      const sessionsByDay = new Map<string, number>();
 
       for (const session of weeklySessions) {
         const day = session.startsAt.toLocaleDateString("en-US", {
@@ -114,14 +128,16 @@ export class AdminCoachRepository {
         specialization: toAdminCoachSpecialization(coach.specialization),
         activeClients,
         sessionsThisWeek,
-        recurringBlocks: coach.scheduleBlocks.length,
+        recurringBlocks: coachScheduleBlocks.length,
         conflicts,
         openSlots,
-        weeklyLoad: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => ({
-          day,
-          sessions: sessionsByDay.get(day) ?? 0,
-        })),
-        blockAssignments: coach.scheduleBlocks.map((block) => ({
+        weeklyLoad: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(
+          (day) => ({
+            day,
+            sessions: sessionsByDay.get(day) ?? 0,
+          })
+        ),
+        blockAssignments: coachScheduleBlocks.map((block) => ({
           id: block.id,
           title: block.title,
           recurrenceSummary: block.recurrenceDays
@@ -133,7 +149,7 @@ export class AdminCoachRepository {
         phone: coach.phone ?? "No phone",
         summary:
           activeClients > 0
-            ? `${coach.fullName} is currently supporting ${activeClients} client${activeClients === 1 ? "" : "s"} across ${coach.scheduleBlocks.length} recurring block${coach.scheduleBlocks.length === 1 ? "" : "s"}.`
+            ? `${coach.fullName} is currently supporting ${activeClients} client${activeClients === 1 ? "" : "s"} across ${coachScheduleBlocks.length} recurring block${coachScheduleBlocks.length === 1 ? "" : "s"}.`
             : `${coach.fullName} has no assigned clients yet.`,
       };
     });

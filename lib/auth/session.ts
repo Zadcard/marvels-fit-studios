@@ -19,6 +19,7 @@ async function ensurePersistedSessionUser(sessionUser: {
       id: true,
       email: true,
       name: true,
+      mustChangePassword: true,
       role: true,
     },
   });
@@ -37,6 +38,7 @@ async function ensurePersistedSessionUser(sessionUser: {
       id: true,
       email: true,
       name: true,
+      mustChangePassword: true,
       role: true,
     },
   });
@@ -75,6 +77,7 @@ async function ensurePersistedSessionUser(sessionUser: {
       id: true,
       email: true,
       name: true,
+      mustChangePassword: true,
       role: true,
     },
   });

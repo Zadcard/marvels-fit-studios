@@ -33,9 +33,11 @@ export class ClientRegistrationService {
     const result = await this.prisma.$transaction(async (tx) => {
       const user = await tx.user.create({
         data: {
+          name: input.fullName,
           clientId,
           email: input.email || null,
           password: hashedPassword,
+          mustChangePassword: true,
           role: "CLIENT",
         },
         select: { id: true },

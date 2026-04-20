@@ -113,6 +113,9 @@ export class AdminClientRepository {
   private prisma = getPrisma();
 
   async list(): Promise<AdminClientRecord[]> {
+    const scheduleBlockDelegate = this.prisma.scheduleBlock as
+      | typeof this.prisma.scheduleBlock
+      | undefined;
     const clients = await this.prisma.client.findMany({
       orderBy: [{ createdAt: "desc" }],
       select: {
@@ -124,7 +127,6 @@ export class AdminClientRepository {
         createdAt: true,
         user: {
           select: {
-            clientId: true,
             email: true,
           },
         },
@@ -135,22 +137,6 @@ export class AdminClientRepository {
             coach: {
               select: {
                 fullName: true,
-              },
-            },
-          },
-        },
-        scheduleBlocks: {
-          orderBy: {
-            scheduleBlock: {
-              startsOn: "asc",
-            },
-          },
-          take: 1,
-          select: {
-            scheduleBlock: {
-              select: {
-                id: true,
-                title: true,
               },
             },
           },
@@ -213,8 +199,38 @@ export class AdminClientRepository {
         },
       },
     });
+    const scheduleBlockRecords = scheduleBlockDelegate
+      ? await scheduleBlockDelegate.findMany({
+          orderBy: [{ startsOn: "asc" }],
+          select: {
+            id: true,
+            title: true,
+            roster: {
+              select: {
+                clientId: true,
+              },
+            },
+          },
+        })
+      : [];
+    const scheduleBlocks = Array.isArray(scheduleBlockRecords)
+      ? scheduleBlockRecords
+      : [];
+    const firstBlockByClientId = new Map<string, { id: string; title: string }>();
+
+    for (const block of scheduleBlocks) {
+      for (const rosterEntry of block.roster) {
+        if (!firstBlockByClientId.has(rosterEntry.clientId)) {
+          firstBlockByClientId.set(rosterEntry.clientId, {
+            id: block.id,
+            title: block.title,
+          });
+        }
+      }
+    }
 
     return clients.map((client) => {
+      const primaryBlock = firstBlockByClientId.get(client.id);
       const nextBooking = client.bookings[0];
       const assignedCoach =
         client.group?.coach.fullName ??
@@ -224,7 +240,7 @@ export class AdminClientRepository {
       return {
         id: client.id,
         fullName: client.fullName,
-        clientId: client.user.clientId ?? "Not assigned",
+        clientId: "Not assigned",
         email: client.user.email ?? "No email",
         phone: client.phone ?? "No phone",
         membership: inferMembership(client),
@@ -236,9 +252,8 @@ export class AdminClientRepository {
         joinedDate: formatDate(client.createdAt),
         primaryGroupId: client.group?.id ?? null,
         primaryGroup: client.group?.name ?? "No group",
-        primaryBlockId: client.scheduleBlocks[0]?.scheduleBlock.id ?? null,
-        primaryBlock:
-          client.scheduleBlocks[0]?.scheduleBlock.title ?? "No recurring block",
+        primaryBlockId: primaryBlock?.id ?? null,
+        primaryBlock: primaryBlock?.title ?? "No recurring block",
         assignedCoach,
         nextSession: nextBooking
           ? `${formatDateTime(nextBooking.trainingSession.startsAt)}`

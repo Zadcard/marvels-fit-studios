@@ -5,17 +5,7 @@ import {
   passwordResetRequestSchema,
   passwordResetSchema,
 } from "@/lib/validators/id-auth";
-
-type PasswordResetActionState = {
-  status: "idle" | "success" | "error";
-  message: string;
-  fieldErrors?: Record<string, string[] | undefined>;
-};
-
-export const initialPasswordResetState: PasswordResetActionState = {
-  status: "idle",
-  message: "",
-};
+import type { PasswordResetActionState } from "@/app/actions/password-reset-state";
 
 export async function requestPasswordReset(
   _previousState: PasswordResetActionState,

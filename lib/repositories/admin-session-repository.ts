@@ -114,63 +114,74 @@ export class AdminSessionRepository {
     clientOptions: AdminSessionClientOption[];
     blockOptions: AdminSessionBlockOption[];
   }> {
-    const [sessions, coaches, clients, blocks] = await Promise.all([
-      this.prisma.trainingSession.findMany({
-        orderBy: [{ startsAt: "asc" }],
+    const scheduleBlockDelegate = this.prisma.scheduleBlock as
+      | typeof this.prisma.scheduleBlock
+      | undefined;
+    const baseSessionSelect = {
+      id: true,
+      title: true,
+      description: true,
+      startsAt: true,
+      endsAt: true,
+      location: true,
+      status: true,
+      type: true,
+      capacity: true,
+      coachId: true,
+      groupId: true,
+      coach: {
         select: {
-          id: true,
-          title: true,
-          description: true,
-          startsAt: true,
-          endsAt: true,
-          location: true,
+          fullName: true,
+        },
+      },
+      group: {
+        select: {
+          name: true,
+        },
+      },
+      bookings: {
+        where: {
+          status: {
+            in: ["BOOKED", "ATTENDED", "MISSED", "WAITLIST"],
+          },
+        },
+        orderBy: [{ bookedAt: "asc" }],
+        select: {
           status: true,
-          type: true,
-          capacity: true,
-          coachId: true,
-          groupId: true,
-          scheduleBlockId: true,
-          coach: {
+          client: {
             select: {
+              id: true,
               fullName: true,
             },
           },
-          group: {
-            select: {
-              name: true,
-            },
-          },
-          scheduleBlock: {
-            select: {
-              title: true,
-            },
-          },
-          bookings: {
-            where: {
-              status: {
-                in: ["BOOKED", "ATTENDED", "MISSED", "WAITLIST"],
-              },
-            },
-            orderBy: [{ bookedAt: "asc" }],
-            select: {
-              status: true,
-              client: {
-                select: {
-                  id: true,
-                  fullName: true,
-                },
-              },
-            },
-          },
-          notes: {
-            orderBy: [{ createdAt: "desc" }],
-            take: 1,
-            select: {
-              content: true,
-            },
-          },
         },
-      }),
+      },
+      notes: {
+        orderBy: [{ createdAt: "desc" }],
+        take: 1,
+        select: {
+          content: true,
+        },
+      },
+    } as const;
+
+    const sessionsPromise = this.prisma.trainingSession.findMany({
+      orderBy: [{ startsAt: "asc" }],
+      select: (scheduleBlockDelegate
+        ? {
+            ...baseSessionSelect,
+            scheduleBlockId: true,
+            scheduleBlock: {
+              select: {
+                title: true,
+              },
+            },
+          }
+        : baseSessionSelect) as any,
+    });
+
+    const [sessions, coaches, clients] = await Promise.all([
+      sessionsPromise,
       this.prisma.coach.findMany({
         orderBy: [{ fullName: "asc" }],
         select: {
@@ -185,21 +196,45 @@ export class AdminSessionRepository {
           fullName: true,
         },
       }),
-      this.prisma.scheduleBlock.findMany({
-        orderBy: [{ title: "asc" }],
-        select: {
-          id: true,
-          title: true,
-        },
-      }),
     ]);
+    const blocks = scheduleBlockDelegate
+      ? await scheduleBlockDelegate.findMany({
+          orderBy: [{ title: "asc" }],
+          select: {
+            id: true,
+            title: true,
+          },
+        })
+      : [];
 
     const groupRecords: AdminGroupSessionRecord[] = [];
     const privateRecords: AdminPrivateSessionRecord[] = [];
     const editorRecords: AdminSessionEditorRecord[] = [];
 
     for (const session of sessions) {
-      const bookedClients = session.bookings
+      const scheduleSession = session as any as typeof session & {
+        id: string;
+        title: string;
+        description: string | null;
+        startsAt: Date;
+        endsAt: Date;
+        location: string | null;
+        status: "DRAFT" | "SCHEDULED" | "COMPLETED" | "CANCELED";
+        type: "GROUP" | "PRIVATE";
+        capacity: number | null;
+        coachId: string;
+        groupId: string | null;
+        coach: { fullName: string };
+        group?: { name: string } | null;
+        bookings: Array<{
+          status: "BOOKED" | "ATTENDED" | "MISSED" | "CANCELED" | "WAITLIST";
+          client: { id: string; fullName: string };
+        }>;
+        notes: Array<{ content: string }>;
+        scheduleBlockId?: string | null;
+        scheduleBlock?: { title: string } | null;
+      };
+      const bookedClients = scheduleSession.bookings
         .map((booking) => {
           const status = mapBookedClientStatus(booking.status);
 
@@ -220,45 +255,47 @@ export class AdminSessionRepository {
         );
       const enrolled = bookedClients.length;
       const isAtCapacity =
-        session.capacity !== null && session.capacity > 0 && enrolled >= session.capacity;
+        scheduleSession.capacity !== null &&
+        scheduleSession.capacity > 0 &&
+        enrolled >= scheduleSession.capacity;
       const baseRecord = {
-        id: session.id,
-        title: session.title,
-        coachName: session.coach.fullName,
-        dayLabel: getDayLabel(session.startsAt),
-        timeLabel: timeFormatter.format(session.startsAt),
-        location: session.location ?? "Studio floor",
-        status: mapStatus(session.status, isAtCapacity),
+        id: scheduleSession.id,
+        title: scheduleSession.title,
+        coachName: scheduleSession.coach.fullName,
+        dayLabel: getDayLabel(scheduleSession.startsAt),
+        timeLabel: timeFormatter.format(scheduleSession.startsAt),
+        location: scheduleSession.location ?? "Studio floor",
+        status: mapStatus(scheduleSession.status, isAtCapacity),
       };
 
       editorRecords.push({
-        id: session.id,
-        title: session.title,
-        description: session.description ?? "",
-        type: session.type,
-        status: session.status,
-        coachId: session.coachId,
-        scheduleBlockId: session.scheduleBlockId,
-        scheduleBlockTitle: session.scheduleBlock?.title ?? "Manual session",
-        groupId: session.groupId,
-        groupName: session.group?.name ?? "No linked group",
-        location: session.location ?? "",
-        startsAt: session.startsAt.toISOString(),
-        endsAt: session.endsAt.toISOString(),
-        capacity: session.capacity,
+        id: scheduleSession.id,
+        title: scheduleSession.title,
+        description: scheduleSession.description ?? "",
+        type: scheduleSession.type,
+        status: scheduleSession.status,
+        coachId: scheduleSession.coachId,
+        scheduleBlockId: scheduleSession.scheduleBlockId ?? null,
+        scheduleBlockTitle: scheduleSession.scheduleBlock?.title ?? "Manual session",
+        groupId: scheduleSession.groupId,
+        groupName: scheduleSession.group?.name ?? "No linked group",
+        location: scheduleSession.location ?? "",
+        startsAt: scheduleSession.startsAt.toISOString(),
+        endsAt: scheduleSession.endsAt.toISOString(),
+        capacity: scheduleSession.capacity,
         bookedClients,
       });
 
-      if (session.type === "PRIVATE") {
+      if (scheduleSession.type === "PRIVATE") {
         privateRecords.push({
           ...baseRecord,
           clientName: bookedClients[0]?.fullName ?? "Unassigned",
-          focus: session.notes[0]?.content ?? "Private coaching block",
+          focus: scheduleSession.notes[0]?.content ?? "Private coaching block",
         });
       } else {
         groupRecords.push({
           ...baseRecord,
-          capacity: session.capacity ?? Math.max(enrolled, 1),
+          capacity: scheduleSession.capacity ?? Math.max(enrolled, 1),
           enrolled,
         });
       }

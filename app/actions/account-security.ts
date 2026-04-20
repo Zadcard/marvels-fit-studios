@@ -31,4 +31,5 @@ export async function changeOwnPassword(input: ChangeOwnPasswordInput) {
   revalidatePath("/admin/profile");
   revalidatePath("/coach/settings");
   revalidatePath("/client/settings");
+  revalidatePath("/change-password");
 }

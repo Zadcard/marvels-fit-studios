@@ -5,6 +5,7 @@ export type ExtendedUser = DefaultSession["user"] & {
   id: string;
   role: UserRole;
   clientId?: string;
+  mustChangePassword?: boolean;
 };
 
 declare module "next-auth" {
@@ -17,5 +18,8 @@ declare module "next-auth/jwt" {
   interface JWT {
     role?: UserRole;
     clientId?: string;
+    mustChangePassword?: boolean;
+    name?: string | null;
+    email?: string | null;
   }
 }

@@ -139,6 +139,7 @@ export async function promoteLeadsToClients(
             email: normalizedEmail,
             name: lead.fullName,
             password: lead.passwordHash,
+            mustChangePassword: true,
             role: UserRole.CLIENT,
           },
         }));
@@ -151,6 +152,7 @@ export async function promoteLeadsToClients(
           data: {
             name: user.name ?? lead.fullName,
             password: user.password ?? lead.passwordHash,
+            mustChangePassword: user.password ? user.mustChangePassword : true,
             role: UserRole.CLIENT,
           },
         });

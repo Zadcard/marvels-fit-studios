@@ -8,6 +8,7 @@ export type PersistedAuthUser = {
   clientId: string | null;
   name: string | null;
   password: string | null;
+  mustChangePassword: boolean;
   role: UserRole;
 };
 

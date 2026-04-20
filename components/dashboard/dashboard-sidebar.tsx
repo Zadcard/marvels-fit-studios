@@ -14,12 +14,14 @@ import {
   isDashboardNavItemActive,
 } from "@/lib/navigation/dashboard-nav";
 import type { DashboardRole } from "@/lib/auth/authorization-policy";
+import type { DashboardAccountSummary } from "@/components/dashboard/dashboard-role-shell";
 import { BrandLockup } from "@/components/ui/brand-lockup";
 import { StatusPill } from "@/components/ui/status-pill";
 import { cn } from "@/lib/utils";
 
 type DashboardSidebarProps = {
   role: DashboardRole;
+  account?: DashboardAccountSummary;
   isOpen: boolean;
   onClose: () => void;
 };
@@ -31,6 +33,7 @@ const sectionLabels: Record<"primary" | "secondary", string> = {
 
 export function DashboardSidebar({
   role,
+  account,
   isOpen,
   onClose,
 }: DashboardSidebarProps) {
@@ -47,10 +50,12 @@ export function DashboardSidebar({
   const [signOutError, setSignOutError] = useState("");
 
   const displayName =
+    account?.name?.trim() ||
     session?.user?.name?.trim() ||
     session?.user?.email?.trim() ||
     profileMeta.name;
   const displaySubtitle =
+    account?.subtitle?.trim() ||
     session?.user?.email?.trim() ||
     profileMeta.subtitle;
 

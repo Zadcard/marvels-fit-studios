@@ -441,7 +441,13 @@ async function main() {
 
         const newUser = await withRetry(() =>
           prisma.user.create({
-            data: { name: row.name, clientId, role: "CLIENT", password: hashed },
+            data: {
+              name: row.name,
+              clientId,
+              role: "CLIENT",
+              password: hashed,
+              mustChangePassword: true,
+            },
           })
         );
 

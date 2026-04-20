@@ -30,6 +30,7 @@ describe("account security actions", () => {
       id: "user-1",
       email: null,
       name: null,
+      mustChangePassword: true,
       role: "CLIENT",
     });
   });

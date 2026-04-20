@@ -78,78 +78,82 @@ export class AdminScheduleRepository {
     scheduleWindowEnd.setDate(scheduleWindowEnd.getDate() + 6);
     scheduleWindowEnd.setHours(23, 59, 59, 999);
     const weekEnd = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const scheduleBlockDelegate = this.prisma.scheduleBlock as
+      | typeof this.prisma.scheduleBlock
+      | undefined;
 
-    const [sessions, coaches, blocks, groups] = await Promise.all([
-      this.prisma.trainingSession.findMany({
-        where: {
-          startsAt: {
-            gte: scheduleWindowStart,
-            lte: scheduleWindowEnd,
-          },
-        },
-        orderBy: [{ startsAt: "asc" }],
+    const baseSessionSelect = {
+      id: true,
+      title: true,
+      description: true,
+      type: true,
+      status: true,
+      startsAt: true,
+      endsAt: true,
+      location: true,
+      capacity: true,
+      coachId: true,
+      coach: {
         select: {
-          id: true,
-          title: true,
-          description: true,
-          type: true,
-          status: true,
-          startsAt: true,
-          endsAt: true,
-          location: true,
-          capacity: true,
-          coachId: true,
-          scheduleBlockId: true,
-          coach: {
-            select: {
-              fullName: true,
-            },
-          },
-          group: {
-            select: {
-              name: true,
-              clients: {
-                select: {
-                  id: true,
-                },
-              },
-            },
-          },
-          scheduleBlock: {
-            select: {
-              title: true,
-              roster: {
-                select: {
-                  clientId: true,
-                },
-              },
-            },
-          },
-          bookings: {
-            where: {
-              status: {
-                in: ["BOOKED", "ATTENDED", "WAITLIST"],
-              },
-            },
+          fullName: true,
+        },
+      },
+      group: {
+        select: {
+          name: true,
+          clients: {
             select: {
               id: true,
-              status: true,
             },
           },
         },
-      }),
+      },
+      bookings: {
+        where: {
+          status: {
+            in: ["BOOKED", "ATTENDED", "WAITLIST"],
+          },
+        },
+        select: {
+          id: true,
+          status: true,
+        },
+      },
+    } as const;
+
+    const sessionsPromise = this.prisma.trainingSession.findMany({
+      where: {
+        startsAt: {
+          gte: scheduleWindowStart,
+          lte: scheduleWindowEnd,
+        },
+      },
+      orderBy: [{ startsAt: "asc" }],
+      select: (scheduleBlockDelegate
+        ? {
+            ...baseSessionSelect,
+            scheduleBlockId: true,
+            scheduleBlock: {
+              select: {
+                title: true,
+                roster: {
+                  select: {
+                    clientId: true,
+                  },
+                },
+              },
+            },
+          }
+        : baseSessionSelect) as any,
+    });
+
+    const [sessions, coaches, groups] = await Promise.all([
+      sessionsPromise,
       this.prisma.coach.findMany({
         orderBy: [{ fullName: "asc" }],
         select: {
           id: true,
           fullName: true,
-        },
-      }),
-      this.prisma.scheduleBlock.findMany({
-        orderBy: [{ title: "asc" }],
-        select: {
-          id: true,
-          title: true,
         },
       }),
       this.prisma.group.findMany({
@@ -160,44 +164,75 @@ export class AdminScheduleRepository {
         },
       }),
     ]);
+    const blocks = scheduleBlockDelegate
+      ? await scheduleBlockDelegate.findMany({
+          orderBy: [{ title: "asc" }],
+          select: {
+            id: true,
+            title: true,
+          },
+        })
+      : [];
 
     const records = sessions.map((session) => {
-      const bookingsCount = session.bookings.length;
-      const waitlistCount = session.bookings.filter(
+      const scheduleSession = session as any as typeof session & {
+        id: string;
+        title: string;
+        description: string | null;
+        startsAt: Date;
+        endsAt: Date;
+        location: string | null;
+        coachId: string;
+        coach: { fullName: string };
+        bookings: Array<{ id: string; status: string }>;
+        status: TrainingSessionStatus;
+        capacity: number | null;
+        type: TrainingSessionType;
+        group?: { name: string; clients: Array<{ id: string }> } | null;
+        scheduleBlockId?: string | null;
+        scheduleBlock?: {
+          title: string;
+          roster: Array<{ clientId: string }>;
+        } | null;
+      };
+      const bookingsCount = scheduleSession.bookings.length;
+      const waitlistCount = scheduleSession.bookings.filter(
         (booking) => booking.status === "WAITLIST"
       ).length;
       const scheduleStatus: AdminScheduleSessionStatus = mapScheduleStatus({
-        status: session.status,
+        status: scheduleSession.status,
         bookingsCount,
-        capacity: session.capacity,
+        capacity: scheduleSession.capacity,
       });
 
       return {
-        id: session.id,
-        title: session.title,
+        id: scheduleSession.id,
+        title: scheduleSession.title,
         sessionType:
-          session.type === TrainingSessionType.PRIVATE
+          scheduleSession.type === TrainingSessionType.PRIVATE
             ? ("Private" as const)
             : ("Group" as const),
         status: scheduleStatus,
-        scheduleBlockId: session.scheduleBlockId,
-        scheduleBlockTitle: session.scheduleBlock?.title ?? "Manual session",
-        groupName: session.group?.name ?? "No linked group",
-        dayKey: dayLabelFormatter.format(session.startsAt),
-        dayLabel: dayLabelFormatter.format(session.startsAt),
-        dateLabel: dateLabelFormatter.format(session.startsAt),
-        timeRange: getTimeRange(session.startsAt, session.endsAt),
-        coachId: session.coachId,
-        coachName: session.coach.fullName,
-        location: session.location ?? "Studio floor",
+        scheduleBlockId: scheduleSession.scheduleBlockId ?? null,
+        scheduleBlockTitle: scheduleSession.scheduleBlock?.title ?? "Manual session",
+        groupName: scheduleSession.group?.name ?? "No linked group",
+        dayKey: dayLabelFormatter.format(scheduleSession.startsAt),
+        dayLabel: dayLabelFormatter.format(scheduleSession.startsAt),
+        dateLabel: dateLabelFormatter.format(scheduleSession.startsAt),
+        timeRange: getTimeRange(scheduleSession.startsAt, scheduleSession.endsAt),
+        coachId: scheduleSession.coachId,
+        coachName: scheduleSession.coach.fullName,
+        location: scheduleSession.location ?? "Studio floor",
         occupancyLabel:
-          session.type === TrainingSessionType.PRIVATE
+          scheduleSession.type === TrainingSessionType.PRIVATE
             ? `${Math.min(bookingsCount, 1)} / 1 booked`
             : `${bookingsCount} / ${
-                session.capacity ?? Math.max(bookingsCount, 1)
+                scheduleSession.capacity ?? Math.max(bookingsCount, 1)
               } booked`,
         rosterCount:
-          session.scheduleBlock?.roster.length ?? session.group?.clients.length ?? 0,
+          scheduleSession.scheduleBlock?.roster.length ??
+          scheduleSession.group?.clients.length ??
+          0,
         bookedCount: bookingsCount,
         waitlistCount,
         attendanceNote:
@@ -205,8 +240,8 @@ export class AdminScheduleRepository {
             ? `${bookingsCount} client${bookingsCount === 1 ? "" : "s"} booked so far.`
             : "No active bookings yet.",
         focus:
-          session.description ??
-          (session.type === TrainingSessionType.PRIVATE
+          scheduleSession.description ??
+          (scheduleSession.type === TrainingSessionType.PRIVATE
             ? "Private coaching block."
             : "Group training block."),
         highlight:
@@ -214,12 +249,15 @@ export class AdminScheduleRepository {
             ? "Session is at capacity"
             : scheduleStatus === "Attention"
               ? "Needs review before it runs"
-              : session.scheduleBlock
-                ? `Generated from ${session.scheduleBlock.title}`
+              : scheduleSession.scheduleBlock
+                ? `Generated from ${scheduleSession.scheduleBlock.title}`
                 : "Manual occurrence",
-        startsAt: session.startsAt.toISOString(),
-        endsAt: session.endsAt.toISOString(),
-        capacity: session.type === TrainingSessionType.PRIVATE ? 1 : session.capacity,
+        startsAt: scheduleSession.startsAt.toISOString(),
+        endsAt: scheduleSession.endsAt.toISOString(),
+        capacity:
+          scheduleSession.type === TrainingSessionType.PRIVATE
+            ? 1
+            : scheduleSession.capacity,
       } satisfies AdminScheduleSessionRecord;
     });
 

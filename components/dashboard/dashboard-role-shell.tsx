@@ -7,13 +7,21 @@ import { DashboardTopbar } from "@/components/dashboard/dashboard-topbar";
 import { cn } from "@/lib/utils";
 import type { DashboardRole } from "@/lib/auth/authorization-policy";
 
+export type DashboardAccountSummary = {
+  name?: string | null;
+  subtitle?: string | null;
+  initials?: string | null;
+};
+
 type DashboardRoleShellProps = {
   role: DashboardRole;
+  account?: DashboardAccountSummary;
   children: React.ReactNode;
 };
 
 export function DashboardRoleShell({
   role,
+  account,
   children,
 }: DashboardRoleShellProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -49,10 +57,19 @@ export function DashboardRoleShell({
       />
 
       <div className="dashboard-grid">
-        <DashboardSidebar role={role} isOpen={isSidebarOpen} onClose={closeSidebar} />
+        <DashboardSidebar
+          role={role}
+          account={account}
+          isOpen={isSidebarOpen}
+          onClose={closeSidebar}
+        />
 
         <div className="dashboard-main">
-          <DashboardTopbar role={role} onMenuToggle={() => setIsSidebarOpen((open) => !open)} />
+          <DashboardTopbar
+            role={role}
+            account={account}
+            onMenuToggle={() => setIsSidebarOpen((open) => !open)}
+          />
           <main className="dashboard-content">{children}</main>
         </div>
       </div>

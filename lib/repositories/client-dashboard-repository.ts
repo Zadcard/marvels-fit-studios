@@ -104,6 +104,20 @@ function inferPreferredSessionTime(startsAtValues: Date[]) {
 const defaultClientGoal =
   "Build steady strength and improve movement confidence.";
 
+function isUnknownPrismaField(error: unknown, fieldName: string) {
+  const message = error instanceof Error ? error.message : String(error);
+
+  return (
+    message.includes(`Unknown field \`${fieldName}\``) ||
+    message.includes(`Unknown argument \`${fieldName}\``) ||
+    message.includes(`${fieldName}`)
+  );
+}
+
+function isMissingPreferencesRelation(error: unknown) {
+  return isUnknownPrismaField(error, "preferences");
+}
+
 function inferPaymentStatus(subscription: {
   status: string;
   renewsAt?: Date | null;
@@ -291,7 +305,8 @@ export class ClientDashboardRepository {
 
   private async getClientDashboardQueryWithShape(
     userId: string,
-    includeCustomPrice: boolean
+    includeCustomPrice: boolean,
+    includePreferences: boolean
   ) {
     return this.prisma.client.findUnique({
       where: { userId },
@@ -303,15 +318,19 @@ export class ClientDashboardRepository {
         sessionsLeft: true,
         isPaid: true,
         createdAt: true,
-        preferences: {
-          select: {
-            goalLabel: true,
-            preferredSessionTime: true,
-            notificationEmail: true,
-            scheduleReminders: true,
-            coachUpdates: true,
-          },
-        },
+        ...(includePreferences
+          ? {
+              preferences: {
+                select: {
+                  goalLabel: true,
+                  preferredSessionTime: true,
+                  notificationEmail: true,
+                  scheduleReminders: true,
+                  coachUpdates: true,
+                },
+              },
+            }
+          : {}),
         user: {
           select: {
             id: true,
@@ -442,15 +461,35 @@ export class ClientDashboardRepository {
   }
 
   private async getClientDashboardQuery(userId: string) {
-    try {
-      return await this.getClientDashboardQueryWithShape(userId, true);
-    } catch (error) {
-      if (isMissingCustomPriceColumn(error)) {
-        return this.getClientDashboardQueryWithShape(userId, false);
-      }
+    const shapes = [
+      { includeCustomPrice: true, includePreferences: true },
+      { includeCustomPrice: false, includePreferences: true },
+      { includeCustomPrice: true, includePreferences: false },
+      { includeCustomPrice: false, includePreferences: false },
+    ];
+    let lastShapeError: unknown;
 
-      throw error;
+    for (const shape of shapes) {
+      try {
+        return await this.getClientDashboardQueryWithShape(
+          userId,
+          shape.includeCustomPrice,
+          shape.includePreferences
+        );
+      } catch (error) {
+        if (
+          isMissingCustomPriceColumn(error) ||
+          isMissingPreferencesRelation(error)
+        ) {
+          lastShapeError = error;
+          continue;
+        }
+
+        throw error;
+      }
     }
+
+    throw lastShapeError;
   }
 
   private async getSubscriptionWithShape(
@@ -771,7 +810,7 @@ export class ClientDashboardRepository {
       return null;
     }
 
-    const preferences = client.preferences;
+    const preferences = "preferences" in client ? client.preferences : null;
     const sessionTimes = buildClientSessionEntries(client)
       .filter((booking) => booking.startsAt.getTime() >= Date.now())
       .map((booking) => booking.startsAt);

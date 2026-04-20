@@ -3,10 +3,8 @@
 import { useActionState } from "react";
 import Link from "next/link";
 
-import {
-  initialPasswordResetState,
-  resetPasswordWithToken,
-} from "@/app/actions/password-reset";
+import { resetPasswordWithToken } from "@/app/actions/password-reset";
+import { initialPasswordResetState } from "@/app/actions/password-reset-state";
 
 function FieldError({ errors }: { errors?: string[] }) {
   if (!errors?.length) {

@@ -10,12 +10,14 @@ vi.mock("@/lib/auth/id-password-auth-service", () => ({
 describe("password reset actions", () => {
   let service: typeof import("@/lib/auth/id-password-auth-service").idPasswordAuthService;
   let actions: typeof import("@/app/actions/password-reset");
+  let state: typeof import("@/app/actions/password-reset-state");
 
   beforeEach(async () => {
     vi.clearAllMocks();
     service = (await import("@/lib/auth/id-password-auth-service"))
       .idPasswordAuthService;
     actions = await import("@/app/actions/password-reset");
+    state = await import("@/app/actions/password-reset-state");
   });
 
   it("requests reset with generic success message", async () => {
@@ -23,7 +25,7 @@ describe("password reset actions", () => {
     formData.set("clientId", "2605020");
 
     const result = await actions.requestPasswordReset(
-      actions.initialPasswordResetState,
+      state.initialPasswordResetState,
       formData
     );
 
@@ -39,7 +41,7 @@ describe("password reset actions", () => {
     formData.set("clientId", "bad");
 
     const result = await actions.requestPasswordReset(
-      actions.initialPasswordResetState,
+      state.initialPasswordResetState,
       formData
     );
 
@@ -54,7 +56,7 @@ describe("password reset actions", () => {
     formData.set("confirmPassword", "Password123");
 
     const result = await actions.resetPasswordWithToken(
-      actions.initialPasswordResetState,
+      state.initialPasswordResetState,
       formData
     );
 

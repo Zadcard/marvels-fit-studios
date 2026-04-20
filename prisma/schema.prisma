@@ -140,6 +140,7 @@ model User {
 
   // ===== Authentication =====
   password      String?   // Hashed with bcrypt (either from email or MFS_YYMMXXX)
+  mustChangePassword Boolean @default(false)
   role          UserRole  @default(CLIENT)
 
   // ===== Password reset =====

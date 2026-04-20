@@ -21,6 +21,7 @@ function toAuthenticatedUser(user: PersistedAuthUser): AuthenticatedUser | null 
     email: user.email,
     name: user.name ?? "Portal user",
     role: user.role as UserRole,
+    mustChangePassword: user.mustChangePassword,
   };
 }
 

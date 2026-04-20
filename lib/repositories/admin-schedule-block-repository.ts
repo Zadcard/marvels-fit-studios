@@ -74,109 +74,11 @@ export class AdminScheduleBlockRepository {
   }> {
     const now = new Date();
     const weekEnd = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const scheduleBlockDelegate = this.prisma.scheduleBlock as
+      | typeof this.prisma.scheduleBlock
+      | undefined;
 
-    const [blocks, groups, coaches, clients, futureSessions] = await Promise.all([
-      this.prisma.scheduleBlock.findMany({
-        orderBy: [{ startsOn: "asc" }, { title: "asc" }],
-        select: {
-          id: true,
-          title: true,
-          description: true,
-          sessionType: true,
-          status: true,
-          recurrenceDays: true,
-          startsOn: true,
-          endsOn: true,
-          startTime: true,
-          endTime: true,
-          timezone: true,
-          location: true,
-          capacity: true,
-          coachId: true,
-          coach: {
-            select: {
-              fullName: true,
-            },
-          },
-          groupId: true,
-          group: {
-            select: {
-              name: true,
-            },
-          },
-          roster: {
-            orderBy: {
-              client: {
-                fullName: "asc",
-              },
-            },
-            select: {
-              clientId: true,
-              client: {
-                select: {
-                  id: true,
-                  fullName: true,
-                  bookings: {
-                    where: {
-                      status: {
-                        in: ["BOOKED", "ATTENDED", "WAITLIST"],
-                      },
-                      trainingSession: {
-                        status: {
-                          in: ["DRAFT", "SCHEDULED"],
-                        },
-                        startsAt: {
-                          gte: now,
-                        },
-                      },
-                    },
-                    orderBy: {
-                      trainingSession: {
-                        startsAt: "asc",
-                      },
-                    },
-                    take: 1,
-                    select: {
-                      trainingSession: {
-                        select: {
-                          startsAt: true,
-                        },
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          },
-          sessions: {
-            where: {
-              startsAt: {
-                gte: now,
-              },
-            },
-            orderBy: {
-              startsAt: "asc",
-            },
-            select: {
-              id: true,
-              startsAt: true,
-              endsAt: true,
-              status: true,
-              capacity: true,
-              bookings: {
-                where: {
-                  status: {
-                    in: ["BOOKED", "ATTENDED", "WAITLIST"],
-                  },
-                },
-                select: {
-                  id: true,
-                },
-              },
-            },
-          },
-        },
-      }),
+    const [groups, coaches, clients] = await Promise.all([
       this.prisma.group.findMany({
         orderBy: [{ name: "asc" }],
         select: {
@@ -223,16 +125,6 @@ export class AdminScheduleBlockRepository {
               id: true,
             },
           },
-          scheduleBlocks: {
-            where: {
-              status: {
-                in: ["ACTIVE", "PAUSED"],
-              },
-            },
-            select: {
-              id: true,
-            },
-          },
         },
       }),
       this.prisma.client.findMany({
@@ -273,43 +165,155 @@ export class AdminScheduleBlockRepository {
               },
             },
           },
-          scheduleBlocks: {
-            orderBy: {
-              scheduleBlock: {
-                startsOn: "asc",
+        },
+      }),
+    ]);
+    const futureSessions = scheduleBlockDelegate
+      ? await this.prisma.trainingSession.findMany({
+          where: {
+            startsAt: {
+              gte: now,
+            },
+            status: {
+              in: ["DRAFT", "SCHEDULED"],
+            },
+          },
+          select: {
+            id: true,
+            title: true,
+            coachId: true,
+            scheduleBlockId: true,
+            startsAt: true,
+            endsAt: true,
+          },
+        })
+      : [];
+    const blocks = scheduleBlockDelegate
+      ? await scheduleBlockDelegate.findMany({
+          orderBy: [{ startsOn: "asc" }, { title: "asc" }],
+          select: {
+            id: true,
+            title: true,
+            description: true,
+            sessionType: true,
+            status: true,
+            recurrenceDays: true,
+            startsOn: true,
+            endsOn: true,
+            startTime: true,
+            endTime: true,
+            timezone: true,
+            location: true,
+            capacity: true,
+            coachId: true,
+            coach: {
+              select: {
+                fullName: true,
               },
             },
-            select: {
-              scheduleBlockId: true,
-              scheduleBlock: {
-                select: {
-                  id: true,
-                  title: true,
+            groupId: true,
+            group: {
+              select: {
+                name: true,
+              },
+            },
+            roster: {
+              orderBy: {
+                client: {
+                  fullName: "asc",
+                },
+              },
+              select: {
+                clientId: true,
+                client: {
+                  select: {
+                    id: true,
+                    fullName: true,
+                    bookings: {
+                      where: {
+                        status: {
+                          in: ["BOOKED", "ATTENDED", "WAITLIST"],
+                        },
+                        trainingSession: {
+                          status: {
+                            in: ["DRAFT", "SCHEDULED"],
+                          },
+                          startsAt: {
+                            gte: now,
+                          },
+                        },
+                      },
+                      orderBy: {
+                        trainingSession: {
+                          startsAt: "asc",
+                        },
+                      },
+                      take: 1,
+                      select: {
+                        trainingSession: {
+                          select: {
+                            startsAt: true,
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            sessions: {
+              where: {
+                startsAt: {
+                  gte: now,
+                },
+              },
+              orderBy: {
+                startsAt: "asc",
+              },
+              select: {
+                id: true,
+                startsAt: true,
+                endsAt: true,
+                status: true,
+                capacity: true,
+                bookings: {
+                  where: {
+                    status: {
+                      in: ["BOOKED", "ATTENDED", "WAITLIST"],
+                    },
+                  },
+                  select: {
+                    id: true,
+                  },
                 },
               },
             },
           },
-        },
-      }),
-      this.prisma.trainingSession.findMany({
-        where: {
-          startsAt: {
-            gte: now,
-          },
-          status: {
-            in: ["DRAFT", "SCHEDULED"],
-          },
-        },
-        select: {
-          id: true,
-          title: true,
-          coachId: true,
-          scheduleBlockId: true,
-          startsAt: true,
-          endsAt: true,
-        },
-      }),
-    ]);
+        })
+      : [];
+
+    const blocksByCoachId = new Map<string, typeof blocks>();
+    const firstBlockByClientId = new Map<
+      string,
+      { id: string; title: string; startsOn: Date }
+    >();
+
+    for (const block of blocks) {
+      const coachBlocks = blocksByCoachId.get(block.coachId) ?? [];
+      coachBlocks.push(block);
+      blocksByCoachId.set(block.coachId, coachBlocks);
+
+      for (const rosterEntry of block.roster) {
+        const currentBlock = firstBlockByClientId.get(rosterEntry.clientId);
+        if (!currentBlock || block.startsOn < currentBlock.startsOn) {
+          firstBlockByClientId.set(rosterEntry.clientId, {
+            id: block.id,
+            title: block.title,
+            startsOn: block.startsOn,
+          });
+        }
+      }
+    }
 
     const blockRecords = blocks.map((block) => {
       const conflictSessions = futureSessions.filter(
@@ -403,7 +407,7 @@ export class AdminScheduleBlockRepository {
       id: coach.id,
       fullName: coach.fullName,
       sessionsThisWeek: coach.trainingSessions.length,
-      recurringBlocks: coach.scheduleBlocks.length,
+      recurringBlocks: blocksByCoachId.get(coach.id)?.length ?? 0,
       activeClients: coach.groups.reduce(
         (total, group) => total + group._count.clients,
         0
@@ -421,8 +425,8 @@ export class AdminScheduleBlockRepository {
     const clientOptions = clients.map((client) => ({
       id: client.id,
       fullName: client.fullName,
-      currentBlockId: client.scheduleBlocks[0]?.scheduleBlock.id ?? null,
-      currentBlockName: client.scheduleBlocks[0]?.scheduleBlock.title ?? "No block",
+      currentBlockId: firstBlockByClientId.get(client.id)?.id ?? null,
+      currentBlockName: firstBlockByClientId.get(client.id)?.title ?? "No block",
       assignedCoach:
         client.bookings[0]?.trainingSession.coach.fullName ?? "Unassigned",
       nextSession: client.bookings[0]?.trainingSession.startsAt

@@ -1,13 +1,13 @@
-import { ScheduleDay } from "@prisma/client";
+import type { ScheduleDay } from "@prisma/client";
 
 export const scheduleDayOrder: ScheduleDay[] = [
-  ScheduleDay.SUNDAY,
-  ScheduleDay.MONDAY,
-  ScheduleDay.TUESDAY,
-  ScheduleDay.WEDNESDAY,
-  ScheduleDay.THURSDAY,
-  ScheduleDay.FRIDAY,
-  ScheduleDay.SATURDAY,
+  "SUNDAY",
+  "MONDAY",
+  "TUESDAY",
+  "WEDNESDAY",
+  "THURSDAY",
+  "FRIDAY",
+  "SATURDAY",
 ];
 
 const scheduleDayIndex = new Map(

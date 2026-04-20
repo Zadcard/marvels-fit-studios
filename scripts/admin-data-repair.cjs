@@ -162,7 +162,9 @@ async function run() {
         await db.query(
           `
             UPDATE "User"
-            SET password = $2
+            SET
+              password = $2,
+              "mustChangePassword" = true
             WHERE id = $1
           `,
           [user.id, hash]

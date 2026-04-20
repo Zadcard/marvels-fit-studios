@@ -5,6 +5,7 @@ export type AuthenticatedUser = {
   email: string;
   name: string;
   role: UserRole;
+  mustChangePassword?: boolean;
 };
 
 const demoUsers = {

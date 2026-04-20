@@ -181,7 +181,10 @@ export async function saveAdminClient(input: SaveAdminClientInput) {
           name: fullName,
           email,
           ...(initialPassword
-            ? { password: await bcrypt.hash(initialPassword, 12) }
+            ? {
+                password: await bcrypt.hash(initialPassword, 12),
+                mustChangePassword: true,
+              }
             : {}),
         },
       });
@@ -238,6 +241,7 @@ export async function saveAdminClient(input: SaveAdminClientInput) {
           clientId: generatedClientId,
           email,
           password,
+          mustChangePassword: true,
           role: "CLIENT",
         },
         select: {

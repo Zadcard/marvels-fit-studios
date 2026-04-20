@@ -13,6 +13,9 @@ export interface LoginInput {
 export interface AuthenticatedUser {
   userId: string;
   clientId: string;
+  name: string | null;
+  email: string | null;
+  mustChangePassword: boolean;
   role: UserRole;
 }
 
@@ -40,9 +43,17 @@ export class IdPasswordAuthService {
       where: { clientId: input.clientId },
       select: {
         id: true,
+        name: true,
         clientId: true,
+        email: true,
         password: true,
+        mustChangePassword: true,
         role: true,
+        clientProfile: {
+          select: {
+            fullName: true,
+          },
+        },
       },
     });
 
@@ -67,6 +78,9 @@ export class IdPasswordAuthService {
     return {
       userId: user.id,
       clientId: user.clientId!,
+      name: user.clientProfile?.fullName ?? user.name,
+      email: user.email,
+      mustChangePassword: user.mustChangePassword,
       role: user.role,
     };
   }
@@ -145,7 +159,10 @@ export class IdPasswordAuthService {
 
     await this.prisma.user.update({
       where: { id: userId },
-      data: { password: hashedPassword },
+      data: {
+        password: hashedPassword,
+        mustChangePassword: false,
+      },
     });
   }
 

@@ -13,14 +13,17 @@ import {
   getDashboardSearchPrompt,
 } from "@/lib/navigation/dashboard-nav";
 import type { DashboardRole } from "@/lib/auth/authorization-policy";
+import type { DashboardAccountSummary } from "@/components/dashboard/dashboard-role-shell";
 
 type DashboardTopbarProps = {
   role: DashboardRole;
+  account?: DashboardAccountSummary;
   onMenuToggle: () => void;
 };
 
 export function DashboardTopbar({
   role,
+  account,
   onMenuToggle,
 }: DashboardTopbarProps) {
   const pathname = usePathname();
@@ -29,13 +32,15 @@ export function DashboardTopbar({
   const profileMeta = getDashboardProfileMeta(role);
   const roleLabel = getDashboardRoleLabel(role);
   const displayName =
+    account?.name?.trim() ||
     session?.user?.name?.trim() ||
     session?.user?.email?.trim() ||
     profileMeta.name;
   const displaySubtitle =
+    account?.subtitle?.trim() ||
     session?.user?.email?.trim() ||
     profileMeta.subtitle;
-  const displayInitials = displayName
+  const displayInitials = account?.initials?.trim() || displayName
     .split(" ")
     .map((part) => part[0])
     .filter(Boolean)

@@ -48,7 +48,10 @@ export const {
 
             return {
               id: authResult.userId,
+              name: authResult.name,
+              email: authResult.email,
               clientId: authResult.clientId,
+              mustChangePassword: authResult.mustChangePassword,
               role: authResult.role,
             };
           } else if (email) {
