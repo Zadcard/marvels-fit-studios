@@ -5,10 +5,11 @@ import Link from "next/link";
 import { UserRoundPlus } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-import { approveLeadAsClient } from "@/app/actions/admin-leads";
+import { approveLeadAsClient, deleteLead } from "@/app/actions/admin-leads";
 import { DashboardManagementToolbar } from "@/components/dashboard/dashboard-management-toolbar";
 import { DashboardEmptyState } from "@/components/dashboard/dashboard-empty-state";
 import { DashboardMiniStat } from "@/components/dashboard/dashboard-mini-stat";
+import { DashboardModal } from "@/components/dashboard/dashboard-modal";
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
 import { DashboardStatusBadge } from "@/components/dashboard/dashboard-status-badge";
 import { DashboardSurfaceNote } from "@/components/dashboard/dashboard-surface-note";
@@ -44,6 +45,12 @@ export function AdminLeadsWorkspace({ records }: AdminLeadsWorkspaceProps) {
     "All"
   );
   const [actionMessage, setActionMessage] = useState("");
+  const [issuedCredentials, setIssuedCredentials] = useState<{
+    clientId: string;
+    temporaryPassword: string;
+    details: string;
+  } | null>(null);
+  const [leadToDelete, setLeadToDelete] = useState<AdminLeadRecord | null>(null);
 
   const filteredRecords = useMemo(() => {
     return records.filter((lead) => {
@@ -81,17 +88,50 @@ export function AdminLeadsWorkspace({ records }: AdminLeadsWorkspaceProps) {
 
   const handleApprove = (leadId: string) => {
     setActionMessage("");
+    setIssuedCredentials(null);
     startTransition(async () => {
       try {
         const summary = await approveLeadAsClient(leadId);
         const promoted = summary.results.find(
           (result) => result.outcome === "promoted"
         );
-        setActionMessage(promoted?.details ?? "Request approved as client.");
+        if (promoted?.clientId && promoted.temporaryPassword) {
+          setIssuedCredentials({
+            clientId: promoted.clientId,
+            temporaryPassword: promoted.temporaryPassword,
+            details: promoted.details,
+          });
+          setActionMessage(
+            `${promoted.details} The client must change the password on first login.`
+          );
+        } else {
+          setActionMessage(promoted?.details ?? "Request approved as client.");
+        }
         router.refresh();
       } catch (error) {
         setActionMessage(
           error instanceof Error ? error.message : "Approval failed."
+        );
+      }
+    });
+  };
+
+  const handleDelete = () => {
+    if (!leadToDelete) {
+      return;
+    }
+
+    setActionMessage("");
+    setIssuedCredentials(null);
+    startTransition(async () => {
+      try {
+        await deleteLead(leadToDelete.id);
+        setActionMessage(`Deleted lead for ${leadToDelete.fullName}.`);
+        setLeadToDelete(null);
+        router.refresh();
+      } catch (error) {
+        setActionMessage(
+          error instanceof Error ? error.message : "Delete failed."
         );
       }
     });
@@ -183,6 +223,34 @@ export function AdminLeadsWorkspace({ records }: AdminLeadsWorkspaceProps) {
           </div>
         ) : null}
 
+        {issuedCredentials ? (
+          <div className="dashboard-credentials-screen" role="alert">
+            <div className="dashboard-credentials-screen__header">
+              <div className="mv-eyebrow">Client Credentials</div>
+              <h2>Share these login details with the client</h2>
+              <p>{issuedCredentials.details}</p>
+            </div>
+
+            <div className="dashboard-credentials-screen__grid">
+              <div className="dashboard-credentials-screen__card">
+                <span>Client ID</span>
+                <strong>{issuedCredentials.clientId}</strong>
+              </div>
+              <div className="dashboard-credentials-screen__card">
+                <span>Temporary Password</span>
+                <strong>{issuedCredentials.temporaryPassword}</strong>
+              </div>
+            </div>
+
+            <p className="dashboard-credentials-screen__footnote">
+              The client must change this password immediately after the first login.
+            </p>
+            <p className="dashboard-credentials-screen__footnote">
+              *Note: when logging in the password must be changed by a strong password.
+            </p>
+          </div>
+        ) : null}
+
         <div className="dashboard-data-region">
           {filteredRecords.length > 0 ? (
             <>
@@ -243,15 +311,25 @@ export function AdminLeadsWorkspace({ records }: AdminLeadsWorkspaceProps) {
                               tone="success"
                             />
                           ) : (
-                            <button
-                              type="button"
-                              className="mv-btn mv-btn-primary dashboard-lead-table__approve"
-                              onClick={() => handleApprove(lead.id)}
-                              disabled={isPending}
-                            >
-                              <UserRoundPlus size={16} />
-                              {isPending ? "Approving..." : "Approve"}
-                            </button>
+                            <div className="dashboard-lead-table__action-stack">
+                              <button
+                                type="button"
+                                className="mv-btn mv-btn-primary dashboard-lead-table__approve dashboard-lead-table__approve--small"
+                                onClick={() => handleApprove(lead.id)}
+                                disabled={isPending}
+                              >
+                                <UserRoundPlus size={14} />
+                                {isPending ? "Approving..." : "Approve"}
+                              </button>
+                              <button
+                                type="button"
+                                className="mv-btn mv-btn-danger dashboard-lead-table__delete"
+                                onClick={() => setLeadToDelete(lead)}
+                                disabled={isPending}
+                              >
+                                Delete
+                              </button>
+                            </div>
                           )}
                         </td>
                       </tr>
@@ -295,15 +373,25 @@ export function AdminLeadsWorkspace({ records }: AdminLeadsWorkspaceProps) {
                           tone="success"
                         />
                       ) : (
-                        <button
-                          type="button"
-                          className="mv-btn mv-btn-primary"
-                          onClick={() => handleApprove(lead.id)}
-                          disabled={isPending}
-                        >
-                          <UserRoundPlus size={16} />
-                          {isPending ? "Approving..." : "Approve as client"}
-                        </button>
+                        <>
+                          <button
+                            type="button"
+                            className="mv-btn mv-btn-primary dashboard-lead-table__approve--small"
+                            onClick={() => handleApprove(lead.id)}
+                            disabled={isPending}
+                          >
+                            <UserRoundPlus size={14} />
+                            {isPending ? "Approving..." : "Approve"}
+                          </button>
+                          <button
+                            type="button"
+                            className="mv-btn mv-btn-danger"
+                            onClick={() => setLeadToDelete(lead)}
+                            disabled={isPending}
+                          >
+                            Delete
+                          </button>
+                        </>
                       )}
                     </div>
                   </article>
@@ -329,6 +417,50 @@ export function AdminLeadsWorkspace({ records }: AdminLeadsWorkspaceProps) {
           )}
         </div>
       </section>
+
+      <DashboardModal
+        open={Boolean(leadToDelete)}
+        onClose={() => {
+          if (isPending) {
+            return;
+          }
+
+          setLeadToDelete(null);
+        }}
+        title="Delete lead"
+        description={
+          leadToDelete
+            ? `Delete ${leadToDelete.fullName} from join requests? This will remove the lead from the database.`
+            : undefined
+        }
+        footer={
+          <>
+            <button
+              type="button"
+              className="mv-btn mv-btn-outline"
+              onClick={() => setLeadToDelete(null)}
+              disabled={isPending}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="mv-btn mv-btn-danger"
+              onClick={handleDelete}
+              disabled={isPending}
+            >
+              {isPending ? "Deleting..." : "Confirm delete"}
+            </button>
+          </>
+        }
+      >
+        <div className="dashboard-empty-state">
+          <strong>Confirmation required</strong>
+          <p>
+            If you cancel or close this popup, the lead will not be deleted.
+          </p>
+        </div>
+      </DashboardModal>
     </div>
   );
 }

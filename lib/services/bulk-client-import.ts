@@ -19,12 +19,14 @@ export interface ImportResult {
   temporaryPassword: string;
   fullName: string;
   phone: string;
+  groupName?: string;
   error?: string;
 }
 
 export type BulkClientInput = {
   fullName: string;
   phone: string;
+  groupName?: string;
 };
 
 export type BulkClientPreviewRow = BulkClientInput & {
@@ -125,6 +127,7 @@ function createStats(
         temporaryPassword: client.password,
         fullName: client.fullName,
         phone: client.phone,
+        groupName: client.groupName,
       })),
       ...failedImports.map((client) => ({
         success: false,
@@ -132,6 +135,7 @@ function createStats(
         temporaryPassword: "",
         fullName: client.fullName,
         phone: client.phone,
+        groupName: client.groupName,
         error: client.reason,
       })),
     ],
@@ -161,13 +165,19 @@ export class BulkClientImportService {
       firstRow.includes("fullname") ||
       firstRow.includes("full name") ||
       firstRow.includes("name") ||
-      firstRow.includes("phone");
+      firstRow.includes("phone") ||
+      firstRow.includes("groupname") ||
+      firstRow.includes("group name");
     const fullNameIndex = Math.max(
       firstRow.indexOf("fullname"),
       firstRow.indexOf("full name"),
       firstRow.indexOf("name")
     );
     const phoneIndex = firstRow.indexOf("phone");
+    const groupNameIndex = Math.max(
+      firstRow.indexOf("groupname"),
+      firstRow.indexOf("group name")
+    );
     const records = hasHeader ? lines.slice(1) : lines;
     const seenPhones = new Map<string, number>();
 
@@ -179,9 +189,10 @@ export class BulkClientImportService {
         {
           fullName: "",
           phone: "",
+          groupName: "",
           rowNumber: 1,
           valid: false,
-          reason: "CSV must have fullName and phone columns.",
+          reason: "CSV must have fullName and phone columns. groupName is optional.",
         },
       ];
     }
@@ -191,10 +202,16 @@ export class BulkClientImportService {
       const fullName = hasHeader
         ? values[fullNameIndex] ?? ""
         : values[0] ?? "";
-      const phone = hasHeader ? values[phoneIndex] ?? "" : values[1] ?? "";
+      const groupName = hasHeader
+        ? groupNameIndex >= 0
+          ? values[groupNameIndex] ?? ""
+          : ""
+        : values[1] ?? "";
+      const phone = hasHeader ? values[phoneIndex] ?? "" : values[2] ?? "";
       const normalizedInput = {
         fullName: fullName.trim(),
         phone: normalizePhoneNumber(phone),
+        groupName: groupName.trim(),
       };
       const parsed = clientRegistrationSchema.safeParse(normalizedInput);
       const rowNumber = hasHeader ? index + 2 : index + 1;
@@ -212,6 +229,7 @@ export class BulkClientImportService {
       if (earlierRow) {
         return {
           ...parsed.data,
+          groupName: normalizedInput.groupName,
           rowNumber,
           valid: false,
           reason: `Duplicate phone number from row ${earlierRow}.`,
@@ -222,6 +240,7 @@ export class BulkClientImportService {
 
       return {
         ...parsed.data,
+        groupName: normalizedInput.groupName,
         rowNumber,
         valid: true,
       };
@@ -232,9 +251,11 @@ export class BulkClientImportService {
     clientsData: ClientImportData[]
   ): Promise<BulkClientImportStats> {
     const csv = [
-      "fullName,phone",
+      "fullName,groupName,phone",
       ...clientsData.map((client) =>
-        [client.fullName, client.phone].map(toCsvValue).join(",")
+        [client.fullName, client.groupName ?? "", client.phone]
+          .map(toCsvValue)
+          .join(",")
       ),
     ].join("\n");
 
@@ -253,6 +274,7 @@ export class BulkClientImportService {
         failedImports.push({
           fullName: row.fullName,
           phone: row.phone,
+          groupName: row.groupName,
           rowNumber: row.rowNumber,
           reason: row.reason ?? "Invalid client record.",
         });
@@ -268,20 +290,44 @@ export class BulkClientImportService {
           failedImports.push({
             fullName: row.fullName,
             phone: row.phone,
+            groupName: row.groupName,
             rowNumber: row.rowNumber,
             reason: "Phone number is already registered.",
           });
           continue;
         }
 
+        let groupId: string | undefined;
+
+        if (row.groupName) {
+          const matchedGroup = await clientRegistrationService.findGroupByName(
+            row.groupName
+          );
+
+          if (!matchedGroup) {
+            failedImports.push({
+              fullName: row.fullName,
+              phone: row.phone,
+              groupName: row.groupName,
+              rowNumber: row.rowNumber,
+              reason: `Group "${row.groupName}" was not found.`,
+            });
+            continue;
+          }
+
+          groupId = matchedGroup.id;
+        }
+
         const result = await clientRegistrationService.registerClient({
           fullName: row.fullName,
           phone: row.phone,
+          groupId,
         });
 
         successfulImports.push({
           fullName: row.fullName,
           phone: row.phone,
+          groupName: row.groupName,
           rowNumber: row.rowNumber,
           clientId: result.clientId,
           password: result.temporaryPassword,
@@ -290,6 +336,7 @@ export class BulkClientImportService {
         failedImports.push({
           fullName: row.fullName,
           phone: row.phone,
+          groupName: row.groupName,
           rowNumber: row.rowNumber,
           reason: error instanceof Error ? error.message : "Import failed.",
         });
@@ -301,9 +348,15 @@ export class BulkClientImportService {
 
   generateImportReport(stats: BulkClientImportStats): BulkClientImportReport {
     const credentialsCsv = [
-      ["clientId", "fullName", "phone", "password"].join(","),
+      ["clientId", "fullName", "groupName", "phone", "password"].join(","),
       ...stats.successfulImports.map((client) =>
-        [client.clientId, client.fullName, client.phone, client.password]
+        [
+          client.clientId,
+          client.fullName,
+          client.groupName ?? "",
+          client.phone,
+          client.password,
+        ]
           .map(toCsvValue)
           .join(",")
       ),

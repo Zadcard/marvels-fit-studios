@@ -9,12 +9,18 @@ export interface RegisterClientInput {
   fullName: string;
   phone: string;
   email?: string;
+  groupId?: string;
 }
 
 export interface RegisterClientResult {
   userId: string;
   clientId: string;
   temporaryPassword: string;
+}
+
+export interface ResolvedClientGroup {
+  id: string;
+  name: string;
 }
 
 export class ClientRegistrationService {
@@ -48,6 +54,7 @@ export class ClientRegistrationService {
           userId: user.id,
           fullName: input.fullName,
           phone: input.phone,
+          groupId: input.groupId ?? null,
           status: "ACTIVE",
         },
       });
@@ -67,6 +74,21 @@ export class ClientRegistrationService {
       where: { phone },
     });
     return !existing;
+  }
+
+  async findGroupByName(groupName: string): Promise<ResolvedClientGroup | null> {
+    return this.prisma.group.findFirst({
+      where: {
+        name: {
+          equals: groupName.trim(),
+          mode: "insensitive",
+        },
+      },
+      select: {
+        id: true,
+        name: true,
+      },
+    });
   }
 }
 

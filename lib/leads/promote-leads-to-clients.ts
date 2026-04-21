@@ -1,5 +1,9 @@
+import bcryptjs from "bcryptjs";
 import { LeadStatus, UserRole } from "@prisma/client";
 
+import { readLeadCredentialClientId } from "@/lib/leads/lead-credential-metadata";
+import { clientIdGenerator } from "@/lib/services/client-id-generator";
+import { passwordGenerator } from "@/lib/services/password-generator";
 import { getPrisma } from "../prisma";
 
 export type PromoteLeadsInput = {
@@ -16,12 +20,16 @@ export type PromoteLeadResult =
       email: string | null;
       outcome: "promoted";
       details: string;
+      clientId?: string;
+      temporaryPassword?: string;
     }
   | {
       leadId: string;
       email: string | null;
       outcome: "skipped";
       details: string;
+      clientId?: string;
+      temporaryPassword?: string;
     };
 
 export type PromoteLeadsSummary = {
@@ -77,33 +85,16 @@ export async function promoteLeadsToClients(
 
   for (const lead of leads) {
     const normalizedEmail = lead.email?.trim().toLowerCase() ?? null;
+    const reservedClientId = readLeadCredentialClientId(lead.message);
 
-    if (!normalizedEmail) {
-      results.push({
-        leadId: lead.id,
-        email: lead.email,
-        outcome: "skipped",
-        details: "Lead has no email, so it cannot become a login account.",
-      });
-      continue;
-    }
-
-    if (!lead.passwordHash) {
-      results.push({
-        leadId: lead.id,
-        email: normalizedEmail,
-        outcome: "skipped",
-        details: "Lead has no password hash, so credentials login would not work.",
-      });
-      continue;
-    }
-
-    const existingUser = await prisma.user.findUnique({
-      where: { email: normalizedEmail },
-      include: {
-        clientProfile: true,
-      },
-    });
+    const existingUser = normalizedEmail
+      ? await prisma.user.findUnique({
+          where: { email: normalizedEmail },
+          include: {
+            clientProfile: true,
+          },
+        })
+      : null;
 
     if (
       existingUser &&
@@ -119,17 +110,30 @@ export async function promoteLeadsToClients(
       continue;
     }
 
+    const nextClientNumber = await clientIdGenerator.getNextClientNumber();
+    const generatedClientId =
+      reservedClientId ??
+      existingUser?.clientId ??
+      clientIdGenerator.generateId({ clientNumber: nextClientNumber });
+    const temporaryPassword = passwordGenerator.generatePassword(generatedClientId);
+
     if (input.dryRun) {
       results.push({
         leadId: lead.id,
         email: normalizedEmail,
         outcome: "promoted",
         details: existingUser
-          ? "Would attach a Client profile to the existing user and mark the lead as converted."
-          : "Would create a User, create a Client profile, and mark the lead as converted.",
+          ? "Would issue a fresh temporary password, confirm the client profile, and mark the lead as converted."
+          : "Would create a User, create a Client profile, generate credentials, and mark the lead as converted.",
+        clientId: generatedClientId,
+        temporaryPassword,
       });
       continue;
     }
+
+    const hashedPassword = lead.passwordHash
+      ? lead.passwordHash
+      : await bcryptjs.hash(temporaryPassword, 10);
 
     await prisma.$transaction(async (tx) => {
       const user =
@@ -138,21 +142,22 @@ export async function promoteLeadsToClients(
           data: {
             email: normalizedEmail,
             name: lead.fullName,
-            password: lead.passwordHash,
+            clientId: generatedClientId,
+            password: hashedPassword,
             mustChangePassword: true,
             role: UserRole.CLIENT,
           },
         }));
 
-      if (!existingUser) {
-        // New users are already created with the right role and password.
-      } else {
+      if (existingUser) {
         await tx.user.update({
           where: { id: user.id },
           data: {
             name: user.name ?? lead.fullName,
-            password: user.password ?? lead.passwordHash,
-            mustChangePassword: user.password ? user.mustChangePassword : true,
+            email: user.email ?? normalizedEmail,
+            clientId: user.clientId ?? generatedClientId,
+            password: hashedPassword,
+            mustChangePassword: true,
             role: UserRole.CLIENT,
           },
         });
@@ -181,8 +186,10 @@ export async function promoteLeadsToClients(
       email: normalizedEmail,
       outcome: "promoted",
       details: existingUser
-        ? "Attached or confirmed a Client profile on the existing user and marked the lead as converted."
-        : "Created a new User and Client profile and marked the lead as converted.",
+        ? "Issued fresh credentials, confirmed the client profile, and marked the lead as converted."
+        : "Created a new client account, generated credentials, and marked the lead as converted.",
+      clientId: generatedClientId,
+      temporaryPassword,
     });
   }
 

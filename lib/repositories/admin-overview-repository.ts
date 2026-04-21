@@ -1,5 +1,6 @@
 import "server-only";
 
+import { Prisma } from "@prisma/client";
 import {
   CalendarPlus2,
   CircleDollarSign,
@@ -45,6 +46,25 @@ type AdminOverviewData = {
 type TimedAdminRecentActivityItem = AdminRecentActivityItem & {
   occurredAt: number;
 };
+
+function isRecoverablePrismaError(error: unknown) {
+  return (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    (error.code === "P2021" || error.code === "P2022")
+  );
+}
+
+async function withPrismaFallback<T>(operation: Promise<T>, fallback: T) {
+  try {
+    return await operation;
+  } catch (error) {
+    if (isRecoverablePrismaError(error)) {
+      return fallback;
+    }
+
+    throw error;
+  }
+}
 
 function getDayLabel(date: Date) {
   const now = new Date();
@@ -104,135 +124,165 @@ export class AdminOverviewRepository {
       privateSubscriptions,
       attendedBookings,
     ] = await Promise.all([
-      this.prisma.client.count(),
-      this.prisma.coach.count(),
-      this.prisma.trainingSession.count({
-        where: {
-          status: {
-            not: "CANCELED",
-          },
-          startsAt: {
-            gte: now,
-            lte: weekEnd,
-          },
-        },
-      }),
-      this.prisma.payment.aggregate({
-        _sum: { amount: true },
-        where: {
-          date: { gte: startOfMonth },
-        },
-      }),
-      this.prisma.lead.count({
-        where: {
-          status: {
-            in: ["NEW", "CONTACTED"],
-          },
-        },
-      }),
-      this.prisma.trainingSession.findMany({
-        where: {
-          status: "SCHEDULED",
-          startsAt: {
-            gte: now,
-            lte: in48Hours,
-          },
-        },
-        orderBy: { startsAt: "asc" },
-        take: 4,
-        select: {
-          id: true,
-          title: true,
-          startsAt: true,
-          type: true,
-          location: true,
-          capacity: true,
-          coach: {
-            select: {
-              fullName: true,
-            },
-          },
-          bookings: {
-            where: {
-              status: {
-                in: ["BOOKED", "ATTENDED", "WAITLIST"],
-              },
-            },
-            select: {
-              id: true,
-            },
-          },
-        },
-      }),
-      this.prisma.lead.findMany({
-        orderBy: { createdAt: "desc" },
-        take: 2,
-        select: {
-          id: true,
-          fullName: true,
-          status: true,
-          createdAt: true,
-        },
-      }),
-      this.prisma.payment.findMany({
-        orderBy: { date: "desc" },
-        take: 2,
-        select: {
-          id: true,
-          amount: true,
-          currency: true,
-          date: true,
-          client: {
-            select: {
-              fullName: true,
-            },
-          },
-        },
-      }),
-      this.prisma.sessionNote.findMany({
-        orderBy: { createdAt: "desc" },
-        take: 2,
-        select: {
-          id: true,
-          createdAt: true,
-          author: {
-            select: {
-              name: true,
-            },
-          },
-          trainingSession: {
-            select: {
-              title: true,
-            },
-          },
-        },
-      }),
-      this.prisma.clientSubscription.count({
-        where: {
-          status: "ACTIVE",
-        },
-      }),
-      this.prisma.clientSubscription.count({
-        where: {
-          status: "ACTIVE",
-          plan: {
-            name: {
-              contains: "private",
-              mode: "insensitive",
-            },
-          },
-        },
-      }),
-      this.prisma.sessionBooking.count({
-        where: {
-          status: "ATTENDED",
-          trainingSession: {
+      withPrismaFallback(this.prisma.client.count(), 0),
+      withPrismaFallback(this.prisma.coach.count(), 0),
+      withPrismaFallback(
+        this.prisma.trainingSession.count({
+          where: {
             status: {
               not: "CANCELED",
             },
+            startsAt: {
+              gte: now,
+              lte: weekEnd,
+            },
           },
-        },
-      }),
+        }),
+        0
+      ),
+      withPrismaFallback(
+        this.prisma.payment.aggregate({
+          _sum: { amount: true },
+          where: {
+            date: { gte: startOfMonth },
+          },
+        }),
+        { _sum: { amount: null } }
+      ),
+      withPrismaFallback(
+        this.prisma.lead.count({
+          where: {
+            status: {
+              in: ["NEW", "CONTACTED"],
+            },
+          },
+        }),
+        0
+      ),
+      withPrismaFallback(
+        this.prisma.trainingSession.findMany({
+          where: {
+            status: "SCHEDULED",
+            startsAt: {
+              gte: now,
+              lte: in48Hours,
+            },
+          },
+          orderBy: { startsAt: "asc" },
+          take: 4,
+          select: {
+            id: true,
+            title: true,
+            startsAt: true,
+            type: true,
+            location: true,
+            capacity: true,
+            coach: {
+              select: {
+                fullName: true,
+              },
+            },
+            bookings: {
+              where: {
+                status: {
+                  in: ["BOOKED", "ATTENDED", "WAITLIST"],
+                },
+              },
+              select: {
+                id: true,
+              },
+            },
+          },
+        }),
+        []
+      ),
+      withPrismaFallback(
+        this.prisma.lead.findMany({
+          orderBy: { createdAt: "desc" },
+          take: 2,
+          select: {
+            id: true,
+            fullName: true,
+            status: true,
+            createdAt: true,
+          },
+        }),
+        []
+      ),
+      withPrismaFallback(
+        this.prisma.payment.findMany({
+          orderBy: { date: "desc" },
+          take: 2,
+          select: {
+            id: true,
+            amount: true,
+            currency: true,
+            date: true,
+            client: {
+              select: {
+                fullName: true,
+              },
+            },
+          },
+        }),
+        []
+      ),
+      withPrismaFallback(
+        this.prisma.sessionNote.findMany({
+          orderBy: { createdAt: "desc" },
+          take: 2,
+          select: {
+            id: true,
+            createdAt: true,
+            author: {
+              select: {
+                name: true,
+              },
+            },
+            trainingSession: {
+              select: {
+                title: true,
+              },
+            },
+          },
+        }),
+        []
+      ),
+      withPrismaFallback(
+        this.prisma.clientSubscription.count({
+          where: {
+            status: "ACTIVE",
+          },
+        }),
+        0
+      ),
+      withPrismaFallback(
+        this.prisma.clientSubscription.count({
+          where: {
+            status: "ACTIVE",
+            plan: {
+              name: {
+                contains: "private",
+                mode: "insensitive",
+              },
+            },
+          },
+        }),
+        0
+      ),
+      withPrismaFallback(
+        this.prisma.sessionBooking.count({
+          where: {
+            status: "ATTENDED",
+            trainingSession: {
+              status: {
+                not: "CANCELED",
+              },
+            },
+          },
+        }),
+        0
+      ),
     ]);
 
     const stats: AdminOverviewStat[] = [

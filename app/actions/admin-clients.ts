@@ -365,7 +365,25 @@ export async function deleteAdminClient(input: DeleteAdminClientInput) {
   }
 
   await prisma.$transaction(async (tx) => {
+    await tx.scheduleBlockClient.deleteMany({
+      where: {
+        clientId: client.id,
+      },
+    });
+
+    await tx.sessionBooking.deleteMany({
+      where: {
+        clientId: client.id,
+      },
+    });
+
     await tx.payment.deleteMany({
+      where: {
+        clientId: client.id,
+      },
+    });
+
+    await tx.clientSubscription.deleteMany({
       where: {
         clientId: client.id,
       },
@@ -386,6 +404,18 @@ export async function deleteAdminClient(input: DeleteAdminClientInput) {
     await tx.sessionCompensation.deleteMany({
       where: {
         clientId: client.id,
+      },
+    });
+
+    await tx.clientPreferences.deleteMany({
+      where: {
+        clientId: client.id,
+      },
+    });
+
+    await tx.client.delete({
+      where: {
+        id: client.id,
       },
     });
 

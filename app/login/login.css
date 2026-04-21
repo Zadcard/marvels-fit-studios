@@ -360,6 +360,60 @@
   opacity: 0.6;
 }
 
+.join-credentials-screen {
+  display: grid;
+  gap: 16px;
+  padding: 20px;
+  border: 1px solid rgba(230, 36, 41, 0.22);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at top right, rgba(230, 36, 41, 0.14), transparent 34%),
+    linear-gradient(180deg, rgba(24, 24, 24, 0.94), rgba(10, 10, 10, 0.98));
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.28);
+}
+
+.join-credentials-screen__header {
+  display: grid;
+  gap: 8px;
+}
+
+.join-credentials-screen__stack {
+  display: grid;
+  gap: 14px;
+}
+
+.join-credentials-screen__card {
+  display: grid;
+  gap: 8px;
+  padding: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.join-credentials-screen__card span {
+  color: var(--mv-muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.join-credentials-screen__card strong {
+  color: var(--mv-text);
+  font-family: var(--font-display), "Space Grotesk", sans-serif;
+  font-size: clamp(1.8rem, 5vw, 2.5rem);
+  line-height: 1;
+  letter-spacing: -0.05em;
+  word-break: break-word;
+}
+
+.join-credentials-screen__note {
+  color: var(--mv-muted-strong);
+  font-size: 0.84rem;
+  line-height: 1.55;
+}
+
 @media (min-width: 860px) {
   .login-form-panel {
     padding: 48px 40px;

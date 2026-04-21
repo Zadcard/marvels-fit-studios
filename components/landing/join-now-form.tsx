@@ -3,7 +3,7 @@
 import { useActionState, useEffect, useRef } from "react";
 import { useFormStatus } from "react-dom";
 
-import { registerClientWithAutoCredentials } from "@/app/actions/landing";
+import { submitJoinNowLead } from "@/app/actions/landing";
 import {
   initialJoinNowState,
   type JoinNowActionState,
@@ -21,7 +21,7 @@ function SubmitButton() {
       aria-busy={pending}
       disabled={pending}
     >
-      {pending ? "Creating account..." : "Create Account"}
+      {pending ? "Submitting request..." : "Submit Request"}
     </button>
   );
 }
@@ -41,7 +41,7 @@ function FieldError({ errors }: FieldErrorProps) {
 function classifyJoinNowFailure(state: JoinNowActionState) {
   const phoneErrors = state.fieldErrors?.phone ?? [];
 
-  if (phoneErrors.some((error) => error.includes("already registered"))) {
+  if (phoneErrors.some((error) => error.includes("already"))) {
     return "duplicate_phone";
   }
 
@@ -58,7 +58,7 @@ export function JoinNowForm() {
   const trackedSubmissionIdRef = useRef<number | null>(null);
   const submissionCounterRef = useRef(0);
   const [state, formAction] = useActionState(
-    registerClientWithAutoCredentials,
+    submitJoinNowLead,
     initialJoinNowState
   );
 
@@ -119,14 +119,14 @@ export function JoinNowForm() {
           <input
             className="field"
             id="cf-name"
-            name="fullName"
+            name="name"
             type="text"
             placeholder="Enter your full name"
             autoComplete="name"
-            aria-invalid={state.fieldErrors?.fullName ? "true" : undefined}
+            aria-invalid={state.fieldErrors?.name ? "true" : undefined}
             required
           />
-          <FieldError errors={state.fieldErrors?.fullName} />
+          <FieldError errors={state.fieldErrors?.name} />
         </label>
         <label>
           <span>Phone number</span>
@@ -149,10 +149,28 @@ export function JoinNowForm() {
       <SubmitButton />
 
       {state.status === "success" && state.credentials ? (
-        <div className="form-success show" id="join-success" role="alert">
-          <strong>Save these credentials!</strong>
-          <span>Client ID: {state.credentials.clientId}</span>
-          <span>Password: {state.credentials.password}</span>
+        <div className="join-credentials-screen join-credentials-screen--landing show" id="join-success" role="alert">
+          <div className="join-credentials-screen__header">
+            <strong>Your account details</strong>
+          </div>
+
+          <div className="join-credentials-screen__stack">
+            <div className="join-credentials-screen__card">
+              <span>Client ID</span>
+              <strong>{state.credentials.clientId}</strong>
+            </div>
+            <div className="join-credentials-screen__card">
+              <span>Password</span>
+              <strong>{state.credentials.password}</strong>
+            </div>
+          </div>
+
+          <p className="join-credentials-screen__note">
+            Someone from the studio team will accept your request.
+          </p>
+          <p className="join-credentials-screen__note">
+            *Note: when logging in the password must be changed by a strong password.
+          </p>
         </div>
       ) : (
         <p className="form-success" id="join-success" aria-live="polite" />

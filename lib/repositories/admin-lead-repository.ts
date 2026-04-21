@@ -2,6 +2,7 @@ import "server-only";
 
 import { LeadStatus } from "@prisma/client";
 
+import { readLeadCredentialClientId } from "@/lib/leads/lead-credential-metadata";
 import type { AdminLeadRecord, AdminLeadStatus } from "@/lib/dashboard/admin-dashboard-data";
 import { getPrisma } from "@/lib/prisma";
 
@@ -29,6 +30,10 @@ function toLeadStatus(status: LeadStatus): AdminLeadStatus {
 }
 
 function normalizeMessage(value: string | null) {
+  if (readLeadCredentialClientId(value)) {
+    return "No message submitted.";
+  }
+
   return value?.trim() || "No message submitted.";
 }
 

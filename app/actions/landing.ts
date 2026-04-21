@@ -1,23 +1,77 @@
 "use server";
 
-import bcrypt from "bcryptjs";
+import bcryptjs from "bcryptjs";
 import { z } from "zod";
 
+import { readLeadCredentialClientId, serializeLeadCredentialMetadata } from "@/lib/leads/lead-credential-metadata";
 import { getPrisma } from "@/lib/prisma";
-import { clientRegistrationService } from "@/lib/services/client-registration-service";
-import { clientRegistrationSchema } from "@/lib/validators/id-auth";
+import { clientIdGenerator } from "@/lib/services/client-id-generator";
+import { passwordGenerator } from "@/lib/services/password-generator";
+import {
+  fullNameSchema,
+  normalizePhoneNumber,
+  phoneSchema,
+} from "@/lib/validators/id-auth";
 import { type JoinNowActionState } from "./join-now-types";
 
 const joinNowSchema = z.object({
-  name: z.string().trim().min(2, "Please enter your full name."),
-  phone: z.string().trim().min(8, "Please enter a valid phone number."),
-  email: z.string().trim().email("Please enter a valid email address."),
-  password: z
-    .string()
-    .min(8, "Password must be at least 8 characters.")
-    .regex(/[A-Za-z]/, "Password must include at least one letter.")
-    .regex(/[0-9]/, "Password must include at least one number."),
+  name: fullNameSchema,
+  phone: phoneSchema,
 });
+
+async function reserveNextClientId() {
+  const prisma = getPrisma();
+  const now = new Date();
+  const prefix = `${now.getFullYear().toString().slice(-2)}${String(
+    now.getMonth() + 1
+  ).padStart(2, "0")}`;
+
+  const [latestUser, pendingLeads] = await Promise.all([
+    prisma.user.findFirst({
+      where: {
+        clientId: {
+          startsWith: prefix,
+        },
+      },
+      orderBy: {
+        clientId: "desc",
+      },
+      select: {
+        clientId: true,
+      },
+    }),
+    prisma.lead.findMany({
+      where: {
+        status: {
+          in: ["NEW", "CONTACTED"],
+        },
+        message: {
+          startsWith: "__join_credentials__:",
+        },
+      },
+      select: {
+        message: true,
+      },
+    }),
+  ]);
+
+  const highestUserNumber = latestUser?.clientId
+    ? Number.parseInt(latestUser.clientId.slice(4, 7), 10)
+    : 0;
+  const highestLeadNumber = pendingLeads.reduce((max, lead) => {
+    const reservedClientId = readLeadCredentialClientId(lead.message);
+
+    if (!reservedClientId || !reservedClientId.startsWith(prefix)) {
+      return max;
+    }
+
+    return Math.max(max, Number.parseInt(reservedClientId.slice(4, 7), 10));
+  }, 0);
+
+  return clientIdGenerator.generateId({
+    clientNumber: Math.max(highestUserNumber, highestLeadNumber) + 1,
+  });
+}
 
 export async function submitJoinNowLead(
   _previousState: JoinNowActionState,
@@ -26,8 +80,6 @@ export async function submitJoinNowLead(
   const parsed = joinNowSchema.safeParse({
     name: formData.get("name"),
     phone: formData.get("phone"),
-    email: formData.get("email"),
-    password: formData.get("password"),
   });
 
   if (!parsed.success) {
@@ -39,45 +91,53 @@ export async function submitJoinNowLead(
   }
 
   const prisma = getPrisma();
-  const normalizedEmail = parsed.data.email.trim().toLowerCase();
+  const normalizedPhone = normalizePhoneNumber(parsed.data.phone);
+  const reservedClientId = await reserveNextClientId();
+  const temporaryPassword = passwordGenerator.generatePassword(reservedClientId);
+  const passwordHash = await bcryptjs.hash(temporaryPassword, 12);
 
-  const existingUser = await prisma.user.findUnique({
-    where: { email: normalizedEmail },
-    select: { id: true },
-  });
+  const [existingClient, existingLead] = await Promise.all([
+    prisma.client.findUnique({
+      where: { phone: normalizedPhone },
+      select: { id: true },
+    }),
+    prisma.lead.findFirst({
+      where: {
+        phone: normalizedPhone,
+        status: {
+          in: ["NEW", "CONTACTED"],
+        },
+      },
+      select: { id: true },
+    }),
+  ]);
 
-  if (existingUser) {
+  if (existingClient) {
     return {
       status: "error",
-      message: "This email is already linked to an account.",
+      message: "This phone number is already linked to an account.",
       fieldErrors: {
-        email: ["This email is already linked to an account."],
+        phone: ["This phone number is already linked to an account."],
       },
     };
   }
-
-  const existingLead = await prisma.lead.findUnique({
-    where: { email: normalizedEmail },
-    select: { id: true },
-  });
 
   if (existingLead) {
     return {
       status: "error",
-      message: "This email has already been submitted.",
+      message: "This phone number has already been submitted.",
       fieldErrors: {
-        email: ["This email has already been submitted."],
+        phone: ["This phone number has already been submitted."],
       },
     };
   }
 
-  const passwordHash = await bcrypt.hash(parsed.data.password, 12);
   await prisma.lead.create({
     data: {
       fullName: parsed.data.name,
-      phone: parsed.data.phone,
-      email: normalizedEmail,
+      phone: normalizedPhone,
       passwordHash,
+      message: serializeLeadCredentialMetadata(reservedClientId),
       consentAccepted: true,
       source: "landing-join-now",
       status: "NEW",
@@ -87,62 +147,12 @@ export async function submitJoinNowLead(
   return {
     status: "success",
     message:
-      "Your request has been received. The studio team will contact you soon.",
+      "Your request has been received.",
+    credentials: {
+      clientId: reservedClientId,
+      password: temporaryPassword,
+      fullName: parsed.data.name,
+      phone: normalizedPhone,
+    },
   };
-}
-
-export async function registerClientWithAutoCredentials(
-  _previousState: JoinNowActionState,
-  formData: FormData
-): Promise<JoinNowActionState> {
-  const parsed = clientRegistrationSchema.safeParse({
-    fullName: formData.get("fullName"),
-    phone: formData.get("phone"),
-  });
-
-  if (!parsed.success) {
-    return {
-      status: "error",
-      message: "Please fix the highlighted fields and try again.",
-      fieldErrors: parsed.error.flatten().fieldErrors,
-    };
-  }
-
-  const phoneAvailable = await clientRegistrationService.isPhoneAvailable(
-    parsed.data.phone
-  );
-
-  if (!phoneAvailable) {
-    return {
-      status: "error",
-      message: "This phone number is already registered.",
-      fieldErrors: {
-        phone: ["This phone number is already registered."],
-      },
-    };
-  }
-
-  try {
-    const result = await clientRegistrationService.registerClient({
-      fullName: parsed.data.fullName,
-      phone: parsed.data.phone,
-    });
-
-    return {
-      status: "success",
-      message: "Account created. Save these credentials before closing this page.",
-      credentials: {
-        clientId: result.clientId,
-        password: result.temporaryPassword,
-        fullName: parsed.data.fullName,
-        phone: parsed.data.phone,
-      },
-    };
-  } catch {
-    return {
-      status: "error",
-      message:
-        "An error occurred while creating your account. Please try again.",
-    };
-  }
 }

@@ -6,6 +6,7 @@ import type {
   AdminSubscriptionRecord,
   AdminSubscriptionStatus,
 } from "@/lib/mocks/admin-subscriptions";
+import { getAssignedCoachLabel } from "@/lib/coaches/placeholder-coaches";
 import { isMissingCustomPriceColumn } from "@/lib/custom-price-compat";
 import { getPrisma } from "@/lib/prisma";
 
@@ -352,10 +353,11 @@ export class AdminSubscriptionRepository {
         planName,
         subscriptionStatus,
         paymentStatus,
-        assignedCoach:
+        assignedCoach: getAssignedCoachLabel(
           subscription.client.group?.coach.fullName ??
-          subscription.client.bookings[0]?.trainingSession.coach.fullName ??
-          "Unassigned",
+            subscription.client.bookings[0]?.trainingSession.coach.fullName ??
+            null
+        ),
         renewalDate: subscription.renewsAt
           ? dateFormatter.format(subscription.renewsAt)
           : "No renewal set",

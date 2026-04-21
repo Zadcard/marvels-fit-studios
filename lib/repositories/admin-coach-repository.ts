@@ -4,6 +4,7 @@ import type {
   AdminCoachRecord,
   AdminCoachSpecialization,
 } from "@/lib/mocks/admin-coaches";
+import { isPlaceholderCoachName } from "@/lib/coaches/placeholder-coaches";
 import { getPrisma } from "@/lib/prisma";
 
 function toAdminCoachSpecialization(
@@ -92,7 +93,9 @@ export class AdminCoachRepository {
       blocksByCoachId.set(block.coachId, existingBlocks);
     }
 
-    return coaches.map((coach) => {
+    return coaches
+      .filter((coach) => !isPlaceholderCoachName(coach.fullName))
+      .map((coach) => {
       const coachScheduleBlocks = blocksByCoachId.get(coach.id) ?? [];
       const activeClients = coach.groups.reduce(
         (total, group) => total + group._count.clients,

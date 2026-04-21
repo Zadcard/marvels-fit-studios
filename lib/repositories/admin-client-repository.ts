@@ -1,11 +1,13 @@
 import "server-only";
 
 import type {
+  AdminClientInitialOption,
   AdminClientMembership,
   AdminClientRecord,
   AdminClientStatus,
   AdminPaymentStatus,
 } from "@/lib/dashboard/admin-dashboard-data";
+import { getAssignedCoachLabel } from "@/lib/coaches/placeholder-coaches";
 import { getPrisma } from "@/lib/prisma";
 
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
@@ -112,93 +114,174 @@ function inferPaymentStatus(record: {
 export class AdminClientRepository {
   private prisma = getPrisma();
 
-  async list(): Promise<AdminClientRecord[]> {
+  async list(input?: {
+    search?: string;
+    initial?: string | null;
+    sort?: "asc" | "desc";
+  }): Promise<{
+    records: AdminClientRecord[];
+    totalCount: number;
+    filteredCount: number;
+    initialOptions: AdminClientInitialOption[];
+  }> {
+    const search = input?.search?.trim() ?? "";
+    const initial = input?.initial?.trim().slice(0, 1).toUpperCase() ?? null;
+    const sort = input?.sort === "desc" ? "desc" : "asc";
     const scheduleBlockDelegate = this.prisma.scheduleBlock as
       | typeof this.prisma.scheduleBlock
       | undefined;
-    const clients = await this.prisma.client.findMany({
-      orderBy: [{ createdAt: "desc" }],
-      select: {
-        id: true,
-        fullName: true,
-        phone: true,
-        paymentStatus: true,
-        status: true,
-        createdAt: true,
-        user: {
-          select: {
-            email: true,
-          },
+    const where = {
+      AND: [
+        initial
+          ? {
+              fullName: {
+                startsWith: initial,
+                mode: "insensitive" as const,
+              },
+            }
+          : {},
+        search
+          ? {
+              OR: [
+                {
+                  fullName: {
+                    contains: search,
+                    mode: "insensitive" as const,
+                  },
+                },
+                {
+                  phone: {
+                    contains: search,
+                  },
+                },
+                {
+                  user: {
+                    is: {
+                      email: {
+                        contains: search,
+                        mode: "insensitive" as const,
+                      },
+                    },
+                  },
+                },
+                {
+                  user: {
+                    is: {
+                      clientId: {
+                        contains: search,
+                      },
+                    },
+                  },
+                },
+                {
+                  group: {
+                    is: {
+                      name: {
+                        contains: search,
+                        mode: "insensitive" as const,
+                      },
+                    },
+                  },
+                },
+              ],
+            }
+          : {},
+      ],
+    };
+    const [totalCount, filteredCount, initialNameRecords, clients] = await Promise.all([
+      this.prisma.client.count(),
+      this.prisma.client.count({ where }),
+      this.prisma.client.findMany({
+        select: {
+          fullName: true,
         },
-        group: {
-          select: {
-            id: true,
-            name: true,
-            coach: {
-              select: {
-                fullName: true,
+      }),
+      this.prisma.client.findMany({
+        where,
+        orderBy: [{ fullName: sort }],
+        select: {
+          id: true,
+          fullName: true,
+          phone: true,
+          paymentStatus: true,
+          status: true,
+          createdAt: true,
+          user: {
+            select: {
+              email: true,
+              clientId: true,
+            },
+          },
+          group: {
+            select: {
+              id: true,
+              name: true,
+              coach: {
+                select: {
+                  fullName: true,
+                },
               },
             },
           },
-        },
-        subscriptions: {
-          orderBy: [{ startsAt: "desc" }],
-          take: 1,
-          select: {
-            id: true,
-            status: true,
-            plan: {
-              select: {
-                name: true,
+          subscriptions: {
+            orderBy: [{ startsAt: "desc" }],
+            take: 1,
+            select: {
+              id: true,
+              status: true,
+              plan: {
+                select: {
+                  name: true,
+                },
               },
-            },
-            payments: {
-              orderBy: [{ date: "desc" }],
-              take: 1,
-              select: {
-                date: true,
+              payments: {
+                orderBy: [{ date: "desc" }],
+                take: 1,
+                select: {
+                  date: true,
+                },
               },
             },
           },
-        },
-        payments: {
-          orderBy: [{ date: "desc" }],
-          take: 1,
-          select: {
-            amount: true,
-            date: true,
-          },
-        },
-        bookings: {
-          where: {
-            status: {
-              in: ["BOOKED", "ATTENDED", "MISSED", "WAITLIST"],
+          payments: {
+            orderBy: [{ date: "desc" }],
+            take: 1,
+            select: {
+              amount: true,
+              date: true,
             },
-            trainingSession: {
+          },
+          bookings: {
+            where: {
               status: {
-                not: "CANCELED",
+                in: ["BOOKED", "ATTENDED", "MISSED", "WAITLIST"],
+              },
+              trainingSession: {
+                status: {
+                  not: "CANCELED",
+                },
               },
             },
-          },
-          orderBy: [{ trainingSession: { startsAt: "asc" } }],
-          take: 3,
-          select: {
-            trainingSession: {
-              select: {
-                startsAt: true,
-                title: true,
-                type: true,
-                coach: {
-                  select: {
-                    fullName: true,
+            orderBy: [{ trainingSession: { startsAt: "asc" } }],
+            take: 3,
+            select: {
+              trainingSession: {
+                select: {
+                  startsAt: true,
+                  title: true,
+                  type: true,
+                  coach: {
+                    select: {
+                      fullName: true,
+                    },
                   },
                 },
               },
             },
           },
         },
-      },
-    });
+      }),
+    ]);
     const scheduleBlockRecords = scheduleBlockDelegate
       ? await scheduleBlockDelegate.findMany({
           orderBy: [{ startsOn: "asc" }],
@@ -229,18 +312,31 @@ export class AdminClientRepository {
       }
     }
 
-    return clients.map((client) => {
+    const initialCounts = new Map<string, number>();
+
+    for (const record of initialNameRecords) {
+      const initialLabel = record.fullName.trim().charAt(0).toUpperCase();
+
+      if (!/^[A-Z]$/.test(initialLabel)) {
+        continue;
+      }
+
+      initialCounts.set(initialLabel, (initialCounts.get(initialLabel) ?? 0) + 1);
+    }
+
+    const records = clients.map((client) => {
       const primaryBlock = firstBlockByClientId.get(client.id);
       const nextBooking = client.bookings[0];
-      const assignedCoach =
+      const assignedCoach = getAssignedCoachLabel(
         client.group?.coach.fullName ??
-        nextBooking?.trainingSession.coach.fullName ??
-        "Unassigned";
+          nextBooking?.trainingSession.coach.fullName ??
+          null
+      );
 
       return {
         id: client.id,
         fullName: client.fullName,
-        clientId: "Not assigned",
+        clientId: client.user.clientId ?? "Not assigned",
         email: client.user.email ?? "No email",
         phone: client.phone ?? "No phone",
         membership: inferMembership(client),
@@ -266,6 +362,21 @@ export class AdminClientRepository {
           `Membership profile: ${titleCase(inferMembership(client))}`,
       };
     });
+
+    const initialOptions = Array.from({ length: 26 }, (_, index) => {
+      const label = String.fromCharCode(65 + index);
+      return {
+        label,
+        count: initialCounts.get(label) ?? 0,
+      };
+    }).filter((option) => option.count > 0);
+
+    return {
+      records,
+      totalCount,
+      filteredCount,
+      initialOptions,
+    };
   }
 }
 

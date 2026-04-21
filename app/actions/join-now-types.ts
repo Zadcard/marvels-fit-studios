@@ -1,4 +1,4 @@
-type JoinNowFieldName = "name" | "fullName" | "phone" | "email" | "password";
+type JoinNowFieldName = "name" | "fullName" | "phone" | "email";
 
 export type GeneratedClientCredentials = {
   clientId: string;

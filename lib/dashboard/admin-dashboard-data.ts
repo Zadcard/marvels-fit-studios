@@ -26,6 +26,11 @@ export type AdminClientRecord = {
   progressNote: string;
 };
 
+export type AdminClientInitialOption = {
+  label: string;
+  count: number;
+};
+
 export const adminClientStatusFilters: Array<"All" | AdminClientStatus> = [
   "All",
   "Active",

@@ -24,7 +24,9 @@ export function AdminBulkImportWorkspace() {
   const [dropState, setDropState] = useState<DropState>("idle");
   const [previewRows, setPreviewRows] = useState<BulkClientPreviewRow[]>([]);
   const [report, setReport] = useState<BulkClientImportReport | null>(null);
-  const [message, setMessage] = useState("Upload a CSV with fullName and phone columns.");
+  const [message, setMessage] = useState(
+    "Upload a CSV with fullName, groupName, and phone columns."
+  );
   const [isPreviewing, startPreviewTransition] = useTransition();
   const [isImporting, startImportTransition] = useTransition();
 
@@ -155,7 +157,7 @@ export function AdminBulkImportWorkspace() {
         <div className="dashboard-panel__header dashboard-panel__header--tight">
           <div>
             <div className="mv-eyebrow">CSV Upload</div>
-            <h2>Import clients by full name and phone</h2>
+            <h2>Import clients by full name, group, and phone</h2>
             <p>{message}</p>
           </div>
           <button
@@ -206,7 +208,7 @@ export function AdminBulkImportWorkspace() {
         >
           <UploadCloud size={28} />
           <strong>Drop CSV here or click to upload</strong>
-          <span>Expected columns: fullName,phone</span>
+          <span>Expected columns: fullName,groupName,phone</span>
         </button>
 
         {isBusy ? (
@@ -233,6 +235,7 @@ export function AdminBulkImportWorkspace() {
                 <tr>
                   <th>Row</th>
                   <th>Client</th>
+                  <th>Group</th>
                   <th>Phone</th>
                   <th>Status</th>
                 </tr>
@@ -246,6 +249,7 @@ export function AdminBulkImportWorkspace() {
                         <strong>{row.fullName || "Missing name"}</strong>
                       </div>
                     </td>
+                    <td>{row.groupName || "No group"}</td>
                     <td>{row.phone || "Missing phone"}</td>
                     <td>{row.valid ? "Ready" : row.reason}</td>
                   </tr>
@@ -293,8 +297,9 @@ export function AdminBulkImportWorkspace() {
                 <thead>
                   <tr>
                     <th>Client</th>
-                    <th>Phone</th>
+                    <th>Group</th>
                     <th>Client ID</th>
+                    <th>Phone</th>
                     <th>Password</th>
                   </tr>
                 </thead>
@@ -302,8 +307,9 @@ export function AdminBulkImportWorkspace() {
                   {report.successfulImports.map((client) => (
                     <tr key={client.clientId}>
                       <td>{client.fullName}</td>
-                      <td>{client.phone}</td>
+                      <td>{client.groupName || "No group"}</td>
                       <td>{client.clientId}</td>
+                      <td>{client.phone}</td>
                       <td>{client.password}</td>
                     </tr>
                   ))}
@@ -319,6 +325,7 @@ export function AdminBulkImportWorkspace() {
                   <tr>
                     <th>Row</th>
                     <th>Client</th>
+                    <th>Group</th>
                     <th>Phone</th>
                     <th>Reason</th>
                   </tr>
@@ -328,6 +335,7 @@ export function AdminBulkImportWorkspace() {
                     <tr key={`${client.rowNumber}-${client.phone}`}>
                       <td>{client.rowNumber}</td>
                       <td>{client.fullName}</td>
+                      <td>{client.groupName || "No group"}</td>
                       <td>{client.phone}</td>
                       <td>{client.reason}</td>
                     </tr>
