@@ -4,7 +4,7 @@ import { LeadStatus } from "@prisma/client";
 
 import { readLeadCredentialClientId } from "@/lib/leads/lead-credential-metadata";
 import type { AdminLeadRecord, AdminLeadStatus } from "@/lib/dashboard/admin-dashboard-data";
-import { getPrisma } from "@/lib/prisma";
+import { getPrisma, withPrismaFallback } from "@/lib/prisma";
 
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
   month: "short",
@@ -38,22 +38,28 @@ function normalizeMessage(value: string | null) {
 }
 
 export class AdminLeadRepository {
-  private prisma = getPrisma();
+  private get prisma() {
+    return getPrisma();
+  }
 
   async list(): Promise<AdminLeadRecord[]> {
-    const leads = await this.prisma.lead.findMany({
-      orderBy: [{ createdAt: "desc" }],
-      select: {
-        id: true,
-        fullName: true,
-        email: true,
-        phone: true,
-        source: true,
-        status: true,
-        createdAt: true,
-        message: true,
-      },
-    });
+    const leads = await withPrismaFallback(
+      () =>
+        this.prisma.lead.findMany({
+          orderBy: [{ createdAt: "desc" }],
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+            phone: true,
+            source: true,
+            status: true,
+            createdAt: true,
+            message: true,
+          },
+        }),
+      []
+    );
 
     return leads.map((lead) => ({
       id: lead.id,

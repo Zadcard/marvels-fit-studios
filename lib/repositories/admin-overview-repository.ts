@@ -1,6 +1,5 @@
 import "server-only";
 
-import { Prisma } from "@prisma/client";
 import {
   CalendarPlus2,
   CircleDollarSign,
@@ -18,7 +17,7 @@ import type {
   AdminStudioSnapshot,
   AdminUpcomingSession,
 } from "@/lib/mocks/admin-overview";
-import { getPrisma } from "@/lib/prisma";
+import { getPrisma, withPrismaFallback } from "@/lib/prisma";
 
 const numberFormatter = new Intl.NumberFormat("en-US");
 const currencyFormatter = new Intl.NumberFormat("en-US", {
@@ -46,25 +45,6 @@ type AdminOverviewData = {
 type TimedAdminRecentActivityItem = AdminRecentActivityItem & {
   occurredAt: number;
 };
-
-function isRecoverablePrismaError(error: unknown) {
-  return (
-    error instanceof Prisma.PrismaClientKnownRequestError &&
-    (error.code === "P2021" || error.code === "P2022")
-  );
-}
-
-async function withPrismaFallback<T>(operation: Promise<T>, fallback: T) {
-  try {
-    return await operation;
-  } catch (error) {
-    if (isRecoverablePrismaError(error)) {
-      return fallback;
-    }
-
-    throw error;
-  }
-}
 
 function getDayLabel(date: Date) {
   const now = new Date();
@@ -102,7 +82,9 @@ function getRelativeLabel(date: Date) {
 }
 
 export class AdminOverviewRepository {
-  private prisma = getPrisma();
+  private get prisma() {
+    return getPrisma();
+  }
 
   async getOverview(): Promise<AdminOverviewData> {
     const now = new Date();
@@ -124,10 +106,10 @@ export class AdminOverviewRepository {
       privateSubscriptions,
       attendedBookings,
     ] = await Promise.all([
-      withPrismaFallback(this.prisma.client.count(), 0),
-      withPrismaFallback(this.prisma.coach.count(), 0),
+      withPrismaFallback(() => this.prisma.client.count(), 0),
+      withPrismaFallback(() => this.prisma.coach.count(), 0),
       withPrismaFallback(
-        this.prisma.trainingSession.count({
+        () => this.prisma.trainingSession.count({
           where: {
             status: {
               not: "CANCELED",
@@ -141,7 +123,7 @@ export class AdminOverviewRepository {
         0
       ),
       withPrismaFallback(
-        this.prisma.payment.aggregate({
+        () => this.prisma.payment.aggregate({
           _sum: { amount: true },
           where: {
             date: { gte: startOfMonth },
@@ -150,7 +132,7 @@ export class AdminOverviewRepository {
         { _sum: { amount: null } }
       ),
       withPrismaFallback(
-        this.prisma.lead.count({
+        () => this.prisma.lead.count({
           where: {
             status: {
               in: ["NEW", "CONTACTED"],
@@ -160,7 +142,7 @@ export class AdminOverviewRepository {
         0
       ),
       withPrismaFallback(
-        this.prisma.trainingSession.findMany({
+        () => this.prisma.trainingSession.findMany({
           where: {
             status: "SCHEDULED",
             startsAt: {
@@ -197,7 +179,7 @@ export class AdminOverviewRepository {
         []
       ),
       withPrismaFallback(
-        this.prisma.lead.findMany({
+        () => this.prisma.lead.findMany({
           orderBy: { createdAt: "desc" },
           take: 2,
           select: {
@@ -210,7 +192,7 @@ export class AdminOverviewRepository {
         []
       ),
       withPrismaFallback(
-        this.prisma.payment.findMany({
+        () => this.prisma.payment.findMany({
           orderBy: { date: "desc" },
           take: 2,
           select: {
@@ -228,7 +210,7 @@ export class AdminOverviewRepository {
         []
       ),
       withPrismaFallback(
-        this.prisma.sessionNote.findMany({
+        () => this.prisma.sessionNote.findMany({
           orderBy: { createdAt: "desc" },
           take: 2,
           select: {
@@ -249,7 +231,7 @@ export class AdminOverviewRepository {
         []
       ),
       withPrismaFallback(
-        this.prisma.clientSubscription.count({
+        () => this.prisma.clientSubscription.count({
           where: {
             status: "ACTIVE",
           },
@@ -257,7 +239,7 @@ export class AdminOverviewRepository {
         0
       ),
       withPrismaFallback(
-        this.prisma.clientSubscription.count({
+        () => this.prisma.clientSubscription.count({
           where: {
             status: "ACTIVE",
             plan: {
@@ -271,7 +253,7 @@ export class AdminOverviewRepository {
         0
       ),
       withPrismaFallback(
-        this.prisma.sessionBooking.count({
+        () => this.prisma.sessionBooking.count({
           where: {
             status: "ATTENDED",
             trainingSession: {
