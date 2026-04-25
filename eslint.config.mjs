@@ -17,7 +17,7 @@ const eslintConfig = defineConfig([
       "@typescript-eslint/no-explicit-any": "off",
     },
   },
-  globalIgnores([
+globalIgnores([
     ".next/**",
     "out/**",
     "build/**",
@@ -27,6 +27,8 @@ const eslintConfig = defineConfig([
     "tmp/**",
     "test-results/**",
     "archive/**",
+    ".claude/**",
+    "coverage/**",
   ]),
 ]);
 
