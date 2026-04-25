@@ -23,8 +23,6 @@ export type AdminScheduleSessionRecord = {
   title: string;
   sessionType: AdminScheduleSessionType;
   status: AdminScheduleSessionStatus;
-  scheduleBlockId: string | null;
-  scheduleBlockTitle: string;
   groupName: string;
   dayKey: string;
   dayLabel: string;

@@ -4,12 +4,10 @@ import type { AdminClientInitialOption, AdminClientRecord } from "@/lib/dashboar
 import { getPrisma, withPrismaFallback } from "@/lib/prisma";
 import {
   buildAdminClientWhere,
-  buildFirstScheduleBlockByClientId,
   buildInitialOptions,
   mapAdminClientRecord,
   normalizeAdminClientListFilters,
   type AdminClientListRecord,
-  type AdminClientScheduleBlockRecord,
 } from "@/lib/repositories/admin-client-repository-helpers";
 
 export class AdminClientRepository {
@@ -28,11 +26,8 @@ export class AdminClientRepository {
     initialOptions: AdminClientInitialOption[];
   }> {
     const filters = normalizeAdminClientListFilters(input);
-    const scheduleBlockDelegate = this.prisma.scheduleBlock as
-      | typeof this.prisma.scheduleBlock
-      | undefined;
     const where = buildAdminClientWhere(filters);
-    const [totalCount, filteredCount, initialNameRecords, clients, scheduleBlocks] =
+    const [totalCount, filteredCount, initialNameRecords, clients] =
       await Promise.all([
         withPrismaFallback(() => this.prisma.client.count(), 0),
         withPrismaFallback(() => this.prisma.client.count({ where }), 0),
@@ -134,29 +129,8 @@ export class AdminClientRepository {
             }),
           []
         ),
-        scheduleBlockDelegate
-          ? withPrismaFallback<AdminClientScheduleBlockRecord[]>(
-              () =>
-                scheduleBlockDelegate.findMany({
-                  orderBy: [{ startsOn: "asc" }],
-                  select: {
-                    id: true,
-                    title: true,
-                    roster: {
-                      select: {
-                        clientId: true,
-                      },
-                    },
-                  },
-                }),
-              []
-            )
-          : Promise.resolve([]),
       ]);
-    const firstBlockByClientId = buildFirstScheduleBlockByClientId(scheduleBlocks);
-    const records = clients.map((client) =>
-      mapAdminClientRecord(client, firstBlockByClientId)
-    );
+    const records = clients.map((client) => mapAdminClientRecord(client));
     const initialOptions = buildInitialOptions(initialNameRecords);
 
     return {

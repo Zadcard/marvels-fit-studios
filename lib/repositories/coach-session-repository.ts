@@ -179,7 +179,7 @@ export class CoachSessionRepository {
         focus:
           session.description ??
           (session.type === "PRIVATE"
-            ? "Private coaching block"
+            ? "Private coaching session"
             : "Coached group session"),
         note: noteValue || "Attendance updates and coaching notes appear here.",
         noteValue,

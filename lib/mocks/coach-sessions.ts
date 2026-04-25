@@ -38,7 +38,7 @@ export const coachSessionRecords: CoachSessionRecord[] = [
     timeLabel: "6:30 PM",
     location: "Performance Floor A",
     rosterLabel: "14 / 18 booked",
-    focus: "Technique-led strength block for mixed-experience members.",
+    focus: "Technique-led strength session for mixed-experience members.",
     note: "Two first-week members need quick movement regression options.",
   },
   {
@@ -62,7 +62,7 @@ export const coachSessionRecords: CoachSessionRecord[] = [
     timeLabel: "7:00 PM",
     location: "Floor A",
     rosterLabel: "16 / 18 booked",
-    focus: "Crossover conditioning block for stronger intermediate members.",
+    focus: "Crossover conditioning session for stronger intermediate members.",
     note: "Front desk may need overflow handling if two more members confirm.",
   },
   {

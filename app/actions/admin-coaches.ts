@@ -12,7 +12,6 @@ type SaveCoachInput = {
   fullName: string;
   email: string;
   phone?: string;
-  initialPassword?: string;
   specialization: "Strength" | "Conditioning" | "Mobility" | "Private Coaching";
 };
 
@@ -36,26 +35,9 @@ function toCoachSpecialization(
   }
 }
 
-function normalizePassword(value: string | undefined) {
-  return value?.trim() ?? "";
-}
-
-function assertValidPassword(password: string, mode: "create" | "reset") {
-  if (!password) {
-    if (mode === "create") {
-      throw new Error("Initial password is required for new coaches.");
-    }
-
-    return;
-  }
-
-  if (password.length < 8) {
-    throw new Error("Password must be at least 8 characters.");
-  }
-
-  if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) {
-    throw new Error("Password must include at least one letter and one number.");
-  }
+function buildGeneratedCoachPassword(email: string) {
+  const localPart = email.split("@")[0]?.replace(/[^a-z0-9]/gi, "") || "coach";
+  return `MFS_${localPart.slice(0, 10)}2026`;
 }
 
 export async function saveCoach(input: SaveCoachInput) {
@@ -64,7 +46,6 @@ export async function saveCoach(input: SaveCoachInput) {
   const fullName = input.fullName.trim();
   const email = input.email.trim().toLowerCase();
   const phone = input.phone?.trim() || null;
-  const initialPassword = normalizePassword(input.initialPassword);
   const specialization = toCoachSpecialization(input.specialization);
 
   if (!fullName) {
@@ -104,17 +85,12 @@ export async function saveCoach(input: SaveCoachInput) {
       throw new Error("Another user already uses this email.");
     }
 
-    assertValidPassword(initialPassword, "reset");
-
     await prisma.$transaction(async (tx) => {
       await tx.user.update({
         where: { id: existingCoach.userId },
         data: {
           name: fullName,
           email,
-          ...(initialPassword
-            ? { password: await bcrypt.hash(initialPassword, 12) }
-            : {}),
         },
       });
 
@@ -136,8 +112,7 @@ export async function saveCoach(input: SaveCoachInput) {
       throw new Error("A user with this email already exists. Use a different email.");
     }
 
-    assertValidPassword(initialPassword, "create");
-    const password = await bcrypt.hash(initialPassword, 12);
+    const password = await bcrypt.hash(buildGeneratedCoachPassword(email), 12);
 
     await prisma.$transaction(async (tx) => {
       const createdUser = await tx.user.create({

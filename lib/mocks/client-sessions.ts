@@ -38,7 +38,7 @@ export const clientSessionRecords: ClientSessionRecord[] = [
     timeLabel: "6:30 PM",
     location: "Performance Floor A",
     coachName: "Ahmed Waheed",
-    note: "Arrive a few minutes early for the warm-up block.",
+    note: "Arrive a few minutes early for the warm-up.",
   },
   {
     id: "client-session-2",

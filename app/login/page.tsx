@@ -379,12 +379,7 @@ function LoginForm() {
         </div>
 
         <div className="login-help-row">
-          <p className="login-trust-note">
-            Secure portal access.
-          </p>
-          <Link href="/password-reset/request" className="login-forgot">
-            Forgot password?
-          </Link>
+          <p className="login-trust-note">Secure portal access.</p>
         </div>
 
         <button

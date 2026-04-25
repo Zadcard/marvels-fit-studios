@@ -6,7 +6,7 @@ export const metadata = {
 };
 
 export default async function AdminSchedulePage() {
-  const { stats, records, coachOptions, blockOptions, groupOptions } =
+  const { stats, records, coachOptions, groupOptions } =
     await adminScheduleRepository.getSchedule();
 
   return (
@@ -14,7 +14,6 @@ export default async function AdminSchedulePage() {
       stats={stats}
       records={records}
       coachOptions={coachOptions}
-      blockOptions={blockOptions}
       groupOptions={groupOptions}
     />
   );

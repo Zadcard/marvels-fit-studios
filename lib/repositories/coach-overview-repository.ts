@@ -41,7 +41,7 @@ export class CoachOverviewRepository {
         },
         {
           id: "check-ins",
-          label: "Waitlist blocks",
+          label: "Waitlist sessions",
           value: String(waitlistSessions.length).padStart(2, "0"),
           change: waitlistSessions.length > 0 ? "Needs review" : "Clear",
           detail: "Sessions currently at capacity or flagged by demand.",
@@ -53,7 +53,7 @@ export class CoachOverviewRepository {
           id: "consistency",
           label: "Roster pace",
           value: attentionClients.length > 0 ? "Watch" : "Steady",
-          change: `${readySessions.length} active blocks`,
+          change: `${readySessions.length} active sessions`,
           detail: "Quick coaching signal based on ready sessions and clients needing attention.",
           note: "Database-backed",
           icon: "target",

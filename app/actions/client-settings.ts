@@ -14,9 +14,6 @@ function normalizeSettings(input: ClientSettingsRecord): ClientSettingsRecord {
     phone: input.phone.trim(),
     goalLabel: input.goalLabel.trim(),
     preferredSessionTime: input.preferredSessionTime.trim(),
-    notificationEmail: input.notificationEmail,
-    scheduleReminders: input.scheduleReminders,
-    coachUpdates: input.coachUpdates,
   };
 }
 
@@ -76,18 +73,12 @@ export async function saveClientSettings(input: ClientSettingsRecord) {
           settings.goalLabel ||
           "Build steady strength and improve movement confidence.",
         preferredSessionTime: settings.preferredSessionTime || "Flexible",
-        notificationEmail: settings.notificationEmail,
-        scheduleReminders: settings.scheduleReminders,
-        coachUpdates: settings.coachUpdates,
       },
       update: {
         goalLabel:
           settings.goalLabel ||
           "Build steady strength and improve movement confidence.",
         preferredSessionTime: settings.preferredSessionTime || "Flexible",
-        notificationEmail: settings.notificationEmail,
-        scheduleReminders: settings.scheduleReminders,
-        coachUpdates: settings.coachUpdates,
       },
     });
   });

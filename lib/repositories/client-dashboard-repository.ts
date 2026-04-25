@@ -5,6 +5,7 @@ import {
   clientOverviewStatIcons,
   clientQuickActions,
   type ClientCoachRecord,
+  type ClientFileRecord,
   type ClientOverviewData,
   type ClientSessionRecord,
   type ClientSettingsRecord,
@@ -300,6 +301,38 @@ function isUpcomingVisibleSession(entry: ClientDashboardSessionEntry) {
   return entry.startsAt.getTime() >= Date.now() && !isCanceledSession(entry);
 }
 
+function mapClientFiles(client: {
+  files: Array<{
+    id: string;
+    name: string;
+    note: string | null;
+    createdAt: Date;
+    expiresAt: Date;
+  }>;
+  group?: {
+    files: Array<{
+      id: string;
+      name: string;
+      note: string | null;
+      createdAt: Date;
+      expiresAt: Date;
+    }>;
+  } | null;
+}): ClientFileRecord[] {
+  const filesById = new Map(
+    [...client.files, ...(client.group?.files ?? [])].map((file) => [file.id, file])
+  );
+
+  return [...filesById.values()].map((file) => ({
+    id: file.id,
+    name: file.name,
+    note: file.note ?? "No note added.",
+    uploadedAtLabel: formatDate(file.createdAt),
+    expiresAtLabel: formatDate(file.expiresAt),
+    downloadHref: `/api/files/${file.id}/download`,
+  }));
+}
+
 export class ClientDashboardRepository {
   private get prisma() {
     return getPrisma();
@@ -326,9 +359,6 @@ export class ClientDashboardRepository {
                 select: {
                   goalLabel: true,
                   preferredSessionTime: true,
-                  notificationEmail: true,
-                  scheduleReminders: true,
-                  coachUpdates: true,
                 },
               },
             }
@@ -343,6 +373,22 @@ export class ClientDashboardRepository {
         group: {
           select: {
             name: true,
+            files: {
+              where: {
+                deletedAt: null,
+                expiresAt: {
+                  gt: new Date(),
+                },
+              },
+              orderBy: [{ createdAt: "desc" }],
+              select: {
+                id: true,
+                name: true,
+                note: true,
+                createdAt: true,
+                expiresAt: true,
+              },
+            },
             coach: {
               select: {
                 fullName: true,
@@ -458,6 +504,22 @@ export class ClientDashboardRepository {
             },
           },
         },
+        files: {
+          where: {
+            deletedAt: null,
+            expiresAt: {
+              gt: new Date(),
+            },
+          },
+          orderBy: [{ createdAt: "desc" }],
+          select: {
+            id: true,
+            name: true,
+            note: true,
+            createdAt: true,
+            expiresAt: true,
+          },
+        },
       },
     });
   }
@@ -552,6 +614,7 @@ export class ClientDashboardRepository {
     const completedBookings = sessionEntries.filter(isAttendedSession);
     const activeSubscription = client.subscriptions[0] ?? null;
     const primaryCoach = resolvePrimaryCoach(client, sessionEntries);
+    const activeFiles = mapClientFiles(client);
 
     const upcomingSessions: ClientUpcomingSession[] = upcomingBookings.slice(0, 3).map((booking) => ({
       id: booking.id,
@@ -588,6 +651,16 @@ export class ClientDashboardRepository {
         description: `${upcomingBookings[0].title} is booked with ${upcomingBookings[0].coachName}.`,
         timeLabel: formatDate(upcomingBookings[0].startsAt),
         tone: "warning",
+      });
+    }
+
+    if (activeFiles.length > 0) {
+      recentActivity.unshift({
+        id: "client-activity-files",
+        title: `${activeFiles.length} file${activeFiles.length === 1 ? "" : "s"} available`,
+        description: "Your coach uploaded downloadable files for your training.",
+        timeLabel: activeFiles[0].uploadedAtLabel,
+        tone: "neutral",
       });
     }
 
@@ -663,6 +736,7 @@ export class ClientDashboardRepository {
           `Membership type: ${titleCase(client.membershipType)}`,
       },
       quickActions: clientQuickActions,
+      activeFiles,
       };
     }, null);
   }
@@ -833,9 +907,6 @@ export class ClientDashboardRepository {
       goalLabel: preferences?.goalLabel ?? defaultClientGoal,
       preferredSessionTime:
         preferences?.preferredSessionTime ?? inferPreferredSessionTime(sessionTimes),
-      notificationEmail: preferences?.notificationEmail ?? true,
-      scheduleReminders: preferences?.scheduleReminders ?? true,
-      coachUpdates: preferences?.coachUpdates ?? true,
       };
     }, null);
   }

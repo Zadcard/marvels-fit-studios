@@ -121,7 +121,7 @@ export const clientOverviewData: {
     {
       id: "client-activity-1",
       title: "Coach note added",
-      description: "Your squat pattern is improving and the next block will push tempo a little further.",
+      description: "Your squat pattern is improving and the next session will push tempo a little further.",
       timeLabel: "Yesterday",
       tone: "success",
     },

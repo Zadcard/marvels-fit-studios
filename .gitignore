@@ -18,3 +18,4 @@ output/
 .DS_Store
 Thumbs.db
 .claude/worktrees/admiring-driscoll-1f4091/
+.vercel

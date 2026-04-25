@@ -7,6 +7,7 @@ vi.mock("@/lib/prisma", () => ({
 vi.mock("@/lib/services/client-id-generator", () => ({
   clientIdGenerator: {
     generateId: vi.fn(),
+    getNextAvailableSlot: vi.fn(),
   },
 }));
 
@@ -61,6 +62,11 @@ describe("landing lead action", () => {
     prisma.client.findUnique.mockResolvedValue(null);
     prisma.lead.findFirst.mockResolvedValue(null);
     prisma.lead.findMany.mockResolvedValue([]);
+    vi.mocked(clientIdGenerator.getNextAvailableSlot).mockResolvedValue({
+      year: 2026,
+      month: 5,
+      clientNumber: 1,
+    });
     vi.mocked(clientIdGenerator.generateId).mockReturnValue("2605001");
     vi.mocked(passwordGenerator.generatePassword).mockReturnValue("MFS_2605001");
 

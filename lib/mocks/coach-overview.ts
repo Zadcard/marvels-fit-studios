@@ -71,7 +71,7 @@ export const coachOverviewData: {
       label: "Sessions today",
       value: "04",
       change: "2 group, 2 private",
-      detail: "A balanced coaching day with one prime-time block and focused private follow-up.",
+      detail: "A balanced coaching day with one prime-time session and focused private follow-up.",
       note: "Mock coaching load",
       icon: CalendarRange,
       tone: "accent",
@@ -180,7 +180,7 @@ export const coachOverviewData: {
     {
       id: "coach-activity-3",
       title: "Three client logs still open",
-      description: "Post-session notes for Tuesday's private blocks are still waiting.",
+      description: "Post-session notes for Tuesday's private sessions are still waiting.",
       timeLabel: "1 hr ago",
       tone: "neutral",
     },
@@ -189,7 +189,7 @@ export const coachOverviewData: {
     {
       id: "coach-action-1",
       label: "Open today's sessions",
-      description: "Jump straight into the next coaching blocks and prep notes.",
+      description: "Jump straight into the next coaching sessions and prep notes.",
       icon: Dumbbell,
       ctaLabel: "Review sessions",
       href: "/coach/sessions",
@@ -216,7 +216,7 @@ export const coachOverviewData: {
       id: "coach-plan-1",
       timeLabel: "4:30 PM",
       title: "Review private-session notes",
-      note: "Refresh Sara's last strength checkpoint before the evening block.",
+      note: "Refresh Sara's last strength checkpoint before the evening session.",
     },
     {
       id: "coach-plan-2",

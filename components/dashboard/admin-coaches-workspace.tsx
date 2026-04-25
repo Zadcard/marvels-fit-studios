@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { Pencil, Plus } from "lucide-react";
 
 import { deleteCoach, saveCoach } from "@/app/actions/admin-coaches";
-import { reassignAdminScheduleBlockCoach } from "@/app/actions/admin-schedule-blocks";
 import { DashboardManagementToolbar } from "@/components/dashboard/dashboard-management-toolbar";
 import { DashboardEmptyState } from "@/components/dashboard/dashboard-empty-state";
 import { DashboardMiniStat } from "@/components/dashboard/dashboard-mini-stat";
@@ -22,7 +21,6 @@ type CoachFormState = {
   fullName: string;
   email: string;
   phone: string;
-  initialPassword: string;
   specialization: AdminCoachSpecialization;
 };
 
@@ -38,7 +36,6 @@ const emptyCoachForm: CoachFormState = {
   fullName: "",
   email: "",
   phone: "",
-  initialPassword: "",
   specialization: "Strength",
 };
 
@@ -68,16 +65,9 @@ function getCoachLoadLabel(coach: AdminCoachRecord) {
 
 type AdminCoachesWorkspaceProps = {
   records: AdminCoachRecord[];
-  blockOptions: Array<{
-    id: string;
-    title: string;
-  }>;
 };
 
-export function AdminCoachesWorkspace({
-  records,
-  blockOptions,
-}: AdminCoachesWorkspaceProps) {
+export function AdminCoachesWorkspace({ records }: AdminCoachesWorkspaceProps) {
   const router = useRouter();
   const [isSaving, startTransition] = useTransition();
   const [isDeleting, startDeleteTransition] = useTransition();
@@ -92,7 +82,6 @@ export function AdminCoachesWorkspace({
   const [formState, setFormState] = useState<CoachFormState>(emptyCoachForm);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleteConfirmationText, setDeleteConfirmationText] = useState("");
-  const [selectedBlockId, setSelectedBlockId] = useState(blockOptions[0]?.id ?? "");
   const [errorMessage, setErrorMessage] = useState("");
 
   const filteredCoaches = records.filter((coach) => {
@@ -138,7 +127,6 @@ export function AdminCoachesWorkspace({
       fullName: coach.fullName,
       email: coach.email,
       phone: coach.phone,
-      initialPassword: "",
       specialization: coach.specialization,
     });
     setIsModalOpen(true);
@@ -154,7 +142,6 @@ export function AdminCoachesWorkspace({
           fullName: formState.fullName,
           email: formState.email,
           phone: formState.phone,
-          initialPassword: formState.initialPassword,
           specialization: formState.specialization,
         });
         setIsModalOpen(false);
@@ -187,25 +174,6 @@ export function AdminCoachesWorkspace({
       } catch (error) {
         setErrorMessage(
           error instanceof Error ? error.message : "Could not delete coach."
-        );
-      }
-    });
-  };
-
-  const handleAssignBlock = () => {
-    if (!selectedCoach || !selectedBlockId) {
-      return;
-    }
-
-    setErrorMessage("");
-
-    startTransition(async () => {
-      try {
-        await reassignAdminScheduleBlockCoach(selectedBlockId, selectedCoach.id);
-        router.refresh();
-      } catch (error) {
-        setErrorMessage(
-          error instanceof Error ? error.message : "Could not assign block to coach."
         );
       }
     });
@@ -342,10 +310,6 @@ export function AdminCoachesWorkspace({
                                 <span>sessions this week</span>
                               </div>
                               <div className="dashboard-badge-stack">
-                                <DashboardStatusBadge
-                                  label={`${coach.recurringBlocks} blocks`}
-                                  tone="neutral"
-                                />
                                 {coach.conflicts > 0 ? (
                                   <DashboardStatusBadge
                                     label={`${coach.conflicts} conflicts`}
@@ -407,7 +371,6 @@ export function AdminCoachesWorkspace({
                       <div className="dashboard-record-card__meta">
                         <span>{coach.activeClients} active clients</span>
                         <span>{coach.sessionsThisWeek} sessions this week</span>
-                        <span>{coach.recurringBlocks} blocks</span>
                         <span>{coach.openSlots} open slots</span>
                       </div>
                       {coach.conflicts > 0 ? (
@@ -478,8 +441,8 @@ export function AdminCoachesWorkspace({
                   <small>{selectedCoach.openSlots} open slots</small>
                 </div>
                 <div className="dashboard-detail-stat">
-                  <span className="dashboard-detail-stat__label">Recurring blocks</span>
-                  <strong>{selectedCoach.recurringBlocks}</strong>
+                  <span className="dashboard-detail-stat__label">Conflicts</span>
+                  <strong>{selectedCoach.conflicts}</strong>
                   {selectedCoach.conflicts > 0 ? (
                     <DashboardStatusBadge
                       label={`${selectedCoach.conflicts} conflicts`}
@@ -502,7 +465,7 @@ export function AdminCoachesWorkspace({
                   <div>
                     <div className="mv-eyebrow">Weekly load</div>
                     <h3>Sessions by day</h3>
-                    <p>Quick load pattern before assigning another recurring block.</p>
+                    <p>Quick load pattern before assigning another session.</p>
                   </div>
                 </div>
                 <div className="dashboard-panel__meta-strip">
@@ -511,69 +474,6 @@ export function AdminCoachesWorkspace({
                       {day.day}: {day.sessions}
                     </span>
                   ))}
-                </div>
-              </div>
-
-              <div className="dashboard-form-section">
-                <div className="dashboard-form-section__header">
-                  <div>
-                    <div className="mv-eyebrow">Recurring blocks</div>
-                    <h3>Current block assignments</h3>
-                    <p>Review recurring ownership and rebalance when needed.</p>
-                  </div>
-                </div>
-                {selectedCoach.blockAssignments.length > 0 ? (
-                  <div className="dashboard-summary-list">
-                    {selectedCoach.blockAssignments.map((block) => (
-                      <div key={block.id} className="dashboard-summary-row">
-                        <strong>{block.title}</strong>
-                        <span>
-                          {block.recurrenceSummary} · {block.rosterCount} rostered
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <DashboardEmptyState
-                    title="No recurring blocks assigned"
-                    description="Use the action below to attach a block to this coach."
-                  />
-                )}
-              </div>
-
-              <div className="dashboard-form-section">
-                <div className="dashboard-form-section__header">
-                  <div>
-                    <div className="mv-eyebrow">Assign block</div>
-                    <h3>Attach a recurring block</h3>
-                    <p>This replaces the coach on future occurrences of the selected block.</p>
-                  </div>
-                </div>
-                <div className="dashboard-form-grid">
-                  <label className="dashboard-form-field">
-                    <span>Schedule block</span>
-                    <select
-                      className="dashboard-select"
-                      value={selectedBlockId}
-                      onChange={(event) => setSelectedBlockId(event.target.value)}
-                    >
-                      {blockOptions.map((block) => (
-                        <option key={block.id} value={block.id}>
-                          {block.title}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                </div>
-                <div className="dashboard-row-actions">
-                  <button
-                    type="button"
-                    className="mv-btn mv-btn-primary"
-                    onClick={handleAssignBlock}
-                    disabled={isSaving || !selectedBlockId}
-                  >
-                    Assign block
-                  </button>
                 </div>
               </div>
 
@@ -687,20 +587,6 @@ export function AdminCoachesWorkspace({
                 setFormState((current) => ({
                   ...current,
                   phone: event.target.value,
-                }))
-              }
-            />
-          </label>
-          <label className="dashboard-form-field">
-            <span>Initial / reset password</span>
-            <input
-              type="password"
-              className="dashboard-input"
-              value={formState.initialPassword}
-              onChange={(event) =>
-                setFormState((current) => ({
-                  ...current,
-                  initialPassword: event.target.value,
                 }))
               }
             />

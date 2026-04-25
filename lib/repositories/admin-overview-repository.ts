@@ -393,7 +393,7 @@ export class AdminOverviewRepository {
           {
             id: "action-3",
             label: "Create session",
-            description: "Build the next session block or adjust a live one.",
+            description: "Build the next session or adjust a live one.",
             ctaLabel: "Launch",
             href: "/admin/sessions",
             icon: CalendarPlus2,
@@ -422,7 +422,7 @@ export class AdminOverviewRepository {
           {
             id: "action-2",
             label: "Create session",
-            description: "Build the next session block or adjust a live one.",
+            description: "Build the next session or adjust a live one.",
             ctaLabel: "Launch",
             href: "/admin/sessions",
             icon: CalendarPlus2,

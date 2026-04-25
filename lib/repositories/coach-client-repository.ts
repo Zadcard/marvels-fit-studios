@@ -164,9 +164,12 @@ export class PrismaCoachClientRepository implements CoachClientRepository {
       select: {
         id: true,
         fullName: true,
+        phone: true,
         createdAt: true,
         group: {
           select: {
+            id: true,
+            name: true,
             coach: {
               select: {
                 userId: true,
@@ -215,10 +218,34 @@ export class PrismaCoachClientRepository implements CoachClientRepository {
         },
         workoutNotes: {
           orderBy: [{ date: "desc" }],
-          take: 1,
+          take: 5,
           select: {
+            id: true,
             content: true,
             date: true,
+            updatedAt: true,
+            author: {
+              select: {
+                name: true,
+                email: true,
+              },
+            },
+          },
+        },
+        files: {
+          where: {
+            deletedAt: null,
+            expiresAt: {
+              gt: new Date(),
+            },
+          },
+          orderBy: [{ createdAt: "desc" }],
+          take: 5,
+          select: {
+            id: true,
+            name: true,
+            note: true,
+            expiresAt: true,
           },
         },
       },
@@ -238,6 +265,7 @@ export class PrismaCoachClientRepository implements CoachClientRepository {
         return {
           id: client.id,
           fullName: client.fullName,
+          phone: client.phone ?? "No phone",
           planType: determinePlanType(client, userId),
           status: determineStatus(client),
           nextSession: nextSessionLabel,
@@ -246,6 +274,20 @@ export class PrismaCoachClientRepository implements CoachClientRepository {
           progressNote: describeProgressNote(
             upcomingBooking ? { bookings: [upcomingBooking] } : { bookings: [] }
           ),
+          groupId: client.group?.id ?? null,
+          groupName: client.group?.name ?? "No group",
+          privateNotes: client.workoutNotes.map((note) => ({
+            id: note.id,
+            content: note.content,
+            authorName: note.author?.name ?? note.author?.email ?? "Coach",
+            updatedAtLabel: formatDateLabel(note.updatedAt ?? note.date),
+          })),
+          activeFiles: client.files.map((file) => ({
+            id: file.id,
+            name: file.name,
+            note: file.note ?? "No note added.",
+            expiresAtLabel: formatDateLabel(file.expiresAt),
+          })),
         };
       });
     }, []);

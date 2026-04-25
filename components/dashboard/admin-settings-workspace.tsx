@@ -28,11 +28,6 @@ export function AdminSettingsWorkspace({
   const [saveMessage, setSaveMessage] = useState("Live settings loaded.");
   const [isSaving, startTransition] = useTransition();
   const hasChanges = JSON.stringify(settings) !== JSON.stringify(defaultSettings);
-  const notificationDefaultsCount = [
-    settings.coachAutoReminders,
-    settings.memberCheckInAlerts,
-    settings.renewalDigest,
-  ].filter(Boolean).length;
 
   const updateField = <Key extends keyof AdminStudioSettings>(
     field: Key,
@@ -111,12 +106,6 @@ export function AdminSettingsWorkspace({
           label="Waitlist mode"
           value={settings.overbookWaitlist ? "Managed overflow" : "Closed"}
           description="Controls whether the studio allows pressure-mode overflow."
-        />
-        <DashboardMiniStat
-          tone={notificationDefaultsCount > 1 ? "accent" : "neutral"}
-          label="Notification defaults"
-          value={`${notificationDefaultsCount}/3`}
-          description="Coach, member, and renewal reminders enabled by default."
         />
       </section>
 
@@ -241,39 +230,6 @@ export function AdminSettingsWorkspace({
                   ))}
                 </select>
               </label>
-            </div>
-          </DashboardFormSection>
-
-          <DashboardFormSection
-            eyebrow="Notifications"
-            title="Notification defaults"
-            description="Reminder and digest defaults."
-          >
-            <div className="dashboard-stack">
-              <DashboardSwitch
-                checked={settings.coachAutoReminders}
-                onCheckedChange={(checked) =>
-                  updateField("coachAutoReminders", checked)
-                }
-                label="Coach auto-reminders"
-                description="Day-of reminders for coaches."
-              />
-              <DashboardSwitch
-                checked={settings.memberCheckInAlerts}
-                onCheckedChange={(checked) =>
-                  updateField("memberCheckInAlerts", checked)
-                }
-                label="Member check-in alerts"
-                description="Flag missed arrivals for follow-up."
-              />
-              <DashboardSwitch
-                checked={settings.renewalDigest}
-                onCheckedChange={(checked) =>
-                  updateField("renewalDigest", checked)
-                }
-                label="Renewal digest"
-                description="Weekly renewal summary."
-              />
             </div>
           </DashboardFormSection>
 

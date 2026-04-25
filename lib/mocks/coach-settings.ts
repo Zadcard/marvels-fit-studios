@@ -27,7 +27,7 @@ export const coachSettingsRecord: CoachSettingsRecord = {
   specialization: "Strength and group performance",
   preferredView: "Today first",
   reminderLeadTime: "30 minutes",
-  availabilityNote: "Available Monday to Thursday evenings, plus Saturday morning blocks.",
+  availabilityNote: "Available Monday to Thursday evenings, plus Saturday morning sessions.",
   mobileAlerts: true,
   clientCheckIns: true,
   waitlistFlags: false,

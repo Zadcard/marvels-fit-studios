@@ -32,8 +32,7 @@ export class ClientRegistrationService {
   async registerClient(
     input: RegisterClientInput
   ): Promise<RegisterClientResult> {
-    const nextNumber = await clientIdGenerator.getNextClientNumber();
-    const clientId = clientIdGenerator.generateId({ clientNumber: nextNumber });
+    const clientId = await clientIdGenerator.getNextAvailableId();
     const temporaryPassword = passwordGenerator.generatePassword(clientId);
 
     const hashedPassword = await bcryptjs.hash(temporaryPassword, 10);

@@ -4,9 +4,6 @@ export type ClientSettingsRecord = {
   phone: string;
   goalLabel: string;
   preferredSessionTime: string;
-  notificationEmail: boolean;
-  scheduleReminders: boolean;
-  coachUpdates: boolean;
 };
 
 export const clientSettingsOptions = {
@@ -19,7 +16,4 @@ export const clientSettingsRecord: ClientSettingsRecord = {
   phone: "+20 109 441 2288",
   goalLabel: "Build steady strength and improve movement confidence.",
   preferredSessionTime: "Evenings",
-  notificationEmail: true,
-  scheduleReminders: true,
-  coachUpdates: true,
 };

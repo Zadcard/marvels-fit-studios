@@ -8,7 +8,6 @@ import { DashboardFormSection } from "@/components/dashboard/dashboard-form-sect
 import { DashboardMiniStat } from "@/components/dashboard/dashboard-mini-stat";
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
 import { DashboardSurfaceNote } from "@/components/dashboard/dashboard-surface-note";
-import { DashboardSwitch } from "@/components/dashboard/dashboard-switch";
 import {
   clientSettingsOptions,
   type ClientSettingsRecord,
@@ -27,11 +26,6 @@ export function ClientSettingsWorkspace({
   const [saveMessage, setSaveMessage] = useState("Live settings loaded.");
   const [isSaving, startTransition] = useTransition();
   const hasChanges = JSON.stringify(settings) !== JSON.stringify(initialSettings);
-  const enabledNotifications = [
-    settings.notificationEmail,
-    settings.scheduleReminders,
-    settings.coachUpdates,
-  ].filter(Boolean).length;
 
   const updateField = <Key extends keyof ClientSettingsRecord>(
     field: Key,
@@ -78,7 +72,6 @@ export function ClientSettingsWorkspace({
         title="Profile details and alerts are grouped separately."
         description="Update your details and reminder preferences here."
         items={[
-          `${enabledNotifications}/3 alerts enabled.`,
           hasChanges ? "Unsaved changes pending." : "No pending changes.",
         ]}
       />
@@ -88,11 +81,6 @@ export function ClientSettingsWorkspace({
           label="Preferred time"
           value={settings.preferredSessionTime}
           description="Current scheduling preference."
-        />
-        <DashboardMiniStat
-          label="Notifications on"
-          value={`${enabledNotifications}/3`}
-          description="Active alerts."
         />
         <DashboardMiniStat
           label="Changes pending"
@@ -162,36 +150,6 @@ export function ClientSettingsWorkspace({
             </label>
           </DashboardFormSection>
 
-          <DashboardFormSection
-            eyebrow="Notifications"
-            title="Preferences"
-            description="Choose the reminders you want."
-          >
-            <div className="dashboard-stack">
-              <DashboardSwitch
-                checked={settings.notificationEmail}
-                onCheckedChange={(checked) =>
-                  updateField("notificationEmail", checked)
-                }
-                label="Email updates"
-                description="Account and membership updates."
-              />
-              <DashboardSwitch
-                checked={settings.scheduleReminders}
-                onCheckedChange={(checked) =>
-                  updateField("scheduleReminders", checked)
-                }
-                label="Session reminders"
-                description="Reminders before booked sessions."
-              />
-              <DashboardSwitch
-                checked={settings.coachUpdates}
-                onCheckedChange={(checked) => updateField("coachUpdates", checked)}
-                label="Coach updates"
-                description="Updates from your coach."
-              />
-            </div>
-          </DashboardFormSection>
         </div>
 
         <aside className="dashboard-panel dashboard-detail-panel">
@@ -211,10 +169,6 @@ export function ClientSettingsWorkspace({
             <div className="dashboard-summary-row">
               <strong>Goal</strong>
               <span>{settings.goalLabel}</span>
-            </div>
-            <div className="dashboard-summary-row">
-              <strong>Coach updates</strong>
-              <span>{settings.coachUpdates ? "Enabled" : "Muted"}</span>
             </div>
             <div className="dashboard-summary-row">
               <strong>Save state</strong>

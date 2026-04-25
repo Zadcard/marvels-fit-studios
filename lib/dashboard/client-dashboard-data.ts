@@ -62,6 +62,16 @@ export type ClientOverviewData = {
   coachSnapshot: ClientCoachSnapshot;
   subscriptionSnapshot: ClientSubscriptionSnapshot;
   quickActions: ClientQuickAction[];
+  activeFiles: ClientFileRecord[];
+};
+
+export type ClientFileRecord = {
+  id: string;
+  name: string;
+  note: string;
+  uploadedAtLabel: string;
+  expiresAtLabel: string;
+  downloadHref: string;
 };
 
 export type ClientCoachRecord = {
@@ -133,9 +143,6 @@ export type ClientSettingsRecord = {
   phone: string;
   goalLabel: string;
   preferredSessionTime: string;
-  notificationEmail: boolean;
-  scheduleReminders: boolean;
-  coachUpdates: boolean;
 };
 
 export const clientSettingsOptions = {

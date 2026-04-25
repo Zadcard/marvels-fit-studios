@@ -81,7 +81,7 @@ export const adminOverviewData: {
       label: "Active coaches",
       value: "6",
       change: "Full coverage",
-      detail: "Every session block this week has a confirmed coach lead.",
+      detail: "Every session this week has a confirmed coach lead.",
       note: "Mock metric",
       icon: ShieldUser,
       tone: "success",

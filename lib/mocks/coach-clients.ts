@@ -69,7 +69,7 @@ export const coachClientRecords: CoachClientRecord[] = [
     status: "On track",
     nextSession: "Today, 8:00 PM",
     lastTouchpoint: "Program note sent yesterday",
-    currentFocus: "Strength confidence and consistency across private blocks.",
+    currentFocus: "Strength confidence and consistency across private sessions.",
     progressNote: "Great compliance so far; form quality is improving under load.",
   },
   {

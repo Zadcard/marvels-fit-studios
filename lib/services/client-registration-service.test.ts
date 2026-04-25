@@ -42,6 +42,7 @@ describe("ClientRegistrationService", () => {
 
     mockClientIdGenerator = {
       getNextClientNumber: vi.fn().mockResolvedValue(1),
+      getNextAvailableId: vi.fn().mockResolvedValue("2605001"),
       generateId: vi.fn(({ clientNumber }: any) =>
         `2605${String(clientNumber || 1).padStart(3, "0")}`
       ),

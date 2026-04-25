@@ -31,9 +31,6 @@ export class AdminCoachRepository {
     return withPrismaFallback(async () => {
       const now = new Date();
       const weekEnd = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-      const scheduleBlockDelegate = this.prisma.scheduleBlock as
-        | typeof this.prisma.scheduleBlock
-        | undefined;
 
       const coaches = await this.prisma.coach.findMany({
         orderBy: { fullName: "asc" },
@@ -67,39 +64,9 @@ export class AdminCoachRepository {
         },
       });
 
-      const scheduleBlocks = scheduleBlockDelegate
-        ? await scheduleBlockDelegate.findMany({
-            where: {
-              status: {
-                in: ["ACTIVE", "PAUSED"],
-              },
-            },
-            select: {
-              id: true,
-              coachId: true,
-              title: true,
-              recurrenceDays: true,
-              roster: {
-                select: {
-                  clientId: true,
-                },
-              },
-            },
-          })
-        : [];
-
-      const blocksByCoachId = new Map<string, typeof scheduleBlocks>();
-
-      for (const block of scheduleBlocks) {
-        const existingBlocks = blocksByCoachId.get(block.coachId) ?? [];
-        existingBlocks.push(block);
-        blocksByCoachId.set(block.coachId, existingBlocks);
-      }
-
       return coaches
         .filter((coach) => !isPlaceholderCoachName(coach.fullName))
         .map((coach) => {
-          const coachScheduleBlocks = blocksByCoachId.get(coach.id) ?? [];
           const activeClients = coach.groups.reduce(
             (total, group) => total + group._count.clients,
             0
@@ -134,7 +101,6 @@ export class AdminCoachRepository {
             specialization: toAdminCoachSpecialization(coach.specialization),
             activeClients,
             sessionsThisWeek,
-            recurringBlocks: coachScheduleBlocks.length,
             conflicts,
             openSlots,
             weeklyLoad: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(
@@ -143,19 +109,11 @@ export class AdminCoachRepository {
                 sessions: sessionsByDay.get(day) ?? 0,
               })
             ),
-            blockAssignments: coachScheduleBlocks.map((block) => ({
-              id: block.id,
-              title: block.title,
-              recurrenceSummary: block.recurrenceDays
-                .map((day) => `${day.charAt(0)}${day.slice(1).toLowerCase()}`)
-                .join(", "),
-              rosterCount: block.roster.length,
-            })),
             email: coach.user.email ?? "No email",
             phone: coach.phone ?? "No phone",
             summary:
               activeClients > 0
-                ? `${coach.fullName} is currently supporting ${activeClients} client${activeClients === 1 ? "" : "s"} across ${coachScheduleBlocks.length} recurring block${coachScheduleBlocks.length === 1 ? "" : "s"}.`
+                ? `${coach.fullName} is currently supporting ${activeClients} client${activeClients === 1 ? "" : "s"}.`
                 : `${coach.fullName} has no assigned clients yet.`,
           };
         });

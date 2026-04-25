@@ -353,7 +353,7 @@ export function AdminSessionsWorkspace({
                     ...record,
                     ...baseRecord,
                     clientName: nextRecord.bookedClients[0]?.fullName ?? "Unassigned",
-                    focus: nextRecord.description || "Private coaching block",
+                    focus: nextRecord.description || "Private coaching session",
                   }
                 : record
             )

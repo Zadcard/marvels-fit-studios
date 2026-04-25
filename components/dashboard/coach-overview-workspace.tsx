@@ -31,7 +31,7 @@ const coachQuickActions = [
   {
     id: "coach-action-1",
     label: "Open today's sessions",
-    description: "Jump straight into the next coaching blocks and prep notes.",
+    description: "Jump straight into the next coaching sessions and prep notes.",
     ctaLabel: "Review sessions",
     href: "/coach/sessions",
   },

@@ -86,6 +86,16 @@ describe("ClientIdGenerator", () => {
       });
       expect(id).toBe("2612050");
     });
+
+    it("should reject client numbers above 999", () => {
+      expect(() =>
+        generator.generateId({
+          year: 2026,
+          month: 5,
+          clientNumber: 1000,
+        })
+      ).toThrow("Client number must be between 1 and 999");
+    });
   });
 
   describe("parseId", () => {
@@ -311,6 +321,42 @@ describe("ClientIdGenerator", () => {
         const parsed = generator.parseId(id);
         expect(parsed.clientNumber).toBe(clientNum);
       }
+    });
+  });
+
+  describe("getNextAvailableId", () => {
+    it("should keep the current month when capacity remains", async () => {
+      mockPrisma.user.findFirst.mockResolvedValue({
+        clientId: "2605042",
+      });
+
+      const nextId = await generator.getNextAvailableId(5, 2026);
+
+      expect(nextId).toBe("2605043");
+    });
+
+    it("should roll over to the next month when the current month is full", async () => {
+      mockPrisma.user.findFirst
+        .mockResolvedValueOnce({
+          clientId: "2604999",
+        })
+        .mockResolvedValueOnce(null);
+
+      const nextId = await generator.getNextAvailableId(4, 2026);
+
+      expect(nextId).toBe("2605001");
+    });
+
+    it("should roll over from December into January of the next year", async () => {
+      mockPrisma.user.findFirst
+        .mockResolvedValueOnce({
+          clientId: "2612999",
+        })
+        .mockResolvedValueOnce(null);
+
+      const nextId = await generator.getNextAvailableId(12, 2026);
+
+      expect(nextId).toBe("2701001");
     });
   });
 });

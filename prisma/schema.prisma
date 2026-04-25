@@ -41,26 +41,6 @@ enum TrainingSessionStatus {
   CANCELED
 }
 
-enum ScheduleBlockStatus {
-  ACTIVE
-  PAUSED
-  ARCHIVED
-}
-
-enum ScheduleRecurrenceType {
-  WEEKLY
-}
-
-enum ScheduleDay {
-  SUNDAY
-  MONDAY
-  TUESDAY
-  WEDNESDAY
-  THURSDAY
-  FRIDAY
-  SATURDAY
-}
-
 enum CoachSpecialization {
   STRENGTH
   CONDITIONING
@@ -116,9 +96,6 @@ model StudioSettings {
   defaultSessionLength  String   @default("60 minutes")
   intakeLeadTime        String   @default("24 hours")
   overbookWaitlist      Boolean  @default(true)
-  coachAutoReminders    Boolean  @default(true)
-  memberCheckInAlerts   Boolean  @default(true)
-  renewalDigest         Boolean  @default(false)
   cancellationWindow    String   @default("6 hours")
   privateSessionBuffer  String   @default("15 minutes")
   scheduleStartDay      String   @default("Monday")
@@ -156,8 +133,9 @@ model User {
   coachProfile  Coach?
   clientProfile Client?
   createdTrainingSessions TrainingSession[] @relation("TrainingSessionCreatedBy")
-  createdScheduleBlocks   ScheduleBlock[]   @relation("ScheduleBlockCreatedBy")
   sessionNotesAuthored    SessionNote[]
+  workoutNotesAuthored    WorkoutNote[]
+  uploadedFiles           File[]            @relation("FileUploadedBy")
 
   // Admin Actions
   approvedCompensations SessionCompensation[]
@@ -236,7 +214,6 @@ model Coach {
   // One coach can manage many groups
   groups    Group[]
   trainingSessions TrainingSession[]
-  scheduleBlocks ScheduleBlock[]
 }
 
 // ---------------------------------------------
@@ -274,7 +251,6 @@ model Client {
   bookings       SessionBooking[]
   subscriptions  ClientSubscription[]
   preferences    ClientPreferences?
-  scheduleBlocks ScheduleBlockClient[]
 
   @@index([phone])
 }
@@ -284,9 +260,6 @@ model ClientPreferences {
   clientId             String   @unique
   goalLabel            String   @default("Build steady strength and improve movement confidence.")
   preferredSessionTime String   @default("Flexible")
-  notificationEmail    Boolean  @default(true)
-  scheduleReminders    Boolean  @default(true)
-  coachUpdates         Boolean  @default(true)
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
 
@@ -311,7 +284,6 @@ model Group {
   clients   Client[]
   files     File[]
   trainingSessions TrainingSession[]
-  scheduleBlocks ScheduleBlock[]
 }
 
 enum GroupType {
@@ -365,16 +337,31 @@ model SessionCompensation {
 model File {
   id          String   @id @default(cuid())
   name        String
-  path        String
+  path        String   @default("")
   mimeType    String?
+  size        Int      @default(0)
+  data        Bytes?
+  note        String?
+  expiresAt   DateTime
+  downloadedAt DateTime?
+  deletedAt   DateTime?
 
   createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  uploadedById String?
+  uploadedBy   User?    @relation("FileUploadedBy", fields: [uploadedById], references: [id], onDelete: SetNull)
 
   groupId     String?
-  group       Group?   @relation(fields: [groupId], references: [id])
+  group       Group?   @relation(fields: [groupId], references: [id], onDelete: Cascade)
 
   clientId    String?
-  client      Client?  @relation(fields: [clientId], references: [id])
+  client      Client?  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+  @@index([groupId])
+  @@index([uploadedById])
+  @@index([expiresAt])
 }
 
 // ---------------------------------------------
@@ -384,11 +371,19 @@ model WorkoutNote {
   id        String   @id @default(cuid())
   content   String
   date      DateTime @default(now())
+  isPrivate Boolean  @default(true)
 
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   clientId  String
-  client    Client   @relation(fields: [clientId], references: [id])
+  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  authorId  String?
+  author    User?    @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  @@index([clientId])
+  @@index([authorId])
 }
 
 model TrainingSession {
@@ -403,70 +398,20 @@ model TrainingSession {
   location    String?
   coachId     String
   groupId     String?
-  scheduleBlockId String?
   createdById String
   createdAt   DateTime              @default(now())
   updatedAt   DateTime              @updatedAt
 
   coach       Coach                 @relation(fields: [coachId], references: [id])
   group       Group?                @relation(fields: [groupId], references: [id])
-  scheduleBlock ScheduleBlock?      @relation(fields: [scheduleBlockId], references: [id], onDelete: SetNull)
   createdBy   User                  @relation("TrainingSessionCreatedBy", fields: [createdById], references: [id])
   bookings    SessionBooking[]
   notes       SessionNote[]
 
   @@index([coachId])
   @@index([groupId])
-  @@index([scheduleBlockId])
   @@index([createdById])
   @@index([startsAt])
-}
-
-model ScheduleBlock {
-  id             String                 @id @default(cuid())
-  title          String
-  description    String?
-  sessionType    TrainingSessionType
-  status         ScheduleBlockStatus    @default(ACTIVE)
-  recurrenceType ScheduleRecurrenceType @default(WEEKLY)
-  recurrenceDays ScheduleDay[]
-  startsOn       DateTime
-  endsOn         DateTime
-  startTime      String
-  endTime        String
-  timezone       String                 @default("Africa/Cairo")
-  capacity       Int?
-  location       String?
-  coachId        String
-  groupId        String?
-  createdById    String
-  createdAt      DateTime               @default(now())
-  updatedAt      DateTime               @updatedAt
-
-  coach          Coach                  @relation(fields: [coachId], references: [id])
-  group          Group?                 @relation(fields: [groupId], references: [id], onDelete: SetNull)
-  createdBy      User                   @relation("ScheduleBlockCreatedBy", fields: [createdById], references: [id])
-  sessions       TrainingSession[]
-  roster         ScheduleBlockClient[]
-
-  @@index([coachId])
-  @@index([groupId])
-  @@index([status])
-  @@index([startsOn])
-  @@index([endsOn])
-}
-
-model ScheduleBlockClient {
-  id              String        @id @default(cuid())
-  scheduleBlockId String
-  clientId        String
-  createdAt       DateTime      @default(now())
-
-  scheduleBlock   ScheduleBlock @relation(fields: [scheduleBlockId], references: [id], onDelete: Cascade)
-  client          Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
-
-  @@unique([scheduleBlockId, clientId])
-  @@index([clientId])
 }
 
 model SessionBooking {

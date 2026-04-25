@@ -18,8 +18,6 @@ export type AdminClientRecord = {
   joinedDate: string;
   primaryGroupId: string | null;
   primaryGroup: string;
-  primaryBlockId: string | null;
-  primaryBlock: string;
   assignedCoach: string;
   nextSession: string;
   nextSessions: string[];

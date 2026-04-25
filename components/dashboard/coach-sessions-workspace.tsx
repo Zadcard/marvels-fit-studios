@@ -241,7 +241,7 @@ export function CoachSessionsWorkspace({
           description="Ready now."
         />
         <DashboardMiniStat
-          label="Group blocks"
+          label="Group sessions"
           value={groupSessions}
           description="Group sessions."
         />

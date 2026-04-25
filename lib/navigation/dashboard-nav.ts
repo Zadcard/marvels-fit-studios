@@ -80,7 +80,7 @@ const dashboardNavConfig: Record<DashboardRole, DashboardNavItem[]> = {
       label: "Schedule",
       href: "/admin/schedule",
       icon: CalendarRange,
-      description: "Recurring sessions",
+      description: "Sessions calendar",
       section: "primary",
       available: true,
     },

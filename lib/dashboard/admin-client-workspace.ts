@@ -14,12 +14,10 @@ import {
 export type ClientFormState = {
   fullName: string;
   phone: string;
-  initialPassword: string;
   status: AdminClientStatus;
   paymentStatus: AdminPaymentStatus;
   paymentAmount: string;
   groupId: string;
-  blockId: string;
 };
 
 export type AdminClientWorkspaceFilters = {
@@ -73,11 +71,6 @@ export const adminClientWorkspaceDefinition: WorkspaceDefinition<
       kind: "tel",
     },
     {
-      key: "initialPassword",
-      label: "Initial / reset password",
-      kind: "password",
-    },
-    {
       key: "status",
       label: "Status",
       kind: "select",
@@ -116,17 +109,14 @@ export const adminClientWorkspaceDefinition: WorkspaceDefinition<
   createEmptyForm: () => ({
     fullName: "",
     phone: "",
-    initialPassword: "",
     status: "Pending",
     paymentStatus: "Unpaid",
     paymentAmount: "",
     groupId: "",
-    blockId: "",
   }),
   toFormState: (record) => ({
     fullName: record.fullName,
     phone: record.phone,
-    initialPassword: "",
     status: record.status,
     paymentStatus: record.paymentStatus,
     paymentAmount:
@@ -134,6 +124,5 @@ export const adminClientWorkspaceDefinition: WorkspaceDefinition<
         ? ""
         : record.paymentAmountLabel.replace(/^EGP\s*/, ""),
     groupId: record.primaryGroupId ?? "",
-    blockId: record.primaryBlockId ?? "",
   }),
 };

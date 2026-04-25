@@ -2763,13 +2763,6 @@ body.dashboard-nav-open {
   margin-top: 12px;
 }
 
-.dashboard-block-card {
-  width: 100%;
-  display: grid;
-  gap: 12px;
-  text-align: left;
-}
-
 .dashboard-schedule-grid {
   display: grid;
   gap: 14px;

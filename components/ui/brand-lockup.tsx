@@ -32,7 +32,7 @@ export function BrandLockup({
     <span className={cn("inline-flex min-w-0 items-center gap-3", className)}>
       <span
         className={cn(
-          "inline-flex shrink-0 items-center justify-center rounded-[8px] border border-white/10 bg-black/80 shadow-[0_14px_30px_rgba(0,0,0,0.36)]",
+          "inline-flex shrink-0 items-center justify-center",
           compact ? "size-10" : "size-12 sm:size-14"
         )}
       >

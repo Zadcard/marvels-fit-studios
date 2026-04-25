@@ -1,8 +1,13 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
-import { ArrowRight, CreditCard, ShieldUser, Sparkles } from "lucide-react";
+import { ArrowRight, CreditCard, Download, Files, ShieldUser, Sparkles } from "lucide-react";
 
 import { DashboardActivityFeed } from "@/components/dashboard/dashboard-activity-feed";
+import { DashboardEmptyState } from "@/components/dashboard/dashboard-empty-state";
 import { DashboardMiniStat } from "@/components/dashboard/dashboard-mini-stat";
+import { DashboardModal } from "@/components/dashboard/dashboard-modal";
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
 import { DashboardStatCard } from "@/components/dashboard/dashboard-stat-card";
 import { DashboardSurfaceNote } from "@/components/dashboard/dashboard-surface-note";
@@ -25,6 +30,7 @@ type ClientOverviewWorkspaceProps = {
 };
 
 export function ClientOverviewWorkspace({ data }: ClientOverviewWorkspaceProps) {
+  const [isFilesOpen, setIsFilesOpen] = useState(false);
   const bookedThisWeek = data.upcomingSessions.length;
   const readyNow = data.upcomingSessions.filter(
     (session) => session.status === "Check-in ready"
@@ -35,10 +41,20 @@ export function ClientOverviewWorkspace({ data }: ClientOverviewWorkspaceProps) 
       <DashboardPageHeader
         eyebrow="Member overview"
         actions={
-          <Link href="/client/sessions" className="mv-btn mv-btn-primary">
-            <Sparkles size={16} />
-            Review My Week
-          </Link>
+          <>
+            <button
+              type="button"
+              className={data.activeFiles.length > 0 ? "mv-btn mv-btn-secondary" : "mv-btn mv-btn-outline"}
+              onClick={() => setIsFilesOpen(true)}
+            >
+              <Files size={16} />
+              Files {data.activeFiles.length > 0 ? `(${data.activeFiles.length})` : ""}
+            </button>
+            <Link href="/client/sessions" className="mv-btn mv-btn-primary">
+              <Sparkles size={16} />
+              Review My Week
+            </Link>
+          </>
         }
       />
 
@@ -206,6 +222,39 @@ export function ClientOverviewWorkspace({ data }: ClientOverviewWorkspaceProps) 
           </div>
         </article>
       </section>
+
+      <DashboardModal
+        open={isFilesOpen}
+        onClose={() => setIsFilesOpen(false)}
+        title="Coach files"
+        description="Files your coach shared for download. Files expire after 3 days."
+        size="wide"
+      >
+        {data.activeFiles.length > 0 ? (
+          <div className="dashboard-summary-list">
+            {data.activeFiles.map((file) => (
+              <div key={file.id} className="dashboard-summary-row">
+                <div>
+                  <strong>{file.name}</strong>
+                  <span>{file.note}</span>
+                  <small>
+                    Uploaded {file.uploadedAtLabel} - expires {file.expiresAtLabel}
+                  </small>
+                </div>
+                <a className="mv-btn mv-btn-outline" href={file.downloadHref}>
+                  <Download size={16} />
+                  Download
+                </a>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <DashboardEmptyState
+            title="No active files"
+            description="New coach uploads will appear here."
+          />
+        )}
+      </DashboardModal>
     </div>
   );
 }

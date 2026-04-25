@@ -110,11 +110,10 @@ export async function promoteLeadsToClients(
       continue;
     }
 
-    const nextClientNumber = await clientIdGenerator.getNextClientNumber();
     const generatedClientId =
       reservedClientId ??
       existingUser?.clientId ??
-      clientIdGenerator.generateId({ clientNumber: nextClientNumber });
+      (await clientIdGenerator.getNextAvailableId());
     const temporaryPassword = passwordGenerator.generatePassword(generatedClientId);
 
     if (input.dryRun) {

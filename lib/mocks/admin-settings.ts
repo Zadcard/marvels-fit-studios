@@ -1,7 +1,6 @@
 export type AdminStudioSettingSection =
   | "Identity"
   | "Operations"
-  | "Notifications"
   | "Booking";
 
 export type AdminStudioSettings = {
@@ -12,9 +11,6 @@ export type AdminStudioSettings = {
   defaultSessionLength: string;
   intakeLeadTime: string;
   overbookWaitlist: boolean;
-  coachAutoReminders: boolean;
-  memberCheckInAlerts: boolean;
-  renewalDigest: boolean;
   cancellationWindow: string;
   privateSessionBuffer: string;
   scheduleStartDay: string;
@@ -36,11 +32,6 @@ export const adminSettingsSections: Array<{
     description: "Shape the default pacing for classes, private sessions, and intake handling.",
   },
   {
-    id: "Notifications",
-    title: "Notification defaults",
-    description: "Set the tone for reminders and internal follow-up without wiring real delivery yet.",
-  },
-  {
     id: "Booking",
     title: "Booking controls",
     description: "Keep the scheduling rules organized so future calendar integrations have a clean home.",
@@ -55,9 +46,6 @@ export const adminStudioSettings: AdminStudioSettings = {
   defaultSessionLength: "60 minutes",
   intakeLeadTime: "24 hours",
   overbookWaitlist: true,
-  coachAutoReminders: true,
-  memberCheckInAlerts: true,
-  renewalDigest: false,
   cancellationWindow: "6 hours",
   privateSessionBuffer: "15 minutes",
   scheduleStartDay: "Monday",

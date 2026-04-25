@@ -1,11 +1,13 @@
 "use client";
 
-import { useDeferredValue, useEffect, useState } from "react";
-import { UserRoundSearch } from "lucide-react";
+import { useDeferredValue, useEffect, useState, useTransition } from "react";
+import { Download, MessageCircle, Save, UploadCloud, UserRoundSearch } from "lucide-react";
 
+import { savePrivateClientNote, uploadCoachFile } from "@/app/actions/coach-client-assets";
 import { DashboardManagementToolbar } from "@/components/dashboard/dashboard-management-toolbar";
 import { DashboardEmptyState } from "@/components/dashboard/dashboard-empty-state";
 import { DashboardMiniStat } from "@/components/dashboard/dashboard-mini-stat";
+import { DashboardModal } from "@/components/dashboard/dashboard-modal";
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
 import { DashboardStatusBadge } from "@/components/dashboard/dashboard-status-badge";
 import { DashboardSurfaceNote } from "@/components/dashboard/dashboard-surface-note";
@@ -16,6 +18,7 @@ import {
   type CoachClientPlan,
   type CoachClientStatus,
 } from "@/lib/dashboard/coach-client-record";
+import { buildWhatsAppHref } from "@/lib/whatsapp";
 
 function getCoachClientTone(status: CoachClientStatus) {
   switch (status) {
@@ -48,11 +51,16 @@ type CoachClientsWorkspaceProps = {
 };
 
 export function CoachClientsWorkspace({ records }: CoachClientsWorkspaceProps) {
+  const [isSavingAsset, startAssetTransition] = useTransition();
   const [searchTerm, setSearchTerm] = useState("");
   const deferredSearchTerm = useDeferredValue(searchTerm);
   const [statusFilter, setStatusFilter] = useState<"All" | CoachClientStatus>("All");
   const [planFilter, setPlanFilter] = useState<"All" | CoachClientPlan>("All");
   const [selectedClientId, setSelectedClientId] = useState(records[0]?.id ?? "");
+  const [detailClientId, setDetailClientId] = useState<string | null>(null);
+  const [noteContent, setNoteContent] = useState("");
+  const [fileNote, setFileNote] = useState("");
+  const [assetMessage, setAssetMessage] = useState("");
 
   const filteredClients = records.filter((client) => {
     const query = deferredSearchTerm.trim().toLowerCase();
@@ -77,6 +85,8 @@ export function CoachClientsWorkspace({ records }: CoachClientsWorkspaceProps) {
   const selectedClient =
     filteredClients.find((client) => client.id === selectedClientId) ??
     filteredClients[0];
+  const detailClient =
+    filteredClients.find((client) => client.id === detailClientId) ?? null;
   const hasActiveFilters =
     searchTerm.trim().length > 0 || statusFilter !== "All" || planFilter !== "All";
   const needsCheckIn = filteredClients.filter(
@@ -90,6 +100,66 @@ export function CoachClientsWorkspace({ records }: CoachClientsWorkspaceProps) {
     setSearchTerm("");
     setStatusFilter("All");
     setPlanFilter("All");
+  };
+
+  const openDetail = (clientId: string) => {
+    const client = filteredClients.find((record) => record.id === clientId);
+    setSelectedClientId(clientId);
+    setDetailClientId(clientId);
+    setNoteContent(client?.privateNotes[0]?.content ?? "");
+    setFileNote("");
+    setAssetMessage("");
+  };
+
+  const saveNote = () => {
+    if (!detailClient) return;
+    setAssetMessage("");
+    startAssetTransition(async () => {
+      try {
+        await savePrivateClientNote({
+          clientId: detailClient.id,
+          noteId: detailClient.privateNotes[0]?.id,
+          content: noteContent,
+        });
+        setAssetMessage("Private note saved.");
+      } catch (error) {
+        setAssetMessage(error instanceof Error ? error.message : "Could not save note.");
+      }
+    });
+  };
+
+  const uploadFile = (formData: FormData) => {
+    if (!detailClient) return;
+    formData.set("scope", "client");
+    formData.set("targetId", detailClient.id);
+    formData.set("note", fileNote);
+    setAssetMessage("");
+    startAssetTransition(async () => {
+      try {
+        await uploadCoachFile(formData);
+        setFileNote("");
+        setAssetMessage("File uploaded. It will expire in 3 days.");
+      } catch (error) {
+        setAssetMessage(error instanceof Error ? error.message : "Could not upload file.");
+      }
+    });
+  };
+
+  const uploadGroupFile = (formData: FormData) => {
+    if (!detailClient?.groupId) return;
+    formData.set("scope", "group");
+    formData.set("targetId", detailClient.groupId);
+    formData.set("note", fileNote);
+    setAssetMessage("");
+    startAssetTransition(async () => {
+      try {
+        await uploadCoachFile(formData);
+        setFileNote("");
+        setAssetMessage("Group file uploaded. It will expire in 3 days.");
+      } catch (error) {
+        setAssetMessage(error instanceof Error ? error.message : "Could not upload file.");
+      }
+    });
   };
 
   return (
@@ -209,7 +279,7 @@ export function CoachClientsWorkspace({ records }: CoachClientsWorkspaceProps) {
                             <button
                               type="button"
                               className="dashboard-inline-button"
-                              onClick={() => setSelectedClientId(client.id)}
+                              onClick={() => openDetail(client.id)}
                             >
                               Open detail
                             </button>
@@ -242,7 +312,7 @@ export function CoachClientsWorkspace({ records }: CoachClientsWorkspaceProps) {
                         <button
                           type="button"
                           className="dashboard-inline-button"
-                          onClick={() => setSelectedClientId(client.id)}
+                          onClick={() => openDetail(client.id)}
                         >
                           View detail
                         </button>
@@ -320,6 +390,162 @@ export function CoachClientsWorkspace({ records }: CoachClientsWorkspaceProps) {
           )}
         </aside>
       </section>
+
+      <DashboardModal
+        open={!!detailClient}
+        onClose={() => setDetailClientId(null)}
+        title={detailClient?.fullName ?? "Client details"}
+        description={detailClient?.currentFocus}
+        size="wide"
+      >
+        {detailClient ? (
+          <div className="dashboard-stack">
+            {assetMessage ? (
+              <div className="dashboard-info-strip" role="status">
+                <strong>Status</strong>
+                <p>{assetMessage}</p>
+              </div>
+            ) : null}
+
+            <div className="dashboard-detail-grid">
+              <div className="dashboard-detail-stat">
+                <span className="dashboard-detail-stat__label">Plan</span>
+                <strong>{detailClient.planType}</strong>
+              </div>
+              <div className="dashboard-detail-stat">
+                <span className="dashboard-detail-stat__label">Status</span>
+                <strong>{detailClient.status}</strong>
+              </div>
+              <div className="dashboard-detail-stat">
+                <span className="dashboard-detail-stat__label">Next session</span>
+                <strong>{detailClient.nextSession}</strong>
+              </div>
+              <div className="dashboard-detail-stat">
+                <span className="dashboard-detail-stat__label">Group</span>
+                <strong>{detailClient.groupName}</strong>
+              </div>
+            </div>
+
+            <div className="dashboard-row-actions">
+              {buildWhatsAppHref(detailClient.phone) ? (
+                <a
+                  className="mv-btn mv-btn-outline"
+                  href={buildWhatsAppHref(detailClient.phone) ?? undefined}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <MessageCircle size={16} />
+                  WhatsApp
+                </a>
+              ) : null}
+            </div>
+
+            <div className="dashboard-form-section">
+              <div className="dashboard-form-section__header">
+                <div>
+                  <div className="mv-eyebrow">Private note</div>
+                  <h3>Coach-only note</h3>
+                  <p>This note is never shown in the client portal.</p>
+                </div>
+              </div>
+              <label className="dashboard-form-field dashboard-form-field--wide">
+                <span>Note</span>
+                <textarea
+                  className="dashboard-textarea"
+                  value={noteContent}
+                  rows={4}
+                  onChange={(event) => setNoteContent(event.target.value)}
+                />
+              </label>
+              <div className="dashboard-row-actions">
+                <button
+                  type="button"
+                  className="mv-btn mv-btn-primary"
+                  onClick={saveNote}
+                  disabled={isSavingAsset}
+                >
+                  <Save size={16} />
+                  {isSavingAsset ? "Saving..." : "Save private note"}
+                </button>
+              </div>
+              {detailClient.privateNotes.length > 0 ? (
+                <div className="dashboard-summary-list">
+                  {detailClient.privateNotes.map((note) => (
+                    <div key={note.id} className="dashboard-summary-row">
+                      <strong>{note.authorName}</strong>
+                      <span>{note.content}</span>
+                      <small>{note.updatedAtLabel}</small>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+
+            <form action={uploadFile} className="dashboard-form-section">
+              <div className="dashboard-form-section__header">
+                <div>
+                  <div className="mv-eyebrow">Files</div>
+                  <h3>Upload client file</h3>
+                  <p>Files are downloadable by the client and expire after 3 days.</p>
+                </div>
+              </div>
+              <div className="dashboard-form-grid">
+                <label className="dashboard-form-field">
+                  <span>File</span>
+                  <input className="dashboard-input" type="file" name="file" />
+                </label>
+                <label className="dashboard-form-field">
+                  <span>File note</span>
+                  <input
+                    className="dashboard-input"
+                    value={fileNote}
+                    onChange={(event) => setFileNote(event.target.value)}
+                  />
+                </label>
+              </div>
+              <div className="dashboard-row-actions">
+                <button
+                  type="submit"
+                  className="mv-btn mv-btn-secondary"
+                  disabled={isSavingAsset}
+                >
+                  <UploadCloud size={16} />
+                  {isSavingAsset ? "Uploading..." : "Upload file"}
+                </button>
+                {detailClient.groupId ? (
+                  <button
+                    type="submit"
+                    formAction={uploadGroupFile}
+                    className="mv-btn mv-btn-outline"
+                    disabled={isSavingAsset}
+                  >
+                    <UploadCloud size={16} />
+                    Upload to group
+                  </button>
+                ) : null}
+              </div>
+              {detailClient.activeFiles.length > 0 ? (
+                <div className="dashboard-summary-list">
+                  {detailClient.activeFiles.map((file) => (
+                    <div key={file.id} className="dashboard-summary-row">
+                      <strong>{file.name}</strong>
+                      <span>{file.note}</span>
+                      <small>Expires {file.expiresAtLabel}</small>
+                      <a
+                        className="dashboard-inline-button"
+                        href={`/api/files/${file.id}/download`}
+                      >
+                        <Download size={14} />
+                        Download
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </form>
+          </div>
+        ) : null}
+      </DashboardModal>
     </div>
   );
 }

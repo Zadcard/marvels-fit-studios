@@ -21,7 +21,6 @@ import type {
 } from "@/lib/dashboard/admin-schedule-data";
 import type { AdminSessionCoachOption } from "@/lib/repositories/admin-session-repository";
 import type {
-  AdminScheduleBlockOption,
   AdminScheduleGroupOption,
 } from "@/lib/repositories/admin-schedule-repository";
 
@@ -90,7 +89,6 @@ type AdminScheduleWorkspaceProps = {
   stats: AdminScheduleStat[];
   records: AdminScheduleSessionRecord[];
   coachOptions: AdminSessionCoachOption[];
-  blockOptions: AdminScheduleBlockOption[];
   groupOptions: AdminScheduleGroupOption[];
 };
 
@@ -98,7 +96,6 @@ export function AdminScheduleWorkspace({
   stats,
   records,
   coachOptions,
-  blockOptions,
   groupOptions,
 }: AdminScheduleWorkspaceProps) {
   const router = useRouter();
@@ -110,7 +107,6 @@ export function AdminScheduleWorkspace({
   const [typeFilter, setTypeFilter] =
     useState<AdminScheduleSessionRecord["sessionType"] | "All">("All");
   const [coachFilter, setCoachFilter] = useState("all");
-  const [blockFilter, setBlockFilter] = useState("all");
   const [groupFilter, setGroupFilter] = useState("all");
   const [selectedSessionId, setSelectedSessionId] = useState(records[0]?.id ?? "");
   const [selectedSessionIds, setSelectedSessionIds] = useState<string[]>([]);
@@ -181,7 +177,6 @@ export function AdminScheduleWorkspace({
           record.title,
           record.coachName,
           record.groupName,
-          record.scheduleBlockTitle,
           record.focus,
           record.location,
         ]
@@ -192,11 +187,6 @@ export function AdminScheduleWorkspace({
       const matchesStatus = statusFilter === "All" || record.status === statusFilter;
       const matchesType = typeFilter === "All" || record.sessionType === typeFilter;
       const matchesCoach = coachFilter === "all" || record.coachId === coachFilter;
-      const matchesBlock =
-        blockFilter === "all" ||
-        (blockFilter === "manual"
-          ? record.scheduleBlockId === null
-          : record.scheduleBlockId === blockFilter);
       const matchesGroup =
         groupFilter === "all" ||
         (groupFilter === "none"
@@ -208,12 +198,10 @@ export function AdminScheduleWorkspace({
         matchesStatus &&
         matchesType &&
         matchesCoach &&
-        matchesBlock &&
         matchesGroup
       );
     });
   }, [
-    blockFilter,
     coachFilter,
     deferredSearchTerm,
     groupFilter,
@@ -269,11 +257,6 @@ export function AdminScheduleWorkspace({
   const recordsByDay = new Map<string, AdminScheduleSessionRecord[]>();
   const weekDays: string[] = [];
   const isAllCollapsed = false;
-  const selectedBlockSessions = selectedSession?.scheduleBlockId
-    ? filteredRecords
-        .filter((record) => record.scheduleBlockId === selectedSession.scheduleBlockId)
-        .slice(0, 4)
-      : [];
 
   useEffect(() => {
     if (selectedSession?.coachId) {
@@ -352,9 +335,9 @@ export function AdminScheduleWorkspace({
       <DashboardPageHeader
         eyebrow="Admin schedule"
         actions={
-          <Link href="/admin/blocks" className="mv-btn mv-btn-primary">
+          <Link href="/admin/sessions" className="mv-btn mv-btn-primary">
             <CalendarPlus2 size={16} />
-            Create Block
+            Create Session
           </Link>
         }
       />
@@ -369,7 +352,7 @@ export function AdminScheduleWorkspace({
         <DashboardManagementToolbar
           searchValue={searchTerm}
           onSearchChange={setSearchTerm}
-          searchPlaceholder="Search by session, coach, group, block, or location"
+          searchPlaceholder="Search by session, coach, group, or location"
           summary={`${filteredRecords.length} occurrences in the current view`}
           filters={
             <>
@@ -422,22 +405,6 @@ export function AdminScheduleWorkspace({
                   {coachOptions.map((coach) => (
                     <option key={coach.id} value={coach.id}>
                       {coach.fullName}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="dashboard-filter-field">
-                <span>Block</span>
-                <select
-                  className="dashboard-select"
-                  value={blockFilter}
-                  onChange={(event) => setBlockFilter(event.target.value)}
-                >
-                  <option value="all">All blocks</option>
-                  <option value="manual">Manual sessions</option>
-                  {blockOptions.map((block) => (
-                    <option key={block.id} value={block.id}>
-                      {block.title}
                     </option>
                   ))}
                 </select>
@@ -556,7 +523,7 @@ export function AdminScheduleWorkspace({
         ) : (
           <DashboardEmptyState
             title="No sessions in this schedule view"
-            description="Try another filter combination or create a session/block."
+            description="Try another filter combination or create a session."
           />
         )}
 
@@ -690,7 +657,7 @@ export function AdminScheduleWorkspace({
 
           {errorMessage ? (
             <div className="dashboard-empty-state" role="alert">
-              <strong>Action blocked</strong>
+              <strong>Action stopped</strong>
               <p>{errorMessage}</p>
             </div>
           ) : null}
@@ -699,8 +666,8 @@ export function AdminScheduleWorkspace({
             <>
               <div className="dashboard-detail-grid">
                 <div className="dashboard-detail-stat">
-                  <span className="dashboard-detail-stat__label">Block</span>
-                  <strong>{selectedSession.scheduleBlockTitle}</strong>
+                  <span className="dashboard-detail-stat__label">Source</span>
+                  <strong>Manual session</strong>
                   <small>{selectedSession.highlight}</small>
                 </div>
                 <div className="dashboard-detail-stat">
@@ -771,14 +738,6 @@ export function AdminScheduleWorkspace({
                       Cancel occurrence
                     </button>
                   ) : null}
-                  {selectedSession.scheduleBlockId ? (
-                    <Link
-                      href="/admin/blocks"
-                      className="mv-btn mv-btn-outline"
-                    >
-                      Open parent block
-                    </Link>
-                  ) : null}
                 </div>
               </div>
 
@@ -787,33 +746,11 @@ export function AdminScheduleWorkspace({
                 <p>{selectedSession.attendanceNote}</p>
               </div>
 
-              {selectedBlockSessions.length > 1 ? (
-                <div className="dashboard-summary-list">
-                  <div className="dashboard-summary-row">
-                    <strong>Linked block occurrences</strong>
-                    <span>Next occurrences from the same recurring block.</span>
-                  </div>
-                  {selectedBlockSessions.map((record) => (
-                    <div key={record.id} className="dashboard-summary-row">
-                      <strong>
-                        {record.dateLabel} · {record.timeRange}
-                      </strong>
-                      <span>
-                        {record.occupancyLabel} · {record.coachName}
-                      </span>
-                      <DashboardStatusBadge
-                        label={record.status}
-                        tone={getScheduleTone(record.status)}
-                      />
-                    </div>
-                  ))}
-                </div>
-              ) : null}
             </>
           ) : (
             <DashboardEmptyState
               title="No occurrence available"
-              description="Adjust the filters or create a block to populate the board."
+            description="Adjust the filters or create a session to populate the board."
             />
           )}
         </article>
@@ -829,7 +766,7 @@ export function AdminScheduleWorkspace({
 
           {errorMessage ? (
             <div className="dashboard-empty-state" role="alert">
-              <strong>Bulk update blocked</strong>
+              <strong>Bulk update stopped</strong>
               <p>{errorMessage}</p>
             </div>
           ) : null}

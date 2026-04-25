@@ -10,7 +10,7 @@ const authSecret =
 export default {
   session: { strategy: "jwt" },
   secret: authSecret,
-  trustHost: process.env.NODE_ENV !== "production",
+  trustHost: true,
   providers: [],
   callbacks: {
     async jwt({ token, user }) {

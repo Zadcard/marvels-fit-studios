@@ -1,6 +1,6 @@
 import { AdminClientsWorkspace } from "@/components/dashboard/admin-clients-workspace";
+import { getPrisma } from "@/lib/prisma";
 import { adminClientRepository } from "@/lib/repositories/admin-client-repository";
-import { adminScheduleBlockRepository } from "@/lib/repositories/admin-schedule-block-repository";
 
 export const metadata = {
   title: "Clients Management",
@@ -24,7 +24,13 @@ export default async function AdminClientsPage(
     initial: initial || null,
     sort,
   });
-  const { blockRecords, groupOptions } = await adminScheduleBlockRepository.list();
+  const groupOptions = await getPrisma().group.findMany({
+    orderBy: { name: "asc" },
+    select: {
+      id: true,
+      name: true,
+    },
+  });
 
   return (
     <AdminClientsWorkspace
@@ -35,10 +41,6 @@ export default async function AdminClientsPage(
       totalCount={clientDirectory.totalCount}
       filteredCount={clientDirectory.filteredCount}
       initialOptions={clientDirectory.initialOptions}
-      blockOptions={blockRecords.map((block) => ({
-        id: block.id,
-        title: block.title,
-      }))}
       groupOptions={groupOptions}
     />
   );

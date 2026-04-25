@@ -1,7 +1,5 @@
 import "server-only";
 
-import type { Prisma } from "@prisma/client";
-
 import type {
   AdminGroupSessionRecord,
   AdminPrivateSessionRecord,
@@ -75,8 +73,6 @@ export type AdminSessionEditorRecord = {
   type: "GROUP" | "PRIVATE";
   status: "DRAFT" | "SCHEDULED" | "COMPLETED" | "CANCELED";
   coachId: string;
-  scheduleBlockId: string | null;
-  scheduleBlockTitle: string;
   groupId: string | null;
   groupName: string;
   location: string;
@@ -100,11 +96,6 @@ export type AdminSessionClientOption = {
   fullName: string;
 };
 
-export type AdminSessionBlockOption = {
-  id: string;
-  title: string;
-};
-
 export class AdminSessionRepository {
   private get prisma() {
     return getPrisma();
@@ -116,73 +107,57 @@ export class AdminSessionRepository {
     editorRecords: AdminSessionEditorRecord[];
     coachOptions: AdminSessionCoachOption[];
     clientOptions: AdminSessionClientOption[];
-    blockOptions: AdminSessionBlockOption[];
   }> {
     return withPrismaFallback(async () => {
-      const scheduleBlockDelegate = this.prisma.scheduleBlock as
-        | typeof this.prisma.scheduleBlock
-        | undefined;
-      const baseSessionSelect = {
-      id: true,
-      title: true,
-      description: true,
-      startsAt: true,
-      endsAt: true,
-      location: true,
-      status: true,
-      type: true,
-      capacity: true,
-      coachId: true,
-      groupId: true,
-      coach: {
-        select: {
-          fullName: true,
-        },
-      },
-      group: {
-        select: {
-          name: true,
-        },
-      },
-      bookings: {
-        where: {
-          status: {
-            in: ["BOOKED", "ATTENDED", "MISSED", "WAITLIST"],
-          },
-        },
-        orderBy: [{ bookedAt: "asc" }],
-        select: {
-          status: true,
-          client: {
-            select: {
-              id: true,
-              fullName: true,
-            },
-          },
-        },
-      },
-      notes: {
-        orderBy: [{ createdAt: "desc" }],
-        take: 1,
-        select: {
-          content: true,
-        },
-      },
-    } as const;
-
       const sessionsPromise = this.prisma.trainingSession.findMany({
       orderBy: [{ startsAt: "asc" }],
-      select: (scheduleBlockDelegate
-        ? {
-            ...baseSessionSelect,
-            scheduleBlockId: true,
-            scheduleBlock: {
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        startsAt: true,
+        endsAt: true,
+        location: true,
+        status: true,
+        type: true,
+        capacity: true,
+        coachId: true,
+        groupId: true,
+        coach: {
+          select: {
+            fullName: true,
+          },
+        },
+        group: {
+          select: {
+            name: true,
+          },
+        },
+        bookings: {
+          where: {
+            status: {
+              in: ["BOOKED", "ATTENDED", "MISSED", "WAITLIST"],
+            },
+          },
+          orderBy: [{ bookedAt: "asc" }],
+          select: {
+            status: true,
+            client: {
               select: {
-                title: true,
+                id: true,
+                fullName: true,
               },
             },
-          }
-        : baseSessionSelect) as unknown as Prisma.TrainingSessionSelect,
+          },
+        },
+        notes: {
+          orderBy: [{ createdAt: "desc" }],
+          take: 1,
+          select: {
+            content: true,
+          },
+        },
+      },
     });
 
       const [sessions, coaches, clients] = await Promise.all([
@@ -202,16 +177,6 @@ export class AdminSessionRepository {
         },
       }),
     ]);
-      const blocks = scheduleBlockDelegate
-        ? await scheduleBlockDelegate.findMany({
-          orderBy: [{ title: "asc" }],
-          select: {
-            id: true,
-            title: true,
-          },
-        })
-        : [];
-
       const groupRecords: AdminGroupSessionRecord[] = [];
       const privateRecords: AdminPrivateSessionRecord[] = [];
       const editorRecords: AdminSessionEditorRecord[] = [];
@@ -236,8 +201,6 @@ export class AdminSessionRepository {
           client: { id: string; fullName: string };
         }>;
         notes: Array<{ content: string }>;
-        scheduleBlockId?: string | null;
-        scheduleBlock?: { title: string } | null;
       };
       const bookedClients = scheduleSession.bookings
         .map((booking) => {
@@ -280,8 +243,6 @@ export class AdminSessionRepository {
         type: scheduleSession.type,
         status: scheduleSession.status,
         coachId: scheduleSession.coachId,
-        scheduleBlockId: scheduleSession.scheduleBlockId ?? null,
-        scheduleBlockTitle: scheduleSession.scheduleBlock?.title ?? "Manual session",
         groupId: scheduleSession.groupId,
         groupName: scheduleSession.group?.name ?? "No linked group",
         location: scheduleSession.location ?? "",
@@ -295,7 +256,7 @@ export class AdminSessionRepository {
         privateRecords.push({
           ...baseRecord,
           clientName: bookedClients[0]?.fullName ?? "Unassigned",
-          focus: scheduleSession.notes[0]?.content ?? "Private coaching block",
+          focus: scheduleSession.notes[0]?.content ?? "Private coaching session",
         });
       } else {
         groupRecords.push({
@@ -312,7 +273,6 @@ export class AdminSessionRepository {
         editorRecords,
         coachOptions: coaches,
         clientOptions: clients,
-        blockOptions: blocks,
       };
     }, {
       groupRecords: [],
@@ -320,7 +280,6 @@ export class AdminSessionRepository {
       editorRecords: [],
       coachOptions: [],
       clientOptions: [],
-      blockOptions: [],
     });
   }
 }

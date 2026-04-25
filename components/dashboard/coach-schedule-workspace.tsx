@@ -65,8 +65,8 @@ export function CoachScheduleWorkspace({ records }: CoachScheduleWorkspaceProps)
       : [focusedDay];
   const hasActiveFilters =
     searchTerm.trim().length > 0 || dayFilter !== "All days" || statusFilter !== "All";
-  const readyBlocks = filteredSchedule.filter((session) => session.status === "Ready").length;
-  const prepBlocks = filteredSchedule.filter((session) => session.status === "Prep").length;
+  const readySessions = filteredSchedule.filter((session) => session.status === "Ready").length;
+  const prepSessions = filteredSchedule.filter((session) => session.status === "Prep").length;
 
   const resetFilters = () => {
     setSearchTerm("");
@@ -82,22 +82,22 @@ export function CoachScheduleWorkspace({ records }: CoachScheduleWorkspaceProps)
       <DashboardSurfaceNote
         eyebrow="Schedule"
         title="Review your week or focus on one day."
-        description="Filter the board, then scan the blocks you own."
+        description="Filter the board, then scan the sessions you own."
         items={[
-          `${readyBlocks} ready blocks.`,
-          `${prepBlocks} in prep.`,
+          `${readySessions} ready sessions.`,
+          `${prepSessions} in prep.`,
         ]}
       />
 
       <section className="dashboard-mini-grid" aria-label="Coach schedule highlights">
         <DashboardMiniStat
-          label="Blocks in view"
+          label="Sessions in view"
           value={filteredSchedule.length}
           description="Current workload."
         />
         <DashboardMiniStat
           label="Ready"
-          value={readyBlocks}
+          value={readySessions}
           description="Ready to run."
         />
         <DashboardMiniStat
@@ -112,7 +112,7 @@ export function CoachScheduleWorkspace({ records }: CoachScheduleWorkspaceProps)
             <div>
               <div className="mv-eyebrow">Schedule rhythm</div>
               <h2>Week and day views</h2>
-              <p>Your classes, private blocks, and prep.</p>
+              <p>Your classes, private sessions, and prep.</p>
             </div>
           <div className="dashboard-segmented">
             <button
@@ -146,7 +146,7 @@ export function CoachScheduleWorkspace({ records }: CoachScheduleWorkspaceProps)
           searchValue={searchTerm}
           onSearchChange={setSearchTerm}
           searchPlaceholder="Search by session, note, or location"
-          summary={`${filteredSchedule.length} schedule blocks in view`}
+          summary={`${filteredSchedule.length} sessions in view`}
           isFiltered={hasActiveFilters}
           onReset={resetFilters}
           filters={
@@ -231,7 +231,7 @@ export function CoachScheduleWorkspace({ records }: CoachScheduleWorkspaceProps)
                     <h3>{daySessions[0]?.dateLabel ?? "Upcoming"}</h3>
                   </div>
                   <DashboardStatusBadge
-                    label={`${daySessions.length} blocks`}
+                    label={`${daySessions.length} sessions`}
                     tone={daySessions.length > 0 ? "accent" : "neutral"}
                   />
                 </header>
@@ -263,7 +263,7 @@ export function CoachScheduleWorkspace({ records }: CoachScheduleWorkspaceProps)
                     ))
                   ) : (
                     <DashboardEmptyState
-                      title="No schedule blocks here"
+                      title="No sessions here"
                       description="Try a different day or reset the filters."
                       action={
                         hasActiveFilters ? (

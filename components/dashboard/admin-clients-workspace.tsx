@@ -2,15 +2,9 @@
 
 import { useCallback, useEffect, useState, useTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
-import { ArrowRightLeft, Plus, UserMinus, UserPlus } from "lucide-react";
+import { MessageCircle, Plus } from "lucide-react";
 
 import { deleteAdminClient, saveAdminClient } from "@/app/actions/admin-clients";
-import {
-  addClientToAdminScheduleBlock,
-  moveClientBetweenAdminScheduleBlocks,
-  removeClientFromAdminScheduleBlock,
-} from "@/app/actions/admin-schedule-blocks";
 import { DashboardEmptyState } from "@/components/dashboard/dashboard-empty-state";
 import { DashboardModal } from "@/components/dashboard/dashboard-modal";
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
@@ -24,6 +18,7 @@ import type {
   AdminClientInitialOption,
   AdminClientRecord,
 } from "@/lib/dashboard/admin-dashboard-data";
+import { buildWhatsAppHref } from "@/lib/whatsapp";
 
 type AdminClientsWorkspaceProps = {
   records: AdminClientRecord[];
@@ -33,33 +28,19 @@ type AdminClientsWorkspaceProps = {
   totalCount: number;
   filteredCount: number;
   initialOptions: AdminClientInitialOption[];
-  blockOptions: Array<{
-    id: string;
-    title: string;
-  }>;
-  groupOptions: Array<{
-    id: string;
-    name: string;
-  }>;
+  groupOptions: Array<{ id: string; name: string }>;
 };
 
 function getPaymentTone(status: AdminClientRecord["paymentStatus"]) {
-  switch (status) {
-    case "Paid":
-      return "success";
-    case "Due soon":
-      return "warning";
-    default:
-      return "neutral";
-  }
+  if (status === "Paid") return "success";
+  if (status === "Due soon") return "warning";
+  return "neutral";
 }
 
 function formatResultsLabel(filteredCount: number, totalCount: number) {
-  if (filteredCount === totalCount) {
-    return `${totalCount} clients`;
-  }
-
-  return `${filteredCount} of ${totalCount} clients`;
+  return filteredCount === totalCount
+    ? `${totalCount} clients`
+    : `${filteredCount} of ${totalCount} clients`;
 }
 
 export function AdminClientsWorkspace({
@@ -70,7 +51,6 @@ export function AdminClientsWorkspace({
   totalCount,
   filteredCount,
   initialOptions,
-  blockOptions,
   groupOptions,
 }: AdminClientsWorkspaceProps) {
   const router = useRouter();
@@ -79,7 +59,6 @@ export function AdminClientsWorkspace({
   const [isSaving, startTransition] = useTransition();
   const [isDeleting, startDeleteTransition] = useTransition();
   const [isFilterPending, startFilterTransition] = useTransition();
-  const [isMutating, startMutatingTransition] = useTransition();
   const [errorMessage, setErrorMessage] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRecordId, setEditingRecordId] = useState<string | null>(null);
@@ -89,43 +68,29 @@ export function AdminClientsWorkspace({
   const [searchInput, setSearchInput] = useState(searchValue);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleteConfirmationText, setDeleteConfirmationText] = useState("");
-  const [selectedClientId, setSelectedClientId] = useState(records[0]?.id ?? "");
-  const [moveTargetBlockId, setMoveTargetBlockId] = useState(
-    blockOptions[0]?.id ?? ""
-  );
-  const [assignBlockId, setAssignBlockId] = useState(blockOptions[0]?.id ?? "");
+  const [detailClientId, setDetailClientId] = useState<string | null>(null);
 
   useEffect(() => {
     setSearchInput(searchValue);
   }, [searchValue]);
 
-  useEffect(() => {
-    if (records.some((client) => client.id === selectedClientId)) {
-      return;
-    }
-
-    setSelectedClientId(records[0]?.id ?? "");
-  }, [records, selectedClientId]);
-
-  const selectedClient =
-    records.find((client) => client.id === selectedClientId) ?? records[0] ?? null;
+  const detailClient = records.find((client) => client.id === detailClientId) ?? null;
 
   const updateFormField = (key: keyof ClientFormState, value: string) => {
-    setFormState((current) => ({
-      ...current,
-      [key]: value,
-    }));
+    setFormState((current) => ({ ...current, [key]: value }));
   };
 
   const openCreateModal = () => {
     setEditingRecordId(null);
     setFormState(adminClientWorkspaceDefinition.createEmptyForm());
+    setErrorMessage("");
     setIsModalOpen(true);
   };
 
   const openEditModal = (record: AdminClientRecord) => {
     setEditingRecordId(record.id);
     setFormState(adminClientWorkspaceDefinition.toFormState(record));
+    setErrorMessage("");
     setIsModalOpen(true);
   };
 
@@ -134,11 +99,8 @@ export function AdminClientsWorkspace({
       const params = new URLSearchParams(searchParams.toString());
 
       for (const [key, value] of Object.entries(updates)) {
-        if (!value) {
-          params.delete(key);
-        } else {
-          params.set(key, value);
-        }
+        if (!value) params.delete(key);
+        else params.set(key, value);
       }
 
       const nextQuery = params.toString();
@@ -154,9 +116,7 @@ export function AdminClientsWorkspace({
   useEffect(() => {
     const normalizedSearch = searchInput.trim();
 
-    if (normalizedSearch === searchValue) {
-      return;
-    }
+    if (normalizedSearch === searchValue) return;
 
     const timeoutId = window.setTimeout(() => {
       updateQuery({ q: normalizedSearch || null });
@@ -164,71 +124,6 @@ export function AdminClientsWorkspace({
 
     return () => window.clearTimeout(timeoutId);
   }, [searchInput, searchValue, updateQuery]);
-
-  const handleSortToggle = (nextSort: "asc" | "desc") => {
-    updateQuery({
-      sort: sortOrder === nextSort ? null : nextSort,
-    });
-  };
-
-  const handleInitialToggle = (nextInitial: string) => {
-    updateQuery({
-      initial: selectedInitial === nextInitial ? null : nextInitial,
-    });
-  };
-
-  const handleAssignBlock = () => {
-    if (!selectedClient || !assignBlockId) return;
-    setErrorMessage("");
-    startMutatingTransition(async () => {
-      try {
-        await addClientToAdminScheduleBlock(assignBlockId, selectedClient.id);
-        router.refresh();
-      } catch (error) {
-        setErrorMessage(
-          error instanceof Error ? error.message : "Could not assign block."
-        );
-      }
-    });
-  };
-
-  const handleRemoveFromBlock = () => {
-    if (!selectedClient?.primaryBlockId) return;
-    const primaryBlockId = selectedClient.primaryBlockId;
-    setErrorMessage("");
-    startMutatingTransition(async () => {
-      try {
-        await removeClientFromAdminScheduleBlock(primaryBlockId, selectedClient.id);
-        router.refresh();
-      } catch (error) {
-        setErrorMessage(
-          error instanceof Error
-            ? error.message
-            : "Could not remove from block."
-        );
-      }
-    });
-  };
-
-  const handleMoveBlock = () => {
-    if (!selectedClient?.primaryBlockId || !moveTargetBlockId) return;
-    const primaryBlockId = selectedClient.primaryBlockId;
-    setErrorMessage("");
-    startMutatingTransition(async () => {
-      try {
-        await moveClientBetweenAdminScheduleBlocks(
-          primaryBlockId,
-          moveTargetBlockId,
-          selectedClient.id
-        );
-        router.refresh();
-      } catch (error) {
-        setErrorMessage(
-          error instanceof Error ? error.message : "Could not move client."
-        );
-      }
-    });
-  };
 
   const handleSaveClient = () => {
     setErrorMessage("");
@@ -239,12 +134,10 @@ export function AdminClientsWorkspace({
           clientId: editingRecordId,
           fullName: formState.fullName,
           phone: formState.phone,
-          initialPassword: formState.initialPassword,
           status: formState.status,
           paymentStatus: formState.paymentStatus,
           paymentAmount: formState.paymentAmount,
           groupId: formState.groupId,
-          blockId: formState.blockId,
         });
         setIsModalOpen(false);
         router.refresh();
@@ -257,10 +150,7 @@ export function AdminClientsWorkspace({
   };
 
   const handleDeleteClient = () => {
-    if (!editingRecordId) {
-      return;
-    }
-
+    if (!editingRecordId) return;
     setErrorMessage("");
 
     startDeleteTransition(async () => {
@@ -286,18 +176,14 @@ export function AdminClientsWorkspace({
       <DashboardPageHeader
         eyebrow="Admin clients"
         actions={
-          <button
-            type="button"
-            className="mv-btn mv-btn-primary"
-            onClick={openCreateModal}
-          >
+          <button type="button" className="mv-btn mv-btn-primary" onClick={openCreateModal}>
             <Plus size={16} />
             Add Client
           </button>
         }
       />
 
-      <section className="dashboard-clients-shell">
+      <section className="dashboard-clients-shell dashboard-clients-shell--single">
         <article className="dashboard-clients-roster-panel">
           <div className="dashboard-clients-toolbar">
             <div className="dashboard-clients-toolbar__copy">
@@ -327,22 +213,18 @@ export function AdminClientsWorkspace({
             <div className="dashboard-clients-filter-group">
               <span className="dashboard-clients-filter-group__label">Sort</span>
               <div className="dashboard-clients-checkbox-row">
-                <label className="dashboard-clients-checkbox">
-                  <input
-                    type="checkbox"
-                    checked={sortOrder === "asc"}
-                    onChange={() => handleSortToggle("asc")}
-                  />
-                  <span>A-Z</span>
-                </label>
-                <label className="dashboard-clients-checkbox">
-                  <input
-                    type="checkbox"
-                    checked={sortOrder === "desc"}
-                    onChange={() => handleSortToggle("desc")}
-                  />
-                  <span>Z-A</span>
-                </label>
+                {(["asc", "desc"] as const).map((order) => (
+                  <label key={order} className="dashboard-clients-checkbox">
+                    <input
+                      type="checkbox"
+                      checked={sortOrder === order}
+                      onChange={() =>
+                        updateQuery({ sort: sortOrder === order ? null : order })
+                      }
+                    />
+                    <span>{order === "asc" ? "A-Z" : "Z-A"}</span>
+                  </label>
+                ))}
               </div>
             </div>
 
@@ -365,7 +247,12 @@ export function AdminClientsWorkspace({
                     <input
                       type="checkbox"
                       checked={selectedInitial === option.label}
-                      onChange={() => handleInitialToggle(option.label)}
+                      onChange={() =>
+                        updateQuery({
+                          initial:
+                            selectedInitial === option.label ? null : option.label,
+                        })
+                      }
                     />
                     <span>
                       {option.label}
@@ -379,31 +266,59 @@ export function AdminClientsWorkspace({
 
           <div className="dashboard-clients-roster-list">
             {records.length > 0 ? (
-              records.map((client) => (
-                <button
-                  key={client.id}
-                  type="button"
-                  className={`dashboard-clients-roster-item ${
-                    selectedClient?.id === client.id
-                      ? "dashboard-clients-roster-item--active"
-                      : ""
-                  }`}
-                  onClick={() => setSelectedClientId(client.id)}
-                >
-                  <div className="dashboard-clients-roster-item__topline">
-                    <strong>{client.fullName}</strong>
-                    <DashboardStatusBadge
-                      label={client.status}
-                      tone={adminClientToneByStatus[client.status]}
-                    />
+              records.map((client) => {
+                const whatsappHref = buildWhatsAppHref(client.phone);
+
+                return (
+                  <div key={client.id} className="dashboard-clients-roster-item">
+                    <button
+                      type="button"
+                      className="dashboard-clients-roster-item__button"
+                      onClick={() => setDetailClientId(client.id)}
+                    >
+                      <div className="dashboard-clients-roster-item__topline">
+                        <strong>{client.fullName}</strong>
+                        <DashboardStatusBadge
+                          label={client.status}
+                          tone={adminClientToneByStatus[client.status]}
+                        />
+                      </div>
+                      <div className="dashboard-clients-roster-item__meta">
+                        <span>{client.clientId}</span>
+                        <span>{client.phone}</span>
+                        <span>{client.assignedCoach}</span>
+                      </div>
+                    </button>
+                    <div className="dashboard-row-actions">
+                      <button
+                        type="button"
+                        className="dashboard-inline-button"
+                        onClick={() => setDetailClientId(client.id)}
+                      >
+                        View details
+                      </button>
+                      <button
+                        type="button"
+                        className="dashboard-inline-button"
+                        onClick={() => openEditModal(client)}
+                      >
+                        Edit
+                      </button>
+                      {whatsappHref ? (
+                        <a
+                          className="dashboard-inline-button"
+                          href={whatsappHref}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          <MessageCircle size={14} />
+                          WhatsApp
+                        </a>
+                      ) : null}
+                    </div>
                   </div>
-                  <div className="dashboard-clients-roster-item__meta">
-                    <span>{client.clientId}</span>
-                    <span>{client.phone}</span>
-                    <span>{client.assignedCoach}</span>
-                  </div>
-                </button>
-              ))
+                );
+              })
             ) : (
               <DashboardEmptyState
                 title="No clients found"
@@ -412,192 +327,98 @@ export function AdminClientsWorkspace({
             )}
           </div>
         </article>
+      </section>
 
-        <aside className="dashboard-clients-detail-panel">
-          {selectedClient ? (
+      <DashboardModal
+        open={!!detailClient}
+        onClose={() => setDetailClientId(null)}
+        title={detailClient?.fullName ?? "Client details"}
+        description={detailClient?.progressNote}
+        size="wide"
+        footer={
+          detailClient ? (
             <>
-              <div className="dashboard-panel__header dashboard-panel__header--tight">
-                <div>
-                  <div className="mv-eyebrow">Client detail</div>
-                  <h2>{selectedClient.fullName}</h2>
-                  <p>{selectedClient.progressNote}</p>
-                </div>
-                <div className="dashboard-badge-stack">
-                  <DashboardStatusBadge
-                    label={selectedClient.status}
-                    tone={adminClientToneByStatus[selectedClient.status]}
-                  />
-                  <DashboardStatusBadge
-                    label={selectedClient.paymentStatus}
-                    tone={getPaymentTone(selectedClient.paymentStatus)}
-                  />
-                </div>
-              </div>
-
-              {errorMessage ? (
-                <div className="dashboard-empty-state" role="alert">
-                  <strong>Action blocked</strong>
-                  <p>{errorMessage}</p>
-                </div>
+              {buildWhatsAppHref(detailClient.phone) ? (
+                <a
+                  className="mv-btn mv-btn-outline"
+                  href={buildWhatsAppHref(detailClient.phone) ?? undefined}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <MessageCircle size={16} />
+                  WhatsApp
+                </a>
               ) : null}
-
-              <div className="dashboard-detail-grid">
-                <div className="dashboard-detail-stat">
-                  <span className="dashboard-detail-stat__label">Client ID</span>
-                  <strong>{selectedClient.clientId}</strong>
-                </div>
-                <div className="dashboard-detail-stat">
-                  <span className="dashboard-detail-stat__label">Coach</span>
-                  <strong>{selectedClient.assignedCoach}</strong>
-                </div>
-                <div className="dashboard-detail-stat">
-                  <span className="dashboard-detail-stat__label">Group</span>
-                  <strong>{selectedClient.primaryGroup}</strong>
-                </div>
-                <div className="dashboard-detail-stat">
-                  <span className="dashboard-detail-stat__label">Block</span>
-                  <strong>{selectedClient.primaryBlock}</strong>
-                </div>
-                <div className="dashboard-detail-stat">
-                  <span className="dashboard-detail-stat__label">Membership</span>
-                  <strong>{selectedClient.membership}</strong>
-                  <small>{selectedClient.paymentAmountLabel}</small>
-                </div>
-              </div>
-
-              <div className="dashboard-form-section">
-                <div className="dashboard-form-section__header">
-                  <div>
-                    <div className="mv-eyebrow">Sessions</div>
-                    <h3>Upcoming schedule</h3>
-                    <p>Next booked sessions for this client.</p>
-                  </div>
-                </div>
-                {selectedClient.nextSessions.length > 0 ? (
-                  <div className="dashboard-summary-list">
-                    {selectedClient.nextSessions.slice(0, 3).map((session, index) => (
-                      <div key={index} className="dashboard-summary-row">
-                        <strong>{session}</strong>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <DashboardEmptyState
-                    title="No upcoming sessions"
-                    description={selectedClient.nextSession}
-                  />
-                )}
-              </div>
-
-              <div className="dashboard-form-section">
-                <div className="dashboard-form-section__header">
-                  <div>
-                    <div className="mv-eyebrow">Block assignment</div>
-                    <h3>Recurring structure</h3>
-                    <p>Assign, move, or remove from a recurring block.</p>
-                  </div>
-                </div>
-
-                {selectedClient.primaryBlockId ? (
-                  <div className="dashboard-row-actions">
-                    <Link href="/admin/blocks" className="mv-btn mv-btn-outline">
-                      Open block
-                    </Link>
-                    <button
-                      type="button"
-                      className="mv-btn mv-btn-danger"
-                      onClick={handleRemoveFromBlock}
-                      disabled={isMutating}
-                    >
-                      <UserMinus size={16} />
-                      Remove from block
-                    </button>
-                  </div>
-                ) : null}
-
-                {selectedClient.primaryBlockId ? (
-                  <>
-                    <div className="dashboard-form-grid">
-                      <label className="dashboard-form-field">
-                        <span>Move to block</span>
-                        <select
-                          className="dashboard-select"
-                          value={moveTargetBlockId}
-                          onChange={(event) => setMoveTargetBlockId(event.target.value)}
-                          disabled={isMutating}
-                        >
-                          {blockOptions
-                            .filter((block) => block.id !== selectedClient.primaryBlockId)
-                            .map((block) => (
-                              <option key={block.id} value={block.id}>
-                                {block.title}
-                              </option>
-                            ))}
-                        </select>
-                      </label>
-                    </div>
-                    <div className="dashboard-row-actions">
-                      <button
-                        type="button"
-                        className="mv-btn mv-btn-secondary"
-                        onClick={handleMoveBlock}
-                        disabled={isMutating || !moveTargetBlockId}
-                      >
-                        <ArrowRightLeft size={16} />
-                        {isMutating ? "Moving..." : "Move to block"}
-                      </button>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="dashboard-form-grid">
-                      <label className="dashboard-form-field">
-                        <span>Assign to block</span>
-                        <select
-                          className="dashboard-select"
-                          value={assignBlockId}
-                          onChange={(event) => setAssignBlockId(event.target.value)}
-                          disabled={isMutating}
-                        >
-                          {blockOptions.map((block) => (
-                            <option key={block.id} value={block.id}>
-                              {block.title}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-                    </div>
-                    <div className="dashboard-row-actions">
-                      <button
-                        type="button"
-                        className="mv-btn mv-btn-primary"
-                        onClick={handleAssignBlock}
-                        disabled={isMutating || !assignBlockId}
-                      >
-                        <UserPlus size={16} />
-                        {isMutating ? "Assigning..." : "Assign to block"}
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
-
               <button
                 type="button"
-                className="mv-btn mv-btn-secondary"
-                onClick={() => openEditModal(selectedClient)}
+                className="mv-btn mv-btn-primary"
+                onClick={() => openEditModal(detailClient)}
               >
                 Edit Client
               </button>
             </>
-          ) : (
-            <DashboardEmptyState
-              title="No client selected"
-              description="Choose a client from the roster to inspect details."
-            />
-          )}
-        </aside>
-      </section>
+          ) : null
+        }
+      >
+        {detailClient ? (
+          <div className="dashboard-stack">
+            <div className="dashboard-badge-stack">
+              <DashboardStatusBadge
+                label={detailClient.status}
+                tone={adminClientToneByStatus[detailClient.status]}
+              />
+              <DashboardStatusBadge
+                label={detailClient.paymentStatus}
+                tone={getPaymentTone(detailClient.paymentStatus)}
+              />
+            </div>
+
+            <div className="dashboard-detail-grid">
+              <div className="dashboard-detail-stat">
+                <span className="dashboard-detail-stat__label">Client ID</span>
+                <strong>{detailClient.clientId}</strong>
+              </div>
+              <div className="dashboard-detail-stat">
+                <span className="dashboard-detail-stat__label">Coach</span>
+                <strong>{detailClient.assignedCoach}</strong>
+              </div>
+              <div className="dashboard-detail-stat">
+                <span className="dashboard-detail-stat__label">Group</span>
+                <strong>{detailClient.primaryGroup}</strong>
+              </div>
+              <div className="dashboard-detail-stat">
+                <span className="dashboard-detail-stat__label">Membership</span>
+                <strong>{detailClient.membership}</strong>
+                <small>{detailClient.paymentAmountLabel}</small>
+              </div>
+            </div>
+
+            <div className="dashboard-form-section">
+              <div className="dashboard-form-section__header">
+                <div>
+                  <div className="mv-eyebrow">Sessions</div>
+                  <h3>Upcoming schedule</h3>
+                  <p>Next booked sessions for this client.</p>
+                </div>
+              </div>
+              {detailClient.nextSessions.length > 0 ? (
+                <div className="dashboard-summary-list">
+                  {detailClient.nextSessions.slice(0, 3).map((session, index) => (
+                    <div key={index} className="dashboard-summary-row">
+                      <strong>{session}</strong>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <DashboardEmptyState
+                  title="No upcoming sessions"
+                  description={detailClient.nextSession}
+                />
+              )}
+            </div>
+          </div>
+        ) : null}
+      </DashboardModal>
 
       <DashboardModal
         open={isModalOpen}
@@ -728,31 +549,13 @@ export function AdminClientsWorkspace({
               ))}
             </select>
           </label>
-          <label className="dashboard-form-field">
-            <span>Recurring block</span>
-            <select
-              className="dashboard-select"
-              value={formState.blockId}
-              onChange={(event) => updateFormField("blockId", event.target.value)}
-            >
-              <option value="">No recurring block</option>
-              {blockOptions.map((block) => (
-                <option key={block.id} value={block.id}>
-                  {block.title}
-                </option>
-              ))}
-            </select>
-          </label>
         </div>
       </DashboardModal>
 
       <DashboardModal
         open={isDeleteModalOpen}
         onClose={() => {
-          if (isDeleting) {
-            return;
-          }
-
+          if (isDeleting) return;
           setErrorMessage("");
           setDeleteConfirmationText("");
           setIsDeleteModalOpen(false);

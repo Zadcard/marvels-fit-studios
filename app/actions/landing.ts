@@ -21,56 +21,52 @@ const joinNowSchema = z.object({
 
 async function reserveNextClientId() {
   const prisma = getPrisma();
-  const now = new Date();
-  const prefix = `${now.getFullYear().toString().slice(-2)}${String(
-    now.getMonth() + 1
-  ).padStart(2, "0")}`;
+  const pendingLeads = await prisma.lead.findMany({
+    where: {
+      status: {
+        in: ["NEW", "CONTACTED"],
+      },
+      message: {
+        startsWith: "__join_credentials__:",
+      },
+    },
+    select: {
+      message: true,
+    },
+  });
 
-  const [latestUser, pendingLeads] = await Promise.all([
-    prisma.user.findFirst({
-      where: {
-        clientId: {
-          startsWith: prefix,
-        },
-      },
-      orderBy: {
-        clientId: "desc",
-      },
-      select: {
-        clientId: true,
-      },
-    }),
-    prisma.lead.findMany({
-      where: {
-        status: {
-          in: ["NEW", "CONTACTED"],
-        },
-        message: {
-          startsWith: "__join_credentials__:",
-        },
-      },
-      select: {
-        message: true,
-      },
-    }),
-  ]);
+  let slot = await clientIdGenerator.getNextAvailableSlot();
 
-  const highestUserNumber = latestUser?.clientId
-    ? Number.parseInt(latestUser.clientId.slice(4, 7), 10)
-    : 0;
-  const highestLeadNumber = pendingLeads.reduce((max, lead) => {
-    const reservedClientId = readLeadCredentialClientId(lead.message);
+  for (let attempts = 0; attempts < 120; attempts += 1) {
+    const prefix = `${slot.year.toString().slice(-2)}${String(slot.month).padStart(2, "0")}`;
+    const highestLeadNumber = pendingLeads.reduce((max, lead) => {
+      const reservedClientId = readLeadCredentialClientId(lead.message);
 
-    if (!reservedClientId || !reservedClientId.startsWith(prefix)) {
-      return max;
+      if (!reservedClientId || !reservedClientId.startsWith(prefix)) {
+        return max;
+      }
+
+      return Math.max(max, Number.parseInt(reservedClientId.slice(4, 7), 10));
+    }, 0);
+
+    const nextClientNumber = Math.max(slot.clientNumber, highestLeadNumber + 1);
+
+    if (nextClientNumber <= 999) {
+      return clientIdGenerator.generateId({
+        year: slot.year,
+        month: slot.month,
+        clientNumber: nextClientNumber,
+      });
     }
 
-    return Math.max(max, Number.parseInt(reservedClientId.slice(4, 7), 10));
-  }, 0);
+    const nextDate = new Date(slot.year, slot.month, 1);
+    slot = await clientIdGenerator.getNextAvailableSlot(
+      nextDate.getMonth() + 1,
+      nextDate.getFullYear()
+    );
+  }
 
-  return clientIdGenerator.generateId({
-    clientNumber: Math.max(highestUserNumber, highestLeadNumber) + 1,
-  });
+  throw new Error("Could not reserve a new client ID.");
 }
 
 export async function submitJoinNowLead(
