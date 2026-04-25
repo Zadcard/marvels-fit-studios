@@ -35,7 +35,9 @@ export interface ChangePasswordInput {
 }
 
 export class IdPasswordAuthService {
-  private prisma = getPrisma();
+  private get prisma() {
+    return getPrisma();
+  }
   private passwordVerifier = new BcryptPasswordVerifier();
 
   async authenticate(input: LoginInput): Promise<AuthenticatedUser> {

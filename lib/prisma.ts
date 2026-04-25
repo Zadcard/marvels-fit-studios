@@ -6,6 +6,7 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
   prismaAdapter: PrismaPg | undefined;
   prismaPool: Pool | undefined;
+  prismaResetPromise: Promise<void> | undefined;
 };
 
 function getConnectionString() {
@@ -40,7 +41,7 @@ export function getPrisma() {
   return globalForPrisma.prisma;
 }
 
-export async function resetPrisma() {
+async function resetPrismaInternal() {
   const prisma = globalForPrisma.prisma;
   const pool = globalForPrisma.prismaPool;
 
@@ -57,33 +58,68 @@ export async function resetPrisma() {
   }
 }
 
+export async function resetPrisma() {
+  if (!globalForPrisma.prismaResetPromise) {
+    globalForPrisma.prismaResetPromise = resetPrismaInternal().finally(() => {
+      globalForPrisma.prismaResetPromise = undefined;
+    });
+  }
+
+  await globalForPrisma.prismaResetPromise;
+}
+
+function getPrismaErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message.toLowerCase() : "";
+}
+
+function isPrismaClientError(error: unknown) {
+  return (
+    error instanceof Prisma.PrismaClientKnownRequestError ||
+    error instanceof Prisma.PrismaClientInitializationError ||
+    error instanceof Prisma.PrismaClientUnknownRequestError ||
+    error instanceof Prisma.PrismaClientRustPanicError
+  );
+}
+
 export function isRecoverablePrismaError(error: unknown) {
+  const message = getPrismaErrorMessage(error);
+
   if (error instanceof Prisma.PrismaClientKnownRequestError) {
     return (
       error.code === "P2021" ||
       error.code === "P2022" ||
-      error.message.includes("Server has closed the connection") ||
-      error.message.includes("Connection terminated unexpectedly") ||
-      error.message.includes("Can't reach database server")
+      message.includes("server has closed the connection") ||
+      message.includes("server closed the connection unexpectedly") ||
+      message.includes("connection terminated unexpectedly") ||
+      message.includes("connection ended unexpectedly") ||
+      message.includes("terminating connection") ||
+      message.includes("can't reach database server")
     );
   }
 
   if (
     error instanceof Prisma.PrismaClientInitializationError ||
-    error instanceof Prisma.PrismaClientUnknownRequestError
+    error instanceof Prisma.PrismaClientUnknownRequestError ||
+    error instanceof Prisma.PrismaClientRustPanicError
   ) {
     return (
-      error.message.includes("Server has closed the connection") ||
-      error.message.includes("Connection terminated unexpectedly") ||
-      error.message.includes("Can't reach database server")
+      message.includes("server has closed the connection") ||
+      message.includes("server closed the connection unexpectedly") ||
+      message.includes("connection terminated unexpectedly") ||
+      message.includes("connection ended unexpectedly") ||
+      message.includes("terminating connection") ||
+      message.includes("can't reach database server")
     );
   }
 
   if (error instanceof Error) {
     return (
-      error.message.includes("Server has closed the connection") ||
-      error.message.includes("Connection terminated unexpectedly") ||
-      error.message.includes("Can't reach database server")
+      message.includes("server has closed the connection") ||
+      message.includes("server closed the connection unexpectedly") ||
+      message.includes("connection terminated unexpectedly") ||
+      message.includes("connection ended unexpectedly") ||
+      message.includes("terminating connection") ||
+      message.includes("can't reach database server")
     );
   }
 
@@ -105,7 +141,13 @@ export async function withPrismaFallback<T>(
       await resetPrisma();
       return await operation();
     } catch (retryError) {
-      if (isRecoverablePrismaError(retryError)) {
+      if (isRecoverablePrismaError(retryError) || isPrismaClientError(retryError)) {
+        console.error("[prisma] Read operation failed after retry. Returning fallback.", {
+          initialError:
+            error instanceof Error ? error.message : String(error),
+          retryError:
+            retryError instanceof Error ? retryError.message : String(retryError),
+        });
         return fallback;
       }
 

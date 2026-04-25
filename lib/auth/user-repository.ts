@@ -1,6 +1,6 @@
 import type { UserRole } from "@prisma/client";
 
-import { getPrisma } from "@/lib/prisma";
+import { getPrisma, withPrismaFallback } from "@/lib/prisma";
 
 export type PersistedAuthUser = {
   id: string;
@@ -20,14 +20,23 @@ export interface UserRepository {
 
 export class PrismaUserRepository implements UserRepository {
   async findByEmail(email: string): Promise<PersistedAuthUser | null> {
-    return getPrisma().user.findUnique({ where: { email } });
+    return withPrismaFallback(
+      () => getPrisma().user.findUnique({ where: { email } }),
+      null
+    );
   }
 
   async findByClientId(clientId: string): Promise<PersistedAuthUser | null> {
-    return getPrisma().user.findUnique({ where: { clientId } });
+    return withPrismaFallback(
+      () => getPrisma().user.findUnique({ where: { clientId } }),
+      null
+    );
   }
 
   async findById(id: string): Promise<PersistedAuthUser | null> {
-    return getPrisma().user.findUnique({ where: { id } });
+    return withPrismaFallback(
+      () => getPrisma().user.findUnique({ where: { id } }),
+      null
+    );
   }
 }

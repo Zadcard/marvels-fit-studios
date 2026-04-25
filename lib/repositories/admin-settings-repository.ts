@@ -1,7 +1,7 @@
 import "server-only";
 
 import type { AdminStudioSettings } from "@/lib/mocks/admin-settings";
-import { getPrisma } from "@/lib/prisma";
+import { getPrisma, withPrismaFallback } from "@/lib/prisma";
 
 const DEFAULT_SETTINGS_ID = "default";
 
@@ -22,34 +22,38 @@ const defaultSettings: AdminStudioSettings = {
 };
 
 export class AdminSettingsRepository {
-  private prisma = getPrisma();
+  private get prisma() {
+    return getPrisma();
+  }
 
   async get(): Promise<AdminStudioSettings> {
-    const settings = await this.prisma.studioSettings.upsert({
-      where: { id: DEFAULT_SETTINGS_ID },
-      create: {
-        id: DEFAULT_SETTINGS_ID,
-        ...defaultSettings,
-      },
-      update: {},
-      select: {
-        studioName: true,
-        supportEmail: true,
-        supportPhone: true,
-        timezone: true,
-        defaultSessionLength: true,
-        intakeLeadTime: true,
-        overbookWaitlist: true,
-        coachAutoReminders: true,
-        memberCheckInAlerts: true,
-        renewalDigest: true,
-        cancellationWindow: true,
-        privateSessionBuffer: true,
-        scheduleStartDay: true,
-      },
-    });
-
-    return settings;
+    return withPrismaFallback(
+      () =>
+        this.prisma.studioSettings.upsert({
+          where: { id: DEFAULT_SETTINGS_ID },
+          create: {
+            id: DEFAULT_SETTINGS_ID,
+            ...defaultSettings,
+          },
+          update: {},
+          select: {
+            studioName: true,
+            supportEmail: true,
+            supportPhone: true,
+            timezone: true,
+            defaultSessionLength: true,
+            intakeLeadTime: true,
+            overbookWaitlist: true,
+            coachAutoReminders: true,
+            memberCheckInAlerts: true,
+            renewalDigest: true,
+            cancellationWindow: true,
+            privateSessionBuffer: true,
+            scheduleStartDay: true,
+          },
+        }),
+      defaultSettings
+    );
   }
 }
 

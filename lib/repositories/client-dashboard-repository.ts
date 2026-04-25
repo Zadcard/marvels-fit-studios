@@ -12,7 +12,7 @@ import {
   type ClientUpcomingSession,
 } from "@/lib/dashboard/client-dashboard-data";
 import { isMissingCustomPriceColumn } from "@/lib/custom-price-compat";
-import { getPrisma } from "@/lib/prisma";
+import { getPrisma, withPrismaFallback } from "@/lib/prisma";
 
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
   month: "short",
@@ -301,7 +301,9 @@ function isUpcomingVisibleSession(entry: ClientDashboardSessionEntry) {
 }
 
 export class ClientDashboardRepository {
-  private prisma = getPrisma();
+  private get prisma() {
+    return getPrisma();
+  }
 
   private async getClientDashboardQueryWithShape(
     userId: string,
@@ -538,11 +540,12 @@ export class ClientDashboardRepository {
   }
 
   async getOverview(userId: string): Promise<ClientOverviewData | null> {
-    const client = await this.getClientDashboardQuery(userId);
+    return withPrismaFallback(async () => {
+      const client = await this.getClientDashboardQuery(userId);
 
-    if (!client) {
-      return null;
-    }
+      if (!client) {
+        return null;
+      }
 
     const sessionEntries = buildClientSessionEntries(client);
     const upcomingBookings = sessionEntries.filter(isUpcomingVisibleSession);
@@ -592,7 +595,7 @@ export class ClientDashboardRepository {
       ? formatDateTime(upcomingBookings[0].startsAt)
       : "No session booked";
 
-    return {
+      return {
       stats: [
         {
           id: "sessions-booked",
@@ -660,22 +663,24 @@ export class ClientDashboardRepository {
           `Membership type: ${titleCase(client.membershipType)}`,
       },
       quickActions: clientQuickActions,
-    };
+      };
+    }, null);
   }
 
   async getCoach(userId: string): Promise<ClientCoachRecord | null> {
-    const client = await this.getClientDashboardQuery(userId);
+    return withPrismaFallback(async () => {
+      const client = await this.getClientDashboardQuery(userId);
 
-    if (!client) {
-      return null;
-    }
+      if (!client) {
+        return null;
+      }
 
     const visibleSessions = buildClientSessionEntries(client);
     const nextBooking =
       visibleSessions.find(isUpcomingVisibleSession) ?? visibleSessions[0];
     const primaryCoach = resolvePrimaryCoach(client, visibleSessions);
 
-    return {
+      return {
       fullName: primaryCoach.fullName,
       roleLabel: "Assigned Coach",
       specialization: primaryCoach.specialization,
@@ -689,20 +694,22 @@ export class ClientDashboardRepository {
         nextBooking
           ? `${nextBooking.title} is your next planned touchpoint with ${primaryCoach.fullName}.`
           : "Your coach details and next touchpoint will appear here once a session is booked.",
-    };
+      };
+    }, null);
   }
 
   async getSubscription(userId: string): Promise<ClientSubscriptionRecord | null> {
-    const client = await this.getClientDashboardQuery(userId);
+    return withPrismaFallback(async () => {
+      const client = await this.getClientDashboardQuery(userId);
 
-    if (!client) {
-      return null;
-    }
+      if (!client) {
+        return null;
+      }
 
-    const subscription = await this.getSubscriptionRecord(client.id);
+      const subscription = await this.getSubscriptionRecord(client.id);
 
-    if (!subscription) {
-      return {
+      if (!subscription) {
+        return {
         planName: "No active plan",
         status: client.isPaid ? "Paid" : "Pending",
         paymentStatus: client.isPaid ? "Paid" : "Unpaid",
@@ -712,10 +719,10 @@ export class ClientDashboardRepository {
         benefits: ["No active subscription has been attached to this client yet."],
         note: "Subscription details will appear here once a plan is assigned.",
         paymentHistory: [],
-      };
-    }
+        };
+      }
 
-    const paymentHistory = await this.prisma.payment.findMany({
+      const paymentHistory = await this.prisma.payment.findMany({
       where: {
         clientSubscriptionId: subscription.id,
       },
@@ -729,9 +736,9 @@ export class ClientDashboardRepository {
         note: true,
       },
     });
-    const latestPayment = paymentHistory[0] ?? null;
+      const latestPayment = paymentHistory[0] ?? null;
 
-    return {
+      return {
       planName: subscription.plan.name,
       status: titleCase(subscription.status),
       paymentStatus: inferPaymentStatus({
@@ -760,17 +767,19 @@ export class ClientDashboardRepository {
         dateLabel: formatDate(payment.date),
         note: payment.note ?? "Payment recorded.",
       })),
-    };
+      };
+    }, null);
   }
 
   async getSessions(userId: string): Promise<ClientSessionRecord[]> {
-    const client = await this.getClientDashboardQuery(userId);
+    return withPrismaFallback(async () => {
+      const client = await this.getClientDashboardQuery(userId);
 
-    if (!client) {
-      return [];
-    }
+      if (!client) {
+        return [];
+      }
 
-    return buildClientSessionEntries(client).map((booking) => {
+      return buildClientSessionEntries(client).map((booking) => {
       const isPast = booking.startsAt.getTime() < Date.now();
       const status =
         booking.bookingStatus === "CANCELED"
@@ -800,22 +809,24 @@ export class ClientDashboardRepository {
           booking.description ??
           "Session details and attendance updates will appear here.",
       };
-    });
+      });
+    }, []);
   }
 
   async getSettings(userId: string): Promise<ClientSettingsRecord | null> {
-    const client = await this.getClientDashboardQuery(userId);
+    return withPrismaFallback(async () => {
+      const client = await this.getClientDashboardQuery(userId);
 
-    if (!client) {
-      return null;
-    }
+      if (!client) {
+        return null;
+      }
 
     const preferences = "preferences" in client ? client.preferences : null;
     const sessionTimes = buildClientSessionEntries(client)
       .filter((booking) => booking.startsAt.getTime() >= Date.now())
       .map((booking) => booking.startsAt);
 
-    return {
+      return {
       fullName: client.fullName || client.user.name || "Client",
       email: client.user.email ?? "",
       phone: client.phone ?? "",
@@ -825,7 +836,8 @@ export class ClientDashboardRepository {
       notificationEmail: preferences?.notificationEmail ?? true,
       scheduleReminders: preferences?.scheduleReminders ?? true,
       coachUpdates: preferences?.coachUpdates ?? true,
-    };
+      };
+    }, null);
   }
 }
 

@@ -6,7 +6,7 @@ import type {
   CoachSessionStatus,
 } from "@/lib/dashboard/coach-session-data";
 import type { CoachScheduleRecord } from "@/lib/dashboard/coach-schedule-data";
-import { getPrisma } from "@/lib/prisma";
+import { getPrisma, withPrismaFallback } from "@/lib/prisma";
 
 const dayFormatter = new Intl.DateTimeFormat("en-US", { weekday: "short" });
 const dayKeyFormatter = new Intl.DateTimeFormat("en-US", { weekday: "long" });
@@ -73,20 +73,27 @@ function mapBookingStatus(
 }
 
 export class CoachSessionRepository {
-  private prisma = getPrisma();
+  private get prisma() {
+    return getPrisma();
+  }
 
   async listClientOptions(): Promise<Array<{ id: string; fullName: string }>> {
-    return this.prisma.client.findMany({
-      orderBy: [{ fullName: "asc" }],
-      select: {
-        id: true,
-        fullName: true,
-      },
-    });
+    return withPrismaFallback(
+      () =>
+        this.prisma.client.findMany({
+          orderBy: [{ fullName: "asc" }],
+          select: {
+            id: true,
+            fullName: true,
+          },
+        }),
+      []
+    );
   }
 
   async listForCoachUserId(userId: string): Promise<CoachSessionRecord[]> {
-    const sessions = await this.prisma.trainingSession.findMany({
+    return withPrismaFallback(async () => {
+      const sessions = await this.prisma.trainingSession.findMany({
       where: {
         coach: {
           userId,
@@ -132,7 +139,7 @@ export class CoachSessionRepository {
       },
     });
 
-    return sessions.map((session) => {
+      return sessions.map((session) => {
       const bookings = session.bookings
         .map((booking) => {
           const status = mapBookingStatus(booking.status);
@@ -178,33 +185,36 @@ export class CoachSessionRepository {
         noteValue,
         bookings,
       };
-    });
+      });
+    }, []);
   }
 
   async listScheduleForCoachUserId(userId: string): Promise<CoachScheduleRecord[]> {
-    const sessions = await this.listForCoachUserId(userId);
+    return withPrismaFallback(async () => {
+      const sessions = await this.listForCoachUserId(userId);
 
-    return sessions.map((session) => {
-      const timeRange = session.timeLabel;
+      return sessions.map((session) => {
+        const timeRange = session.timeLabel;
 
-      return {
-        id: session.id,
-        dayKey: dayKeyFormatter.format(
-          this.parseSessionDate(session.dayLabel, session.timeLabel)
-        ),
-        dayLabel: session.dayLabel,
-        dateLabel: dateFormatter.format(
-          this.parseSessionDate(session.dayLabel, session.timeLabel)
-        ),
-        title: session.title,
-        timeRange,
-        sessionType: session.sessionType,
-        status: session.status,
-        location: session.location,
-        rosterLabel: session.rosterLabel,
-        note: session.note,
-      };
-    });
+        return {
+          id: session.id,
+          dayKey: dayKeyFormatter.format(
+            this.parseSessionDate(session.dayLabel, session.timeLabel)
+          ),
+          dayLabel: session.dayLabel,
+          dateLabel: dateFormatter.format(
+            this.parseSessionDate(session.dayLabel, session.timeLabel)
+          ),
+          title: session.title,
+          timeRange,
+          sessionType: session.sessionType,
+          status: session.status,
+          location: session.location,
+          rosterLabel: session.rosterLabel,
+          note: session.note,
+        };
+      });
+    }, []);
   }
 
   private parseSessionDate(dayLabel: string, timeLabel: string) {

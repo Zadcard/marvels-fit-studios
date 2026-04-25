@@ -28,16 +28,19 @@ export function ClientCoachWorkspace({ data }: ClientCoachWorkspaceProps) {
 
       <section className="dashboard-mini-grid" aria-label="Coach relationship highlights">
         <DashboardMiniStat
+          className="dashboard-mini-stat--coach"
           label="Specialization"
           value={data.specialization}
           description="Main focus area."
         />
         <DashboardMiniStat
+          className="dashboard-mini-stat--coach"
           label="Next touchpoint"
           value={sanitizedNextSession}
           description="Next touchpoint."
         />
         <DashboardMiniStat
+          className="dashboard-mini-stat--coach"
           label="Communication"
           value="Direct"
           description="Phone and email available."
@@ -67,12 +70,22 @@ export function ClientCoachWorkspace({ data }: ClientCoachWorkspaceProps) {
             <span>{sanitizedNextSession}</span>
           </div>
 
-          <div className="dashboard-row-actions">
-            <a className="mv-btn mv-btn-outline" href={`mailto:${data.email}`}>
-              <Mail size={16} />
-              Email coach
-            </a>
-            <a className="mv-btn mv-btn-primary" href={`tel:${data.phone}`}>
+          <div
+            className="dashboard-row-actions"
+            style={{ width: "auto", alignItems: "center" }}
+          >
+            <a
+              className="mv-btn mv-btn-primary"
+              href={`tel:${data.phone}`}
+              style={{
+                minHeight: 38,
+                paddingInline: 16,
+                borderRadius: 14,
+                width: "fit-content",
+                justifyContent: "center",
+                fontSize: "0.88rem",
+              }}
+            >
               <Phone size={16} />
               Call coach
             </a>

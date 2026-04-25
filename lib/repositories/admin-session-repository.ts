@@ -7,7 +7,7 @@ import type {
   AdminPrivateSessionRecord,
   AdminSessionStatus,
 } from "@/lib/mocks/admin-sessions";
-import { getPrisma } from "@/lib/prisma";
+import { getPrisma, withPrismaFallback } from "@/lib/prisma";
 
 const dayFormatter = new Intl.DateTimeFormat("en-US", { weekday: "short" });
 const timeFormatter = new Intl.DateTimeFormat("en-US", {
@@ -106,7 +106,9 @@ export type AdminSessionBlockOption = {
 };
 
 export class AdminSessionRepository {
-  private prisma = getPrisma();
+  private get prisma() {
+    return getPrisma();
+  }
 
   async list(): Promise<{
     groupRecords: AdminGroupSessionRecord[];
@@ -116,10 +118,11 @@ export class AdminSessionRepository {
     clientOptions: AdminSessionClientOption[];
     blockOptions: AdminSessionBlockOption[];
   }> {
-    const scheduleBlockDelegate = this.prisma.scheduleBlock as
-      | typeof this.prisma.scheduleBlock
-      | undefined;
-    const baseSessionSelect = {
+    return withPrismaFallback(async () => {
+      const scheduleBlockDelegate = this.prisma.scheduleBlock as
+        | typeof this.prisma.scheduleBlock
+        | undefined;
+      const baseSessionSelect = {
       id: true,
       title: true,
       description: true,
@@ -167,7 +170,7 @@ export class AdminSessionRepository {
       },
     } as const;
 
-    const sessionsPromise = this.prisma.trainingSession.findMany({
+      const sessionsPromise = this.prisma.trainingSession.findMany({
       orderBy: [{ startsAt: "asc" }],
       select: (scheduleBlockDelegate
         ? {
@@ -182,7 +185,7 @@ export class AdminSessionRepository {
         : baseSessionSelect) as unknown as Prisma.TrainingSessionSelect,
     });
 
-    const [sessions, coaches, clients] = await Promise.all([
+      const [sessions, coaches, clients] = await Promise.all([
       sessionsPromise,
       this.prisma.coach.findMany({
         orderBy: [{ fullName: "asc" }],
@@ -199,21 +202,21 @@ export class AdminSessionRepository {
         },
       }),
     ]);
-    const blocks = scheduleBlockDelegate
-      ? await scheduleBlockDelegate.findMany({
+      const blocks = scheduleBlockDelegate
+        ? await scheduleBlockDelegate.findMany({
           orderBy: [{ title: "asc" }],
           select: {
             id: true,
             title: true,
           },
         })
-      : [];
+        : [];
 
-    const groupRecords: AdminGroupSessionRecord[] = [];
-    const privateRecords: AdminPrivateSessionRecord[] = [];
-    const editorRecords: AdminSessionEditorRecord[] = [];
+      const groupRecords: AdminGroupSessionRecord[] = [];
+      const privateRecords: AdminPrivateSessionRecord[] = [];
+      const editorRecords: AdminSessionEditorRecord[] = [];
 
-    for (const session of sessions) {
+      for (const session of sessions) {
       const scheduleSession = session as unknown as {
         id: string;
         title: string;
@@ -301,16 +304,24 @@ export class AdminSessionRepository {
           enrolled,
         });
       }
-    }
+      }
 
-    return {
-      groupRecords,
-      privateRecords,
-      editorRecords,
-      coachOptions: coaches,
-      clientOptions: clients,
-      blockOptions: blocks,
-    };
+      return {
+        groupRecords,
+        privateRecords,
+        editorRecords,
+        coachOptions: coaches,
+        clientOptions: clients,
+        blockOptions: blocks,
+      };
+    }, {
+      groupRecords: [],
+      privateRecords: [],
+      editorRecords: [],
+      coachOptions: [],
+      clientOptions: [],
+      blockOptions: [],
+    });
   }
 }
 

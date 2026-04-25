@@ -602,6 +602,21 @@ body.dashboard-nav-open {
   font-size: 0.78rem;
 }
 
+.dashboard-mini-stat--coach {
+  min-height: 0;
+  padding: 14px 16px;
+  border-radius: 16px;
+  gap: 4px;
+}
+
+.dashboard-mini-stat--coach strong {
+  font-size: clamp(0.98rem, 0.55vw + 0.92rem, 1.16rem);
+}
+
+.dashboard-mini-stat--coach p {
+  font-size: 0.74rem;
+}
+
 .dashboard-info-strip {
   display: grid;
   gap: 6px;

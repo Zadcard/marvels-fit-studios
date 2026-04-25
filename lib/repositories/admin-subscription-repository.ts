@@ -8,7 +8,7 @@ import type {
 } from "@/lib/mocks/admin-subscriptions";
 import { getAssignedCoachLabel } from "@/lib/coaches/placeholder-coaches";
 import { isMissingCustomPriceColumn } from "@/lib/custom-price-compat";
-import { getPrisma } from "@/lib/prisma";
+import { getPrisma, withPrismaFallback } from "@/lib/prisma";
 
 const currencyFormatter = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -109,7 +109,9 @@ function mapBillingCycleLabel(value: string) {
 }
 
 export class AdminSubscriptionRepository {
-  private prisma = getPrisma();
+  private get prisma() {
+    return getPrisma();
+  }
 
   private async getSubscriptions(includeCustomPrice: boolean) {
     return this.prisma.clientSubscription.findMany({
@@ -256,85 +258,86 @@ export class AdminSubscriptionRepository {
     clientOptions: Array<{ id: string; label: string }>;
     planOptions: Array<{ id: string; label: string; amountLabel: string }>;
   }> {
-    await this.ensureDefaultPlans();
+    return withPrismaFallback(async () => {
+      await this.ensureDefaultPlans();
 
-    const now = new Date();
-    const in7Days = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const now = new Date();
+      const in7Days = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-    const [
-      subscriptions,
-      activePlans,
-      renewalsThisWeek,
-      collectedThisCycle,
-      atRiskAccounts,
-      clients,
-      plans,
-    ] =
-      await Promise.all([
-        this.getSubscriptions(true).catch((error) => {
-          if (isMissingCustomPriceColumn(error)) {
-            return this.getSubscriptions(false);
-          }
+      const [
+        subscriptions,
+        activePlans,
+        renewalsThisWeek,
+        collectedThisCycle,
+        atRiskAccounts,
+        clients,
+        plans,
+      ] =
+        await Promise.all([
+          this.getSubscriptions(true).catch((error) => {
+            if (isMissingCustomPriceColumn(error)) {
+              return this.getSubscriptions(false);
+            }
 
-          throw error;
-        }),
-        this.prisma.clientSubscription.count({
-          where: { status: "ACTIVE" },
-        }),
-        this.prisma.clientSubscription.count({
-          where: {
-            renewsAt: {
-              gte: now,
-              lte: in7Days,
+            throw error;
+          }),
+          this.prisma.clientSubscription.count({
+            where: { status: "ACTIVE" },
+          }),
+          this.prisma.clientSubscription.count({
+            where: {
+              renewsAt: {
+                gte: now,
+                lte: in7Days,
+              },
             },
-          },
-        }),
-        this.prisma.payment.aggregate({
-          _sum: { amount: true },
-          where: {
-            date: { gte: startOfMonth },
-          },
-        }),
-        this.prisma.clientSubscription.count({
-          where: {
-            OR: [
-              {
-                renewsAt: {
-                  lt: now,
+          }),
+          this.prisma.payment.aggregate({
+            _sum: { amount: true },
+            where: {
+              date: { gte: startOfMonth },
+            },
+          }),
+          this.prisma.clientSubscription.count({
+            where: {
+              OR: [
+                {
+                  renewsAt: {
+                    lt: now,
+                  },
+                  payments: {
+                    none: {},
+                  },
                 },
-                payments: {
-                  none: {},
+                {
+                  status: {
+                    in: ["PAUSED", "EXPIRED", "CANCELED"],
+                  },
                 },
-              },
-              {
-                status: {
-                  in: ["PAUSED", "EXPIRED", "CANCELED"],
-                },
-              },
-            ],
-          },
-        }),
-        this.prisma.client.findMany({
-          orderBy: [{ fullName: "asc" }],
-          select: {
-            id: true,
-            fullName: true,
-          },
-        }),
-        this.prisma.subscriptionPlan.findMany({
-          where: { isActive: true },
-          orderBy: [{ name: "asc" }],
-          select: {
-            id: true,
-            name: true,
-            price: true,
-            currency: true,
-          },
-        }),
-      ]);
+              ],
+            },
+          }),
+          this.prisma.client.findMany({
+            orderBy: [{ fullName: "asc" }],
+            select: {
+              id: true,
+              fullName: true,
+            },
+          }),
+          this.prisma.subscriptionPlan.findMany({
+            where: { isActive: true },
+            orderBy: [{ name: "asc" }],
+            select: {
+              id: true,
+              name: true,
+              price: true,
+              currency: true,
+            },
+          }),
+        ]);
 
-    const records = subscriptions.map((subscription) => {
+      const records = subscriptions.map((subscription) => {
       const planName = mapPlanName(subscription);
       const subscriptionStatus = mapSubscriptionStatus(
         subscription.status,
@@ -384,9 +387,9 @@ export class AdminSubscriptionRepository {
           note: payment.note ?? "Payment recorded.",
         })),
       } satisfies AdminSubscriptionRecord;
-    });
+      });
 
-    const stats: Array<{
+      const stats: Array<{
       id: string;
       label: string;
       value: string;
@@ -438,23 +441,29 @@ export class AdminSubscriptionRepository {
       },
     ];
 
-    return {
-      stats,
-      records,
-      clientOptions: clients.map((client) => ({
-        id: client.id,
-        label: client.fullName,
-      })),
-      planOptions: plans.map((plan) => ({
-        id: plan.id,
-        label: plan.name,
-        amountLabel: new Intl.NumberFormat("en-US", {
-          style: "currency",
-          currency: plan.currency,
-          maximumFractionDigits: 0,
-        }).format(plan.price),
-      })),
-    };
+      return {
+        stats,
+        records,
+        clientOptions: clients.map((client) => ({
+          id: client.id,
+          label: client.fullName,
+        })),
+        planOptions: plans.map((plan) => ({
+          id: plan.id,
+          label: plan.name,
+          amountLabel: new Intl.NumberFormat("en-US", {
+            style: "currency",
+            currency: plan.currency,
+            maximumFractionDigits: 0,
+          }).format(plan.price),
+        })),
+      };
+    }, {
+      stats: [],
+      records: [],
+      clientOptions: [],
+      planOptions: [],
+    });
   }
 }
 

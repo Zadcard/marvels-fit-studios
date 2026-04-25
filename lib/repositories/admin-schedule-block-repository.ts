@@ -13,7 +13,7 @@ import type {
   AdminScheduleBlockRecord,
   AdminScheduleBlockStat,
 } from "@/lib/dashboard/admin-blocks-data";
-import { getPrisma } from "@/lib/prisma";
+import { getPrisma, withPrismaFallback } from "@/lib/prisma";
 import {
   formatRecurrenceSummary,
   rangesOverlap,
@@ -63,7 +63,9 @@ function mapSessionType(type: TrainingSessionType) {
 }
 
 export class AdminScheduleBlockRepository {
-  private prisma = getPrisma();
+  private get prisma() {
+    return getPrisma();
+  }
 
   async list(): Promise<{
     stats: AdminScheduleBlockStat[];
@@ -72,13 +74,14 @@ export class AdminScheduleBlockRepository {
     groupOptions: AdminScheduleBlockGroupOption[];
     clientOptions: AdminScheduleBlockClientOption[];
   }> {
-    const now = new Date();
-    const weekEnd = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-    const scheduleBlockDelegate = this.prisma.scheduleBlock as
-      | typeof this.prisma.scheduleBlock
-      | undefined;
+    return withPrismaFallback(async () => {
+      const now = new Date();
+      const weekEnd = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+      const scheduleBlockDelegate = this.prisma.scheduleBlock as
+        | typeof this.prisma.scheduleBlock
+        | undefined;
 
-    const [groups, coaches, clients] = await Promise.all([
+      const [groups, coaches, clients] = await Promise.all([
       this.prisma.group.findMany({
         orderBy: [{ name: "asc" }],
         select: {
@@ -168,8 +171,8 @@ export class AdminScheduleBlockRepository {
         },
       }),
     ]);
-    const futureSessions = scheduleBlockDelegate
-      ? await this.prisma.trainingSession.findMany({
+      const futureSessions = scheduleBlockDelegate
+        ? await this.prisma.trainingSession.findMany({
           where: {
             startsAt: {
               gte: now,
@@ -187,9 +190,9 @@ export class AdminScheduleBlockRepository {
             endsAt: true,
           },
         })
-      : [];
-    const blocks = scheduleBlockDelegate
-      ? await scheduleBlockDelegate.findMany({
+        : [];
+      const blocks = scheduleBlockDelegate
+        ? await scheduleBlockDelegate.findMany({
           orderBy: [{ startsOn: "asc" }, { title: "asc" }],
           select: {
             id: true,
@@ -290,15 +293,15 @@ export class AdminScheduleBlockRepository {
             },
           },
         })
-      : [];
+        : [];
 
-    const blocksByCoachId = new Map<string, typeof blocks>();
-    const firstBlockByClientId = new Map<
+      const blocksByCoachId = new Map<string, typeof blocks>();
+      const firstBlockByClientId = new Map<
       string,
       { id: string; title: string; startsOn: Date }
-    >();
+      >();
 
-    for (const block of blocks) {
+      for (const block of blocks) {
       const coachBlocks = blocksByCoachId.get(block.coachId) ?? [];
       coachBlocks.push(block);
       blocksByCoachId.set(block.coachId, coachBlocks);
@@ -313,9 +316,9 @@ export class AdminScheduleBlockRepository {
           });
         }
       }
-    }
+      }
 
-    const blockRecords = blocks.map((block) => {
+      const blockRecords = blocks.map((block) => {
       const conflictSessions = futureSessions.filter(
         (session) =>
           session.coachId === block.coachId &&
@@ -401,9 +404,9 @@ export class AdminScheduleBlockRepository {
                 : "Scheduled",
         })),
       } satisfies AdminScheduleBlockRecord;
-    });
+      });
 
-    const coachOptions = coaches.map((coach) => ({
+      const coachOptions = coaches.map((coach) => ({
       id: coach.id,
       fullName: coach.fullName,
       sessionsThisWeek: coach.trainingSessions.length,
@@ -414,7 +417,7 @@ export class AdminScheduleBlockRepository {
       ),
     }));
 
-    const groupOptions = groups.map((group) => ({
+      const groupOptions = groups.map((group) => ({
       id: group.id,
       name: group.name,
       type: (group.type === "PRIVATE" ? "Private" : "Group") as "Group" | "Private",
@@ -422,7 +425,7 @@ export class AdminScheduleBlockRepository {
       memberCount: group._count.clients,
     }));
 
-    const clientOptions = clients.map((client) => ({
+      const clientOptions = clients.map((client) => ({
       id: client.id,
       fullName: client.fullName,
       currentBlockId: firstBlockByClientId.get(client.id)?.id ?? null,
@@ -434,17 +437,17 @@ export class AdminScheduleBlockRepository {
         : "Awaiting first session",
     }));
 
-    const activeBlocks = blockRecords.filter((block) => block.status === "Active").length;
-    const pausedBlocks = blockRecords.filter((block) => block.status === "Paused").length;
-    const totalConflicts = blockRecords.reduce(
+      const activeBlocks = blockRecords.filter((block) => block.status === "Active").length;
+      const pausedBlocks = blockRecords.filter((block) => block.status === "Paused").length;
+      const totalConflicts = blockRecords.reduce(
       (total, block) => total + block.conflicts.length,
       0
     );
-    const rosteredClients = new Set(
+      const rosteredClients = new Set(
       blockRecords.flatMap((block) => block.clientIds)
-    ).size;
+      ).size;
 
-    const stats: AdminScheduleBlockStat[] = [
+      const stats: AdminScheduleBlockStat[] = [
       {
         id: "active-blocks",
         label: "Active blocks",
@@ -489,13 +492,20 @@ export class AdminScheduleBlockRepository {
       },
     ];
 
-    return {
-      stats,
-      blockRecords,
-      coachOptions,
-      groupOptions,
-      clientOptions,
-    };
+      return {
+        stats,
+        blockRecords,
+        coachOptions,
+        groupOptions,
+        clientOptions,
+      };
+    }, {
+      stats: [],
+      blockRecords: [],
+      coachOptions: [],
+      groupOptions: [],
+      clientOptions: [],
+    });
   }
 }
 

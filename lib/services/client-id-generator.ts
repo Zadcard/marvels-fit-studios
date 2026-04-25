@@ -14,7 +14,9 @@ export interface ParsedClientId {
 }
 
 export class ClientIdGenerator {
-  private prisma = getPrisma();
+  private get prisma() {
+    return getPrisma();
+  }
 
   generateId(options?: ClientIdGeneratorOptions): string {
     const now = new Date();

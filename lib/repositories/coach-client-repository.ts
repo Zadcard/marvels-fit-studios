@@ -1,7 +1,7 @@
 import "server-only";
 
 import type { CoachClientPlan, CoachClientRecord, CoachClientStatus } from "@/lib/dashboard/coach-client-record";
-import { getPrisma } from "@/lib/prisma";
+import { getPrisma, withPrismaFallback } from "@/lib/prisma";
 
 const dateTimeFormatter = new Intl.DateTimeFormat("en-US", {
   month: "short",
@@ -129,9 +129,10 @@ function describeProgressNote(client: {
 
 export class PrismaCoachClientRepository implements CoachClientRepository {
   async listForCoachUserId(userId: string): Promise<CoachClientRecord[]> {
-    const prisma = getPrisma();
+    return withPrismaFallback(async () => {
+      const prisma = getPrisma();
 
-    const clients = await prisma.client.findMany({
+      const clients = await prisma.client.findMany({
       where: {
         OR: [
           {
@@ -224,29 +225,30 @@ export class PrismaCoachClientRepository implements CoachClientRepository {
       orderBy: [{ fullName: "asc" }],
     });
 
-    return clients.map((client) => {
-      const upcomingBooking =
-        client.bookings.find(
-          (booking) => booking.trainingSession.startsAt.getTime() >= Date.now()
-        ) ?? client.bookings[0];
+      return clients.map((client) => {
+        const upcomingBooking =
+          client.bookings.find(
+            (booking) => booking.trainingSession.startsAt.getTime() >= Date.now()
+          ) ?? client.bookings[0];
 
-      const nextSessionLabel = upcomingBooking
-        ? formatDateTimeLabel(upcomingBooking.trainingSession.startsAt)
-        : "Not booked";
+        const nextSessionLabel = upcomingBooking
+          ? formatDateTimeLabel(upcomingBooking.trainingSession.startsAt)
+          : "Not booked";
 
-      return {
-        id: client.id,
-        fullName: client.fullName,
-        planType: determinePlanType(client, userId),
-        status: determineStatus(client),
-        nextSession: nextSessionLabel,
-        lastTouchpoint: describeLastTouchpoint(client),
-        currentFocus: describeCurrentFocus(client),
-        progressNote: describeProgressNote(
-          upcomingBooking ? { bookings: [upcomingBooking] } : { bookings: [] }
-        ),
-      };
-    });
+        return {
+          id: client.id,
+          fullName: client.fullName,
+          planType: determinePlanType(client, userId),
+          status: determineStatus(client),
+          nextSession: nextSessionLabel,
+          lastTouchpoint: describeLastTouchpoint(client),
+          currentFocus: describeCurrentFocus(client),
+          progressNote: describeProgressNote(
+            upcomingBooking ? { bookings: [upcomingBooking] } : { bookings: [] }
+          ),
+        };
+      });
+    }, []);
   }
 }
 

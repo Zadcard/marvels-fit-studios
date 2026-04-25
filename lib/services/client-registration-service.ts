@@ -24,7 +24,9 @@ export interface ResolvedClientGroup {
 }
 
 export class ClientRegistrationService {
-  private prisma = getPrisma();
+  private get prisma() {
+    return getPrisma();
+  }
   private passwordVerifier = new BcryptPasswordVerifier();
 
   async registerClient(

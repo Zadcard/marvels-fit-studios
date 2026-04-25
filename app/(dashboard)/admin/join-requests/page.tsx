@@ -5,8 +5,35 @@ export const metadata = {
   title: "Join Requests",
 };
 
-export default async function AdminJoinRequestsPage() {
-  const records = await adminLeadRepository.list();
+function getSingleValue(
+  value: string | string[] | undefined
+): string | undefined {
+  return Array.isArray(value) ? value[0] : value;
+}
 
-  return <AdminLeadsWorkspace records={records} />;
+export default async function AdminJoinRequestsPage(
+  props: PageProps<"/admin/join-requests">
+) {
+  const searchParams = await props.searchParams;
+  const search = getSingleValue(searchParams.q)?.trim() ?? "";
+  const initial =
+    getSingleValue(searchParams.initial)?.trim().slice(0, 1).toUpperCase() ?? "";
+  const sort = getSingleValue(searchParams.sort) === "desc" ? "desc" : "asc";
+  const leadDirectory = await adminLeadRepository.list({
+    search,
+    initial: initial || null,
+    sort,
+  });
+
+  return (
+    <AdminLeadsWorkspace
+      records={leadDirectory.records}
+      searchValue={search}
+      selectedInitial={initial || null}
+      sortOrder={sort}
+      totalCount={leadDirectory.totalCount}
+      filteredCount={leadDirectory.filteredCount}
+      initialOptions={leadDirectory.initialOptions}
+    />
+  );
 }

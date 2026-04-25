@@ -1,12 +1,11 @@
 "use client";
 
-import { useDeferredValue, useMemo, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { UserRoundPlus } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { approveLeadAsClient, deleteLead } from "@/app/actions/admin-leads";
-import { DashboardManagementToolbar } from "@/components/dashboard/dashboard-management-toolbar";
 import { DashboardEmptyState } from "@/components/dashboard/dashboard-empty-state";
 import { DashboardMiniStat } from "@/components/dashboard/dashboard-mini-stat";
 import { DashboardModal } from "@/components/dashboard/dashboard-modal";
@@ -18,9 +17,20 @@ import {
   type AdminLeadRecord,
   type AdminLeadStatus,
 } from "@/lib/dashboard/admin-dashboard-data";
+import type { AdminLeadInitialOption } from "@/lib/repositories/admin-lead-repository";
+
+const visibleLeadStatusFilters = adminLeadStatusFilters.filter(
+  (filter) => filter !== "Contacted"
+);
 
 type AdminLeadsWorkspaceProps = {
   records: AdminLeadRecord[];
+  searchValue: string;
+  selectedInitial: string | null;
+  sortOrder: "asc" | "desc";
+  totalCount: number;
+  filteredCount: number;
+  initialOptions: AdminLeadInitialOption[];
 };
 
 function getLeadTone(status: AdminLeadStatus) {
@@ -36,11 +46,29 @@ function getLeadTone(status: AdminLeadStatus) {
   }
 }
 
-export function AdminLeadsWorkspace({ records }: AdminLeadsWorkspaceProps) {
+function formatResultsLabel(filteredCount: number, totalCount: number) {
+  if (filteredCount === totalCount) {
+    return `${totalCount} requests`;
+  }
+
+  return `${filteredCount} of ${totalCount} requests`;
+}
+
+export function AdminLeadsWorkspace({
+  records,
+  searchValue,
+  selectedInitial,
+  sortOrder,
+  totalCount,
+  filteredCount,
+  initialOptions,
+}: AdminLeadsWorkspaceProps) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
-  const [searchTerm, setSearchTerm] = useState("");
-  const deferredSearchTerm = useDeferredValue(searchTerm);
+  const [isFilterPending, startFilterTransition] = useTransition();
+  const [searchInput, setSearchInput] = useState(searchValue);
   const [statusFilter, setStatusFilter] = useState<"All" | AdminLeadStatus>(
     "All"
   );
@@ -52,38 +80,85 @@ export function AdminLeadsWorkspace({ records }: AdminLeadsWorkspaceProps) {
   } | null>(null);
   const [leadToDelete, setLeadToDelete] = useState<AdminLeadRecord | null>(null);
 
+  useEffect(() => {
+    setSearchInput(searchValue);
+  }, [searchValue]);
+
+  const updateQuery = useCallback(
+    (updates: Record<string, string | null>) => {
+      const params = new URLSearchParams(searchParams.toString());
+
+      for (const [key, value] of Object.entries(updates)) {
+        if (!value) {
+          params.delete(key);
+        } else {
+          params.set(key, value);
+        }
+      }
+
+      const nextQuery = params.toString();
+      const nextUrl = nextQuery ? `${pathname}?${nextQuery}` : pathname;
+
+      startFilterTransition(() => {
+        router.replace(nextUrl, { scroll: false });
+      });
+    },
+    [pathname, router, searchParams]
+  );
+
+  useEffect(() => {
+    const normalizedSearch = searchInput.trim();
+
+    if (normalizedSearch === searchValue) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      updateQuery({ q: normalizedSearch || null });
+    }, 250);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [searchInput, searchValue, updateQuery]);
+
   const filteredRecords = useMemo(() => {
     return records.filter((lead) => {
-      const query = deferredSearchTerm.trim().toLowerCase();
-      const matchesSearch =
-        query.length === 0 ||
-        [lead.fullName, lead.email, lead.phone, lead.message, lead.source]
-          .join(" ")
-          .toLowerCase()
-          .includes(query);
-      const matchesStatus =
-        statusFilter === "All" || lead.status === statusFilter;
-
-      return matchesSearch && matchesStatus;
+      return statusFilter === "All" || lead.status === statusFilter;
     });
-  }, [deferredSearchTerm, records, statusFilter]);
+  }, [records, statusFilter]);
 
   const pendingLeads = filteredRecords.filter(
     (lead) => lead.status !== "Converted"
   ).length;
   const newLeads = filteredRecords.filter((lead) => lead.status === "New").length;
-  const contactedLeads = filteredRecords.filter(
-    (lead) => lead.status === "Contacted"
-  ).length;
   const convertedLeads = filteredRecords.filter(
     (lead) => lead.status === "Converted"
   ).length;
   const hasActiveFilters =
-    searchTerm.trim().length > 0 || statusFilter !== "All";
+    searchInput.trim().length > 0 ||
+    statusFilter !== "All" ||
+    selectedInitial !== null ||
+    sortOrder !== "asc";
 
   const resetFilters = () => {
-    setSearchTerm("");
+    setSearchInput("");
     setStatusFilter("All");
+    updateQuery({
+      q: null,
+      initial: null,
+      sort: null,
+    });
+  };
+
+  const handleSortToggle = (nextSort: "asc" | "desc") => {
+    updateQuery({
+      sort: sortOrder === nextSort ? null : nextSort,
+    });
+  };
+
+  const handleInitialToggle = (nextInitial: string) => {
+    updateQuery({
+      initial: selectedInitial === nextInitial ? null : nextInitial,
+    });
   };
 
   const handleApprove = (leadId: string) => {
@@ -159,8 +234,8 @@ export function AdminLeadsWorkspace({ records }: AdminLeadsWorkspaceProps) {
         description="Work new inquiries first, move contacted requests to a decision, and only create clients when the request is ready."
         items={[
           `${newLeads} new requests need first contact.`,
-          `${contactedLeads} contacted requests are waiting on a decision.`,
           `${convertedLeads} converted requests stay here as history.`,
+          `${pendingLeads} visible requests still need action.`,
         ]}
       />
 
@@ -175,12 +250,6 @@ export function AdminLeadsWorkspace({ records }: AdminLeadsWorkspaceProps) {
           description="Need first response."
         />
         <DashboardMiniStat
-          tone={contactedLeads > 0 ? "warning" : "success"}
-          label="Contacted"
-          value={contactedLeads}
-          description="Waiting on a decision."
-        />
-        <DashboardMiniStat
           tone="success"
           label="Converted"
           value={convertedLeads}
@@ -189,32 +258,105 @@ export function AdminLeadsWorkspace({ records }: AdminLeadsWorkspaceProps) {
       </section>
 
       <section className="dashboard-panel dashboard-panel--accent dashboard-panel--dense">
-        <DashboardManagementToolbar
-          searchValue={searchTerm}
-          onSearchChange={setSearchTerm}
-          searchPlaceholder="Search by request, email, phone, or message"
-          summary={`${filteredRecords.length} requests in view • ${pendingLeads} still need action`}
-          isFiltered={hasActiveFilters}
-          onReset={resetFilters}
-          filters={
-            <label className="dashboard-filter-field">
-              <span>Status</span>
-              <select
-                className="dashboard-select"
-                value={statusFilter}
-                onChange={(event) =>
-                  setStatusFilter(event.target.value as "All" | AdminLeadStatus)
-                }
-              >
-                {adminLeadStatusFilters.map((filter) => (
-                  <option key={filter} value={filter}>
-                    {filter}
-                  </option>
-                ))}
-              </select>
-            </label>
-          }
-        />
+        <div className="dashboard-clients-toolbar">
+          <div className="dashboard-clients-toolbar__copy">
+            <div className="mv-eyebrow">Join intake</div>
+            <h2>Search requests</h2>
+            <p>
+              {formatResultsLabel(filteredCount, totalCount)}
+              {isFilterPending ? " updating..." : ""}
+            </p>
+          </div>
+
+          <label className="dashboard-clients-search" htmlFor="admin-lead-search">
+            <span>Search</span>
+            <input
+              id="admin-lead-search"
+              type="search"
+              className="dashboard-clients-search__input"
+              placeholder="Search name, email, phone, source, message"
+              value={searchInput}
+              onChange={(event) => setSearchInput(event.target.value)}
+              autoComplete="off"
+            />
+          </label>
+        </div>
+
+        <div className="dashboard-clients-filters">
+          <div className="dashboard-clients-filter-group">
+            <span className="dashboard-clients-filter-group__label">Sort</span>
+            <div className="dashboard-clients-checkbox-row">
+              <label className="dashboard-clients-checkbox">
+                <input
+                  type="checkbox"
+                  checked={sortOrder === "asc"}
+                  onChange={() => handleSortToggle("asc")}
+                />
+                <span>A-Z</span>
+              </label>
+              <label className="dashboard-clients-checkbox">
+                <input
+                  type="checkbox"
+                  checked={sortOrder === "desc"}
+                  onChange={() => handleSortToggle("desc")}
+                />
+                <span>Z-A</span>
+              </label>
+            </div>
+          </div>
+
+          <div className="dashboard-clients-filter-group">
+            <span className="dashboard-clients-filter-group__label">Initial</span>
+            <div className="dashboard-clients-initials">
+              <label className="dashboard-clients-checkbox dashboard-clients-checkbox--compact">
+                <input
+                  type="checkbox"
+                  checked={!selectedInitial}
+                  onChange={() => updateQuery({ initial: null })}
+                />
+                <span>All</span>
+              </label>
+              {initialOptions.map((option) => (
+                <label
+                  key={option.label}
+                  className="dashboard-clients-checkbox dashboard-clients-checkbox--compact"
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedInitial === option.label}
+                    onChange={() => handleInitialToggle(option.label)}
+                  />
+                  <span>
+                    {option.label}
+                    <small>{option.count}</small>
+                  </span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div className="dashboard-clients-filter-group">
+            <span className="dashboard-clients-filter-group__label">Status</span>
+            <div className="dashboard-clients-checkbox-row">
+              {visibleLeadStatusFilters.map((filter) => (
+                <label key={filter} className="dashboard-clients-checkbox">
+                  <input
+                    type="checkbox"
+                    checked={
+                      filter === "All"
+                        ? statusFilter === "All"
+                        : statusFilter === filter
+                    }
+                    onChange={() =>
+                      setStatusFilter(filter as "All" | AdminLeadStatus)
+                    }
+                  />
+                  <span>{filter}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        </div>
 
         {actionMessage ? (
           <div className="dashboard-info-strip">
@@ -256,8 +398,8 @@ export function AdminLeadsWorkspace({ records }: AdminLeadsWorkspaceProps) {
             <>
               <div className="dashboard-panel__meta-strip">
                 <span>{newLeads} new</span>
-                <span>{contactedLeads} contacted</span>
                 <span>{convertedLeads} converted</span>
+                <span>{pendingLeads} still need action</span>
               </div>
 
               <div className="dashboard-table-wrap">

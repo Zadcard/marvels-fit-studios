@@ -8,7 +8,7 @@ import type {
   AdminScheduleSessionStatus,
   AdminScheduleStat,
 } from "@/lib/dashboard/admin-schedule-data";
-import { getPrisma } from "@/lib/prisma";
+import { getPrisma, withPrismaFallback } from "@/lib/prisma";
 import type { AdminSessionCoachOption } from "@/lib/repositories/admin-session-repository";
 
 const dayLabelFormatter = new Intl.DateTimeFormat("en-US", { weekday: "long" });
@@ -63,7 +63,9 @@ export type AdminScheduleGroupOption = {
 };
 
 export class AdminScheduleRepository {
-  private prisma = getPrisma();
+  private get prisma() {
+    return getPrisma();
+  }
 
   async getSchedule(): Promise<{
     stats: AdminScheduleStat[];
@@ -72,18 +74,19 @@ export class AdminScheduleRepository {
     blockOptions: AdminScheduleBlockOption[];
     groupOptions: AdminScheduleGroupOption[];
   }> {
-    const now = new Date();
-    const scheduleWindowStart = new Date(now);
-    scheduleWindowStart.setHours(0, 0, 0, 0);
-    const scheduleWindowEnd = new Date(scheduleWindowStart);
-    scheduleWindowEnd.setDate(scheduleWindowEnd.getDate() + 6);
-    scheduleWindowEnd.setHours(23, 59, 59, 999);
-    const weekEnd = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-    const scheduleBlockDelegate = this.prisma.scheduleBlock as
-      | typeof this.prisma.scheduleBlock
-      | undefined;
+    return withPrismaFallback(async () => {
+      const now = new Date();
+      const scheduleWindowStart = new Date(now);
+      scheduleWindowStart.setHours(0, 0, 0, 0);
+      const scheduleWindowEnd = new Date(scheduleWindowStart);
+      scheduleWindowEnd.setDate(scheduleWindowEnd.getDate() + 6);
+      scheduleWindowEnd.setHours(23, 59, 59, 999);
+      const weekEnd = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+      const scheduleBlockDelegate = this.prisma.scheduleBlock as
+        | typeof this.prisma.scheduleBlock
+        | undefined;
 
-    const baseSessionSelect = {
+      const baseSessionSelect = {
       id: true,
       title: true,
       description: true,
@@ -122,7 +125,7 @@ export class AdminScheduleRepository {
       },
     } as const;
 
-    const sessionsPromise = this.prisma.trainingSession.findMany({
+      const sessionsPromise = this.prisma.trainingSession.findMany({
       where: {
         startsAt: {
           gte: scheduleWindowStart,
@@ -148,7 +151,7 @@ export class AdminScheduleRepository {
         : baseSessionSelect) as unknown as Prisma.TrainingSessionSelect,
     });
 
-    const [sessions, coaches, groups] = await Promise.all([
+      const [sessions, coaches, groups] = await Promise.all([
       sessionsPromise,
       this.prisma.coach.findMany({
         orderBy: [{ fullName: "asc" }],
@@ -165,17 +168,17 @@ export class AdminScheduleRepository {
         },
       }),
     ]);
-    const blocks = scheduleBlockDelegate
-      ? await scheduleBlockDelegate.findMany({
+      const blocks = scheduleBlockDelegate
+        ? await scheduleBlockDelegate.findMany({
           orderBy: [{ title: "asc" }],
           select: {
             id: true,
             title: true,
           },
         })
-      : [];
+        : [];
 
-    const records = sessions.map((session) => {
+      const records = sessions.map((session) => {
       const scheduleSession = session as unknown as {
         id: string;
         title: string;
@@ -260,7 +263,7 @@ export class AdminScheduleRepository {
             ? 1
             : scheduleSession.capacity,
       } satisfies AdminScheduleSessionRecord;
-    });
+      });
 
     const recordsThisWeek = records.filter(
       (record) => new Date(record.startsAt) >= now && new Date(record.startsAt) <= weekEnd
@@ -278,7 +281,7 @@ export class AdminScheduleRepository {
       (record) => record.scheduleBlockId
     ).length;
 
-    const stats: AdminScheduleStat[] = [
+      const stats: AdminScheduleStat[] = [
       {
         id: "weekly-slots",
         label: "This week",
@@ -321,13 +324,20 @@ export class AdminScheduleRepository {
       },
     ];
 
-    return {
-      stats,
-      records,
-      coachOptions: coaches,
-      blockOptions: blocks,
-      groupOptions: groups,
-    };
+      return {
+        stats,
+        records,
+        coachOptions: coaches,
+        blockOptions: blocks,
+        groupOptions: groups,
+      };
+    }, {
+      stats: [],
+      records: [],
+      coachOptions: [],
+      blockOptions: [],
+      groupOptions: [],
+    });
   }
 }
 
