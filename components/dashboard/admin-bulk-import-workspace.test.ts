@@ -1,17 +1,44 @@
-import { readFileSync } from "node:fs";
-import { describe, expect, it } from "vitest";
+import { act } from "react";
+import { createElement } from "react";
+import { createRoot } from "react-dom/client";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
-describe("AdminBulkImportWorkspace source", () => {
+import { AdminBulkImportWorkspace } from "./admin-bulk-import-workspace";
+
+vi.mock("@/app/actions/admin-bulk-import", () => ({
+  importClientCSV: vi.fn(),
+  previewClientImportCSV: vi.fn(async () => []),
+}));
+
+describe("AdminBulkImportWorkspace", () => {
+  let root: ReturnType<typeof createRoot> | null = null;
+  let container: HTMLDivElement | null = null;
+
+  afterEach(() => {
+    if (root) {
+      act(() => {
+        root?.unmount();
+      });
+    }
+    container?.remove();
+    root = null;
+    container = null;
+  });
+
   it("renders the expected bulk import controls and report labels", () => {
-    const source = readFileSync(
-      "components/dashboard/admin-bulk-import-workspace.tsx",
-      "utf8"
-    );
+    container = document.createElement("div");
+    document.body.appendChild(container);
+    root = createRoot(container);
 
-    expect(source).toContain("Drop CSV here or click to upload");
-    expect(source).toContain("Expected columns: fullName,phone");
-    expect(source).toContain("Import All");
-    expect(source).toContain("Download credentials CSV");
-    expect(source).toContain("Success rate");
+    act(() => {
+      root?.render(createElement(AdminBulkImportWorkspace));
+    });
+
+    expect(container.textContent).toContain("Drop CSV here or click to upload");
+    expect(container.textContent).toContain(
+      "Expected columns: fullName,groupName,phone"
+    );
+    expect(container.textContent).toContain("Import All");
+    expect(container.textContent).toContain("Success rate");
   });
 });

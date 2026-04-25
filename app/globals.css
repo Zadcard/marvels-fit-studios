@@ -80,6 +80,27 @@
   --mv-shadow-md: 0 28px 54px rgba(12, 16, 24, 0.12);
   --mv-shadow-glow: 0 16px 30px rgba(230, 36, 41, 0.22);
 
+  /* Shared Marvel app surfaces */
+  --mv-page-bg:
+    radial-gradient(circle at 8% 0%, rgba(230, 36, 41, 0.16), transparent 28%),
+    radial-gradient(circle at 92% 10%, rgba(230, 36, 41, 0.1), transparent 24%),
+    radial-gradient(circle at 50% 100%, rgba(230, 36, 41, 0.08), transparent 30%),
+    linear-gradient(180deg, #050505 0%, #090909 100%);
+  --mv-panel-bg:
+    radial-gradient(circle at top right, rgba(230, 36, 41, 0.1), transparent 36%),
+    linear-gradient(180deg, rgba(24, 24, 24, 0.92), rgba(12, 12, 12, 0.94));
+  --mv-panel-bg-soft:
+    linear-gradient(180deg, rgba(22, 22, 22, 0.86), rgba(10, 10, 10, 0.9)),
+    rgba(255, 255, 255, 0.02);
+  --mv-panel-bg-strong:
+    radial-gradient(circle at top right, rgba(230, 36, 41, 0.14), transparent 34%),
+    linear-gradient(180deg, rgba(32, 32, 32, 0.94), rgba(12, 12, 12, 0.98));
+  --mv-control-bg: rgba(255, 255, 255, 0.04);
+  --mv-control-bg-strong: rgba(255, 255, 255, 0.07);
+  --mv-border-subtle: rgba(255, 255, 255, 0.08);
+  --mv-border-strong: rgba(255, 255, 255, 0.14);
+  --mv-border-accent: rgba(230, 36, 41, 0.28);
+
   /* Spacing Scale (fluid, matching landing page) */
   --mv-space-2xs: clamp(6px, 0.8vw, 8px);
   --mv-space-xs: clamp(10px, 1.2vw, 14px);
@@ -116,7 +137,7 @@
     font-family: var(--font-body), "Manrope", sans-serif;
     font-size: clamp(0.97rem, 0.2vw + 0.95rem, 1.04rem);
     line-height: 1.58;
-    background: var(--mv-bg);
+    background: var(--mv-page-bg);
   }
 
   a {

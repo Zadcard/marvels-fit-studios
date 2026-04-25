@@ -1,5 +1,7 @@
 import "server-only";
 
+import type { Prisma } from "@prisma/client";
+
 import type {
   AdminGroupSessionRecord,
   AdminPrivateSessionRecord,
@@ -177,7 +179,7 @@ export class AdminSessionRepository {
               },
             },
           }
-        : baseSessionSelect) as any,
+        : baseSessionSelect) as unknown as Prisma.TrainingSessionSelect,
     });
 
     const [sessions, coaches, clients] = await Promise.all([
@@ -212,7 +214,7 @@ export class AdminSessionRepository {
     const editorRecords: AdminSessionEditorRecord[] = [];
 
     for (const session of sessions) {
-      const scheduleSession = session as any as typeof session & {
+      const scheduleSession = session as unknown as {
         id: string;
         title: string;
         description: string | null;

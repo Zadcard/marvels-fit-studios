@@ -1,6 +1,6 @@
 "use server";
 
-import { ScheduleBlockStatus, UserRole } from "@prisma/client";
+import { UserRole } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 
 import { requireRole } from "@/lib/auth/session";

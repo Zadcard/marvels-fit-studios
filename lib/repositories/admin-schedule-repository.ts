@@ -1,6 +1,7 @@
 import "server-only";
 
 import { TrainingSessionStatus, TrainingSessionType } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 
 import type {
   AdminScheduleSessionRecord,
@@ -144,7 +145,7 @@ export class AdminScheduleRepository {
               },
             },
           }
-        : baseSessionSelect) as any,
+        : baseSessionSelect) as unknown as Prisma.TrainingSessionSelect,
     });
 
     const [sessions, coaches, groups] = await Promise.all([
@@ -175,7 +176,7 @@ export class AdminScheduleRepository {
       : [];
 
     const records = sessions.map((session) => {
-      const scheduleSession = session as any as typeof session & {
+      const scheduleSession = session as unknown as {
         id: string;
         title: string;
         description: string | null;

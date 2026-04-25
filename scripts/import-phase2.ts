@@ -185,8 +185,8 @@ function parseRow(line: string): ParsedRow | null {
   const startDate = dates.length > 1 ? dates[dates.length - 2] : null;
 
   // Determine the month/year of this attendance page from the end date
-  let dataYear = endDate?.getFullYear() ?? null;
-  let dataMonth = endDate?.getMonth() != null ? (endDate!.getMonth() + 1) : null;
+  const dataYear = endDate?.getFullYear() ?? null;
+  const dataMonth = endDate?.getMonth() != null ? (endDate!.getMonth() + 1) : null;
 
   return {
     name, programType, phone, isActive, fees,
@@ -378,7 +378,7 @@ async function main() {
   for (const row of newestRows) {
     try {
       const phone = row.phone;
-      let client = phone
+      const client = phone
         ? await withRetry(() => prisma.client.findUnique({ where: { phone } }))
         : await withRetry(() => prisma.client.findFirst({ where: { fullName: row.name } }));
 

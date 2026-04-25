@@ -31,7 +31,8 @@ describe('AdminClientRepository', () => {
       await repository.list();
 
       expect(mockPrisma.client.findMany).toHaveBeenCalledWith({
-        orderBy: [{ createdAt: 'desc' }],
+        where: { AND: [{}, {}] },
+        orderBy: [{ fullName: 'asc' }],
         select: expect.any(Object),
       });
     });
@@ -41,7 +42,12 @@ describe('AdminClientRepository', () => {
 
       const result = await repository.list();
 
-      expect(result).toEqual([]);
+      expect(result).toMatchObject({
+        records: [],
+        totalCount: 0,
+        filteredCount: 0,
+        initialOptions: [],
+      });
     });
 
     it('should map single client to AdminClientRecord', async () => {
@@ -108,8 +114,8 @@ describe('AdminClientRepository', () => {
 
       const result = await repository.list();
 
-      expect(result).toHaveLength(1);
-      expect(result[0]).toMatchObject({
+      expect(result.records).toHaveLength(1);
+      expect(result.records[0]).toMatchObject({
         id: 'client-1',
         fullName: 'John Doe',
         email: 'john@example.com',
@@ -141,7 +147,7 @@ describe('AdminClientRepository', () => {
 
       const result = await repository.list();
 
-      expect(result[0].email).toBe('No email');
+      expect(result.records[0].email).toBe('No email');
     });
 
     it('should handle client with no phone', async () => {
@@ -166,7 +172,7 @@ describe('AdminClientRepository', () => {
 
       const result = await repository.list();
 
-      expect(result[0].phone).toBe('No phone');
+      expect(result.records[0].phone).toBe('No phone');
     });
 
     it('should map client status ACTIVE', async () => {
@@ -189,7 +195,7 @@ describe('AdminClientRepository', () => {
 
       const result = await repository.list();
 
-      expect(result[0].status).toBe('Active');
+      expect(result.records[0].status).toBe('Active');
     });
 
     it('should map client status PAUSED', async () => {
@@ -212,7 +218,7 @@ describe('AdminClientRepository', () => {
 
       const result = await repository.list();
 
-      expect(result[0].status).toBe('Paused');
+      expect(result.records[0].status).toBe('Paused');
     });
 
     it('should map client status PENDING', async () => {
@@ -235,7 +241,7 @@ describe('AdminClientRepository', () => {
 
       const result = await repository.list();
 
-      expect(result[0].status).toBe('Pending');
+      expect(result.records[0].status).toBe('Pending');
     });
 
     it('should infer membership as Group Membership for GROUP bookings only', async () => {
@@ -274,7 +280,7 @@ describe('AdminClientRepository', () => {
 
       const result = await repository.list();
 
-      expect(result[0].membership).toBe('Group Membership');
+      expect(result.records[0].membership).toBe('Group Membership');
     });
 
     it('should infer membership as Private Coaching for PRIVATE bookings only', async () => {
@@ -313,7 +319,7 @@ describe('AdminClientRepository', () => {
 
       const result = await repository.list();
 
-      expect(result[0].membership).toBe('Private Coaching');
+      expect(result.records[0].membership).toBe('Private Coaching');
     });
 
     it('should infer membership as Hybrid for both GROUP and PRIVATE bookings', async () => {
@@ -360,7 +366,7 @@ describe('AdminClientRepository', () => {
 
       const result = await repository.list();
 
-      expect(result[0].membership).toBe('Hybrid');
+      expect(result.records[0].membership).toBe('Hybrid');
     });
 
     it('should map payment status PAID', async () => {
@@ -383,7 +389,7 @@ describe('AdminClientRepository', () => {
 
       const result = await repository.list();
 
-      expect(result[0].paymentStatus).toBe('Paid');
+      expect(result.records[0].paymentStatus).toBe('Paid');
     });
 
     it('should map payment status DUE_SOON', async () => {
@@ -406,7 +412,7 @@ describe('AdminClientRepository', () => {
 
       const result = await repository.list();
 
-      expect(result[0].paymentStatus).toBe('Due soon');
+      expect(result.records[0].paymentStatus).toBe('Due soon');
     });
 
     it('should handle multiple clients in list', async () => {
@@ -443,9 +449,9 @@ describe('AdminClientRepository', () => {
 
       const result = await repository.list();
 
-      expect(result).toHaveLength(2);
-      expect(result[0].fullName).toBe('John Doe');
-      expect(result[1].fullName).toBe('Jane Smith');
+      expect(result.records).toHaveLength(2);
+      expect(result.records[0].fullName).toBe('John Doe');
+      expect(result.records[1].fullName).toBe('Jane Smith');
     });
 
     it('should use primary group coach as assigned coach when available', async () => {
@@ -474,7 +480,7 @@ describe('AdminClientRepository', () => {
 
       const result = await repository.list();
 
-      expect(result[0].assignedCoach).toBe('Coach Smith');
+      expect(result.records[0].assignedCoach).toBe('Coach Smith');
     });
 
     it('should use next booking coach when no primary group', async () => {
@@ -508,7 +514,7 @@ describe('AdminClientRepository', () => {
 
       const result = await repository.list();
 
-      expect(result[0].assignedCoach).toBe('Coach Jones');
+      expect(result.records[0].assignedCoach).toBe('Coach Jones');
     });
 
     it('should default to Unassigned when no group or bookings', async () => {
@@ -531,7 +537,7 @@ describe('AdminClientRepository', () => {
 
       const result = await repository.list();
 
-      expect(result[0].assignedCoach).toBe('Unassigned');
+      expect(result.records[0].assignedCoach).toBe('Unassigned');
     });
 
     it('should format joined date properly', async () => {
@@ -554,9 +560,9 @@ describe('AdminClientRepository', () => {
 
       const result = await repository.list();
 
-      expect(result[0].joinedDate).toContain('Jun');
-      expect(result[0].joinedDate).toContain('15');
-      expect(result[0].joinedDate).toContain('2024');
+      expect(result.records[0].joinedDate).toContain('Jun');
+      expect(result.records[0].joinedDate).toContain('15');
+      expect(result.records[0].joinedDate).toContain('2024');
     });
 
     it('should handle null joined date', async () => {
@@ -579,7 +585,7 @@ describe('AdminClientRepository', () => {
 
       const result = await repository.list();
 
-      expect(result[0].joinedDate).toBe('TBD');
+      expect(result.records[0].joinedDate).toBe('TBD');
     });
 
     it('should fetch next 3 bookings in chronological order', async () => {
@@ -587,7 +593,7 @@ describe('AdminClientRepository', () => {
 
       await repository.list();
 
-      const query = mockPrisma.client.findMany.mock.calls[0]?.[0];
+      const query = mockPrisma.client.findMany.mock.calls[1]?.[0];
 
       // Verify the select structure includes bookings with proper ordering
       expect(query).toBeDefined();
@@ -628,7 +634,7 @@ describe('AdminClientRepository', () => {
       await repository.list();
 
       // Verify query excludes canceled sessions
-      const query = mockPrisma.client.findMany.mock.calls[0]?.[0];
+      const query = mockPrisma.client.findMany.mock.calls[1]?.[0];
       expect(query).toBeDefined();
       if (query && 'select' in query) {
         const select = query.select as any;
@@ -638,3 +644,4 @@ describe('AdminClientRepository', () => {
     });
   });
 });
+

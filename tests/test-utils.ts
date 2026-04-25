@@ -13,6 +13,7 @@ export function createMockPrisma(): Partial<PrismaClient> {
       create: vi.fn(),
       update: vi.fn(),
       delete: vi.fn(),
+      count: vi.fn().mockResolvedValue(0),
     },
     client: {
       findUnique: vi.fn(),
@@ -20,6 +21,7 @@ export function createMockPrisma(): Partial<PrismaClient> {
       create: vi.fn(),
       update: vi.fn(),
       delete: vi.fn(),
+      count: vi.fn().mockResolvedValue(0),
     },
     coach: {
       findUnique: vi.fn(),
@@ -41,7 +43,7 @@ export function createMockPrisma(): Partial<PrismaClient> {
       create: vi.fn(),
       update: vi.fn(),
       delete: vi.fn(),
-      count: vi.fn(),
+      count: vi.fn().mockResolvedValue(0),
     },
     scheduleBlock: {
       findUnique: vi.fn(),

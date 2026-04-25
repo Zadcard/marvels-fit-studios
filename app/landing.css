@@ -1,22 +1,22 @@
 :root {
-  --bg: #000000;
-  --bg-soft: #0a0a0a;
-  --surface: #111111;
-  --surface-strong: #1a1a1a;
-  --surface-dark: #000000;
-  --text: #ffffff;
-  --muted: #a0a0a0;
-  --muted-strong: #cccccc;
-  --line: #333333;
-  --line-strong: #444444;
-  --primary: #e62429;
-  --primary-deep: #b91c21;
-  --primary-soft: #2d1011;
-  --accent: #ff0000;
-  --accent-soft: #222222;
-  --success: #25d366;
-  --shadow-sm: 0 14px 28px rgba(12, 16, 24, 0.08);
-  --shadow-md: 0 28px 54px rgba(12, 16, 24, 0.12);
+  --bg: var(--mv-bg);
+  --bg-soft: var(--mv-bg-soft);
+  --surface: var(--mv-surface);
+  --surface-strong: var(--mv-surface-strong);
+  --surface-dark: var(--mv-surface-dark);
+  --text: var(--mv-text);
+  --muted: var(--mv-muted);
+  --muted-strong: var(--mv-muted-strong);
+  --line: var(--mv-line);
+  --line-strong: var(--mv-line-strong);
+  --primary: var(--mv-primary);
+  --primary-deep: var(--mv-primary-deep);
+  --primary-soft: var(--mv-primary-soft);
+  --accent: var(--mv-accent);
+  --accent-soft: var(--mv-accent-soft);
+  --success: var(--mv-success);
+  --shadow-sm: var(--mv-shadow-sm);
+  --shadow-md: var(--mv-shadow-md);
   --radius-sm: 14px;
   --radius-md: 22px;
   --radius-lg: 30px;
@@ -29,7 +29,7 @@
   --space-xl: clamp(34px, 4.8vw, 50px);
   --space-2xl: clamp(46px, 6.4vw, 80px);
 
-  --container: calc(100% - 20px);
+  --container: var(--mv-container);
   --nav-height: 64px;
   --card-pad: clamp(20px, 3.8vw, 30px);
   --content-max: 66ch;
@@ -45,7 +45,7 @@
 html {
   scroll-behavior: smooth;
   text-size-adjust: 100%;
-  color-scheme: light;
+  color-scheme: dark;
 }
 
 body {
@@ -56,15 +56,7 @@ body {
   font-family: var(--font-body), "Manrope", sans-serif;
   font-size: clamp(0.97rem, 0.2vw + 0.95rem, 1.04rem);
   line-height: 1.58;
-  background:
-    radial-gradient(ellipse at 8% 12%, rgba(230, 36, 41, 0.22) 0%, transparent 32%),
-    radial-gradient(ellipse at 92% 38%, rgba(200, 20, 28, 0.17) 0%, transparent 30%),
-    radial-gradient(ellipse at 50% 68%, rgba(220, 30, 38, 0.2) 0%, transparent 35%),
-    radial-gradient(ellipse at 18% 88%, rgba(185, 10, 18, 0.15) 0%, transparent 28%),
-    radial-gradient(circle at 75% 92%, rgba(230, 36, 41, 0.12) 0%, transparent 24%),
-    radial-gradient(circle at 50% 2%, rgba(255, 255, 255, 0.08) 0%, transparent 28%),
-    radial-gradient(circle at 82% 8%, rgba(255, 255, 255, 0.05) 0%, transparent 18%),
-    linear-gradient(180deg, #050505 0%, #0a0a0a 100%);
+  background: var(--mv-page-bg);
   -webkit-font-smoothing: antialiased;
 }
 
@@ -174,29 +166,23 @@ main [id] {
 }
 
 .panel {
-  border: 1px solid var(--line);
+  border: 1px solid var(--mv-border-subtle);
   border-radius: var(--radius-md);
-  background: linear-gradient(180deg, rgba(30, 30, 30, 0.5), rgba(15, 15, 15, 0.5));
+  background: var(--mv-panel-bg-soft);
   box-shadow: var(--shadow-sm);
 }
 
 .panel-soft {
-  background:
-    linear-gradient(180deg, rgba(25, 25, 25, 0.5), rgba(10, 10, 10, 0.5)),
-    var(--surface);
+  background: var(--mv-panel-bg-soft);
 }
 
 .panel-strong {
-  background:
-    linear-gradient(180deg, rgba(40, 40, 40, 0.5), rgba(20, 20, 20, 0.5)),
-    var(--surface-strong);
+  background: var(--mv-panel-bg-strong);
 }
 
 .panel-accent {
-  background:
-    radial-gradient(circle at 88% 12%, rgba(230, 36, 41, 0.15), transparent 36%),
-    linear-gradient(180deg, #1a1a1a 0%, #101010 100%);
-  border-color: rgba(230, 36, 41, 0.3);
+  background: var(--mv-panel-bg-strong);
+  border-color: var(--mv-border-accent);
 }
 
 h1,
@@ -259,10 +245,10 @@ p {
   gap: 8px;
   padding: 5px 14px 5px 10px;
   border-radius: 999px;
-  border: 1px solid rgba(230, 36, 41, 0.35);
-  background: rgba(230, 36, 41, 0.12);
+  border: 1px solid var(--mv-border-accent);
+  background: rgba(230, 36, 41, 0.08);
   font-size: 0.72rem;
-  color: var(--primary);
+  color: #ffb7b7;
   backdrop-filter: blur(4px);
 }
 
@@ -407,10 +393,12 @@ p {
   grid-template-columns: minmax(0, 1fr) auto auto;
   gap: 10px;
   align-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--mv-border-subtle);
   border-top: 0;
   border-radius: 0 0 28px 28px;
-  background: #111111;
+  background:
+    linear-gradient(180deg, rgba(20, 20, 20, 0.96), rgba(8, 8, 8, 0.98)),
+    var(--mv-surface);
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(10px);
   overflow: visible;
@@ -467,9 +455,9 @@ p {
   width: 44px;
   height: 44px;
   padding: 0;
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: 1px solid var(--mv-border-strong);
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--mv-control-bg-strong);
 }
 
 .nav-toggle span {
@@ -527,10 +515,10 @@ p {
   align-items: stretch;
   gap: 4px;
   padding: 14px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--mv-border-subtle);
   border-radius: 18px;
-  background: #ffffff;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+  background: var(--mv-panel-bg-strong);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.36);
 }
 
 .nav-links-wrap.open {
@@ -601,8 +589,8 @@ p {
 }
 
 .hero-badges span {
-  border: 1px solid var(--line);
-  background: rgba(30, 30, 30, 0.78);
+  border: 1px solid var(--mv-border-subtle);
+  background: var(--mv-control-bg);
   color: var(--muted-strong);
   font-size: 0.82rem;
   font-weight: 700;
@@ -636,7 +624,7 @@ p {
 }
 
 .hero-actions .btn-primary {
-  box-shadow: 0 0 48px rgba(230, 36, 41, 0.45), 0 16px 30px rgba(230, 36, 41, 0.22);
+  box-shadow: var(--mv-shadow-glow);
   padding: 0 40px;
 }
 
@@ -934,6 +922,26 @@ p {
 .review-track,
 .plan-track {
   grid-auto-columns: 88%;
+}
+
+@media (max-width: 639px) {
+  .carousel-track {
+    grid-auto-flow: row;
+    grid-auto-columns: 1fr;
+    overflow-x: visible;
+    padding-bottom: 0;
+    scroll-snap-type: none;
+    cursor: default;
+    touch-action: auto;
+  }
+
+  .service-track,
+  .benefit-track,
+  .coach-track,
+  .review-track,
+  .plan-track {
+    grid-auto-columns: 1fr;
+  }
 }
 
 .service-card,
@@ -2279,6 +2287,6 @@ min-width: 135px;
   .coach-track,
   .review-track,
   .plan-track {
-    grid-auto-columns: 92%;
+    grid-auto-columns: 1fr;
   }
 }

@@ -42,7 +42,7 @@ describe("BulkClientImportService", () => {
 
     expect(rows[0]).toMatchObject({
       valid: false,
-      reason: "CSV must have fullName and phone columns.",
+      reason: "CSV must have fullName and phone columns. groupName is optional.",
     });
   });
 
@@ -67,6 +67,7 @@ describe("BulkClientImportService", () => {
       {
         rowNumber: 2,
         fullName: "John Doe",
+        groupName: "",
         phone: "+201012345678",
         clientId: "2605001",
         password: "MFS_2605001",
@@ -132,6 +133,7 @@ describe("BulkClientImportService", () => {
         {
           rowNumber: 2,
           fullName: "John Doe",
+          groupName: "",
           phone: "+201012345678",
           clientId: "2605001",
           password: "MFS_2605001",
@@ -143,7 +145,7 @@ describe("BulkClientImportService", () => {
 
     expect(report.summary).toBe("1/1 clients imported (100%).");
     expect(report.credentialsCsv).toContain(
-      "2605001,John Doe,+201012345678,MFS_2605001"
+      "2605001,John Doe,,+201012345678,MFS_2605001"
     );
   });
 });

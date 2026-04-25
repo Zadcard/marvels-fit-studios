@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useCallback, useEffect, useState, useTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowRightLeft, Plus, UserMinus, UserPlus } from "lucide-react";
@@ -129,24 +129,27 @@ export function AdminClientsWorkspace({
     setIsModalOpen(true);
   };
 
-  const updateQuery = (updates: Record<string, string | null>) => {
-    const params = new URLSearchParams(searchParams.toString());
+  const updateQuery = useCallback(
+    (updates: Record<string, string | null>) => {
+      const params = new URLSearchParams(searchParams.toString());
 
-    for (const [key, value] of Object.entries(updates)) {
-      if (!value) {
-        params.delete(key);
-      } else {
-        params.set(key, value);
+      for (const [key, value] of Object.entries(updates)) {
+        if (!value) {
+          params.delete(key);
+        } else {
+          params.set(key, value);
+        }
       }
-    }
 
-    const nextQuery = params.toString();
-    const nextUrl = nextQuery ? `${pathname}?${nextQuery}` : pathname;
+      const nextQuery = params.toString();
+      const nextUrl = nextQuery ? `${pathname}?${nextQuery}` : pathname;
 
-    startFilterTransition(() => {
-      router.replace(nextUrl, { scroll: false });
-    });
-  };
+      startFilterTransition(() => {
+        router.replace(nextUrl, { scroll: false });
+      });
+    },
+    [pathname, router, searchParams]
+  );
 
   useEffect(() => {
     const normalizedSearch = searchInput.trim();
@@ -160,7 +163,7 @@ export function AdminClientsWorkspace({
     }, 250);
 
     return () => window.clearTimeout(timeoutId);
-  }, [searchInput, searchValue]);
+  }, [searchInput, searchValue, updateQuery]);
 
   const handleSortToggle = (nextSort: "asc" | "desc") => {
     updateQuery({

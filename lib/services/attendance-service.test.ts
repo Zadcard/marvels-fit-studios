@@ -155,7 +155,7 @@ describe('Attendance Service', () => {
           id: bookingId,
         });
 
-        const result = await updateSessionAttendance({
+        await updateSessionAttendance({
           ...validInput,
           status: BookingStatus.MISSED,
         });
@@ -188,7 +188,7 @@ describe('Attendance Service', () => {
           id: bookingId,
         });
 
-        const result = await updateSessionAttendance({
+        await updateSessionAttendance({
           ...validInput,
           status: BookingStatus.BOOKED,
         });
@@ -213,7 +213,7 @@ describe('Attendance Service', () => {
           id: bookingId,
         });
 
-        const result = await updateSessionAttendance({
+        await updateSessionAttendance({
           ...validInput,
           status: BookingStatus.WAITLIST,
         });

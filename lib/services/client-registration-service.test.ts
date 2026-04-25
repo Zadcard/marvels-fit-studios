@@ -7,7 +7,6 @@ vi.mock("@/lib/services/client-id-generator");
 vi.mock("@/lib/services/password-generator");
 
 describe("ClientRegistrationService", () => {
-  let ClientRegistrationService: any;
   let mockPrisma: any;
   let mockTx: any;
   let mockClientIdGenerator: any;
@@ -154,9 +153,11 @@ describe("ClientRegistrationService", () => {
 
       const userCreateCall = mockTx.user.create.mock.calls[0][0];
       expect(userCreateCall.data).toEqual({
+        name: "John Doe",
         clientId: expect.stringMatching(/^\d{7}$/),
         email: null,
         password: "hashed_password",
+        mustChangePassword: true,
         role: "CLIENT",
       });
     });
@@ -179,6 +180,7 @@ describe("ClientRegistrationService", () => {
         userId: "user-123",
         fullName: "John Doe",
         phone: "+1234567890",
+        groupId: null,
         status: "ACTIVE",
       });
     });

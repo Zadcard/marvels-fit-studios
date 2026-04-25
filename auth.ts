@@ -62,7 +62,7 @@ export const {
           }
 
           return null;
-        } catch (error) {
+        } catch {
           return null;
         }
       },

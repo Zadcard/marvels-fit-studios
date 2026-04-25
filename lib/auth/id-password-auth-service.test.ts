@@ -138,8 +138,16 @@ describe("IdPasswordAuthService", () => {
         select: {
           id: true,
           clientId: true,
+          email: true,
+          name: true,
           password: true,
+          mustChangePassword: true,
           role: true,
+          clientProfile: {
+            select: {
+              fullName: true,
+            },
+          },
         },
       });
     });
@@ -343,7 +351,7 @@ describe("IdPasswordAuthService", () => {
 
       expect(mockPrisma.user.update).toHaveBeenCalledWith({
         where: { id: "user-123" },
-        data: { password: "hashed_password" },
+        data: { password: "hashed_password", mustChangePassword: false },
       });
     });
 
