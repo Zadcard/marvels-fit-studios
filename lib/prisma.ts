@@ -9,20 +9,13 @@ const globalForPrisma = globalThis as unknown as {
   prismaResetPromise: Promise<void> | undefined;
 };
 
-function getConnectionString() {
-  const connectionString = process.env.DATABASE_URL;
-
-  if (!connectionString) {
-    throw new Error("DATABASE_URL is missing from environment");
-  }
-
-  return connectionString;
-}
-
 function getPrismaAdapter() {
   if (!globalForPrisma.prismaPool) {
+    // Pool does not connect until first query — safe to construct without DATABASE_URL
+    // at module load time (e.g. during Next.js build). The connection string is
+    // resolved from process.env at runtime when the first query executes.
     globalForPrisma.prismaPool = new Pool({
-      connectionString: getConnectionString(),
+      connectionString: process.env.DATABASE_URL,
     });
   }
 

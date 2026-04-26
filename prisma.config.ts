@@ -1,17 +1,21 @@
-import "dotenv/config";
 import { config as loadEnv } from "dotenv";
 import { defineConfig } from "prisma/config";
 
-// TODO: Rotate Neon database credentials (password leaked)
-// TODO: Regenerate AUTH_SECRET
-
-loadEnv({ path: ".env.local", override: true });
-
-if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL is not set in environment variables");
+// Load .env files only in local dev — Vercel injects env vars directly.
+if (!process.env.VERCEL) {
+  if (!process.env.DATABASE_URL) {
+    loadEnv({ path: ".env.local" });
+  }
+  if (!process.env.DATABASE_URL) {
+    loadEnv({ path: ".env" });
+  }
 }
 
-const prismaCliDatabaseUrl = process.env.DIRECT_URL ?? process.env.DATABASE_URL;
+// Only override the schema datasource when a URL is explicitly available.
+// prisma generate does not need a live connection; the schema's env("DATABASE_URL")
+// handles runtime. Throwing here blocks generate on Vercel unnecessarily.
+const prismaCliDatabaseUrl =
+  process.env.DIRECT_URL ?? process.env.DATABASE_URL ?? undefined;
 
 export default defineConfig({
   schema: "prisma/schema.prisma",
@@ -19,7 +23,7 @@ export default defineConfig({
     path: "prisma/migrations",
     seed: "ts-node --esm prisma/seed.ts",
   },
-  datasource: {
-    url: prismaCliDatabaseUrl,
-  },
+  ...(prismaCliDatabaseUrl
+    ? { datasource: { url: prismaCliDatabaseUrl } }
+    : {}),
 });
