@@ -4,7 +4,7 @@ import authConfig from "./auth.config";
 import Credentials from "next-auth/providers/credentials";
 import { idPasswordAuthService } from "@/lib/auth/id-password-auth-service";
 import { CredentialsAuthService } from "@/lib/auth/credentials-auth-service";
-import { DemoCredentialsFallbackPolicy } from "@/lib/auth/demo-users";
+import { NoAuthFallbackPolicy } from "@/lib/auth/demo-users";
 import { BcryptPasswordVerifier } from "@/lib/auth/password-verifier";
 import { PrismaUserRepository } from "@/lib/auth/user-repository";
 import { getPrisma } from "@/lib/prisma";
@@ -12,7 +12,7 @@ import { getPrisma } from "@/lib/prisma";
 const credentialsAuthService = new CredentialsAuthService(
   new PrismaUserRepository(),
   new BcryptPasswordVerifier(),
-  new DemoCredentialsFallbackPolicy()
+  new NoAuthFallbackPolicy()
 );
 
 export const {
@@ -32,7 +32,9 @@ export const {
       },
       async authorize(credentials) {
         const clientId = (credentials?.clientId as string) || "";
-        const email = (credentials?.email as string) || "";
+        const email = ((credentials?.email as string) || "")
+          .trim()
+          .toLowerCase();
         const password = (credentials?.password as string) || "";
 
         if (!password) {

@@ -8,6 +8,7 @@ import { deleteAdminClient, saveAdminClient } from "@/app/actions/admin-clients"
 import { DashboardEmptyState } from "@/components/dashboard/dashboard-empty-state";
 import { DashboardModal } from "@/components/dashboard/dashboard-modal";
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
+import { DashboardPaginationControls } from "@/components/dashboard/dashboard-pagination-controls";
 import { DashboardStatusBadge } from "@/components/dashboard/dashboard-status-badge";
 import {
   adminClientToneByStatus,
@@ -18,6 +19,7 @@ import type {
   AdminClientInitialOption,
   AdminClientRecord,
 } from "@/lib/dashboard/admin-dashboard-data";
+import { paginateDashboardItems } from "@/lib/dashboard/pagination";
 import { buildWhatsAppHref } from "@/lib/whatsapp";
 
 type AdminClientsWorkspaceProps = {
@@ -25,6 +27,7 @@ type AdminClientsWorkspaceProps = {
   searchValue: string;
   selectedInitial: string | null;
   sortOrder: "asc" | "desc";
+  currentPage: number;
   totalCount: number;
   filteredCount: number;
   initialOptions: AdminClientInitialOption[];
@@ -48,6 +51,7 @@ export function AdminClientsWorkspace({
   searchValue,
   selectedInitial,
   sortOrder,
+  currentPage,
   totalCount,
   filteredCount,
   initialOptions,
@@ -75,6 +79,7 @@ export function AdminClientsWorkspace({
   }, [searchValue]);
 
   const detailClient = records.find((client) => client.id === detailClientId) ?? null;
+  const paginatedClients = paginateDashboardItems(records, currentPage);
 
   const updateFormField = (key: keyof ClientFormState, value: string) => {
     setFormState((current) => ({ ...current, [key]: value }));
@@ -119,7 +124,7 @@ export function AdminClientsWorkspace({
     if (normalizedSearch === searchValue) return;
 
     const timeoutId = window.setTimeout(() => {
-      updateQuery({ q: normalizedSearch || null });
+      updateQuery({ q: normalizedSearch || null, page: null });
     }, 250);
 
     return () => window.clearTimeout(timeoutId);
@@ -219,7 +224,10 @@ export function AdminClientsWorkspace({
                       type="checkbox"
                       checked={sortOrder === order}
                       onChange={() =>
-                        updateQuery({ sort: sortOrder === order ? null : order })
+                        updateQuery({
+                          sort: sortOrder === order ? null : order,
+                          page: null,
+                        })
                       }
                     />
                     <span>{order === "asc" ? "A-Z" : "Z-A"}</span>
@@ -235,7 +243,7 @@ export function AdminClientsWorkspace({
                   <input
                     type="checkbox"
                     checked={!selectedInitial}
-                    onChange={() => updateQuery({ initial: null })}
+                    onChange={() => updateQuery({ initial: null, page: null })}
                   />
                   <span>All</span>
                 </label>
@@ -251,6 +259,7 @@ export function AdminClientsWorkspace({
                         updateQuery({
                           initial:
                             selectedInitial === option.label ? null : option.label,
+                          page: null,
                         })
                       }
                     />
@@ -266,7 +275,7 @@ export function AdminClientsWorkspace({
 
           <div className="dashboard-clients-roster-list">
             {records.length > 0 ? (
-              records.map((client) => {
+              paginatedClients.items.map((client) => {
                 const whatsappHref = buildWhatsAppHref(client.phone);
 
                 return (
@@ -326,6 +335,16 @@ export function AdminClientsWorkspace({
               />
             )}
           </div>
+          <DashboardPaginationControls
+            page={paginatedClients.page}
+            pageCount={paginatedClients.pageCount}
+            startItem={paginatedClients.startItem}
+            endItem={paginatedClients.endItem}
+            totalItems={paginatedClients.totalItems}
+            onPageChange={(nextPage) =>
+              updateQuery({ page: nextPage > 1 ? String(nextPage) : null })
+            }
+          />
         </article>
       </section>
 

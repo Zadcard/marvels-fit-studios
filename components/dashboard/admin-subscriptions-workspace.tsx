@@ -18,12 +18,12 @@ import {
 import { DashboardEmptyState } from "@/components/dashboard/dashboard-empty-state";
 import { DashboardFormSection } from "@/components/dashboard/dashboard-form-section";
 import { DashboardManagementToolbar } from "@/components/dashboard/dashboard-management-toolbar";
-import { DashboardMiniStat } from "@/components/dashboard/dashboard-mini-stat";
 import { DashboardModal } from "@/components/dashboard/dashboard-modal";
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
+import { DashboardPaginationControls } from "@/components/dashboard/dashboard-pagination-controls";
 import { DashboardStatCard } from "@/components/dashboard/dashboard-stat-card";
 import { DashboardStatusBadge } from "@/components/dashboard/dashboard-status-badge";
-import { DashboardSurfaceNote } from "@/components/dashboard/dashboard-surface-note";
+import { paginateDashboardItems } from "@/lib/dashboard/pagination";
 import {
   adminPaymentStatusFilters,
   adminPlanFilters,
@@ -44,6 +44,15 @@ type SubscriptionFormState = {
   amount: string;
   renewalDate: string;
 };
+
+type SubscriptionSort = "member-asc" | "member-desc" | "renewal-asc" | "payment";
+
+const subscriptionSortOptions: Array<{ label: string; value: SubscriptionSort }> = [
+  { label: "Member A-Z", value: "member-asc" },
+  { label: "Member Z-A", value: "member-desc" },
+  { label: "Renewal date", value: "renewal-asc" },
+  { label: "Payment status", value: "payment" },
+];
 
 const emptySubscriptionForm: SubscriptionFormState = {
   clientId: "",
@@ -146,6 +155,8 @@ export function AdminSubscriptionsWorkspace({
     useState<(typeof adminPaymentStatusFilters)[number]>("All payments");
   const [planFilter, setPlanFilter] =
     useState<(typeof adminPlanFilters)[number]>("All plans");
+  const [sortOrder, setSortOrder] = useState<SubscriptionSort>("member-asc");
+  const [page, setPage] = useState(1);
   const [selectedSubscriptionId, setSelectedSubscriptionId] = useState(
     records[0]?.id ?? ""
   );
@@ -158,6 +169,7 @@ export function AdminSubscriptionsWorkspace({
   const [saveMessage, setSaveMessage] = useState("");
   const [isSaving, startTransition] = useTransition();
   const [isMutating, startMutationTransition] = useTransition();
+  const [detailSubscriptionId, setDetailSubscriptionId] = useState<string | null>(null);
 
   useEffect(() => {
     setSubscriptionRecords(records);
@@ -193,6 +205,27 @@ export function AdminSubscriptionsWorkspace({
 
     return matchesSearch && matchesSubscription && matchesPayment && matchesPlan;
   });
+  const sortedSubscriptions = useMemo(() => {
+    return [...filteredSubscriptions].sort((left, right) => {
+      if (sortOrder === "member-desc") {
+        return right.memberName.localeCompare(left.memberName);
+      }
+
+      if (sortOrder === "renewal-asc") {
+        return (
+          new Date(left.renewalDateValue).getTime() -
+          new Date(right.renewalDateValue).getTime()
+        );
+      }
+
+      if (sortOrder === "payment") {
+        return left.paymentStatus.localeCompare(right.paymentStatus);
+      }
+
+      return left.memberName.localeCompare(right.memberName);
+    });
+  }, [filteredSubscriptions, sortOrder]);
+  const paginatedSubscriptions = paginateDashboardItems(sortedSubscriptions, page);
 
   const selectedSubscription =
     filteredSubscriptions.find(
@@ -200,6 +233,10 @@ export function AdminSubscriptionsWorkspace({
     ) ??
     filteredSubscriptions[0] ??
     subscriptionRecords[0];
+  const detailSubscription =
+    filteredSubscriptions.find(
+      (subscription) => subscription.id === detailSubscriptionId
+    ) ?? null;
 
   const activeCount = filteredSubscriptions.filter(
     (subscription) => subscription.subscriptionStatus === "Active"
@@ -229,6 +266,10 @@ export function AdminSubscriptionsWorkspace({
     paymentFilter !== "All payments" ||
     planFilter !== "All plans";
 
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm, subscriptionFilter, paymentFilter, planFilter, sortOrder]);
+
   const planSummary = adminPlanFilters
     .filter((filter): filter is AdminPlanType => filter !== "All plans")
     .map((plan) => ({
@@ -255,6 +296,11 @@ export function AdminSubscriptionsWorkspace({
     });
     setSaveMessage("");
     setIsModalOpen(true);
+  };
+
+  const openSubscriptionDetail = (subscriptionId: string) => {
+    setSelectedSubscriptionId(subscriptionId);
+    setDetailSubscriptionId(subscriptionId);
   };
 
   const upsertLocalRecord = (saved: {
@@ -365,47 +411,6 @@ export function AdminSubscriptionsWorkspace({
         }
       />
 
-      <DashboardSurfaceNote
-        eyebrow="Revenue coverage"
-        title={
-          overdueCount > 0
-            ? `${overdueCount} subscriptions need immediate billing follow-up in this view.`
-            : pendingRenewalCount > 0
-              ? `${pendingRenewalCount} subscriptions are approaching renewal in this view.`
-              : "Subscription coverage is stable enough to focus on plan mix and renewals."
-        }
-        description="Use this workspace to catch payment risk, confirm renewals before they slip, and keep the visible plan mix balanced."
-        items={[
-          `${filteredSubscriptions.length} visible subscriptions across the current filters.`,
-          `${dueSoonCount} payments are due soon and ${manualReviewCount} accounts still need manual review.`,
-          `${activeCount} active subscriptions and ${trialCount} trial accounts are in this view.`,
-        ]}
-      />
-
-      <section
-        className="dashboard-mini-grid dashboard-admin-priority-grid"
-        aria-label="Subscription priorities"
-      >
-        <DashboardMiniStat
-          tone={overdueCount > 0 ? "warning" : "success"}
-          label="Overdue"
-          value={overdueCount}
-          description="Need payment recovery now."
-        />
-        <DashboardMiniStat
-          tone={pendingRenewalCount > 0 ? "accent" : "success"}
-          label="Pending renewal"
-          value={pendingRenewalCount}
-          description="Renewal confirmation still open."
-        />
-        <DashboardMiniStat
-          tone={manualReviewCount > 0 ? "warning" : "success"}
-          label="Manual review"
-          value={manualReviewCount}
-          description="Need billing verification."
-        />
-      </section>
-
       <section className="dashboard-kpi-grid">
         {stats.map((stat) => {
           const Icon = statIconMap[stat.iconKey];
@@ -445,12 +450,16 @@ export function AdminSubscriptionsWorkspace({
             onSearchChange={setSearchTerm}
             searchPlaceholder="Search by member, plan, coach, or note"
             summary={`${filteredSubscriptions.length} subscriptions in view, ${overdueCount} overdue`}
+            sortValue={sortOrder}
+            sortOptions={subscriptionSortOptions}
+            onSortChange={(value) => setSortOrder(value as SubscriptionSort)}
             isFiltered={isFiltered}
             onReset={() => {
               setSearchTerm("");
               setSubscriptionFilter("All statuses");
               setPaymentFilter("All payments");
               setPlanFilter("All plans");
+              setSortOrder("member-asc");
             }}
             filters={
               <>
@@ -546,7 +555,7 @@ export function AdminSubscriptionsWorkspace({
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredSubscriptions.map((subscription) => (
+                      {paginatedSubscriptions.items.map((subscription) => (
                         <tr key={subscription.id}>
                           <td>
                             <div className="dashboard-table__identity">
@@ -586,7 +595,7 @@ export function AdminSubscriptionsWorkspace({
                               <button
                                 type="button"
                                 className="dashboard-inline-button"
-                                onClick={() => setSelectedSubscriptionId(subscription.id)}
+                                onClick={() => openSubscriptionDetail(subscription.id)}
                               >
                                 Inspect
                               </button>
@@ -641,7 +650,7 @@ export function AdminSubscriptionsWorkspace({
                         <button
                           type="button"
                           className="dashboard-inline-button"
-                          onClick={() => setSelectedSubscriptionId(subscription.id)}
+                          onClick={() => openSubscriptionDetail(subscription.id)}
                         >
                           Open detail
                         </button>
@@ -660,6 +669,14 @@ export function AdminSubscriptionsWorkspace({
               </>
             )}
           </div>
+          <DashboardPaginationControls
+            page={paginatedSubscriptions.page}
+            pageCount={paginatedSubscriptions.pageCount}
+            startItem={paginatedSubscriptions.startItem}
+            endItem={paginatedSubscriptions.endItem}
+            totalItems={paginatedSubscriptions.totalItems}
+            onPageChange={setPage}
+          />
         </article>
 
         <aside className="dashboard-panel dashboard-detail-panel">
@@ -814,6 +831,95 @@ export function AdminSubscriptionsWorkspace({
           )}
         </aside>
       </section>
+
+      <DashboardModal
+        open={!!detailSubscription}
+        onClose={() => setDetailSubscriptionId(null)}
+        title={detailSubscription?.memberName ?? "Subscription details"}
+        description={detailSubscription?.planName}
+        size="wide"
+        footer={
+          detailSubscription ? (
+            <button
+              type="button"
+              className="mv-btn mv-btn-primary"
+              onClick={() => {
+                setDetailSubscriptionId(null);
+                openEditModal(detailSubscription);
+              }}
+              disabled={detailSubscription.subscriptionStatus === "Canceled"}
+            >
+              Edit Subscription
+            </button>
+          ) : null
+        }
+      >
+        {detailSubscription ? (
+          <div className="dashboard-stack">
+            <div className="dashboard-badge-stack">
+              <DashboardStatusBadge
+                label={detailSubscription.subscriptionStatus}
+                tone={getSubscriptionTone(detailSubscription.subscriptionStatus)}
+              />
+              <DashboardStatusBadge
+                label={detailSubscription.paymentStatus}
+                tone={getPaymentTone(detailSubscription.paymentStatus)}
+              />
+            </div>
+
+            <div className="dashboard-detail-grid">
+              <div className="dashboard-detail-stat">
+                <span className="dashboard-detail-stat__label">Plan</span>
+                <strong>{detailSubscription.planName}</strong>
+                <small>{detailSubscription.billingCycle}</small>
+              </div>
+              <div className="dashboard-detail-stat">
+                <span className="dashboard-detail-stat__label">Amount</span>
+                <strong>{detailSubscription.amountLabel}</strong>
+                <small>Current visible billing amount.</small>
+              </div>
+              <div className="dashboard-detail-stat">
+                <span className="dashboard-detail-stat__label">Renewal</span>
+                <strong>{detailSubscription.renewalDate}</strong>
+                <small>{getSubscriptionHealthCopy(detailSubscription)}</small>
+              </div>
+              <div className="dashboard-detail-stat">
+                <span className="dashboard-detail-stat__label">Coach coverage</span>
+                <strong>{detailSubscription.assignedCoach}</strong>
+                <small>Coach currently tied to the member roster.</small>
+              </div>
+            </div>
+
+            <div className="dashboard-summary-list">
+              <div className="dashboard-summary-row">
+                <strong>Billing note</strong>
+                <span>{detailSubscription.note}</span>
+              </div>
+              <div className="dashboard-summary-row">
+                <strong>Next action</strong>
+                <span>{getSubscriptionHealthCopy(detailSubscription)}</span>
+              </div>
+            </div>
+
+            {detailSubscription.paymentHistory.length > 0 ? (
+              <div className="dashboard-summary-list">
+                {detailSubscription.paymentHistory.map((payment) => (
+                  <div key={payment.id} className="dashboard-summary-row">
+                    <strong>{payment.amountLabel}</strong>
+                    <span>{payment.dateLabel}</span>
+                    <span>{payment.note}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <DashboardEmptyState
+                title="No payments recorded yet"
+                description="The payment log will appear after the first recorded charge."
+              />
+            )}
+          </div>
+        ) : null}
+      </DashboardModal>
 
       <DashboardModal
         open={isModalOpen}

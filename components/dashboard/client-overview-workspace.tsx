@@ -1,17 +1,30 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import Link from "next/link";
-import { ArrowRight, CreditCard, Download, Files, ShieldUser, Sparkles } from "lucide-react";
+import {
+  ArrowRight,
+  CreditCard,
+  Download,
+  Edit3,
+  Files,
+  Save,
+  ShieldUser,
+  Sparkles,
+  X,
+} from "lucide-react";
 
+import { saveClientPrivateNote } from "@/app/actions/client-private-notes";
 import { DashboardActivityFeed } from "@/components/dashboard/dashboard-activity-feed";
 import { DashboardEmptyState } from "@/components/dashboard/dashboard-empty-state";
 import { DashboardMiniStat } from "@/components/dashboard/dashboard-mini-stat";
 import { DashboardModal } from "@/components/dashboard/dashboard-modal";
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
+import { DashboardPaginationControls } from "@/components/dashboard/dashboard-pagination-controls";
 import { DashboardStatCard } from "@/components/dashboard/dashboard-stat-card";
 import { DashboardSurfaceNote } from "@/components/dashboard/dashboard-surface-note";
 import type { ClientOverviewData } from "@/lib/dashboard/client-dashboard-data";
+import { paginateDashboardItems } from "@/lib/dashboard/pagination";
 
 function getSessionBadgeClass(status: "Booked" | "Check-in ready" | "Waitlist") {
   if (status === "Check-in ready") {
@@ -30,11 +43,42 @@ type ClientOverviewWorkspaceProps = {
 };
 
 export function ClientOverviewWorkspace({ data }: ClientOverviewWorkspaceProps) {
+  const [isSavingNote, startNoteTransition] = useTransition();
   const [isFilesOpen, setIsFilesOpen] = useState(false);
+  const [noteDraft, setNoteDraft] = useState("");
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  const [noteMessage, setNoteMessage] = useState("");
+  const [notePage, setNotePage] = useState(1);
+  const [filePage, setFilePage] = useState(1);
   const bookedThisWeek = data.upcomingSessions.length;
   const readyNow = data.upcomingSessions.filter(
     (session) => session.status === "Check-in ready"
   ).length;
+  const paginatedPrivateNotes = paginateDashboardItems(data.privateNotes, notePage);
+  const paginatedActiveFiles = paginateDashboardItems(data.activeFiles, filePage);
+
+  const resetNoteDraft = () => {
+    setEditingNoteId(null);
+    setNoteDraft("");
+  };
+
+  const savePrivateNote = () => {
+    setNoteMessage("");
+    startNoteTransition(async () => {
+      try {
+        await saveClientPrivateNote({
+          noteId: editingNoteId,
+          content: noteDraft,
+        });
+        setNoteMessage(editingNoteId ? "Private note updated." : "Private note added.");
+        resetNoteDraft();
+      } catch (error) {
+        setNoteMessage(
+          error instanceof Error ? error.message : "Could not save private note."
+        );
+      }
+    });
+  };
 
   return (
     <div className="dashboard-stack">
@@ -169,6 +213,97 @@ export function ClientOverviewWorkspace({ data }: ClientOverviewWorkspaceProps) 
           </div>
         </article>
 
+        <article className="dashboard-panel">
+          <div className="dashboard-panel__header">
+            <div>
+              <div className="mv-eyebrow">Private notes</div>
+              <h2>Your notes</h2>
+              <p>Personal reminders only visible from your client dashboard.</p>
+            </div>
+          </div>
+
+          {noteMessage ? (
+            <div className="dashboard-info-strip" role="status">
+              <strong>Note update</strong>
+              <p>{noteMessage}</p>
+            </div>
+          ) : null}
+
+          <div className="dashboard-form-section">
+            <label className="dashboard-form-field dashboard-form-field--wide">
+              <span>{editingNoteId ? "Edit note" : "New note"}</span>
+              <textarea
+                className="dashboard-textarea"
+                value={noteDraft}
+                rows={4}
+                onChange={(event) => setNoteDraft(event.target.value)}
+              />
+            </label>
+            <div className="dashboard-row-actions">
+              <button
+                type="button"
+                className="mv-btn mv-btn-primary"
+                onClick={savePrivateNote}
+                disabled={isSavingNote || noteDraft.trim().length === 0}
+              >
+                <Save size={16} />
+                {isSavingNote ? "Saving..." : editingNoteId ? "Save note" : "Add note"}
+              </button>
+              {editingNoteId ? (
+                <button
+                  type="button"
+                  className="mv-btn mv-btn-outline"
+                  onClick={resetNoteDraft}
+                  disabled={isSavingNote}
+                >
+                  <X size={16} />
+                  Cancel
+                </button>
+              ) : null}
+            </div>
+          </div>
+
+          {data.privateNotes.length > 0 ? (
+            <>
+              <div className="dashboard-summary-list">
+                {paginatedPrivateNotes.items.map((note) => (
+                  <div key={note.id} className="dashboard-summary-row">
+                    <strong>{note.updatedAtLabel}</strong>
+                    <span>{note.content}</span>
+                    <div className="dashboard-row-actions">
+                      <button
+                        type="button"
+                        className="dashboard-inline-button"
+                        onClick={() => {
+                          setEditingNoteId(note.id);
+                          setNoteDraft(note.content);
+                          setNoteMessage("");
+                        }}
+                      >
+                        <Edit3 size={14} />
+                        Edit
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <DashboardPaginationControls
+                page={paginatedPrivateNotes.page}
+                pageCount={paginatedPrivateNotes.pageCount}
+                startItem={paginatedPrivateNotes.startItem}
+                endItem={paginatedPrivateNotes.endItem}
+                totalItems={paginatedPrivateNotes.totalItems}
+                onPageChange={setNotePage}
+              />
+            </>
+          ) : (
+            <DashboardEmptyState
+              title="No private notes yet"
+              description="Add a private note when you want to remember a training cue or question."
+            />
+          )}
+        </article>
+
         <article className="dashboard-panel dashboard-panel--accent">
           <div className="dashboard-panel__header">
             <div>
@@ -215,11 +350,6 @@ export function ClientOverviewWorkspace({ data }: ClientOverviewWorkspaceProps) 
               );
             })}
           </div>
-
-          <div className="dashboard-info-strip">
-            <strong>Billing summary</strong>
-            <p>Renewal and balance details appear here.</p>
-          </div>
         </article>
       </section>
 
@@ -232,7 +362,7 @@ export function ClientOverviewWorkspace({ data }: ClientOverviewWorkspaceProps) 
       >
         {data.activeFiles.length > 0 ? (
           <div className="dashboard-summary-list">
-            {data.activeFiles.map((file) => (
+            {paginatedActiveFiles.items.map((file) => (
               <div key={file.id} className="dashboard-summary-row">
                 <div>
                   <strong>{file.name}</strong>
@@ -247,6 +377,14 @@ export function ClientOverviewWorkspace({ data }: ClientOverviewWorkspaceProps) 
                 </a>
               </div>
             ))}
+            <DashboardPaginationControls
+              page={paginatedActiveFiles.page}
+              pageCount={paginatedActiveFiles.pageCount}
+              startItem={paginatedActiveFiles.startItem}
+              endItem={paginatedActiveFiles.endItem}
+              totalItems={paginatedActiveFiles.totalItems}
+              onPageChange={setFilePage}
+            />
           </div>
         ) : (
           <DashboardEmptyState

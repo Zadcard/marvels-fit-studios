@@ -63,6 +63,7 @@ export type ClientOverviewData = {
   subscriptionSnapshot: ClientSubscriptionSnapshot;
   quickActions: ClientQuickAction[];
   activeFiles: ClientFileRecord[];
+  privateNotes: ClientPrivateNoteRecord[];
 };
 
 export type ClientFileRecord = {
@@ -72,6 +73,12 @@ export type ClientFileRecord = {
   uploadedAtLabel: string;
   expiresAtLabel: string;
   downloadHref: string;
+};
+
+export type ClientPrivateNoteRecord = {
+  id: string;
+  content: string;
+  updatedAtLabel: string;
 };
 
 export type ClientCoachRecord = {

@@ -7,16 +7,16 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { approveLeadAsClient, deleteLead } from "@/app/actions/admin-leads";
 import { DashboardEmptyState } from "@/components/dashboard/dashboard-empty-state";
-import { DashboardMiniStat } from "@/components/dashboard/dashboard-mini-stat";
 import { DashboardModal } from "@/components/dashboard/dashboard-modal";
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
+import { DashboardPaginationControls } from "@/components/dashboard/dashboard-pagination-controls";
 import { DashboardStatusBadge } from "@/components/dashboard/dashboard-status-badge";
-import { DashboardSurfaceNote } from "@/components/dashboard/dashboard-surface-note";
 import {
   adminLeadStatusFilters,
   type AdminLeadRecord,
   type AdminLeadStatus,
 } from "@/lib/dashboard/admin-dashboard-data";
+import { paginateDashboardItems } from "@/lib/dashboard/pagination";
 import type { AdminLeadInitialOption } from "@/lib/repositories/admin-lead-repository";
 
 const visibleLeadStatusFilters = adminLeadStatusFilters.filter(
@@ -28,6 +28,7 @@ type AdminLeadsWorkspaceProps = {
   searchValue: string;
   selectedInitial: string | null;
   sortOrder: "asc" | "desc";
+  currentPage: number;
   totalCount: number;
   filteredCount: number;
   initialOptions: AdminLeadInitialOption[];
@@ -59,6 +60,7 @@ export function AdminLeadsWorkspace({
   searchValue,
   selectedInitial,
   sortOrder,
+  currentPage,
   totalCount,
   filteredCount,
   initialOptions,
@@ -114,7 +116,7 @@ export function AdminLeadsWorkspace({
     }
 
     const timeoutId = window.setTimeout(() => {
-      updateQuery({ q: normalizedSearch || null });
+      updateQuery({ q: normalizedSearch || null, page: null });
     }, 250);
 
     return () => window.clearTimeout(timeoutId);
@@ -125,6 +127,7 @@ export function AdminLeadsWorkspace({
       return statusFilter === "All" || lead.status === statusFilter;
     });
   }, [records, statusFilter]);
+  const paginatedLeads = paginateDashboardItems(filteredRecords, currentPage);
 
   const pendingLeads = filteredRecords.filter(
     (lead) => lead.status !== "Converted"
@@ -146,18 +149,21 @@ export function AdminLeadsWorkspace({
       q: null,
       initial: null,
       sort: null,
+      page: null,
     });
   };
 
   const handleSortToggle = (nextSort: "asc" | "desc") => {
     updateQuery({
       sort: sortOrder === nextSort ? null : nextSort,
+      page: null,
     });
   };
 
   const handleInitialToggle = (nextInitial: string) => {
     updateQuery({
       initial: selectedInitial === nextInitial ? null : nextInitial,
+      page: null,
     });
   };
 
@@ -224,39 +230,6 @@ export function AdminLeadsWorkspace({
         }
       />
 
-      <DashboardSurfaceNote
-        eyebrow="Join request queue"
-        title={
-          pendingLeads > 0
-            ? `${pendingLeads} requests still need a decision in this view.`
-            : "All visible requests are already resolved or converted."
-        }
-        description="Work new inquiries first, move contacted requests to a decision, and only create clients when the request is ready."
-        items={[
-          `${newLeads} new requests need first contact.`,
-          `${convertedLeads} converted requests stay here as history.`,
-          `${pendingLeads} visible requests still need action.`,
-        ]}
-      />
-
-      <section
-        className="dashboard-mini-grid dashboard-admin-priority-grid"
-        aria-label="Join request highlights"
-      >
-        <DashboardMiniStat
-          tone={newLeads > 0 ? "accent" : "success"}
-          label="New"
-          value={newLeads}
-          description="Need first response."
-        />
-        <DashboardMiniStat
-          tone="success"
-          label="Converted"
-          value={convertedLeads}
-          description="Already promoted to client."
-        />
-      </section>
-
       <section className="dashboard-panel dashboard-panel--accent dashboard-panel--dense">
         <div className="dashboard-clients-toolbar">
           <div className="dashboard-clients-toolbar__copy">
@@ -312,7 +285,7 @@ export function AdminLeadsWorkspace({
                 <input
                   type="checkbox"
                   checked={!selectedInitial}
-                  onChange={() => updateQuery({ initial: null })}
+                  onChange={() => updateQuery({ initial: null, page: null })}
                 />
                 <span>All</span>
               </label>
@@ -413,7 +386,7 @@ export function AdminLeadsWorkspace({
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredRecords.map((lead) => (
+                    {paginatedLeads.items.map((lead) => (
                       <tr
                         key={lead.id}
                         className={
@@ -481,7 +454,7 @@ export function AdminLeadsWorkspace({
               </div>
 
               <div className="dashboard-mobile-list">
-                {filteredRecords.map((lead) => (
+                {paginatedLeads.items.map((lead) => (
                   <article
                     key={lead.id}
                     className={
@@ -558,6 +531,16 @@ export function AdminLeadsWorkspace({
             />
           )}
         </div>
+        <DashboardPaginationControls
+          page={paginatedLeads.page}
+          pageCount={paginatedLeads.pageCount}
+          startItem={paginatedLeads.startItem}
+          endItem={paginatedLeads.endItem}
+          totalItems={paginatedLeads.totalItems}
+          onPageChange={(nextPage) =>
+            updateQuery({ page: nextPage > 1 ? String(nextPage) : null })
+          }
+        />
       </section>
 
       <DashboardModal

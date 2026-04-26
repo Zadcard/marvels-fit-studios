@@ -81,6 +81,18 @@ function isPrismaClientError(error: unknown) {
   );
 }
 
+function getPrismaErrorSummary(error: unknown) {
+  if (error instanceof Prisma.PrismaClientKnownRequestError) {
+    return { name: error.name, code: error.code };
+  }
+
+  if (error instanceof Error) {
+    return { name: error.name };
+  }
+
+  return { name: typeof error };
+}
+
 export function isRecoverablePrismaError(error: unknown) {
   const message = getPrismaErrorMessage(error);
 
@@ -142,11 +154,9 @@ export async function withPrismaFallback<T>(
       return await operation();
     } catch (retryError) {
       if (isRecoverablePrismaError(retryError) || isPrismaClientError(retryError)) {
-        console.error("[prisma] Read operation failed after retry. Returning fallback.", {
-          initialError:
-            error instanceof Error ? error.message : String(error),
-          retryError:
-            retryError instanceof Error ? retryError.message : String(retryError),
+        console.warn("[prisma] Read operation failed after retry. Returning fallback.", {
+          initialError: getPrismaErrorSummary(error),
+          retryError: getPrismaErrorSummary(retryError),
         });
         return fallback;
       }

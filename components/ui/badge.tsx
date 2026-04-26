@@ -12,9 +12,9 @@ const badgeVariants = cva(
         accent:
           "border-[rgba(230,36,41,0.28)] bg-[rgba(230,36,41,0.12)] text-[#ffb5b8]",
         success:
-          "border-[rgba(37,211,102,0.24)] bg-[rgba(37,211,102,0.12)] text-[#8ce7ad]",
+          "border-[rgba(230,36,41,0.24)] bg-[rgba(230,36,41,0.08)] text-[color:var(--mv-muted-strong)]",
         warning:
-          "border-[rgba(245,158,11,0.28)] bg-[rgba(245,158,11,0.12)] text-[#f6ca7b]",
+          "border-[rgba(230,36,41,0.34)] bg-[rgba(230,36,41,0.14)] text-[#ffb5b8]",
       },
     },
     defaultVariants: {

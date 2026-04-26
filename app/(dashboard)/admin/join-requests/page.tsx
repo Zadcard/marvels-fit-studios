@@ -19,6 +19,7 @@ export default async function AdminJoinRequestsPage(
   const initial =
     getSingleValue(searchParams.initial)?.trim().slice(0, 1).toUpperCase() ?? "";
   const sort = getSingleValue(searchParams.sort) === "desc" ? "desc" : "asc";
+  const page = Math.max(1, Number(getSingleValue(searchParams.page) ?? "1") || 1);
   const leadDirectory = await adminLeadRepository.list({
     search,
     initial: initial || null,
@@ -31,6 +32,7 @@ export default async function AdminJoinRequestsPage(
       searchValue={search}
       selectedInitial={initial || null}
       sortOrder={sort}
+      currentPage={page}
       totalCount={leadDirectory.totalCount}
       filteredCount={leadDirectory.filteredCount}
       initialOptions={leadDirectory.initialOptions}
