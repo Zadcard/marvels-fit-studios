@@ -4,6 +4,10 @@ type DashboardManagementToolbarProps = {
   onSearchChange: (value: string) => void;
   summary: string;
   searchLabel?: string;
+  sortLabel?: string;
+  sortValue?: string;
+  sortOptions?: Array<{ label: string; value: string }>;
+  onSortChange?: (value: string) => void;
   isFiltered?: boolean;
   onReset?: () => void;
   filters?: React.ReactNode;
@@ -16,6 +20,10 @@ export function DashboardManagementToolbar({
   onSearchChange,
   summary,
   searchLabel = "Search",
+  sortLabel = "Sort",
+  sortValue,
+  sortOptions,
+  onSortChange,
   isFiltered = false,
   onReset,
   filters,
@@ -36,6 +44,22 @@ export function DashboardManagementToolbar({
             className="dashboard-input"
           />
         </label>
+        {sortOptions && sortValue !== undefined && onSortChange ? (
+          <label className="dashboard-filter-field dashboard-filter-field--sort">
+            <span>{sortLabel}</span>
+            <select
+              className="dashboard-select"
+              value={sortValue}
+              onChange={(event) => onSortChange(event.target.value)}
+            >
+              {sortOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
         {filters ? <div className="dashboard-toolbar__filters">{filters}</div> : null}
       </div>
 

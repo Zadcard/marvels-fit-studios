@@ -7,6 +7,7 @@ import {
   type ClientCoachRecord,
   type ClientFileRecord,
   type ClientOverviewData,
+  type ClientPrivateNoteRecord,
   type ClientSessionRecord,
   type ClientSettingsRecord,
   type ClientSubscriptionRecord,
@@ -117,6 +118,18 @@ function isUnknownPrismaField(error: unknown, fieldName: string) {
 
 function isMissingPreferencesRelation(error: unknown) {
   return isUnknownPrismaField(error, "preferences");
+}
+
+function isMissingFileAssetColumn(error: unknown) {
+  return ["expiresAt", "deletedAt", "note", "data", "uploadedById"].some((field) =>
+    isUnknownPrismaField(error, field)
+  );
+}
+
+function isMissingWorkoutNotePrivacyColumn(error: unknown) {
+  return ["isPrivate", "authorId", "updatedAt"].some((field) =>
+    isUnknownPrismaField(error, field)
+  );
 }
 
 function inferPaymentStatus(subscription: {
@@ -302,7 +315,7 @@ function isUpcomingVisibleSession(entry: ClientDashboardSessionEntry) {
 }
 
 function mapClientFiles(client: {
-  files: Array<{
+  files?: Array<{
     id: string;
     name: string;
     note: string | null;
@@ -310,7 +323,7 @@ function mapClientFiles(client: {
     expiresAt: Date;
   }>;
   group?: {
-    files: Array<{
+    files?: Array<{
       id: string;
       name: string;
       note: string | null;
@@ -320,7 +333,10 @@ function mapClientFiles(client: {
   } | null;
 }): ClientFileRecord[] {
   const filesById = new Map(
-    [...client.files, ...(client.group?.files ?? [])].map((file) => [file.id, file])
+    [...(client.files ?? []), ...(client.group?.files ?? [])].map((file) => [
+      file.id,
+      file,
+    ])
   );
 
   return [...filesById.values()].map((file) => ({
@@ -333,6 +349,21 @@ function mapClientFiles(client: {
   }));
 }
 
+function mapClientPrivateNotes(client: {
+  workoutNotes?: Array<{
+    id: string;
+    content: string;
+    date: Date;
+    updatedAt?: Date | null;
+  }>;
+}): ClientPrivateNoteRecord[] {
+  return (client.workoutNotes ?? []).map((note) => ({
+    id: note.id,
+    content: note.content,
+    updatedAtLabel: formatDate(note.updatedAt ?? note.date),
+  }));
+}
+
 export class ClientDashboardRepository {
   private get prisma() {
     return getPrisma();
@@ -341,7 +372,9 @@ export class ClientDashboardRepository {
   private async getClientDashboardQueryWithShape(
     userId: string,
     includeCustomPrice: boolean,
-    includePreferences: boolean
+    includePreferences: boolean,
+    includeFiles: boolean,
+    includePrivateNotes: boolean
   ) {
     return this.prisma.client.findUnique({
       where: { userId },
@@ -373,22 +406,26 @@ export class ClientDashboardRepository {
         group: {
           select: {
             name: true,
-            files: {
-              where: {
-                deletedAt: null,
-                expiresAt: {
-                  gt: new Date(),
-                },
-              },
-              orderBy: [{ createdAt: "desc" }],
-              select: {
-                id: true,
-                name: true,
-                note: true,
-                createdAt: true,
-                expiresAt: true,
-              },
-            },
+            ...(includeFiles
+              ? {
+                  files: {
+                    where: {
+                      deletedAt: null,
+                      expiresAt: {
+                        gt: new Date(),
+                      },
+                    },
+                    orderBy: [{ createdAt: "desc" }],
+                    select: {
+                      id: true,
+                      name: true,
+                      note: true,
+                      createdAt: true,
+                      expiresAt: true,
+                    },
+                  },
+                }
+              : {}),
             coach: {
               select: {
                 fullName: true,
@@ -504,33 +541,60 @@ export class ClientDashboardRepository {
             },
           },
         },
-        files: {
-          where: {
-            deletedAt: null,
-            expiresAt: {
-              gt: new Date(),
-            },
-          },
-          orderBy: [{ createdAt: "desc" }],
-          select: {
-            id: true,
-            name: true,
-            note: true,
-            createdAt: true,
-            expiresAt: true,
-          },
-        },
+        ...(includeFiles
+          ? {
+              files: {
+                where: {
+                  deletedAt: null,
+                  expiresAt: {
+                    gt: new Date(),
+                  },
+                },
+                orderBy: [{ createdAt: "desc" }],
+                select: {
+                  id: true,
+                  name: true,
+                  note: true,
+                  createdAt: true,
+                  expiresAt: true,
+                },
+              },
+            }
+          : {}),
+        ...(includePrivateNotes
+          ? {
+              workoutNotes: {
+                where: {
+                  isPrivate: true,
+                  authorId: userId,
+                },
+                orderBy: [{ updatedAt: "desc" }, { date: "desc" }],
+                select: {
+                  id: true,
+                  content: true,
+                  date: true,
+                  updatedAt: true,
+                },
+              },
+            }
+          : {}),
       },
     });
   }
 
   private async getClientDashboardQuery(userId: string) {
-    const shapes = [
-      { includeCustomPrice: true, includePreferences: true },
-      { includeCustomPrice: false, includePreferences: true },
-      { includeCustomPrice: true, includePreferences: false },
-      { includeCustomPrice: false, includePreferences: false },
-    ];
+    const shapes = [true, false].flatMap((includeCustomPrice) =>
+      [true, false].flatMap((includePreferences) =>
+        [true, false].flatMap((includeFiles) =>
+          [true, false].map((includePrivateNotes) => ({
+            includeCustomPrice,
+            includePreferences,
+            includeFiles,
+            includePrivateNotes,
+          }))
+        )
+      )
+    );
     let lastShapeError: unknown;
 
     for (const shape of shapes) {
@@ -538,12 +602,16 @@ export class ClientDashboardRepository {
         return await this.getClientDashboardQueryWithShape(
           userId,
           shape.includeCustomPrice,
-          shape.includePreferences
+          shape.includePreferences,
+          shape.includeFiles,
+          shape.includePrivateNotes
         );
       } catch (error) {
         if (
           isMissingCustomPriceColumn(error) ||
-          isMissingPreferencesRelation(error)
+          isMissingPreferencesRelation(error) ||
+          isMissingFileAssetColumn(error) ||
+          isMissingWorkoutNotePrivacyColumn(error)
         ) {
           lastShapeError = error;
           continue;
@@ -615,6 +683,7 @@ export class ClientDashboardRepository {
     const activeSubscription = client.subscriptions[0] ?? null;
     const primaryCoach = resolvePrimaryCoach(client, sessionEntries);
     const activeFiles = mapClientFiles(client);
+    const privateNotes = mapClientPrivateNotes(client);
 
     const upcomingSessions: ClientUpcomingSession[] = upcomingBookings.slice(0, 3).map((booking) => ({
       id: booking.id,
@@ -737,6 +806,7 @@ export class ClientDashboardRepository {
       },
       quickActions: clientQuickActions,
       activeFiles,
+      privateNotes,
       };
     }, null);
   }

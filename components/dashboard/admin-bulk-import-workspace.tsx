@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState, useTransition } from "react";
+import { useDeferredValue, useMemo, useRef, useState, useTransition } from "react";
 import { Download, FileUp, UploadCloud } from "lucide-react";
 
 import {
@@ -9,13 +9,23 @@ import {
 } from "@/app/actions/admin-bulk-import";
 import { DashboardEmptyState } from "@/components/dashboard/dashboard-empty-state";
 import { DashboardMiniStat } from "@/components/dashboard/dashboard-mini-stat";
+import { DashboardManagementToolbar } from "@/components/dashboard/dashboard-management-toolbar";
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
+import { DashboardPaginationControls } from "@/components/dashboard/dashboard-pagination-controls";
+import { paginateDashboardItems } from "@/lib/dashboard/pagination";
 import type {
   BulkClientImportReport,
   BulkClientPreviewRow,
 } from "@/lib/services/bulk-client-import";
 
 type DropState = "idle" | "over";
+type BulkImportSort = "row-asc" | "row-desc" | "status";
+
+const bulkImportSortOptions: Array<{ label: string; value: BulkImportSort }> = [
+  { label: "Row 1-9", value: "row-asc" },
+  { label: "Row 9-1", value: "row-desc" },
+  { label: "Status", value: "status" },
+];
 
 export function AdminBulkImportWorkspace() {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -24,6 +34,12 @@ export function AdminBulkImportWorkspace() {
   const [dropState, setDropState] = useState<DropState>("idle");
   const [previewRows, setPreviewRows] = useState<BulkClientPreviewRow[]>([]);
   const [report, setReport] = useState<BulkClientImportReport | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const deferredSearchTerm = useDeferredValue(searchTerm);
+  const [sortOrder, setSortOrder] = useState<BulkImportSort>("row-asc");
+  const [previewPage, setPreviewPage] = useState(1);
+  const [successPage, setSuccessPage] = useState(1);
+  const [failedPage, setFailedPage] = useState(1);
   const [message, setMessage] = useState(
     "Upload a CSV with fullName, groupName, and phone columns."
   );
@@ -36,6 +52,35 @@ export function AdminBulkImportWorkspace() {
   );
   const invalidRows = previewRows.length - validRows.length;
   const isBusy = isPreviewing || isImporting;
+  const filteredPreviewRows = useMemo(() => {
+    const query = deferredSearchTerm.trim().toLowerCase();
+    const rows = query.length
+      ? previewRows.filter((row) =>
+          [row.fullName, row.groupName, row.phone, row.reason ?? ""]
+            .join(" ")
+            .toLowerCase()
+            .includes(query)
+        )
+      : previewRows;
+
+    return [...rows].sort((left, right) => {
+      if (sortOrder === "row-desc") return right.rowNumber - left.rowNumber;
+      if (sortOrder === "status") return Number(right.valid) - Number(left.valid);
+      return left.rowNumber - right.rowNumber;
+    });
+  }, [deferredSearchTerm, previewRows, sortOrder]);
+  const paginatedPreviewRows = paginateDashboardItems(
+    filteredPreviewRows,
+    previewPage
+  );
+  const paginatedSuccessfulImports = paginateDashboardItems(
+    report?.successfulImports ?? [],
+    successPage
+  );
+  const paginatedFailedImports = paginateDashboardItems(
+    report?.failedImports ?? [],
+    failedPage
+  );
 
   const readFile = (file: File) => {
     setReport(null);
@@ -229,34 +274,65 @@ export function AdminBulkImportWorkspace() {
         </div>
 
         {previewRows.length > 0 ? (
-          <div className="dashboard-table-wrap">
-            <table className="dashboard-table">
-              <thead>
-                <tr>
-                  <th>Row</th>
-                  <th>Client</th>
-                  <th>Group</th>
-                  <th>Phone</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {previewRows.map((row) => (
-                  <tr key={`${row.rowNumber}-${row.phone}`}>
-                    <td>{row.rowNumber}</td>
-                    <td>
-                      <div className="dashboard-table__identity">
-                        <strong>{row.fullName || "Missing name"}</strong>
-                      </div>
-                    </td>
-                    <td>{row.groupName || "No group"}</td>
-                    <td>{row.phone || "Missing phone"}</td>
-                    <td>{row.valid ? "Ready" : row.reason}</td>
+          <>
+            <DashboardManagementToolbar
+              searchValue={searchTerm}
+              onSearchChange={(value) => {
+                setSearchTerm(value);
+                setPreviewPage(1);
+              }}
+              searchPlaceholder="Search preview rows"
+              summary={`${filteredPreviewRows.length} preview rows`}
+              sortValue={sortOrder}
+              sortOptions={bulkImportSortOptions}
+              onSortChange={(value) => {
+                setSortOrder(value as BulkImportSort);
+                setPreviewPage(1);
+              }}
+              isFiltered={searchTerm.trim().length > 0}
+              onReset={() => {
+                setSearchTerm("");
+                setSortOrder("row-asc");
+                setPreviewPage(1);
+              }}
+            />
+            <div className="dashboard-table-wrap">
+              <table className="dashboard-table">
+                <thead>
+                  <tr>
+                    <th>Row</th>
+                    <th>Client</th>
+                    <th>Group</th>
+                    <th>Phone</th>
+                    <th>Status</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {paginatedPreviewRows.items.map((row) => (
+                    <tr key={`${row.rowNumber}-${row.phone}`}>
+                      <td>{row.rowNumber}</td>
+                      <td>
+                        <div className="dashboard-table__identity">
+                          <strong>{row.fullName || "Missing name"}</strong>
+                        </div>
+                      </td>
+                      <td>{row.groupName || "No group"}</td>
+                      <td>{row.phone || "Missing phone"}</td>
+                      <td>{row.valid ? "Ready" : row.reason}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <DashboardPaginationControls
+              page={paginatedPreviewRows.page}
+              pageCount={paginatedPreviewRows.pageCount}
+              startItem={paginatedPreviewRows.startItem}
+              endItem={paginatedPreviewRows.endItem}
+              totalItems={paginatedPreviewRows.totalItems}
+              onPageChange={setPreviewPage}
+            />
+          </>
         ) : (
           <DashboardEmptyState
             title="No CSV preview yet"
@@ -292,57 +368,77 @@ export function AdminBulkImportWorkspace() {
           </div>
 
           {report.successfulImports.length > 0 ? (
-            <div className="dashboard-table-wrap">
-              <table className="dashboard-table">
-                <thead>
-                  <tr>
-                    <th>Client</th>
-                    <th>Group</th>
-                    <th>Client ID</th>
-                    <th>Phone</th>
-                    <th>Password</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {report.successfulImports.map((client) => (
-                    <tr key={client.clientId}>
-                      <td>{client.fullName}</td>
-                      <td>{client.groupName || "No group"}</td>
-                      <td>{client.clientId}</td>
-                      <td>{client.phone}</td>
-                      <td>{client.password}</td>
+            <>
+              <div className="dashboard-table-wrap">
+                <table className="dashboard-table">
+                  <thead>
+                    <tr>
+                      <th>Client</th>
+                      <th>Group</th>
+                      <th>Client ID</th>
+                      <th>Phone</th>
+                      <th>Password</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {paginatedSuccessfulImports.items.map((client) => (
+                      <tr key={client.clientId}>
+                        <td>{client.fullName}</td>
+                        <td>{client.groupName || "No group"}</td>
+                        <td>{client.clientId}</td>
+                        <td>{client.phone}</td>
+                        <td>{client.password}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <DashboardPaginationControls
+                page={paginatedSuccessfulImports.page}
+                pageCount={paginatedSuccessfulImports.pageCount}
+                startItem={paginatedSuccessfulImports.startItem}
+                endItem={paginatedSuccessfulImports.endItem}
+                totalItems={paginatedSuccessfulImports.totalItems}
+                onPageChange={setSuccessPage}
+              />
+            </>
           ) : null}
 
           {report.failedImports.length > 0 ? (
-            <div className="dashboard-table-wrap">
-              <table className="dashboard-table">
-                <thead>
-                  <tr>
-                    <th>Row</th>
-                    <th>Client</th>
-                    <th>Group</th>
-                    <th>Phone</th>
-                    <th>Reason</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {report.failedImports.map((client) => (
-                    <tr key={`${client.rowNumber}-${client.phone}`}>
-                      <td>{client.rowNumber}</td>
-                      <td>{client.fullName}</td>
-                      <td>{client.groupName || "No group"}</td>
-                      <td>{client.phone}</td>
-                      <td>{client.reason}</td>
+            <>
+              <div className="dashboard-table-wrap">
+                <table className="dashboard-table">
+                  <thead>
+                    <tr>
+                      <th>Row</th>
+                      <th>Client</th>
+                      <th>Group</th>
+                      <th>Phone</th>
+                      <th>Reason</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {paginatedFailedImports.items.map((client) => (
+                      <tr key={`${client.rowNumber}-${client.phone}`}>
+                        <td>{client.rowNumber}</td>
+                        <td>{client.fullName}</td>
+                        <td>{client.groupName || "No group"}</td>
+                        <td>{client.phone}</td>
+                        <td>{client.reason}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <DashboardPaginationControls
+                page={paginatedFailedImports.page}
+                pageCount={paginatedFailedImports.pageCount}
+                startItem={paginatedFailedImports.startItem}
+                endItem={paginatedFailedImports.endItem}
+                totalItems={paginatedFailedImports.totalItems}
+                onPageChange={setFailedPage}
+              />
+            </>
           ) : null}
         </section>
       ) : null}

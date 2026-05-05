@@ -16,13 +16,13 @@ const toneMap = {
   },
   warning: {
     icon: TriangleAlert,
-    container: "border-[rgba(245,158,11,0.26)] bg-[rgba(245,158,11,0.08)] text-white",
-    iconWrap: "bg-[rgba(245,158,11,0.14)] text-[#f6ca7b]",
+    container: "border-[rgba(230,36,41,0.3)] bg-[rgba(230,36,41,0.1)] text-white",
+    iconWrap: "bg-[rgba(230,36,41,0.16)] text-[#ffb5b8]",
   },
   success: {
     icon: AlertTriangle,
-    container: "border-[rgba(37,211,102,0.26)] bg-[rgba(37,211,102,0.08)] text-white",
-    iconWrap: "bg-[rgba(37,211,102,0.14)] text-[#8ce7ad]",
+    container: "border-white/10 bg-white/[0.035] text-white",
+    iconWrap: "bg-[rgba(230,36,41,0.1)] text-[color:var(--mv-muted-strong)]",
   },
 } as const;
 

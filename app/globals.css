@@ -46,33 +46,33 @@
 /* ─── Marvel Design Tokens (CSS Custom Properties) ─── */
 :root {
   /* Backgrounds */
-  --mv-bg: #000000;
-  --mv-bg-soft: #0a0a0a;
+  --mv-bg: #030303;
+  --mv-bg-soft: #080606;
 
   /* Surfaces */
-  --mv-surface: #111111;
-  --mv-surface-strong: #1a1a1a;
+  --mv-surface: #111010;
+  --mv-surface-strong: #191313;
   --mv-surface-dark: #000000;
 
   /* Text */
   --mv-text: #ffffff;
-  --mv-muted: #a0a0a0;
-  --mv-muted-strong: #cccccc;
+  --mv-muted: #9b9292;
+  --mv-muted-strong: #d4cccc;
 
   /* Lines / Borders */
-  --mv-line: #333333;
-  --mv-line-strong: #444444;
+  --mv-line: rgba(255, 255, 255, 0.1);
+  --mv-line-strong: rgba(255, 255, 255, 0.16);
 
   /* Brand Colors */
   --mv-primary: #e62429;
   --mv-primary-deep: #b91c21;
   --mv-primary-soft: #2d1011;
   --mv-accent: #ff0000;
-  --mv-accent-soft: #222222;
+  --mv-accent-soft: #1d0b0c;
 
   /* Semantic Colors */
-  --mv-success: #25d366;
-  --mv-warning: #f59e0b;
+  --mv-success: #f04449;
+  --mv-warning: #ff6b70;
   --mv-danger: #ef4444;
 
   /* Shadows */
@@ -82,26 +82,36 @@
 
   /* Shared Marvel app surfaces */
   --mv-page-bg:
-    radial-gradient(circle at 8% 0%, rgba(230, 36, 41, 0.16), transparent 28%),
-    radial-gradient(circle at 92% 10%, rgba(230, 36, 41, 0.1), transparent 24%),
-    radial-gradient(circle at 50% 100%, rgba(230, 36, 41, 0.08), transparent 30%),
-    linear-gradient(180deg, #050505 0%, #090909 100%);
+    radial-gradient(circle at 0% 0%, rgba(230, 36, 41, 0.16), transparent 28%),
+    radial-gradient(circle at 100% 0%, rgba(230, 36, 41, 0.08), transparent 26%),
+    linear-gradient(180deg, #050303 0%, #090606 48%, #030303 100%);
   --mv-panel-bg:
-    radial-gradient(circle at top right, rgba(230, 36, 41, 0.1), transparent 36%),
-    linear-gradient(180deg, rgba(24, 24, 24, 0.92), rgba(12, 12, 12, 0.94));
+    radial-gradient(circle at top right, rgba(230, 36, 41, 0.08), transparent 34%),
+    linear-gradient(180deg, rgba(22, 18, 18, 0.94), rgba(9, 8, 8, 0.96));
   --mv-panel-bg-soft:
-    linear-gradient(180deg, rgba(22, 22, 22, 0.86), rgba(10, 10, 10, 0.9)),
-    rgba(255, 255, 255, 0.02);
+    radial-gradient(circle at top left, rgba(230, 36, 41, 0.06), transparent 34%),
+    linear-gradient(180deg, rgba(19, 16, 16, 0.92), rgba(8, 8, 8, 0.94));
   --mv-panel-bg-strong:
-    radial-gradient(circle at top right, rgba(230, 36, 41, 0.14), transparent 34%),
-    linear-gradient(180deg, rgba(32, 32, 32, 0.94), rgba(12, 12, 12, 0.98));
-  --mv-control-bg: rgba(255, 255, 255, 0.04);
-  --mv-control-bg-strong: rgba(255, 255, 255, 0.07);
-  --mv-border-subtle: rgba(255, 255, 255, 0.08);
-  --mv-border-strong: rgba(255, 255, 255, 0.14);
+    radial-gradient(circle at top right, rgba(230, 36, 41, 0.12), transparent 34%),
+    linear-gradient(180deg, rgba(28, 21, 21, 0.96), rgba(8, 7, 7, 0.98));
+  --mv-control-bg: rgba(255, 255, 255, 0.035);
+  --mv-control-bg-strong: rgba(230, 36, 41, 0.08);
+  --mv-border-subtle: rgba(255, 255, 255, 0.075);
+  --mv-border-strong: rgba(255, 255, 255, 0.13);
   --mv-border-accent: rgba(230, 36, 41, 0.28);
 
+  /* Dashboard color template: black base, red brand, white only for contrast. */
+  --mv-dashboard-bg: var(--mv-page-bg);
+  --mv-dashboard-panel: var(--mv-panel-bg);
+  --mv-dashboard-panel-soft: var(--mv-panel-bg-soft);
+  --mv-dashboard-panel-strong: var(--mv-panel-bg-strong);
+  --mv-dashboard-red-surface: rgba(230, 36, 41, 0.1);
+  --mv-dashboard-red-surface-strong: rgba(230, 36, 41, 0.16);
+  --mv-dashboard-text: var(--mv-text);
+  --mv-dashboard-muted: var(--mv-muted);
+
   /* Spacing Scale (fluid, matching landing page) */
+  --mv-space-3xs: 4px;
   --mv-space-2xs: clamp(6px, 0.8vw, 8px);
   --mv-space-xs: clamp(10px, 1.2vw, 14px);
   --mv-space-sm: clamp(14px, 1.8vw, 18px);
@@ -114,6 +124,11 @@
   --mv-container: min(1180px, calc(100% - 28px));
   --mv-card-pad: clamp(20px, 3.8vw, 30px);
   --mv-content-max: 66ch;
+
+  /* Radius scale (dashboard) */
+  --mv-radius-control: 14px;
+  --mv-radius-card: 22px;
+  --mv-radius-card-lg: 28px;
 }
 
 /* ─── Base Styles ─── */

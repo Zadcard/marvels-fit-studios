@@ -13,8 +13,10 @@ import {
 import { DashboardEmptyState } from "@/components/dashboard/dashboard-empty-state";
 import { DashboardManagementToolbar } from "@/components/dashboard/dashboard-management-toolbar";
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
+import { DashboardPaginationControls } from "@/components/dashboard/dashboard-pagination-controls";
 import { DashboardStatCard } from "@/components/dashboard/dashboard-stat-card";
 import { DashboardStatusBadge } from "@/components/dashboard/dashboard-status-badge";
+import { paginateDashboardItems } from "@/lib/dashboard/pagination";
 import type {
   AdminScheduleSessionRecord,
   AdminScheduleStat,
@@ -119,6 +121,7 @@ export function AdminScheduleWorkspace({
   const [occurrenceCoachId, setOccurrenceCoachId] = useState(coachOptions[0]?.id ?? "");
   const [selectedDayKey, setSelectedDayKey] = useState("");
   const [collapsedDays, setCollapsedDays] = useState<string[]>([]);
+  const [page, setPage] = useState(1);
 
   const handleCancelOccurrence = (sessionId: string) => {
     setErrorMessage("");
@@ -210,11 +213,12 @@ export function AdminScheduleWorkspace({
     statusFilter,
     typeFilter,
   ]);
+  const paginatedRecords = paginateDashboardItems(filteredRecords, page);
 
   const dayBuckets = useMemo(() => {
     const grouped = new Map<string, AdminScheduleSessionRecord[]>();
 
-    for (const record of filteredRecords) {
+    for (const record of paginatedRecords.items) {
       const dayKey = getCairoDayKey(record.startsAt);
       const existing = grouped.get(dayKey);
       if (existing) {
@@ -244,7 +248,7 @@ export function AdminScheduleWorkspace({
         };
       })
       .sort((left, right) => left.key.localeCompare(right.key));
-  }, [filteredRecords]);
+  }, [paginatedRecords.items]);
 
   const selectedSession =
     filteredRecords.find((record) => record.id === selectedSessionId) ?? filteredRecords[0];
@@ -257,6 +261,10 @@ export function AdminScheduleWorkspace({
   const recordsByDay = new Map<string, AdminScheduleSessionRecord[]>();
   const weekDays: string[] = [];
   const isAllCollapsed = false;
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm, statusFilter, typeFilter, coachFilter, groupFilter]);
 
   useEffect(() => {
     if (selectedSession?.coachId) {
@@ -628,6 +636,14 @@ export function AdminScheduleWorkspace({
             </div>
           </>
         ) : null}
+        <DashboardPaginationControls
+          page={paginatedRecords.page}
+          pageCount={paginatedRecords.pageCount}
+          startItem={paginatedRecords.startItem}
+          endItem={paginatedRecords.endItem}
+          totalItems={paginatedRecords.totalItems}
+          onPageChange={setPage}
+        />
       </section>
 
       <section className="dashboard-detail-layout">

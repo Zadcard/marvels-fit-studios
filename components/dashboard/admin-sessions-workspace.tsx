@@ -16,13 +16,13 @@ import {
 } from "@/app/actions/admin-session-bookings";
 import { DashboardManagementToolbar } from "@/components/dashboard/dashboard-management-toolbar";
 import { DashboardEmptyState } from "@/components/dashboard/dashboard-empty-state";
-import { DashboardMiniStat } from "@/components/dashboard/dashboard-mini-stat";
 import { DashboardModal } from "@/components/dashboard/dashboard-modal";
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
+import { DashboardPaginationControls } from "@/components/dashboard/dashboard-pagination-controls";
 import { DashboardStatusBadge } from "@/components/dashboard/dashboard-status-badge";
-import { DashboardSurfaceNote } from "@/components/dashboard/dashboard-surface-note";
 import { CoachOptionPicker } from "@/components/dashboard/coach-option-picker";
 import { SessionTypePicker } from "@/components/dashboard/session-type-picker";
+import { paginateDashboardItems } from "@/lib/dashboard/pagination";
 import {
   type AdminSessionCoachOption,
   type AdminSessionClientOption,
@@ -37,6 +37,7 @@ import {
 
 type SessionView = "group" | "private";
 type SessionType = "GROUP" | "PRIVATE";
+type SessionSort = "soonest" | "latest" | "status" | "coach";
 type SessionLifecycleStatus =
   | "DRAFT"
   | "SCHEDULED"
@@ -68,6 +69,13 @@ const emptySessionForm: SessionFormState = {
   capacity: "12",
   description: "",
 };
+
+const sessionSortOptions: Array<{ label: string; value: SessionSort }> = [
+  { label: "Soonest", value: "soonest" },
+  { label: "Latest", value: "latest" },
+  { label: "Status", value: "status" },
+  { label: "Coach", value: "coach" },
+];
 
 const sessionDayFormatter = new Intl.DateTimeFormat("en-US", { weekday: "short" });
 const sessionTimeFormatter = new Intl.DateTimeFormat("en-US", {
@@ -283,6 +291,8 @@ export function AdminSessionsWorkspace({
   const [searchTerm, setSearchTerm] = useState("");
   const deferredSearchTerm = useDeferredValue(searchTerm);
   const [statusFilter, setStatusFilter] = useState<"All" | AdminSessionStatus>("All");
+  const [sortOrder, setSortOrder] = useState<SessionSort>("soonest");
+  const [page, setPage] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
   const [currentGroupRecords, setCurrentGroupRecords] = useState(groupRecords);
@@ -412,6 +422,42 @@ export function AdminSessionsWorkspace({
 
     return matchesSearch && matchesStatus;
   });
+  const sortedGroupRecords = useMemo(() => {
+    return [...filteredGroupRecords].sort((left, right) => {
+      if (sortOrder === "latest") {
+        return right.dayLabel.localeCompare(left.dayLabel) || right.timeLabel.localeCompare(left.timeLabel);
+      }
+
+      if (sortOrder === "status") {
+        return left.status.localeCompare(right.status);
+      }
+
+      if (sortOrder === "coach") {
+        return left.coachName.localeCompare(right.coachName);
+      }
+
+      return left.dayLabel.localeCompare(right.dayLabel) || left.timeLabel.localeCompare(right.timeLabel);
+    });
+  }, [filteredGroupRecords, sortOrder]);
+  const sortedPrivateRecords = useMemo(() => {
+    return [...filteredPrivateRecords].sort((left, right) => {
+      if (sortOrder === "latest") {
+        return right.dayLabel.localeCompare(left.dayLabel) || right.timeLabel.localeCompare(left.timeLabel);
+      }
+
+      if (sortOrder === "status") {
+        return left.status.localeCompare(right.status);
+      }
+
+      if (sortOrder === "coach") {
+        return left.coachName.localeCompare(right.coachName);
+      }
+
+      return left.dayLabel.localeCompare(right.dayLabel) || left.timeLabel.localeCompare(right.timeLabel);
+    });
+  }, [filteredPrivateRecords, sortOrder]);
+  const paginatedGroupRecords = paginateDashboardItems(sortedGroupRecords, page);
+  const paginatedPrivateRecords = paginateDashboardItems(sortedPrivateRecords, page);
 
   const groupCoachCount = new Set(filteredGroupRecords.map((session) => session.coachName)).size;
   const groupBookedCount = filteredGroupRecords.reduce(
@@ -459,6 +505,10 @@ export function AdminSessionsWorkspace({
     view === "group"
       ? `${filteredGroupRecords.length} sessions, ${groupBookedCount} bookings in view`
       : `${filteredPrivateRecords.length} sessions, ${privateAssignedCount} assigned in view`;
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm, statusFilter, sortOrder, view]);
 
   const openCreateModal = () => {
     setEditingSessionId(null);
@@ -797,90 +847,6 @@ export function AdminSessionsWorkspace({
         </div>
       ) : null}
 
-      <DashboardSurfaceNote
-        eyebrow={view === "group" ? "Group schedule" : "Private schedule"}
-        title={
-          view === "group"
-            ? groupAtCapacityCount > 0
-              ? `${groupAtCapacityCount} group sessions are already at capacity in this view.`
-              : groupNeedsBookingsCount > 0
-                ? `${groupNeedsBookingsCount} group sessions still need bookings before they go live.`
-                : "Group schedule is balanced enough to focus on coach timing and room coverage."
-            : privateNeedsClientCount > 0
-              ? `${privateNeedsClientCount} private sessions still need a client assignment in this view.`
-              : privateDraftCount > 0
-                ? `${privateDraftCount} private sessions are still sitting in draft.`
-                : "Private schedule is clear enough to focus on coach timing and follow-through."
-        }
-        description={
-          view === "group"
-            ? "Use this board to catch seat pressure, move drafts to scheduled, and rebalance groups before members arrive."
-            : "Use this board to close assignment gaps, keep coaches aligned, and confirm private sessions before the day starts."
-        }
-        items={
-          view === "group"
-            ? [
-                `${filteredGroupRecords.length} visible group sessions across ${groupCoachCount} coaches.`,
-                `${groupBookedCount} bookings are already placed in this view.`,
-                `${groupDraftCount} drafts still need confirmation.`,
-              ]
-            : [
-                `${filteredPrivateRecords.length} visible private sessions across ${privateCoachCount} coaches.`,
-                `${privateAssignedCount} private sessions already have a client assigned.`,
-                `${privateCompletedCount} sessions are marked completed in this view.`,
-              ]
-        }
-      />
-
-      <section
-        className="dashboard-mini-grid dashboard-admin-priority-grid"
-        aria-label={view === "group" ? "Group session priorities" : "Private session priorities"}
-      >
-        {view === "group" ? (
-          <>
-            <DashboardMiniStat
-              tone={groupAtCapacityCount > 0 ? "warning" : "success"}
-              label="At capacity"
-              value={groupAtCapacityCount}
-              description="Need overflow or another group."
-            />
-            <DashboardMiniStat
-              tone={groupNeedsBookingsCount > 0 ? "accent" : "success"}
-              label="Needs bookings"
-              value={groupNeedsBookingsCount}
-              description="Still empty or too light."
-            />
-            <DashboardMiniStat
-              tone={groupDraftCount > 0 ? "warning" : "success"}
-              label="Drafts"
-              value={groupDraftCount}
-              description="Not fully confirmed yet."
-            />
-          </>
-        ) : (
-          <>
-            <DashboardMiniStat
-              tone={privateNeedsClientCount > 0 ? "warning" : "success"}
-              label="Needs client"
-              value={privateNeedsClientCount}
-              description="Still missing assignment."
-            />
-            <DashboardMiniStat
-              tone={privateDraftCount > 0 ? "accent" : "success"}
-              label="Drafts"
-              value={privateDraftCount}
-              description="Still need confirmation."
-            />
-            <DashboardMiniStat
-              tone="success"
-              label="Assigned"
-              value={privateAssignedCount}
-              description="Client coverage locked in."
-            />
-          </>
-        )}
-      </section>
-
       <section className="dashboard-panel dashboard-panel--accent">
         <div className="dashboard-segmented">
           <button
@@ -932,6 +898,9 @@ export function AdminSessionsWorkspace({
               : "Search by client, coach, or focus"
           }
           summary={activeSummary}
+          sortValue={sortOrder}
+          sortOptions={sessionSortOptions}
+          onSortChange={(value) => setSortOrder(value as SessionSort)}
           filters={
             <label className="dashboard-filter-field">
               <span>Status</span>
@@ -972,19 +941,47 @@ export function AdminSessionsWorkspace({
 
         {view === "group" ? (
           <SessionGroupTable
-            records={filteredGroupRecords}
+            records={paginatedGroupRecords.items}
             onEdit={openEditModal}
             onCancel={handleCancelSession}
             isCanceling={isCanceling}
           />
         ) : (
           <SessionPrivateTable
-            records={filteredPrivateRecords}
+            records={paginatedPrivateRecords.items}
             onEdit={openEditModal}
             onCancel={handleCancelSession}
             isCanceling={isCanceling}
           />
         )}
+        <DashboardPaginationControls
+          page={
+            view === "group"
+              ? paginatedGroupRecords.page
+              : paginatedPrivateRecords.page
+          }
+          pageCount={
+            view === "group"
+              ? paginatedGroupRecords.pageCount
+              : paginatedPrivateRecords.pageCount
+          }
+          startItem={
+            view === "group"
+              ? paginatedGroupRecords.startItem
+              : paginatedPrivateRecords.startItem
+          }
+          endItem={
+            view === "group"
+              ? paginatedGroupRecords.endItem
+              : paginatedPrivateRecords.endItem
+          }
+          totalItems={
+            view === "group"
+              ? paginatedGroupRecords.totalItems
+              : paginatedPrivateRecords.totalItems
+          }
+          onPageChange={setPage}
+        />
       </section>
 
       <DashboardModal

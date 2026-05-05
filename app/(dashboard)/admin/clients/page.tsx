@@ -19,6 +19,7 @@ export default async function AdminClientsPage(
   const search = getSingleValue(searchParams.q)?.trim() ?? "";
   const initial = getSingleValue(searchParams.initial)?.trim().slice(0, 1).toUpperCase() ?? "";
   const sort = getSingleValue(searchParams.sort) === "desc" ? "desc" : "asc";
+  const page = Math.max(1, Number(getSingleValue(searchParams.page) ?? "1") || 1);
   const clientDirectory = await adminClientRepository.list({
     search,
     initial: initial || null,
@@ -38,6 +39,7 @@ export default async function AdminClientsPage(
       searchValue={search}
       selectedInitial={initial || null}
       sortOrder={sort}
+      currentPage={page}
       totalCount={clientDirectory.totalCount}
       filteredCount={clientDirectory.filteredCount}
       initialOptions={clientDirectory.initialOptions}

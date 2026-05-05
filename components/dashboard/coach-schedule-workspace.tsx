@@ -1,12 +1,13 @@
 "use client";
 
-import { useDeferredValue, useState } from "react";
+import { useDeferredValue, useEffect, useState } from "react";
 import { LayoutGrid, Rows3 } from "lucide-react";
 
 import { DashboardEmptyState } from "@/components/dashboard/dashboard-empty-state";
 import { DashboardManagementToolbar } from "@/components/dashboard/dashboard-management-toolbar";
 import { DashboardMiniStat } from "@/components/dashboard/dashboard-mini-stat";
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
+import { DashboardPaginationControls } from "@/components/dashboard/dashboard-pagination-controls";
 import { DashboardStatusBadge } from "@/components/dashboard/dashboard-status-badge";
 import { DashboardSurfaceNote } from "@/components/dashboard/dashboard-surface-note";
 import {
@@ -14,6 +15,7 @@ import {
   type CoachScheduleRecord,
   type CoachScheduleStatus,
 } from "@/lib/dashboard/coach-schedule-data";
+import { paginateDashboardItems } from "@/lib/dashboard/pagination";
 
 type ScheduleView = "week" | "day";
 
@@ -42,6 +44,7 @@ export function CoachScheduleWorkspace({ records }: CoachScheduleWorkspaceProps)
     useState<(typeof coachScheduleDayFilters)[number]>("All days");
   const [statusFilter, setStatusFilter] =
     useState<(typeof coachScheduleStatusFilters)[number]>("All");
+  const [page, setPage] = useState(1);
 
   const filteredSchedule = records.filter((session) => {
     const query = deferredSearchTerm.trim().toLowerCase();
@@ -56,6 +59,7 @@ export function CoachScheduleWorkspace({ records }: CoachScheduleWorkspaceProps)
 
     return matchesSearch && matchesDay && matchesStatus;
   });
+  const paginatedSchedule = paginateDashboardItems(filteredSchedule, page);
 
   const focusedDay =
     dayFilter === "All days" ? scheduleDays[0] ?? "Monday" : dayFilter;
@@ -73,7 +77,12 @@ export function CoachScheduleWorkspace({ records }: CoachScheduleWorkspaceProps)
     setDayFilter("All days");
     setStatusFilter("All");
     setView("week");
+    setPage(1);
   };
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm, dayFilter, statusFilter, view]);
 
   return (
     <div className="dashboard-stack">
@@ -219,7 +228,7 @@ export function CoachScheduleWorkspace({ records }: CoachScheduleWorkspaceProps)
           }
         >
           {visibleDays.map((day) => {
-            const daySessions = filteredSchedule.filter(
+            const daySessions = paginatedSchedule.items.filter(
               (session) => session.dayKey === day
             );
 
@@ -283,6 +292,14 @@ export function CoachScheduleWorkspace({ records }: CoachScheduleWorkspaceProps)
             );
           })}
         </div>
+        <DashboardPaginationControls
+          page={paginatedSchedule.page}
+          pageCount={paginatedSchedule.pageCount}
+          startItem={paginatedSchedule.startItem}
+          endItem={paginatedSchedule.endItem}
+          totalItems={paginatedSchedule.totalItems}
+          onPageChange={setPage}
+        />
       </section>
     </div>
   );

@@ -30,6 +30,12 @@ export interface AuthFallbackPolicy {
   getUser(email: string, password: string): AuthenticatedUser | null;
 }
 
+export class NoAuthFallbackPolicy implements AuthFallbackPolicy {
+  getUser(): AuthenticatedUser | null {
+    return null;
+  }
+}
+
 export class DemoCredentialsFallbackPolicy implements AuthFallbackPolicy {
   getUser(email: string, password: string): AuthenticatedUser | null {
     const demoUser = demoUsers[email as keyof typeof demoUsers];

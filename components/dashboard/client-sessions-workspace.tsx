@@ -1,14 +1,14 @@
 "use client";
 
-import { useDeferredValue, useEffect, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { CalendarClock } from "lucide-react";
 
 import { DashboardManagementToolbar } from "@/components/dashboard/dashboard-management-toolbar";
 import { DashboardEmptyState } from "@/components/dashboard/dashboard-empty-state";
-import { DashboardMiniStat } from "@/components/dashboard/dashboard-mini-stat";
+import { DashboardModal } from "@/components/dashboard/dashboard-modal";
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
+import { DashboardPaginationControls } from "@/components/dashboard/dashboard-pagination-controls";
 import { DashboardStatusBadge } from "@/components/dashboard/dashboard-status-badge";
-import { DashboardSurfaceNote } from "@/components/dashboard/dashboard-surface-note";
 import {
   clientSessionPeriodFilters,
   clientSessionTypeFilters,
@@ -17,6 +17,16 @@ import {
   type ClientSessionStatus,
   type ClientSessionType,
 } from "@/lib/dashboard/client-dashboard-data";
+import { paginateDashboardItems } from "@/lib/dashboard/pagination";
+
+type ClientSessionSort = "soonest" | "latest" | "status" | "type";
+
+const clientSessionSortOptions: Array<{ label: string; value: ClientSessionSort }> = [
+  { label: "Soonest", value: "soonest" },
+  { label: "Latest", value: "latest" },
+  { label: "Status", value: "status" },
+  { label: "Type", value: "type" },
+];
 
 function getSessionTone(status: ClientSessionStatus) {
   switch (status) {
@@ -95,7 +105,10 @@ export function ClientSessionsWorkspace({ records }: ClientSessionsWorkspaceProp
   const deferredSearchTerm = useDeferredValue(searchTerm);
   const [periodFilter, setPeriodFilter] = useState<"All" | ClientSessionPeriod>("All");
   const [typeFilter, setTypeFilter] = useState<"All" | ClientSessionType>("All");
+  const [sortOrder, setSortOrder] = useState<ClientSessionSort>("soonest");
+  const [page, setPage] = useState(1);
   const [selectedSessionId, setSelectedSessionId] = useState(records[0]?.id ?? "");
+  const [detailSessionId, setDetailSessionId] = useState<string | null>(null);
 
   const filteredSessions = records.filter((session) => {
     const query = deferredSearchTerm.trim().toLowerCase();
@@ -111,6 +124,17 @@ export function ClientSessionsWorkspace({ records }: ClientSessionsWorkspaceProp
 
     return matchesSearch && matchesPeriod && matchesType;
   });
+  const sortedSessions = useMemo(() => {
+    return [...filteredSessions].sort((left, right) => {
+      const leftTiming = `${left.period} ${left.dayLabel} ${left.timeLabel}`;
+      const rightTiming = `${right.period} ${right.dayLabel} ${right.timeLabel}`;
+      if (sortOrder === "latest") return rightTiming.localeCompare(leftTiming);
+      if (sortOrder === "status") return left.status.localeCompare(right.status);
+      if (sortOrder === "type") return left.sessionType.localeCompare(right.sessionType);
+      return leftTiming.localeCompare(rightTiming);
+    });
+  }, [filteredSessions, sortOrder]);
+  const paginatedSessions = paginateDashboardItems(sortedSessions, page);
 
   useEffect(() => {
     if (!filteredSessions.some((session) => session.id === selectedSessionId)) {
@@ -121,6 +145,8 @@ export function ClientSessionsWorkspace({ records }: ClientSessionsWorkspaceProp
   const selectedSession =
     filteredSessions.find((session) => session.id === selectedSessionId) ??
     filteredSessions[0];
+  const detailSession =
+    filteredSessions.find((session) => session.id === detailSessionId) ?? null;
   const hasActiveFilters =
     searchTerm.trim().length > 0 || periodFilter !== "All" || typeFilter !== "All";
   const upcomingCount = filteredSessions.filter(
@@ -133,43 +159,24 @@ export function ClientSessionsWorkspace({ records }: ClientSessionsWorkspaceProp
     (session) => session.sessionType === "Private"
   ).length;
 
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm, periodFilter, typeFilter, sortOrder]);
+
   const resetFilters = () => {
     setSearchTerm("");
     setPeriodFilter("All");
     setTypeFilter("All");
   };
 
+  const openSessionDetail = (sessionId: string) => {
+    setSelectedSessionId(sessionId);
+    setDetailSessionId(sessionId);
+  };
+
   return (
     <div className="dashboard-stack">
       <DashboardPageHeader eyebrow="My sessions" />
-
-      <DashboardSurfaceNote
-        eyebrow="Sessions"
-        title="Review upcoming and past sessions in one place."
-        description="Filter the list, then open a session for details."
-        items={[
-          `${upcomingCount} upcoming sessions in view.`,
-          `${readyCount} ready for check-in.`,
-        ]}
-      />
-
-      <section className="dashboard-mini-grid" aria-label="Client session highlights">
-        <DashboardMiniStat
-          label="Upcoming"
-          value={upcomingCount}
-          description="Still ahead."
-        />
-        <DashboardMiniStat
-          label="Check-in ready"
-          value={readyCount}
-          description="Ready now."
-        />
-        <DashboardMiniStat
-          label="Private"
-          value={privateCount}
-          description="Private sessions."
-        />
-      </section>
 
       <section className="dashboard-detail-layout">
         <article className="dashboard-panel dashboard-panel--accent">
@@ -178,6 +185,9 @@ export function ClientSessionsWorkspace({ records }: ClientSessionsWorkspaceProp
             onSearchChange={setSearchTerm}
             searchPlaceholder="Search by session, coach, or location"
             summary={`${filteredSessions.length} sessions in view`}
+            sortValue={sortOrder}
+            sortOptions={clientSessionSortOptions}
+            onSortChange={(value) => setSortOrder(value as ClientSessionSort)}
             isFiltered={hasActiveFilters}
             onReset={resetFilters}
             filters={
@@ -220,7 +230,7 @@ export function ClientSessionsWorkspace({ records }: ClientSessionsWorkspaceProp
 
           {filteredSessions.length > 0 ? (
             <div className="dashboard-mobile-list dashboard-mobile-list--always">
-              {filteredSessions.map((session) => (
+              {paginatedSessions.items.map((session) => (
                 <article
                   key={session.id}
                   className={
@@ -255,7 +265,7 @@ export function ClientSessionsWorkspace({ records }: ClientSessionsWorkspaceProp
                     <button
                       type="button"
                       className="dashboard-inline-button"
-                      onClick={() => setSelectedSessionId(session.id)}
+                      onClick={() => openSessionDetail(session.id)}
                     >
                       Review detail
                     </button>
@@ -280,6 +290,14 @@ export function ClientSessionsWorkspace({ records }: ClientSessionsWorkspaceProp
               }
             />
           )}
+          <DashboardPaginationControls
+            page={paginatedSessions.page}
+            pageCount={paginatedSessions.pageCount}
+            startItem={paginatedSessions.startItem}
+            endItem={paginatedSessions.endItem}
+            totalItems={paginatedSessions.totalItems}
+            onPageChange={setPage}
+          />
         </article>
 
         <aside className="dashboard-panel dashboard-detail-panel">
@@ -337,6 +355,52 @@ export function ClientSessionsWorkspace({ records }: ClientSessionsWorkspaceProp
           )}
         </aside>
       </section>
+
+      <DashboardModal
+        open={!!detailSession}
+        onClose={() => setDetailSessionId(null)}
+        title={detailSession?.title ?? "Session details"}
+        description={detailSession?.coachName}
+      >
+        {detailSession ? (
+          <div className="dashboard-stack">
+            <div className="dashboard-detail-grid">
+              <div className="dashboard-detail-stat">
+                <span className="dashboard-detail-stat__label">When</span>
+                <strong>{detailSession.dayLabel}</strong>
+                <small>{detailSession.timeLabel}</small>
+              </div>
+              <div className="dashboard-detail-stat">
+                <span className="dashboard-detail-stat__label">Type</span>
+                <strong>{detailSession.sessionType}</strong>
+                <small>{detailSession.period}</small>
+              </div>
+              <div className="dashboard-detail-stat">
+                <span className="dashboard-detail-stat__label">
+                  {getDetailStatusLabel(detailSession.status)}
+                </span>
+                <strong>{detailSession.status}</strong>
+                <small>{getStatusCopy(detailSession.status)}</small>
+              </div>
+              <div className="dashboard-detail-stat">
+                <span className="dashboard-detail-stat__label">Location</span>
+                <strong>{detailSession.location}</strong>
+                <small>{detailSession.coachName}</small>
+              </div>
+            </div>
+
+            <div className="dashboard-contact-block">
+              <span className="dashboard-detail-stat__label">Session note</span>
+              <p>{detailSession.note}</p>
+            </div>
+
+            <div className="dashboard-info-strip">
+              <strong>{getStatusSummaryLabel(detailSession.status)}</strong>
+              <p>{getStatusSummaryCopy(detailSession.status)}</p>
+            </div>
+          </div>
+        ) : null}
+      </DashboardModal>
     </div>
   );
 }

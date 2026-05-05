@@ -1,6 +1,6 @@
 "use client";
 
-import { useDeferredValue, useEffect, useRef, useState, useTransition } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { ClipboardCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -11,10 +11,10 @@ import {
 import { saveCoachSessionNote } from "@/app/actions/coach-session-notes";
 import { DashboardManagementToolbar } from "@/components/dashboard/dashboard-management-toolbar";
 import { DashboardEmptyState } from "@/components/dashboard/dashboard-empty-state";
-import { DashboardMiniStat } from "@/components/dashboard/dashboard-mini-stat";
+import { DashboardModal } from "@/components/dashboard/dashboard-modal";
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
+import { DashboardPaginationControls } from "@/components/dashboard/dashboard-pagination-controls";
 import { DashboardStatusBadge } from "@/components/dashboard/dashboard-status-badge";
-import { DashboardSurfaceNote } from "@/components/dashboard/dashboard-surface-note";
 import {
   coachSessionStatusFilters,
   coachSessionTypeFilters,
@@ -23,6 +23,16 @@ import {
   type CoachSessionStatus,
   type CoachSessionType,
 } from "@/lib/dashboard/coach-session-data";
+import { paginateDashboardItems } from "@/lib/dashboard/pagination";
+
+type CoachSessionSort = "soonest" | "latest" | "status" | "type";
+
+const coachSessionSortOptions: Array<{ label: string; value: CoachSessionSort }> = [
+  { label: "Soonest", value: "soonest" },
+  { label: "Latest", value: "latest" },
+  { label: "Status", value: "status" },
+  { label: "Type", value: "type" },
+];
 
 function getCoachSessionTone(status: CoachSessionStatus) {
   switch (status) {
@@ -73,7 +83,10 @@ export function CoachSessionsWorkspace({
   const deferredSearchTerm = useDeferredValue(searchTerm);
   const [typeFilter, setTypeFilter] = useState<"All" | CoachSessionType>("All");
   const [statusFilter, setStatusFilter] = useState<"All" | CoachSessionStatus>("All");
+  const [sortOrder, setSortOrder] = useState<CoachSessionSort>("soonest");
+  const [page, setPage] = useState(1);
   const [selectedSessionId, setSelectedSessionId] = useState(records[0]?.id ?? "");
+  const [detailSessionId, setDetailSessionId] = useState<string | null>(null);
   const [feedbackMessage, setFeedbackMessage] = useState("");
   const [clientSearchTerm, setClientSearchTerm] = useState("");
   const [selectedClientId, setSelectedClientId] = useState(clientOptions[0]?.id ?? "");
@@ -93,6 +106,17 @@ export function CoachSessionsWorkspace({
 
     return matchesSearch && matchesType && matchesStatus;
   });
+  const sortedSessions = useMemo(() => {
+    return [...filteredSessions].sort((left, right) => {
+      const leftTiming = `${left.dayLabel} ${left.timeLabel}`;
+      const rightTiming = `${right.dayLabel} ${right.timeLabel}`;
+      if (sortOrder === "latest") return rightTiming.localeCompare(leftTiming);
+      if (sortOrder === "status") return left.status.localeCompare(right.status);
+      if (sortOrder === "type") return left.sessionType.localeCompare(right.sessionType);
+      return leftTiming.localeCompare(rightTiming);
+    });
+  }, [filteredSessions, sortOrder]);
+  const paginatedSessions = paginateDashboardItems(sortedSessions, page);
 
   useEffect(() => {
     if (!filteredSessions.some((session) => session.id === selectedSessionId)) {
@@ -103,6 +127,8 @@ export function CoachSessionsWorkspace({
   const selectedSession =
     filteredSessions.find((session) => session.id === selectedSessionId) ??
     filteredSessions[0];
+  const detailSession =
+    filteredSessions.find((session) => session.id === detailSessionId) ?? null;
 
   useEffect(() => {
     setNoteDraft(selectedSession?.noteValue ?? "");
@@ -131,6 +157,10 @@ export function CoachSessionsWorkspace({
     (session) => session.sessionType === "Group"
   ).length;
 
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm, typeFilter, statusFilter, sortOrder]);
+
   const resetFilters = () => {
     setSearchTerm("");
     setTypeFilter("All");
@@ -152,6 +182,7 @@ export function CoachSessionsWorkspace({
 
   const openSessionDetail = (sessionId: string) => {
     setSelectedSessionId(sessionId);
+    setDetailSessionId(sessionId);
     requestAnimationFrame(() => {
       detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
@@ -222,31 +253,6 @@ export function CoachSessionsWorkspace({
     <div className="dashboard-stack">
       <DashboardPageHeader eyebrow="Coach sessions" />
 
-      <DashboardSurfaceNote
-        eyebrow="Sessions"
-        title="Track the sessions you are responsible for."
-        description="Filter the list, open a session, and keep the roster current while admin records attendance."
-        items={[`${readySessions} ready sessions.`, `${groupSessions} group sessions.`]}
-      />
-
-      <section className="dashboard-mini-grid" aria-label="Coach session highlights">
-        <DashboardMiniStat
-          label="Sessions in view"
-          value={filteredSessions.length}
-          description="Current load."
-        />
-        <DashboardMiniStat
-          label="Ready"
-          value={readySessions}
-          description="Ready now."
-        />
-        <DashboardMiniStat
-          label="Group sessions"
-          value={groupSessions}
-          description="Group sessions."
-        />
-      </section>
-
       <section className="dashboard-detail-layout">
         <article className="dashboard-panel dashboard-panel--accent">
           <DashboardManagementToolbar
@@ -254,6 +260,9 @@ export function CoachSessionsWorkspace({
             onSearchChange={setSearchTerm}
             searchPlaceholder="Search by session, focus, or location"
             summary={`${filteredSessions.length} assigned sessions in view`}
+            sortValue={sortOrder}
+            sortOptions={coachSessionSortOptions}
+            onSortChange={(value) => setSortOrder(value as CoachSessionSort)}
             isFiltered={hasActiveFilters}
             onReset={resetFilters}
             filters={
@@ -317,7 +326,7 @@ export function CoachSessionsWorkspace({
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredSessions.map((session) => (
+                      {paginatedSessions.items.map((session) => (
                         <tr key={session.id}>
                           <td>
                             <div className="dashboard-table__identity">
@@ -358,7 +367,7 @@ export function CoachSessionsWorkspace({
                 </div>
 
                 <div className="dashboard-mobile-list">
-                  {filteredSessions.map((session) => (
+                  {paginatedSessions.items.map((session) => (
                     <article key={session.id} className="dashboard-record-card">
                       <div className="dashboard-record-card__header">
                         <div>
@@ -409,6 +418,14 @@ export function CoachSessionsWorkspace({
               />
             )}
           </div>
+          <DashboardPaginationControls
+            page={paginatedSessions.page}
+            pageCount={paginatedSessions.pageCount}
+            startItem={paginatedSessions.startItem}
+            endItem={paginatedSessions.endItem}
+            totalItems={paginatedSessions.totalItems}
+            onPageChange={setPage}
+          />
         </article>
 
         <aside className="dashboard-panel dashboard-detail-panel" ref={detailRef}>
@@ -602,6 +619,62 @@ export function CoachSessionsWorkspace({
           )}
         </aside>
       </section>
+
+      <DashboardModal
+        open={!!detailSession}
+        onClose={() => setDetailSessionId(null)}
+        title={detailSession?.title ?? "Session details"}
+        description={detailSession?.focus}
+        size="wide"
+      >
+        {detailSession ? (
+          <div className="dashboard-stack">
+            <div className="dashboard-detail-grid">
+              <div className="dashboard-detail-stat">
+                <span className="dashboard-detail-stat__label">Timing</span>
+                <strong>{detailSession.timeLabel}</strong>
+                <small>{detailSession.dayLabel}</small>
+              </div>
+              <div className="dashboard-detail-stat">
+                <span className="dashboard-detail-stat__label">Type</span>
+                <strong>{detailSession.sessionType}</strong>
+                <small>{detailSession.location}</small>
+              </div>
+              <div className="dashboard-detail-stat">
+                <span className="dashboard-detail-stat__label">Status</span>
+                <strong>{detailSession.status}</strong>
+                <small>Current session status</small>
+              </div>
+              <div className="dashboard-detail-stat">
+                <span className="dashboard-detail-stat__label">Roster</span>
+                <strong>{detailSession.rosterLabel}</strong>
+                <small>Occupancy or assigned client</small>
+              </div>
+            </div>
+
+            <div className="dashboard-contact-block">
+              <span className="dashboard-detail-stat__label">Coach note</span>
+              <p>{detailSession.note}</p>
+            </div>
+
+            {detailSession.bookings.length > 0 ? (
+              <div className="dashboard-summary-list">
+                {detailSession.bookings.map((booking) => (
+                  <div key={booking.clientId} className="dashboard-summary-row">
+                    <strong>{booking.fullName}</strong>
+                    <span>{booking.status}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <DashboardEmptyState
+                title="No active bookings yet"
+                description="This session does not have any booked clients to review."
+              />
+            )}
+          </div>
+        ) : null}
+      </DashboardModal>
     </div>
   );
 }

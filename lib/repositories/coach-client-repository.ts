@@ -1,5 +1,7 @@
 import "server-only";
 
+import { UserRole } from "@prisma/client";
+
 import type { CoachClientPlan, CoachClientRecord, CoachClientStatus } from "@/lib/dashboard/coach-client-record";
 import { getPrisma, withPrismaFallback } from "@/lib/prisma";
 
@@ -217,6 +219,19 @@ export class PrismaCoachClientRepository implements CoachClientRepository {
           },
         },
         workoutNotes: {
+          where: {
+            isPrivate: true,
+            OR: [
+              { authorId: null },
+              {
+                author: {
+                  role: {
+                    in: [UserRole.ADMIN, UserRole.COACH],
+                  },
+                },
+              },
+            ],
+          },
           orderBy: [{ date: "desc" }],
           take: 5,
           select: {

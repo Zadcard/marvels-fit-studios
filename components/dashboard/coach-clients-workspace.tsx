@@ -1,16 +1,15 @@
 "use client";
 
-import { useDeferredValue, useEffect, useState, useTransition } from "react";
+import { useDeferredValue, useEffect, useMemo, useState, useTransition } from "react";
 import { Download, MessageCircle, Save, UploadCloud, UserRoundSearch } from "lucide-react";
 
 import { savePrivateClientNote, uploadCoachFile } from "@/app/actions/coach-client-assets";
 import { DashboardManagementToolbar } from "@/components/dashboard/dashboard-management-toolbar";
 import { DashboardEmptyState } from "@/components/dashboard/dashboard-empty-state";
-import { DashboardMiniStat } from "@/components/dashboard/dashboard-mini-stat";
 import { DashboardModal } from "@/components/dashboard/dashboard-modal";
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
+import { DashboardPaginationControls } from "@/components/dashboard/dashboard-pagination-controls";
 import { DashboardStatusBadge } from "@/components/dashboard/dashboard-status-badge";
-import { DashboardSurfaceNote } from "@/components/dashboard/dashboard-surface-note";
 import {
   coachClientPlanFilters,
   coachClientStatusFilters,
@@ -18,7 +17,17 @@ import {
   type CoachClientPlan,
   type CoachClientStatus,
 } from "@/lib/dashboard/coach-client-record";
+import { paginateDashboardItems } from "@/lib/dashboard/pagination";
 import { buildWhatsAppHref } from "@/lib/whatsapp";
+
+type CoachClientSort = "name-asc" | "name-desc" | "status" | "plan";
+
+const coachClientSortOptions: Array<{ label: string; value: CoachClientSort }> = [
+  { label: "Name A-Z", value: "name-asc" },
+  { label: "Name Z-A", value: "name-desc" },
+  { label: "Status", value: "status" },
+  { label: "Plan", value: "plan" },
+];
 
 function getCoachClientTone(status: CoachClientStatus) {
   switch (status) {
@@ -56,6 +65,8 @@ export function CoachClientsWorkspace({ records }: CoachClientsWorkspaceProps) {
   const deferredSearchTerm = useDeferredValue(searchTerm);
   const [statusFilter, setStatusFilter] = useState<"All" | CoachClientStatus>("All");
   const [planFilter, setPlanFilter] = useState<"All" | CoachClientPlan>("All");
+  const [sortOrder, setSortOrder] = useState<CoachClientSort>("name-asc");
+  const [page, setPage] = useState(1);
   const [selectedClientId, setSelectedClientId] = useState(records[0]?.id ?? "");
   const [detailClientId, setDetailClientId] = useState<string | null>(null);
   const [noteContent, setNoteContent] = useState("");
@@ -75,6 +86,15 @@ export function CoachClientsWorkspace({ records }: CoachClientsWorkspaceProps) {
 
     return matchesSearch && matchesStatus && matchesPlan;
   });
+  const sortedClients = useMemo(() => {
+    return [...filteredClients].sort((left, right) => {
+      if (sortOrder === "name-desc") return right.fullName.localeCompare(left.fullName);
+      if (sortOrder === "status") return left.status.localeCompare(right.status);
+      if (sortOrder === "plan") return left.planType.localeCompare(right.planType);
+      return left.fullName.localeCompare(right.fullName);
+    });
+  }, [filteredClients, sortOrder]);
+  const paginatedClients = paginateDashboardItems(sortedClients, page);
 
   useEffect(() => {
     if (!filteredClients.some((client) => client.id === selectedClientId)) {
@@ -95,6 +115,10 @@ export function CoachClientsWorkspace({ records }: CoachClientsWorkspaceProps) {
   const activeHybrid = filteredClients.filter(
     (client) => client.planType === "Hybrid"
   ).length;
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm, statusFilter, planFilter, sortOrder]);
 
   const resetFilters = () => {
     setSearchTerm("");
@@ -166,34 +190,6 @@ export function CoachClientsWorkspace({ records }: CoachClientsWorkspaceProps) {
     <div className="dashboard-stack">
       <DashboardPageHeader eyebrow="Coach clients" />
 
-      <DashboardSurfaceNote
-        eyebrow="Roster"
-        title="Track your roster, progress notes, and next touchpoints here."
-        description="Filter the list, then open a client for details."
-        items={[
-          `${needsCheckIn} need check-in.`,
-          `${activeHybrid} hybrid clients.`,
-        ]}
-      />
-
-      <section className="dashboard-mini-grid" aria-label="Coach client highlights">
-        <DashboardMiniStat
-          label="Clients in view"
-          value={filteredClients.length}
-          description="Current roster view."
-        />
-        <DashboardMiniStat
-          label="Needs check-in"
-          value={needsCheckIn}
-          description="Need follow-up."
-        />
-        <DashboardMiniStat
-          label="Hybrid plans"
-          value={activeHybrid}
-          description="Hybrid plans."
-        />
-      </section>
-
       <section className="dashboard-detail-layout">
         <article className="dashboard-panel dashboard-panel--accent">
           <DashboardManagementToolbar
@@ -201,6 +197,9 @@ export function CoachClientsWorkspace({ records }: CoachClientsWorkspaceProps) {
             onSearchChange={setSearchTerm}
             searchPlaceholder="Search by client, focus, or progress note"
             summary={`${filteredClients.length} assigned clients in view`}
+            sortValue={sortOrder}
+            sortOptions={coachClientSortOptions}
+            onSortChange={(value) => setSortOrder(value as CoachClientSort)}
             isFiltered={hasActiveFilters}
             onReset={resetFilters}
             filters={
@@ -257,7 +256,7 @@ export function CoachClientsWorkspace({ records }: CoachClientsWorkspaceProps) {
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredClients.map((client) => (
+                      {paginatedClients.items.map((client) => (
                         <tr key={client.id}>
                           <td>
                             <div className="dashboard-table__identity">
@@ -291,7 +290,7 @@ export function CoachClientsWorkspace({ records }: CoachClientsWorkspaceProps) {
                 </div>
 
                 <div className="dashboard-mobile-list">
-                  {filteredClients.map((client) => (
+                  {paginatedClients.items.map((client) => (
                     <article key={client.id} className="dashboard-record-card">
                       <div className="dashboard-record-card__header">
                         <div>
@@ -339,6 +338,14 @@ export function CoachClientsWorkspace({ records }: CoachClientsWorkspaceProps) {
               />
             )}
           </div>
+          <DashboardPaginationControls
+            page={paginatedClients.page}
+            pageCount={paginatedClients.pageCount}
+            startItem={paginatedClients.startItem}
+            endItem={paginatedClients.endItem}
+            totalItems={paginatedClients.totalItems}
+            onPageChange={setPage}
+          />
         </article>
 
         <aside className="dashboard-panel dashboard-detail-panel">

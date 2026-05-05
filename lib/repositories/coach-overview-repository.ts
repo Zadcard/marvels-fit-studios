@@ -1,14 +1,143 @@
 import "server-only";
 
 import type { CoachOverviewData } from "@/lib/dashboard/coach-overview-data";
-import { coachClientRepository } from "@/lib/repositories/coach-client-repository";
+import type { CoachClientRecord, CoachClientStatus } from "@/lib/dashboard/coach-client-record";
+import { getPrisma, withPrismaFallback } from "@/lib/prisma";
 import { coachSessionRepository } from "@/lib/repositories/coach-session-repository";
+
+const dateTimeFormatter = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+});
+
+function formatDateTimeLabel(value: Date) {
+  return dateTimeFormatter.format(value);
+}
+
+function determineOverviewClientStatus(client: {
+  createdAt: Date;
+  workoutNotes: Array<{ content: string }>;
+  bookings: Array<{ trainingSession: { startsAt: Date } }>;
+}): CoachClientStatus {
+  const now = Date.now();
+  const createdWithinWeek = now - client.createdAt.getTime() <= 7 * 24 * 60 * 60 * 1000;
+
+  if (createdWithinWeek) {
+    return "New this week";
+  }
+
+  const latestNote = client.workoutNotes[0]?.content.toLowerCase() ?? "";
+  if (latestNote.includes("recovery") || latestNote.includes("lighter")) {
+    return "Recovery focus";
+  }
+
+  const nextUpcomingSession = client.bookings.find(
+    (booking) => booking.trainingSession.startsAt.getTime() >= now
+  );
+
+  return nextUpcomingSession ? "On track" : "Needs check-in";
+}
+
+async function listOverviewClientsForCoachUserId(
+  userId: string
+): Promise<Array<Pick<CoachClientRecord, "id" | "fullName" | "currentFocus" | "nextSession" | "status">>> {
+  return withPrismaFallback(async () => {
+    const clients = await getPrisma().client.findMany({
+      where: {
+        OR: [
+          {
+            group: {
+              coach: {
+                userId,
+              },
+            },
+          },
+          {
+            bookings: {
+              some: {
+                status: {
+                  in: ["BOOKED", "ATTENDED", "MISSED", "WAITLIST"],
+                },
+                trainingSession: {
+                  status: {
+                    not: "CANCELED",
+                  },
+                  coach: {
+                    userId,
+                  },
+                },
+              },
+            },
+          },
+        ],
+      },
+      select: {
+        id: true,
+        fullName: true,
+        createdAt: true,
+        bookings: {
+          where: {
+            status: {
+              in: ["BOOKED", "ATTENDED", "MISSED", "WAITLIST"],
+            },
+            trainingSession: {
+              status: {
+                not: "CANCELED",
+              },
+              coach: {
+                userId,
+              },
+            },
+          },
+          orderBy: [{ trainingSession: { startsAt: "asc" } }],
+          select: {
+            trainingSession: {
+              select: {
+                startsAt: true,
+              },
+            },
+          },
+        },
+        workoutNotes: {
+          orderBy: [{ date: "desc" }],
+          take: 1,
+          select: {
+            content: true,
+          },
+        },
+      },
+      orderBy: [{ fullName: "asc" }],
+    });
+
+    return clients.map((client) => {
+      const upcomingBooking =
+        client.bookings.find(
+          (booking) => booking.trainingSession.startsAt.getTime() >= Date.now()
+        ) ?? client.bookings[0];
+
+      return {
+        id: client.id,
+        fullName: client.fullName,
+        currentFocus:
+          client.workoutNotes[0]?.content ??
+          "Assigned to your coaching roster. Add a progress note after the next session.",
+        nextSession: upcomingBooking
+          ? formatDateTimeLabel(upcomingBooking.trainingSession.startsAt)
+          : "Not booked",
+        status: determineOverviewClientStatus(client),
+      };
+    });
+  }, []);
+}
 
 export class CoachOverviewRepository {
   async getForCoachUserId(userId: string): Promise<CoachOverviewData> {
     const [sessions, clients] = await Promise.all([
       coachSessionRepository.listForCoachUserId(userId),
-      coachClientRepository.listForCoachUserId(userId),
+      listOverviewClientsForCoachUserId(userId),
     ]);
 
     const readySessions = sessions.filter((session) => session.status === "Ready");

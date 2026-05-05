@@ -1,17 +1,17 @@
 "use client";
 
-import { useDeferredValue, useState, useTransition } from "react";
+import { useDeferredValue, useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Pencil, Plus } from "lucide-react";
 
 import { deleteCoach, saveCoach } from "@/app/actions/admin-coaches";
 import { DashboardManagementToolbar } from "@/components/dashboard/dashboard-management-toolbar";
 import { DashboardEmptyState } from "@/components/dashboard/dashboard-empty-state";
-import { DashboardMiniStat } from "@/components/dashboard/dashboard-mini-stat";
 import { DashboardModal } from "@/components/dashboard/dashboard-modal";
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
+import { DashboardPaginationControls } from "@/components/dashboard/dashboard-pagination-controls";
 import { DashboardStatusBadge } from "@/components/dashboard/dashboard-status-badge";
-import { DashboardSurfaceNote } from "@/components/dashboard/dashboard-surface-note";
+import { paginateDashboardItems } from "@/lib/dashboard/pagination";
 import {
   type AdminCoachRecord,
   type AdminCoachSpecialization,
@@ -38,6 +38,15 @@ const emptyCoachForm: CoachFormState = {
   phone: "",
   specialization: "Strength",
 };
+
+type CoachSort = "name-asc" | "name-desc" | "load-desc" | "sessions-asc";
+
+const coachSortOptions: Array<{ label: string; value: CoachSort }> = [
+  { label: "Name A-Z", value: "name-asc" },
+  { label: "Name Z-A", value: "name-desc" },
+  { label: "Highest load", value: "load-desc" },
+  { label: "Fewest sessions", value: "sessions-asc" },
+];
 
 function getCoachLoadTone(coach: AdminCoachRecord) {
   if (coach.sessionsThisWeek === 0) {
@@ -76,6 +85,8 @@ export function AdminCoachesWorkspace({ records }: AdminCoachesWorkspaceProps) {
   const [specializationFilter, setSpecializationFilter] = useState<
     "All" | AdminCoachSpecialization
   >("All");
+  const [sortOrder, setSortOrder] = useState<CoachSort>("name-asc");
+  const [page, setPage] = useState(1);
   const [selectedCoachId, setSelectedCoachId] = useState(records[0]?.id ?? "");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCoachId, setEditingCoachId] = useState<string | null>(null);
@@ -83,6 +94,7 @@ export function AdminCoachesWorkspace({ records }: AdminCoachesWorkspaceProps) {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleteConfirmationText, setDeleteConfirmationText] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [detailCoachId, setDetailCoachId] = useState<string | null>(null);
 
   const filteredCoaches = records.filter((coach) => {
     const query = deferredSearchTerm.trim().toLowerCase();
@@ -98,10 +110,33 @@ export function AdminCoachesWorkspace({ records }: AdminCoachesWorkspaceProps) {
 
     return matchesSearch && matchesSpecialization;
   });
+  const sortedCoaches = useMemo(() => {
+    return [...filteredCoaches].sort((left, right) => {
+      if (sortOrder === "name-desc") {
+        return right.fullName.localeCompare(left.fullName);
+      }
+
+      if (sortOrder === "load-desc") {
+        return (
+          right.activeClients + right.sessionsThisWeek -
+          (left.activeClients + left.sessionsThisWeek)
+        );
+      }
+
+      if (sortOrder === "sessions-asc") {
+        return left.sessionsThisWeek - right.sessionsThisWeek;
+      }
+
+      return left.fullName.localeCompare(right.fullName);
+    });
+  }, [filteredCoaches, sortOrder]);
+  const paginatedCoaches = paginateDashboardItems(sortedCoaches, page);
 
   const selectedCoach =
     filteredCoaches.find((coach) => coach.id === selectedCoachId) ??
     filteredCoaches[0];
+  const detailCoach =
+    filteredCoaches.find((coach) => coach.id === detailCoachId) ?? null;
   const highLoadCount = filteredCoaches.filter(
     (coach) => coach.activeClients >= 20 || coach.sessionsThisWeek >= 10
   ).length;
@@ -112,6 +147,10 @@ export function AdminCoachesWorkspace({ records }: AdminCoachesWorkspaceProps) {
     (total, coach) => total + coach.activeClients,
     0
   );
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm, specializationFilter, sortOrder]);
 
   const openAddModal = () => {
     setEditingCoachId(null);
@@ -130,6 +169,11 @@ export function AdminCoachesWorkspace({ records }: AdminCoachesWorkspaceProps) {
       specialization: coach.specialization,
     });
     setIsModalOpen(true);
+  };
+
+  const openCoachDetail = (coachId: string) => {
+    setSelectedCoachId(coachId);
+    setDetailCoachId(coachId);
   };
 
   const handleSaveCoach = () => {
@@ -191,45 +235,6 @@ export function AdminCoachesWorkspace({ records }: AdminCoachesWorkspaceProps) {
         }
       />
 
-      <DashboardSurfaceNote
-        eyebrow="Coach coverage"
-        title={
-          noSessionsCount > 0
-            ? `${noSessionsCount} coaches have no sessions scheduled this week in this view.`
-            : "Coach coverage is active enough to focus on load balance and specialization."
-        }
-        description="Scan idle coverage first, then watch high-load coaches before assigning more clients or sessions."
-        items={[
-          `${filteredCoaches.length} coaches are visible in this filtered roster.`,
-          `${highLoadCount} coaches are carrying high client or session load.`,
-          `${activeCoverage} active client assignments are covered across this view.`,
-        ]}
-      />
-
-      <section
-        className="dashboard-mini-grid dashboard-admin-priority-grid"
-        aria-label="Coach priorities"
-      >
-        <DashboardMiniStat
-          tone={noSessionsCount > 0 ? "warning" : "success"}
-          label="No sessions"
-          value={noSessionsCount}
-          description="Need schedule coverage."
-        />
-        <DashboardMiniStat
-          tone={highLoadCount > 0 ? "accent" : "success"}
-          label="High load"
-          value={highLoadCount}
-          description="Need attention before adding more work."
-        />
-        <DashboardMiniStat
-          tone="success"
-          label="Client coverage"
-          value={activeCoverage}
-          description="Active clients covered in this view."
-        />
-      </section>
-
       <section className="dashboard-detail-layout">
         <article className="dashboard-panel dashboard-panel--accent dashboard-panel--dense">
           <DashboardManagementToolbar
@@ -237,6 +242,9 @@ export function AdminCoachesWorkspace({ records }: AdminCoachesWorkspaceProps) {
             onSearchChange={setSearchTerm}
             searchPlaceholder="Search by coach, specialty, or note"
             summary={`${filteredCoaches.length} coaches in view • ${noSessionsCount} need schedule coverage`}
+            sortValue={sortOrder}
+            sortOptions={coachSortOptions}
+            onSortChange={(value) => setSortOrder(value as CoachSort)}
             filters={
               <>
                 <label className="dashboard-filter-field">
@@ -280,7 +288,7 @@ export function AdminCoachesWorkspace({ records }: AdminCoachesWorkspaceProps) {
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredCoaches.map((coach) => (
+                      {paginatedCoaches.items.map((coach) => (
                         <tr key={coach.id}>
                           <td>
                             <div className="dashboard-table__identity">
@@ -330,7 +338,7 @@ export function AdminCoachesWorkspace({ records }: AdminCoachesWorkspaceProps) {
                               <button
                                 type="button"
                                 className="dashboard-inline-button"
-                                onClick={() => setSelectedCoachId(coach.id)}
+                                onClick={() => openCoachDetail(coach.id)}
                               >
                                 Inspect
                               </button>
@@ -350,7 +358,7 @@ export function AdminCoachesWorkspace({ records }: AdminCoachesWorkspaceProps) {
                 </div>
 
                 <div className="dashboard-mobile-list">
-                  {filteredCoaches.map((coach) => (
+                  {paginatedCoaches.items.map((coach) => (
                     <article
                       key={coach.id}
                       className="dashboard-record-card dashboard-record-card--coach"
@@ -386,7 +394,7 @@ export function AdminCoachesWorkspace({ records }: AdminCoachesWorkspaceProps) {
                         <button
                           type="button"
                           className="dashboard-inline-button"
-                          onClick={() => setSelectedCoachId(coach.id)}
+                          onClick={() => openCoachDetail(coach.id)}
                         >
                           Open detail
                         </button>
@@ -409,6 +417,14 @@ export function AdminCoachesWorkspace({ records }: AdminCoachesWorkspaceProps) {
               />
             )}
           </div>
+          <DashboardPaginationControls
+            page={paginatedCoaches.page}
+            pageCount={paginatedCoaches.pageCount}
+            startItem={paginatedCoaches.startItem}
+            endItem={paginatedCoaches.endItem}
+            totalItems={paginatedCoaches.totalItems}
+            onPageChange={setPage}
+          />
         </article>
 
         <aside className="dashboard-panel dashboard-detail-panel dashboard-panel--dense">
@@ -494,6 +510,69 @@ export function AdminCoachesWorkspace({ records }: AdminCoachesWorkspaceProps) {
           )}
         </aside>
       </section>
+
+      <DashboardModal
+        open={!!detailCoach}
+        onClose={() => setDetailCoachId(null)}
+        title={detailCoach?.fullName ?? "Coach details"}
+        description={detailCoach?.summary}
+        size="wide"
+        footer={
+          detailCoach ? (
+            <button
+              type="button"
+              className="mv-btn mv-btn-primary"
+              onClick={() => {
+                setDetailCoachId(null);
+                openEditModal(detailCoach);
+              }}
+            >
+              <Pencil size={16} />
+              Edit Coach
+            </button>
+          ) : null
+        }
+      >
+        {detailCoach ? (
+          <div className="dashboard-stack">
+            <div className="dashboard-detail-grid">
+              <div className="dashboard-detail-stat">
+                <span className="dashboard-detail-stat__label">Specialization</span>
+                <strong>{detailCoach.specialization}</strong>
+              </div>
+              <div className="dashboard-detail-stat">
+                <span className="dashboard-detail-stat__label">Active clients</span>
+                <strong>{detailCoach.activeClients}</strong>
+              </div>
+              <div className="dashboard-detail-stat">
+                <span className="dashboard-detail-stat__label">Weekly sessions</span>
+                <strong>{detailCoach.sessionsThisWeek}</strong>
+                <small>{detailCoach.openSlots} open slots</small>
+              </div>
+              <div className="dashboard-detail-stat">
+                <span className="dashboard-detail-stat__label">Conflicts</span>
+                <strong>{detailCoach.conflicts}</strong>
+                <small>{getCoachLoadLabel(detailCoach)}</small>
+              </div>
+            </div>
+
+            <div className="dashboard-contact-block">
+              <span className="dashboard-detail-stat__label">Contact</span>
+              <p>{detailCoach.email}</p>
+              <p>{detailCoach.phone}</p>
+            </div>
+
+            <div className="dashboard-summary-list">
+              {detailCoach.weeklyLoad.map((day) => (
+                <div key={day.day} className="dashboard-summary-row">
+                  <strong>{day.day}</strong>
+                  <span>{day.sessions} sessions</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
+      </DashboardModal>
 
       <DashboardModal
         open={isModalOpen}
