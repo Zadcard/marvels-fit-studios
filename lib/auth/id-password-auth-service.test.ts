@@ -17,6 +17,9 @@ describe("IdPasswordAuthService", () => {
         findFirst: vi.fn(),
         update: vi.fn(),
       },
+      client: {
+        findFirst: vi.fn(),
+      },
     };
 
     vi.mocked(prismaModule.getPrisma).mockReturnValue(mockPrisma);
@@ -30,8 +33,14 @@ describe("IdPasswordAuthService", () => {
       mockPrisma.user.findUnique.mockResolvedValue({
         id: "user-123",
         clientId: "2605020",
+        email: null,
+        name: "Client User",
         password: "hashed_password",
+        mustChangePassword: false,
         role: "CLIENT",
+        clientProfile: {
+          fullName: "Client User",
+        },
       });
 
       const passwordVerifier = (service as any).passwordVerifier;
@@ -45,8 +54,51 @@ describe("IdPasswordAuthService", () => {
       expect(result).toEqual({
         userId: "user-123",
         clientId: "2605020",
+        name: "Client User",
+        email: null,
+        mustChangePassword: false,
         role: "CLIENT",
       });
+    });
+
+    it("should authenticate user by phone number when client ID is not found", async () => {
+      mockPrisma.user.findUnique.mockResolvedValue(null);
+      mockPrisma.client.findFirst.mockResolvedValue({
+        user: {
+          id: "user-123",
+          clientId: "2605020",
+          email: null,
+          name: "Client User",
+          password: "hashed_password",
+          mustChangePassword: false,
+          role: "CLIENT",
+          clientProfile: {
+            fullName: "Client User",
+          },
+        },
+      });
+
+      const passwordVerifier = (service as any).passwordVerifier;
+      vi.spyOn(passwordVerifier, "verify").mockResolvedValue(true);
+
+      const result = await service.authenticate({
+        clientId: "01080481525",
+        password: "MFS_2605020",
+      });
+
+      expect(mockPrisma.client.findFirst).toHaveBeenCalledWith({
+        where: {
+          phone: {
+            in: ["01080481525", "+201080481525"],
+          },
+        },
+        select: {
+          user: {
+            select: expect.any(Object),
+          },
+        },
+      });
+      expect(result.clientId).toBe("2605020");
     });
 
     it("should update lastLoginAt on successful authentication", async () => {
@@ -79,7 +131,7 @@ describe("IdPasswordAuthService", () => {
           clientId: "invalid",
           password: "password",
         })
-      ).rejects.toThrow("Invalid client ID or password");
+      ).rejects.toThrow("Invalid client ID, phone, or password");
     });
 
     it("should throw error when user has no password", async () => {
@@ -95,7 +147,7 @@ describe("IdPasswordAuthService", () => {
           clientId: "2605020",
           password: "MFS_2605020",
         })
-      ).rejects.toThrow("Invalid client ID or password");
+      ).rejects.toThrow("Invalid client ID, phone, or password");
     });
 
     it("should throw error when password is incorrect", async () => {
@@ -114,7 +166,7 @@ describe("IdPasswordAuthService", () => {
           clientId: "2605020",
           password: "wrong_password",
         })
-      ).rejects.toThrow("Invalid client ID or password");
+      ).rejects.toThrow("Invalid client ID, phone, or password");
     });
 
     it("should query by clientId", async () => {

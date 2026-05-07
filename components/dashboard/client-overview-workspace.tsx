@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import {
   ArrowRight,
+  CalendarCheck2,
   CreditCard,
   Download,
   Edit3,
@@ -23,8 +24,17 @@ import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-heade
 import { DashboardPaginationControls } from "@/components/dashboard/dashboard-pagination-controls";
 import { DashboardStatCard } from "@/components/dashboard/dashboard-stat-card";
 import { DashboardSurfaceNote } from "@/components/dashboard/dashboard-surface-note";
-import type { ClientOverviewData } from "@/lib/dashboard/client-dashboard-data";
+import type {
+  ClientOverviewData,
+  ClientQuickActionIconKey,
+} from "@/lib/dashboard/client-dashboard-data";
 import { paginateDashboardItems } from "@/lib/dashboard/pagination";
+
+const clientQuickActionIcons: Record<ClientQuickActionIconKey, typeof CalendarCheck2> = {
+  "calendar-check-2": CalendarCheck2,
+  "credit-card": CreditCard,
+  "shield-user": ShieldUser,
+};
 
 function getSessionBadgeClass(status: "Booked" | "Check-in ready" | "Waitlist") {
   if (status === "Check-in ready") {
@@ -331,7 +341,7 @@ export function ClientOverviewWorkspace({ data }: ClientOverviewWorkspaceProps) 
 
           <div className="dashboard-quick-grid">
             {data.quickActions.map((action) => {
-              const Icon = action.icon;
+              const Icon = clientQuickActionIcons[action.icon];
 
               return (
                 <div key={action.id} className="dashboard-quick-card">

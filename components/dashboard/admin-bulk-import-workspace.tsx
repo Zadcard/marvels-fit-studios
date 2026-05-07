@@ -281,7 +281,12 @@ export function AdminBulkImportWorkspace() {
                 setSearchTerm(value);
                 setPreviewPage(1);
               }}
-              searchPlaceholder="Search preview rows"
+                searchPlaceholder="Search preview rows"
+                searchSuggestions={previewRows.map((row) => ({
+                  label: row.fullName,
+                  value: row.fullName,
+                  detail: `Row ${row.rowNumber} - ${row.phone}`,
+                }))}
               summary={`${filteredPreviewRows.length} preview rows`}
               sortValue={sortOrder}
               sortOptions={bulkImportSortOptions}

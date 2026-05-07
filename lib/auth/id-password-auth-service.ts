@@ -34,33 +34,94 @@ export interface ChangePasswordInput {
   newPassword: string;
 }
 
+const authUserSelect = {
+  id: true,
+  name: true,
+  clientId: true,
+  email: true,
+  password: true,
+  mustChangePassword: true,
+  role: true,
+  clientProfile: {
+    select: {
+      fullName: true,
+    },
+  },
+} as const;
+
+function getPhoneCandidates(identifier: string) {
+  const trimmed = identifier.trim();
+  const digits = trimmed.replace(/\D/g, "");
+  const candidates = new Set<string>();
+
+  if (trimmed) {
+    candidates.add(trimmed);
+  }
+
+  if (digits) {
+    candidates.add(digits);
+
+    if (digits.startsWith("00")) {
+      candidates.add(`+${digits.slice(2)}`);
+    }
+
+    if (digits.startsWith("20")) {
+      candidates.add(`+${digits}`);
+    }
+
+    if (digits.startsWith("0")) {
+      candidates.add(`+20${digits.slice(1)}`);
+    }
+  }
+
+  return [...candidates];
+}
+
 export class IdPasswordAuthService {
   private get prisma() {
     return getPrisma();
   }
   private passwordVerifier = new BcryptPasswordVerifier();
 
-  async authenticate(input: LoginInput): Promise<AuthenticatedUser> {
-    const user = await this.prisma.user.findUnique({
-      where: { clientId: input.clientId },
+  private async findUserByLoginIdentifier(identifier: string) {
+    const clientId = identifier.trim();
+
+    const userByClientId = await this.prisma.user.findUnique({
+      where: { clientId },
+      select: authUserSelect,
+    });
+
+    if (userByClientId) {
+      return userByClientId;
+    }
+
+    const phoneCandidates = getPhoneCandidates(identifier);
+
+    if (phoneCandidates.length === 0) {
+      return null;
+    }
+
+    const clientByPhone = await this.prisma.client.findFirst({
+      where: {
+        phone: {
+          in: phoneCandidates,
+        },
+      },
       select: {
-        id: true,
-        name: true,
-        clientId: true,
-        email: true,
-        password: true,
-        mustChangePassword: true,
-        role: true,
-        clientProfile: {
-          select: {
-            fullName: true,
-          },
+        user: {
+          select: authUserSelect,
         },
       },
     });
 
+    return clientByPhone?.user ?? null;
+  }
+
+  async authenticate(input: LoginInput): Promise<AuthenticatedUser> {
+    const user = await this.findUserByLoginIdentifier(input.clientId);
+
     if (!user || !user.password) {
-      throw new Error("Invalid client ID or password");
+      throw new Error("Invalid client ID, phone, or password");
     }
 
     const isValid = await this.passwordVerifier.verify(
@@ -69,7 +130,7 @@ export class IdPasswordAuthService {
     );
 
     if (!isValid) {
-      throw new Error("Invalid client ID or password");
+      throw new Error("Invalid client ID, phone, or password");
     }
 
     await this.prisma.user.update({

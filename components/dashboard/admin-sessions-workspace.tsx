@@ -892,12 +892,25 @@ export function AdminSessionsWorkspace({
         <DashboardManagementToolbar
           searchValue={searchTerm}
           onSearchChange={setSearchTerm}
-          searchPlaceholder={
-            view === "group"
-              ? "Search by session, coach, or location"
-              : "Search by client, coach, or focus"
-          }
-          summary={activeSummary}
+            searchPlaceholder={
+              view === "group"
+                ? "Search by session, coach, or location"
+                : "Search by client, coach, or focus"
+            }
+            searchSuggestions={
+              view === "group"
+                ? currentGroupRecords.map((session) => ({
+                    label: session.title,
+                    value: session.title,
+                    detail: `${session.coachName} - ${session.location}`,
+                  }))
+                : currentPrivateRecords.map((session) => ({
+                    label: session.clientName,
+                    value: session.clientName,
+                    detail: `${session.title} - ${session.coachName}`,
+                  }))
+            }
+            summary={activeSummary}
           sortValue={sortOrder}
           sortOptions={sessionSortOptions}
           onSortChange={(value) => setSortOrder(value as SessionSort)}

@@ -360,7 +360,12 @@ export function AdminScheduleWorkspace({
         <DashboardManagementToolbar
           searchValue={searchTerm}
           onSearchChange={setSearchTerm}
-          searchPlaceholder="Search by session, coach, group, or location"
+            searchPlaceholder="Search by session, coach, group, or location"
+            searchSuggestions={records.map((record) => ({
+              label: record.title,
+              value: record.title,
+              detail: `${record.coachName} - ${record.location}`,
+            }))}
           summary={`${filteredRecords.length} occurrences in the current view`}
           filters={
             <>

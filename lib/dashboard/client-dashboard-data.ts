@@ -1,13 +1,10 @@
-import type { LucideIcon } from "lucide-react";
-import {
-  CalendarCheck2,
-  CreditCard,
-  ShieldUser,
-  Target,
-  TrendingUp,
-} from "lucide-react";
-
 import type { DashboardActivityFeedItem } from "@/components/dashboard/dashboard-activity-feed";
+import type { DashboardStatIconKey } from "@/components/dashboard/dashboard-stat-card";
+
+export type ClientQuickActionIconKey =
+  | "calendar-check-2"
+  | "credit-card"
+  | "shield-user";
 
 export type ClientOverviewStat = {
   id: string;
@@ -16,7 +13,7 @@ export type ClientOverviewStat = {
   change: string;
   detail: string;
   note: string;
-  icon: LucideIcon;
+  icon: DashboardStatIconKey;
   tone: "accent" | "success" | "warning" | "neutral";
 };
 
@@ -50,7 +47,7 @@ export type ClientQuickAction = {
   id: string;
   label: string;
   description: string;
-  icon: LucideIcon;
+  icon: ClientQuickActionIconKey;
   ctaLabel: string;
   href: string;
 };
@@ -161,7 +158,7 @@ export const clientQuickActions: ClientQuickAction[] = [
     id: "client-action-1",
     label: "Review my sessions",
     description: "See what's coming up next without digging through the full schedule.",
-    icon: CalendarCheck2,
+    icon: "calendar-check-2",
     ctaLabel: "Open sessions",
     href: "/client/sessions",
   },
@@ -169,7 +166,7 @@ export const clientQuickActions: ClientQuickAction[] = [
     id: "client-action-2",
     label: "Check my coach",
     description: "Jump into your coach summary and the next touchpoint details.",
-    icon: ShieldUser,
+    icon: "shield-user",
     ctaLabel: "View coach",
     href: "/client/coach",
   },
@@ -177,14 +174,14 @@ export const clientQuickActions: ClientQuickAction[] = [
     id: "client-action-3",
     label: "See my plan",
     description: "Keep your current membership and renewal details easy to reach.",
-    icon: CreditCard,
+    icon: "credit-card",
     ctaLabel: "View plan",
     href: "/client/subscription",
   },
 ];
 
 export const clientOverviewStatIcons = {
-  sessions: CalendarCheck2,
-  attendance: TrendingUp,
-  focus: Target,
-};
+  sessions: "calendar-check-2",
+  attendance: "trending-up",
+  focus: "target",
+} as const;

@@ -54,11 +54,11 @@ function LoginForm() {
 
     if (loginMethod === "clientId") {
       if (!clientId.trim()) {
-        errors.clientId = "Please enter your 7-digit Client ID";
+        errors.clientId = "Please enter your Client ID or phone number";
         firstInvalidField = clientIdInputRef.current;
-      } else if (!/^\d{7}$/.test(clientId.trim())) {
+      } else if (!/^[+\d\s().-]{7,24}$/.test(clientId.trim())) {
         errors.clientId =
-          "Client ID must be exactly 7 digits (e.g., 2605020)";
+          "Enter a valid Client ID or phone number";
         firstInvalidField = clientIdInputRef.current;
       }
     } else {
@@ -120,7 +120,7 @@ function LoginForm() {
         if (result?.error) {
           if (result.error === "CredentialsSignin" || result.error === "Credentials") {
             const identifier =
-              loginMethod === "clientId" ? "Client ID" : "email";
+              loginMethod === "clientId" ? "Client ID, phone" : "email";
             setFormError(`Invalid ${identifier} or password.`);
             (loginMethod === "clientId" ? passwordInputRef : passwordInputRef)
               .current?.focus();
@@ -221,7 +221,7 @@ function LoginForm() {
             }`}
             disabled={isLoading}
           >
-            Client ID
+            Client ID / Phone
           </button>
           <button
             type="button"
@@ -244,25 +244,24 @@ function LoginForm() {
         {loginMethod === "clientId" && (
           <div className="login-field-group">
             <label className="login-field-label" htmlFor="login-client-id">
-              Client ID (7 digits)
+              Client ID or phone number
             </label>
             <input
               ref={clientIdInputRef}
               id="login-client-id"
               name="clientId"
-              type="text"
+              type="tel"
               className={`mv-field ${
                 fieldErrors.clientId ? "field-error" : ""
               }`}
               value={clientId}
               onChange={(event) => {
-                const value = event.target.value.replace(/\D/g, "").slice(0, 7);
-                setClientId(value);
+                setClientId(event.target.value.slice(0, 24));
                 clearFieldError("clientId");
               }}
-              placeholder="e.g., 2605020"
-              inputMode="numeric"
-              autoComplete="off"
+              placeholder="e.g., 2605020 or +201012345678"
+              inputMode="tel"
+              autoComplete="tel"
               disabled={isLoading}
             />
             {fieldErrors.clientId ? (

@@ -259,6 +259,11 @@ export function CoachSessionsWorkspace({
             searchValue={searchTerm}
             onSearchChange={setSearchTerm}
             searchPlaceholder="Search by session, focus, or location"
+            searchSuggestions={records.map((session) => ({
+              label: session.title,
+              value: session.title,
+              detail: `${session.focus} - ${session.location}`,
+            }))}
             summary={`${filteredSessions.length} assigned sessions in view`}
             sortValue={sortOrder}
             sortOptions={coachSessionSortOptions}

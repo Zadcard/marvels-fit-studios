@@ -241,6 +241,11 @@ export function AdminCoachesWorkspace({ records }: AdminCoachesWorkspaceProps) {
             searchValue={searchTerm}
             onSearchChange={setSearchTerm}
             searchPlaceholder="Search by coach, specialty, or note"
+            searchSuggestions={records.map((coach) => ({
+              label: coach.fullName,
+              value: coach.fullName,
+              detail: `${coach.specialization} - ${coach.email}`,
+            }))}
             summary={`${filteredCoaches.length} coaches in view • ${noSessionsCount} need schedule coverage`}
             sortValue={sortOrder}
             sortOptions={coachSortOptions}

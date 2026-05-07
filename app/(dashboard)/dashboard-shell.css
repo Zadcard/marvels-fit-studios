@@ -933,15 +933,23 @@ body.dashboard-nav-open {
 .dashboard-clients-search {
   display: grid;
   gap: var(--mv-space-2xs);
+  position: relative;
 }
 
-.dashboard-clients-search span,
+.dashboard-clients-search label,
 .dashboard-clients-filter-group__label {
   color: var(--mv-muted);
   font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+.dashboard-clients-search__controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--mv-space-xs);
+  align-items: center;
 }
 
 .dashboard-clients-search__input {
@@ -1738,7 +1746,54 @@ body.dashboard-nav-open {
 
 .dashboard-search-field {
   width: 100%;
-  max-width: 460px;
+  max-width: 620px;
+  position: relative;
+}
+
+.dashboard-search-field__controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--mv-space-xs);
+  align-items: center;
+}
+
+.dashboard-search-suggestions {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  display: grid;
+  gap: 2px;
+  padding: 6px;
+  border: 1px solid var(--mv-border-strong);
+  border-radius: var(--mv-radius-card);
+  background: rgba(13, 13, 13, 0.98);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.36);
+}
+
+.dashboard-search-suggestion {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: var(--mv-radius-control);
+  background: transparent;
+  color: var(--mv-text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.dashboard-search-suggestion:hover,
+.dashboard-search-suggestion:focus-visible {
+  outline: none;
+  background: rgba(230, 36, 41, 0.14);
+}
+
+.dashboard-search-suggestion span {
+  color: var(--mv-muted);
+  font-size: 0.76rem;
 }
 
 .dashboard-filter-field--sort {
@@ -3517,6 +3572,20 @@ body.dashboard-nav-open {
   .dashboard-form-grid > *,
   .dashboard-toolbar__filters > * {
     flex: 1 1 100%;
+  }
+
+  .dashboard-clients-search__controls {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-search-field__controls {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-clients-search__controls > .mv-btn,
+  .dashboard-search-field__controls > .mv-btn {
+    width: 100%;
+    justify-content: center;
   }
 
   .dashboard-type-picker {

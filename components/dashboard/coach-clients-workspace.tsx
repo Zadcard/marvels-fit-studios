@@ -196,6 +196,11 @@ export function CoachClientsWorkspace({ records }: CoachClientsWorkspaceProps) {
             searchValue={searchTerm}
             onSearchChange={setSearchTerm}
             searchPlaceholder="Search by client, focus, or progress note"
+            searchSuggestions={records.map((client) => ({
+              label: client.fullName,
+              value: client.fullName,
+              detail: `${client.planType} - ${client.currentFocus}`,
+            }))}
             summary={`${filteredClients.length} assigned clients in view`}
             sortValue={sortOrder}
             sortOptions={coachClientSortOptions}

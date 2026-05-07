@@ -184,6 +184,11 @@ export function ClientSessionsWorkspace({ records }: ClientSessionsWorkspaceProp
             searchValue={searchTerm}
             onSearchChange={setSearchTerm}
             searchPlaceholder="Search by session, coach, or location"
+            searchSuggestions={records.map((session) => ({
+              label: session.title,
+              value: session.title,
+              detail: `${session.coachName} - ${session.location}`,
+            }))}
             summary={`${filteredSessions.length} sessions in view`}
             sortValue={sortOrder}
             sortOptions={clientSessionSortOptions}

@@ -1,8 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useState, useTransition } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useTransition,
+  type FormEvent,
+} from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { MessageCircle, Plus } from "lucide-react";
+import { MessageCircle, Plus, Search } from "lucide-react";
 
 import { deleteAdminClient, saveAdminClient } from "@/app/actions/admin-clients";
 import { DashboardEmptyState } from "@/components/dashboard/dashboard-empty-state";
@@ -80,6 +87,22 @@ export function AdminClientsWorkspace({
 
   const detailClient = records.find((client) => client.id === detailClientId) ?? null;
   const paginatedClients = paginateDashboardItems(records, currentPage);
+  const searchSuggestions = useMemo(() => {
+    const query = searchInput.trim().toLowerCase();
+
+    if (!query) {
+      return [];
+    }
+
+    return records
+      .filter((client) =>
+        [client.fullName, client.clientId, client.phone, client.assignedCoach]
+          .join(" ")
+          .toLowerCase()
+          .includes(query)
+      )
+      .slice(0, 6);
+  }, [records, searchInput]);
 
   const updateFormField = (key: keyof ClientFormState, value: string) => {
     setFormState((current) => ({ ...current, [key]: value }));
@@ -118,17 +141,15 @@ export function AdminClientsWorkspace({
     [pathname, router, searchParams]
   );
 
-  useEffect(() => {
+  const handleSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
     const normalizedSearch = searchInput.trim();
 
     if (normalizedSearch === searchValue) return;
 
-    const timeoutId = window.setTimeout(() => {
-      updateQuery({ q: normalizedSearch || null, page: null });
-    }, 250);
-
-    return () => window.clearTimeout(timeoutId);
-  }, [searchInput, searchValue, updateQuery]);
+    updateQuery({ q: normalizedSearch || null, page: null });
+  };
 
   const handleSaveClient = () => {
     setErrorMessage("");
@@ -200,18 +221,49 @@ export function AdminClientsWorkspace({
               </p>
             </div>
 
-            <label className="dashboard-clients-search" htmlFor="admin-client-search">
-              <span>Search</span>
-              <input
-                id="admin-client-search"
-                type="search"
-                className="dashboard-clients-search__input"
-                placeholder="Search name, ID, phone, email"
-                value={searchInput}
-                onChange={(event) => setSearchInput(event.target.value)}
-                autoComplete="off"
-              />
-            </label>
+            <form className="dashboard-clients-search" onSubmit={handleSearchSubmit}>
+              <label htmlFor="admin-client-search">Search</label>
+              <div className="dashboard-clients-search__controls">
+                <input
+                  id="admin-client-search"
+                  type="search"
+                  className="dashboard-clients-search__input"
+                  placeholder="Search name, ID, phone, email"
+                  value={searchInput}
+                  onChange={(event) => setSearchInput(event.target.value)}
+                  autoComplete="off"
+                />
+                <button
+                  type="submit"
+                  className="mv-btn mv-btn-primary"
+                  disabled={isFilterPending}
+                >
+                  <Search size={16} />
+                  Search
+                </button>
+              </div>
+              {searchSuggestions.length > 0 ? (
+                <div className="dashboard-search-suggestions" role="listbox">
+                  {searchSuggestions.map((client) => (
+                    <button
+                      key={client.id}
+                      type="button"
+                      className="dashboard-search-suggestion"
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={() => {
+                        setSearchInput(client.fullName);
+                        updateQuery({ q: client.fullName, page: null });
+                      }}
+                    >
+                      <strong>{client.fullName}</strong>
+                      <span>
+                        {client.clientId} - {client.phone}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+            </form>
           </div>
 
           <div className="dashboard-clients-filters">

@@ -1,4 +1,5 @@
 import {
+  CalendarCheck2,
   CalendarClock,
   Clock3,
   Target,
@@ -10,6 +11,7 @@ import {
 import { cn } from "@/lib/utils";
 
 export type DashboardStatIconKey =
+  | "calendar-check-2"
   | "calendar-clock"
   | "clock-3"
   | "target"
@@ -27,6 +29,7 @@ type DashboardStatCardProps = {
 };
 
 const dashboardStatIcons: Record<DashboardStatIconKey, LucideIcon> = {
+  "calendar-check-2": CalendarCheck2,
   "calendar-clock": CalendarClock,
   "clock-3": Clock3,
   target: Target,

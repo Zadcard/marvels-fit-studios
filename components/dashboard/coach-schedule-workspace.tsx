@@ -154,7 +154,12 @@ export function CoachScheduleWorkspace({ records }: CoachScheduleWorkspaceProps)
         <DashboardManagementToolbar
           searchValue={searchTerm}
           onSearchChange={setSearchTerm}
-          searchPlaceholder="Search by session, note, or location"
+            searchPlaceholder="Search by session, note, or location"
+            searchSuggestions={records.map((session) => ({
+              label: session.title,
+              value: session.title,
+              detail: `${session.dayKey} - ${session.location}`,
+            }))}
           summary={`${filteredSchedule.length} sessions in view`}
           isFiltered={hasActiveFilters}
           onReset={resetFilters}

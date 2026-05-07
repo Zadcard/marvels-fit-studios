@@ -449,6 +449,11 @@ export function AdminSubscriptionsWorkspace({
             searchValue={searchTerm}
             onSearchChange={setSearchTerm}
             searchPlaceholder="Search by member, plan, coach, or note"
+            searchSuggestions={subscriptionRecords.map((subscription) => ({
+              label: subscription.memberName,
+              value: subscription.memberName,
+              detail: `${subscription.planName} - ${subscription.assignedCoach}`,
+            }))}
             summary={`${filteredSubscriptions.length} subscriptions in view, ${overdueCount} overdue`}
             sortValue={sortOrder}
             sortOptions={subscriptionSortOptions}
