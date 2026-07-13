@@ -17,15 +17,19 @@ export default async function AuthRedirectPage() {
   }
 
   if (session.user.id) {
-    const user = await getPrisma().user.findUnique({
-      where: { id: session.user.id },
-      select: {
-        mustChangePassword: true,
-      },
-    });
+    try {
+      const user = await getPrisma().user.findUnique({
+        where: { id: session.user.id },
+        select: {
+          mustChangePassword: true,
+        },
+      });
 
-    if (user?.mustChangePassword) {
-      redirect("/change-password");
+      if (user?.mustChangePassword) {
+        redirect("/change-password");
+      }
+    } catch {
+      // DB unavailable (local dev without env vars) — skip the check
     }
   }
 

@@ -42,7 +42,12 @@ export class CredentialsAuthService {
     const { email, password } = parsedCredentials;
     const fallbackUser = () => this.fallbackPolicy.getUser(email, password);
 
-    const user = await this.userRepository.findByEmail(email);
+    let user;
+    try {
+      user = await this.userRepository.findByEmail(email);
+    } catch {
+      return fallbackUser();
+    }
 
     if (!user?.password) {
       return fallbackUser();
