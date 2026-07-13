@@ -1,79 +1,68 @@
-import { expect, vi } from 'vitest';
-import type { PrismaClient } from '@prisma/client';
+import { expect, vi, type Mock } from 'vitest';
+
+/**
+ * A mocked Prisma model delegate. Every method is a vitest Mock so tests can
+ * chain `.mockResolvedValue(...)` etc. with full type safety.
+ */
+type MockModelDelegate = {
+  findUnique: Mock;
+  findFirst: Mock;
+  findMany: Mock;
+  create: Mock;
+  update: Mock;
+  delete: Mock;
+  count: Mock;
+  upsert: Mock;
+};
+
+/**
+ * Shape of the object returned by {@link createMockPrisma}. Delegates are
+ * non-optional (unlike `Partial<PrismaClient>`) so `mockPrisma.sessionBooking`
+ * is never `possibly undefined` in tests.
+ */
+export type MockPrisma = {
+  user: MockModelDelegate;
+  client: MockModelDelegate;
+  coach: MockModelDelegate;
+  trainingSession: MockModelDelegate;
+  sessionBooking: MockModelDelegate;
+  scheduleBlock: MockModelDelegate;
+  lead: MockModelDelegate;
+  subscription: MockModelDelegate;
+  clientSubscription: MockModelDelegate;
+  $transaction: Mock;
+};
+
+function createMockDelegate(): MockModelDelegate {
+  return {
+    findUnique: vi.fn(),
+    findFirst: vi.fn(),
+    findMany: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+    count: vi.fn().mockResolvedValue(0),
+    upsert: vi.fn(),
+  };
+}
 
 /**
  * Mock Prisma client for testing
  * Usage: const mockPrisma = createMockPrisma();
  */
-export function createMockPrisma(): Partial<PrismaClient> {
+export function createMockPrisma(): MockPrisma {
   return {
-    user: {
-      findUnique: vi.fn(),
-      findMany: vi.fn(),
-      create: vi.fn(),
-      update: vi.fn(),
-      delete: vi.fn(),
-      count: vi.fn().mockResolvedValue(0),
-    },
-    client: {
-      findUnique: vi.fn(),
-      findMany: vi.fn(),
-      create: vi.fn(),
-      update: vi.fn(),
-      delete: vi.fn(),
-      count: vi.fn().mockResolvedValue(0),
-    },
-    coach: {
-      findUnique: vi.fn(),
-      findMany: vi.fn(),
-      create: vi.fn(),
-      update: vi.fn(),
-      delete: vi.fn(),
-    },
-    trainingSession: {
-      findUnique: vi.fn(),
-      findMany: vi.fn(),
-      create: vi.fn(),
-      update: vi.fn(),
-      delete: vi.fn(),
-    },
-    sessionBooking: {
-      findUnique: vi.fn(),
-      findMany: vi.fn(),
-      create: vi.fn(),
-      update: vi.fn(),
-      delete: vi.fn(),
-      count: vi.fn().mockResolvedValue(0),
-    },
-    scheduleBlock: {
-      findUnique: vi.fn(),
-      findMany: vi.fn(),
-      create: vi.fn(),
-      update: vi.fn(),
-      delete: vi.fn(),
-    },
-    lead: {
-      findUnique: vi.fn(),
-      findMany: vi.fn(),
-      create: vi.fn(),
-      update: vi.fn(),
-      delete: vi.fn(),
-    },
-    subscription: {
-      findUnique: vi.fn(),
-      findMany: vi.fn(),
-      create: vi.fn(),
-      update: vi.fn(),
-      delete: vi.fn(),
-    },
-    clientSubscription: {
-      findUnique: vi.fn(),
-      findMany: vi.fn(),
-      create: vi.fn(),
-      update: vi.fn(),
-      delete: vi.fn(),
-    },
-  } as unknown as Partial<PrismaClient>;
+    user: createMockDelegate(),
+    client: createMockDelegate(),
+    coach: createMockDelegate(),
+    trainingSession: createMockDelegate(),
+    sessionBooking: createMockDelegate(),
+    scheduleBlock: createMockDelegate(),
+    lead: createMockDelegate(),
+    subscription: createMockDelegate(),
+    clientSubscription: createMockDelegate(),
+    $transaction: vi.fn(),
+  };
 }
 
 /**

@@ -39,7 +39,7 @@ describe('Attendance Service', () => {
     const validInput = {
       trainingSessionId: 'session-123',
       clientId: 'client-456',
-      status: BookingStatus.ATTENDED as const,
+      status: BookingStatus.ATTENDED,
     };
 
     describe('Validation', () => {
