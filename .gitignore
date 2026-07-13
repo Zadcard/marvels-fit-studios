@@ -5,18 +5,30 @@
 .next
 out
 dist
+*.tsbuildinfo
+
+# Test / coverage output
+coverage/
 
 # Environment
 .env
 .env.local
+.env*.local
 
 # Temp files
 tmp-*.cjs
+tmp-*.csv
 output/
+csrf.json
+
+# Local artifacts / exports
+*.zip
+WhatsApp Image*.jpeg
 
 # OS
 .DS_Store
 Thumbs.db
-.claude/worktrees/admiring-driscoll-1f4091/
+
+# Tooling
+.claude/worktrees/
 .vercel
-.env*.local
