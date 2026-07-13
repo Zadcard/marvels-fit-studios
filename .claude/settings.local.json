@@ -38,5 +38,9 @@
       "Bash(taskkill /PID 400 /F)",
       "Bash(taskkill /PID 27996 /F)"
     ]
-  }
+  },
+  "disabledMcpjsonServers": [
+    "context7",
+    "neon"
+  ]
 }
