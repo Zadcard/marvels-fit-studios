@@ -150,12 +150,6 @@ export function CoachSessionsWorkspace({
     : filteredClientOptions[0]?.id ?? "";
   const hasActiveFilters =
     searchTerm.trim().length > 0 || typeFilter !== "All" || statusFilter !== "All";
-  const readySessions = filteredSessions.filter(
-    (session) => session.status === "Ready"
-  ).length;
-  const groupSessions = filteredSessions.filter(
-    (session) => session.sessionType === "Group"
-  ).length;
 
   useEffect(() => {
     setPage(1);

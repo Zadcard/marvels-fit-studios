@@ -464,18 +464,6 @@ export function AdminSessionsWorkspace({
     (total, session) => total + session.enrolled,
     0
   );
-  const groupAtCapacityCount = filteredGroupRecords.filter(
-    (session) => session.status === "Waitlist"
-  ).length;
-  const groupNeedsBookingsCount = filteredGroupRecords.filter(
-    (session) =>
-      session.enrolled === 0 &&
-      session.status !== "Canceled" &&
-      session.status !== "Completed"
-  ).length;
-  const groupDraftCount = filteredGroupRecords.filter(
-    (session) => session.status === "Draft"
-  ).length;
   const groupOpenSpots = filteredGroupRecords.reduce((total, session) => {
     if (session.status === "Canceled" || session.status === "Completed") {
       return total;
@@ -489,15 +477,6 @@ export function AdminSessionsWorkspace({
   ).size;
   const privateAssignedCount = filteredPrivateRecords.filter((session) =>
     isClientAssigned(session.clientName)
-  ).length;
-  const privateNeedsClientCount = filteredPrivateRecords.filter(
-    (session) => !isClientAssigned(session.clientName)
-  ).length;
-  const privateDraftCount = filteredPrivateRecords.filter(
-    (session) => session.status === "Draft"
-  ).length;
-  const privateCompletedCount = filteredPrivateRecords.filter(
-    (session) => session.status === "Completed"
   ).length;
 
   const isFiltered = normalizedSearchTerm.length > 0 || statusFilter !== "All";

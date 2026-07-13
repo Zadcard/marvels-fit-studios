@@ -109,12 +109,6 @@ export function CoachClientsWorkspace({ records }: CoachClientsWorkspaceProps) {
     filteredClients.find((client) => client.id === detailClientId) ?? null;
   const hasActiveFilters =
     searchTerm.trim().length > 0 || statusFilter !== "All" || planFilter !== "All";
-  const needsCheckIn = filteredClients.filter(
-    (client) => client.status === "Needs check-in"
-  ).length;
-  const activeHybrid = filteredClients.filter(
-    (client) => client.planType === "Hybrid"
-  ).length;
 
   useEffect(() => {
     setPage(1);

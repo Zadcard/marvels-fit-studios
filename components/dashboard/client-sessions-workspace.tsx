@@ -149,15 +149,6 @@ export function ClientSessionsWorkspace({ records }: ClientSessionsWorkspaceProp
     filteredSessions.find((session) => session.id === detailSessionId) ?? null;
   const hasActiveFilters =
     searchTerm.trim().length > 0 || periodFilter !== "All" || typeFilter !== "All";
-  const upcomingCount = filteredSessions.filter(
-    (session) => session.period === "Upcoming"
-  ).length;
-  const readyCount = filteredSessions.filter(
-    (session) => session.status === "Check-in ready"
-  ).length;
-  const privateCount = filteredSessions.filter(
-    (session) => session.sessionType === "Private"
-  ).length;
 
   useEffect(() => {
     setPage(1);

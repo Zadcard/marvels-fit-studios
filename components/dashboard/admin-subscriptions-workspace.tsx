@@ -241,20 +241,8 @@ export function AdminSubscriptionsWorkspace({
   const activeCount = filteredSubscriptions.filter(
     (subscription) => subscription.subscriptionStatus === "Active"
   ).length;
-  const pendingRenewalCount = filteredSubscriptions.filter(
-    (subscription) => subscription.subscriptionStatus === "Pending renewal"
-  ).length;
-  const trialCount = filteredSubscriptions.filter(
-    (subscription) => subscription.subscriptionStatus === "Trial"
-  ).length;
   const overdueCount = filteredSubscriptions.filter(
     (subscription) => subscription.paymentStatus === "Overdue"
-  ).length;
-  const dueSoonCount = filteredSubscriptions.filter(
-    (subscription) => subscription.paymentStatus === "Due soon"
-  ).length;
-  const manualReviewCount = filteredSubscriptions.filter(
-    (subscription) => subscription.paymentStatus === "Manual review"
   ).length;
   const visibleRevenue = filteredSubscriptions.reduce(
     (total, subscription) => total + Number(subscription.amountValue || 0),
