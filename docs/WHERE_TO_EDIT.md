@@ -19,8 +19,6 @@ If you only remember one thing: start at `app/(dashboard)/**/page.tsx`, then fol
 
 When making product changes, ignore these unless you intentionally need them:
 
-- `archive/` (historical snapshots)
-- `design-system/` (reference/design artifacts)
 - `.claude/`, `.agents/`, `.continue/` (tooling/assistant metadata)
 - `docs/references/` binary files (PDF/images used for import/reference)
 - `node_modules/`, `.next/`, `tsconfig.tsbuildinfo`

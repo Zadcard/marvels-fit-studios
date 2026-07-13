@@ -5,8 +5,6 @@ This project is currently set up for local development only.
 - Database: Neon Postgres
 - App stack: Next.js + NextAuth/Auth.js + Prisma
 
-Legacy static-site files and database reference snapshots are preserved under `archive/` and are not part of the active runtime.
-
 ## Navigation For Humans
 
 If you feel lost finding the right file for a change, start here:
