@@ -6,7 +6,8 @@ import type {
   CoachSessionStatus,
 } from "@/lib/dashboard/coach-session-data";
 import type { CoachScheduleRecord } from "@/lib/dashboard/coach-schedule-data";
-import { getPrisma, withPrismaFallback } from "@/lib/prisma";
+import { withSupabaseFallback } from "@/lib/supabase/errors";
+import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 const dayFormatter = new Intl.DateTimeFormat("en-US", { weekday: "short" });
 const dayKeyFormatter = new Intl.DateTimeFormat("en-US", { weekday: "long" });
@@ -73,71 +74,33 @@ function mapBookingStatus(
 }
 
 export class CoachSessionRepository {
-  private get prisma() {
-    return getPrisma();
-  }
-
   async listClientOptions(): Promise<Array<{ id: string; fullName: string }>> {
-    return withPrismaFallback(
-      () =>
-        this.prisma.client.findMany({
-          orderBy: [{ fullName: "asc" }],
-          select: {
-            id: true,
-            fullName: true,
-          },
-        }),
+    return withSupabaseFallback(
+      async () => {
+        const { data, error } = await getSupabaseServerClient()
+          .from("Client").select("id,fullName").order("fullName");
+        if (error) throw error;
+        return data;
+      },
       []
     );
   }
 
   async listForCoachUserId(userId: string): Promise<CoachSessionRecord[]> {
-    return withPrismaFallback(async () => {
-      const sessions = await this.prisma.trainingSession.findMany({
-      where: {
-        coach: {
-          userId,
-        },
-        status: {
-          not: "CANCELED",
-        },
-      },
-      orderBy: [{ startsAt: "asc" }],
-      select: {
-        id: true,
-        title: true,
-        description: true,
-        type: true,
-        status: true,
-        startsAt: true,
-        location: true,
-        capacity: true,
-        notes: {
-          orderBy: [{ createdAt: "desc" }],
-          take: 1,
-          select: {
-            content: true,
-          },
-        },
-        bookings: {
-          where: {
-            status: {
-              in: ["BOOKED", "ATTENDED", "MISSED", "WAITLIST"],
-            },
-          },
-          orderBy: [{ bookedAt: "asc" }],
-          select: {
-            status: true,
-            client: {
-              select: {
-                id: true,
-                fullName: true,
-              },
-            },
-          },
-        },
-      },
-    });
+    return withSupabaseFallback(async () => {
+      const { data, error } = await getSupabaseServerClient()
+        .from("TrainingSession")
+        .select("id,title,description,type,status,startsAt,location,capacity,coach:Coach!inner(userId),notes:SessionNote(content,createdAt),bookings:SessionBooking(status,bookedAt,client:Client(id,fullName))")
+        .eq("coach.userId", userId).neq("status", "CANCELED").order("startsAt");
+      if (error) throw error;
+      const sessions = data.map((session) => ({
+        ...session,
+        startsAt: new Date(session.startsAt),
+        notes: session.notes.sort((a,b) => b.createdAt.localeCompare(a.createdAt)).slice(0,1),
+        bookings: session.bookings
+          .filter((booking) => ["BOOKED","ATTENDED","MISSED","WAITLIST"].includes(booking.status))
+          .sort((a,b) => a.bookedAt.localeCompare(b.bookedAt)),
+      }));
 
       return sessions.map((session) => {
       const bookings = session.bookings
@@ -190,7 +153,7 @@ export class CoachSessionRepository {
   }
 
   async listScheduleForCoachUserId(userId: string): Promise<CoachScheduleRecord[]> {
-    return withPrismaFallback(async () => {
+    return withSupabaseFallback(async () => {
       const sessions = await this.listForCoachUserId(userId);
 
       return sessions.map((session) => {
