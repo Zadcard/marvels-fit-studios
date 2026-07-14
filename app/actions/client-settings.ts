@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 
 import { requireRole } from "@/lib/auth/session";
 import type { ClientSettingsRecord } from "@/lib/dashboard/client-dashboard-data";
-import { getPrisma } from "@/lib/prisma";
+import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 function normalizeSettings(input: ClientSettingsRecord): ClientSettingsRecord {
   return {
@@ -19,7 +19,6 @@ function normalizeSettings(input: ClientSettingsRecord): ClientSettingsRecord {
 
 export async function saveClientSettings(input: ClientSettingsRecord) {
   const user = await requireRole(UserRole.CLIENT);
-  const prisma = getPrisma();
   const settings = normalizeSettings(input);
 
   if (!settings.fullName) {
@@ -30,58 +29,17 @@ export async function saveClientSettings(input: ClientSettingsRecord) {
     throw new Error("Client email is required.");
   }
 
-  const existingUser = await prisma.user.findUnique({
-    where: { email: settings.email },
-    select: { id: true },
+  const { error } = await getSupabaseServerClient().rpc("save_client_settings", {
+    p_email: settings.email,
+    p_full_name: settings.fullName,
+    p_goal_label: settings.goalLabel,
+    p_phone: settings.phone,
+    p_preferred_session_time: settings.preferredSessionTime,
+    p_user_id: user.id,
   });
-
-  if (existingUser && existingUser.id !== user.id) {
-    throw new Error("Another user already uses this email.");
-  }
-
-  const client = await prisma.client.findUnique({
-    where: { userId: user.id },
-    select: { id: true },
-  });
-
-  if (!client) {
-    throw new Error("Client profile not found.");
-  }
-
-  await prisma.$transaction(async (tx) => {
-    await tx.user.update({
-      where: { id: user.id },
-      data: {
-        name: settings.fullName,
-        email: settings.email,
-      },
-    });
-
-    await tx.client.update({
-      where: { id: client.id },
-      data: {
-        fullName: settings.fullName,
-        phone: settings.phone || null,
-      },
-    });
-
-    await tx.clientPreferences.upsert({
-      where: { clientId: client.id },
-      create: {
-        clientId: client.id,
-        goalLabel:
-          settings.goalLabel ||
-          "Build steady strength and improve movement confidence.",
-        preferredSessionTime: settings.preferredSessionTime || "Flexible",
-      },
-      update: {
-        goalLabel:
-          settings.goalLabel ||
-          "Build steady strength and improve movement confidence.",
-        preferredSessionTime: settings.preferredSessionTime || "Flexible",
-      },
-    });
-  });
+  if (error?.code === "23505") throw new Error("Another user already uses this email.");
+  if (error?.code === "P0002") throw new Error("Client profile not found.");
+  if (error) throw error;
 
   revalidatePath("/client");
   revalidatePath("/client/settings");

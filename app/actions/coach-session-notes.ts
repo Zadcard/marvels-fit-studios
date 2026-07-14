@@ -5,7 +5,7 @@ import { TrainingSessionStatus, UserRole } from "@/lib/supabase/domain";
 import { z } from "zod";
 
 import { requireRole } from "@/lib/auth/session";
-import { getPrisma } from "@/lib/prisma";
+import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 const saveCoachSessionNoteSchema = z.object({
   trainingSessionId: z.string().trim().min(1, "Session id is required."),
@@ -39,19 +39,14 @@ export async function saveCoachSessionNote(
     throw new Error(parsed.error.issues[0]?.message ?? "Invalid session note.");
   }
 
-  const prisma = getPrisma();
-  const session = await prisma.trainingSession.findFirst({
-    where: {
-      id: parsed.data.trainingSessionId,
-      coach: {
-        userId: user.id,
-      },
-    },
-    select: {
-      id: true,
-      status: true,
-    },
-  });
+  const supabase = getSupabaseServerClient();
+  const { data: session, error: sessionError } = await supabase
+    .from("TrainingSession")
+    .select("id,status,coach:Coach!inner(userId)")
+    .eq("id", parsed.data.trainingSessionId)
+    .eq("coach.userId", user.id)
+    .maybeSingle();
+  if (sessionError) throw sessionError;
 
   if (!session) {
     throw new Error("You can only write notes for your own sessions.");
@@ -61,32 +56,31 @@ export async function saveCoachSessionNote(
     throw new Error("Canceled sessions cannot receive new notes.");
   }
 
-  const existingNote = await prisma.sessionNote.findFirst({
-    where: {
-      trainingSessionId: session.id,
-      authorId: user.id,
-    },
-    orderBy: [{ updatedAt: "desc" }],
-    select: {
-      id: true,
-    },
-  });
+  const { data: existingNote, error: noteError } = await supabase
+    .from("SessionNote")
+    .select("id")
+    .eq("trainingSessionId", session.id)
+    .eq("authorId", user.id)
+    .order("updatedAt", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (noteError) throw noteError;
 
   if (existingNote) {
-    await prisma.sessionNote.update({
-      where: { id: existingNote.id },
-      data: {
-        content: parsed.data.content,
-      },
-    });
+    const { error } = await supabase
+      .from("SessionNote")
+      .update({ content: parsed.data.content })
+      .eq("id", existingNote.id);
+    if (error) throw error;
   } else {
-    await prisma.sessionNote.create({
-      data: {
+    const { error } = await supabase
+      .from("SessionNote")
+      .insert({
         trainingSessionId: session.id,
         authorId: user.id,
         content: parsed.data.content,
-      },
-    });
+      });
+    if (error) throw error;
   }
 
   revalidateSessionNoteViews();

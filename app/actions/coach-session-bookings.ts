@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { UserRole } from "@/lib/supabase/domain";
 
 import { requireRole } from "@/lib/auth/session";
-import { getPrisma } from "@/lib/prisma";
+import { getSupabaseServerClient } from "@/lib/supabase/server";
 import {
   cancelSessionBooking,
   createSessionBooking,
@@ -15,18 +15,13 @@ import {
 } from "@/lib/validators/session-booking";
 
 async function requireOwnedSessionForCoach(userId: string, trainingSessionId: string) {
-  const prisma = getPrisma();
-  const session = await prisma.trainingSession.findFirst({
-    where: {
-      id: trainingSessionId,
-      coach: {
-        userId,
-      },
-    },
-    select: {
-      id: true,
-    },
-  });
+  const { data: session, error } = await getSupabaseServerClient()
+    .from("TrainingSession")
+    .select("id,coach:Coach!inner(userId)")
+    .eq("id", trainingSessionId)
+    .eq("coach.userId", userId)
+    .maybeSingle();
+  if (error) throw error;
 
   if (!session) {
     throw new Error("You can only manage bookings for your own sessions.");

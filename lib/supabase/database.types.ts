@@ -927,6 +927,17 @@ export type Database = {
           userId: string
         }[]
       }
+      save_client_settings: {
+        Args: {
+          p_email: string
+          p_full_name: string
+          p_goal_label: string
+          p_phone: string
+          p_preferred_session_time: string
+          p_user_id: string
+        }
+        Returns: undefined
+      }
       save_coach_settings: {
         Args: {
           p_email: string

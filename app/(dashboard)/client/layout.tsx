@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { DashboardRoleShell } from "@/components/dashboard/dashboard-role-shell";
 import { getDashboardHomeForUserRole } from "@/lib/auth/authorization-policy";
-import { getPrisma } from "@/lib/prisma";
+import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { UserRole } from "@/lib/supabase/domain";
 
 function getInitials(name: string) {
@@ -31,27 +31,19 @@ export default async function ClientDashboardLayout({
     redirect(getDashboardHomeForUserRole(session.user.role));
   }
 
-  const user = await getPrisma().user.findUnique({
-    where: { id: session.user.id },
-    select: {
-      name: true,
-      email: true,
-      clientId: true,
-      mustChangePassword: true,
-      clientProfile: {
-        select: {
-          fullName: true,
-        },
-      },
-    },
-  });
+  const { data: user, error } = await getSupabaseServerClient()
+    .from("User")
+    .select("name,email,clientId,mustChangePassword,clientProfile:Client(fullName)")
+    .eq("id", session.user.id)
+    .maybeSingle();
+  if (error) throw error;
 
   if (user?.mustChangePassword) {
     redirect("/change-password");
   }
 
   const displayName =
-    user?.clientProfile?.fullName?.trim() ||
+    user?.clientProfile?.[0]?.fullName?.trim() ||
     user?.name?.trim() ||
     user?.clientId?.trim() ||
     "Client";
