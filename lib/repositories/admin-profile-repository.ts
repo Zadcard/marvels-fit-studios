@@ -4,7 +4,8 @@ import type {
   AdminProfilePreferences,
   AdminProfileRecord,
 } from "@/lib/mocks/admin-profile";
-import { getPrisma, withPrismaFallback } from "@/lib/prisma";
+import { withSupabaseFallback } from "@/lib/supabase/errors";
+import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
   month: "long",
@@ -84,10 +85,6 @@ function getDefaultAdminProfileData(): {
 }
 
 export class AdminProfileRepository {
-  private get prisma() {
-    return getPrisma();
-  }
-
   async getByUserId(userId: string): Promise<{
     profile: AdminProfileRecord;
     metrics: Array<{
@@ -99,45 +96,42 @@ export class AdminProfileRepository {
     }>;
     preferences: AdminProfilePreferences;
   }> {
-    return withPrismaFallback(async () => {
-      const [user, pendingApprovals, activePlans, liveAlerts] = await Promise.all([
-        this.prisma.user.findUniqueOrThrow({
-          where: { id: userId },
-          select: {
-            name: true,
-            email: true,
-            createdAt: true,
-          },
-        }),
-        this.prisma.lead.count({
-          where: {
-            status: {
-              in: ["NEW", "CONTACTED"],
-            },
-          },
-        }),
-        this.prisma.clientSubscription.count({
-          where: {
-            status: "ACTIVE",
-          },
-        }),
-        this.prisma.clientSubscription.count({
-          where: {
-            OR: [
-              {
-                renewsAt: {
-                  lt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-                },
-              },
-              {
-                payments: {
-                  none: {},
-                },
-              },
-            ],
-          },
-        }),
-      ]);
+    return withSupabaseFallback(async () => {
+      const supabase = getSupabaseServerClient();
+      const [userResult, approvalsResult, plansResult, alertsResult] =
+        await Promise.all([
+          supabase
+            .from("User")
+            .select("name,email,createdAt")
+            .eq("id", userId)
+            .single(),
+          supabase
+            .from("Lead")
+            .select("id", { count: "exact", head: true })
+            .in("status", ["NEW", "CONTACTED"]),
+          supabase
+            .from("ClientSubscription")
+            .select("id", { count: "exact", head: true })
+            .eq("status", "ACTIVE"),
+          supabase
+            .from("ClientSubscription")
+            .select("renewsAt,payments:Payment(id)"),
+        ]);
+      if (userResult.error) throw userResult.error;
+      if (approvalsResult.error) throw approvalsResult.error;
+      if (plansResult.error) throw plansResult.error;
+      if (alertsResult.error) throw alertsResult.error;
+
+      const user = userResult.data;
+      const pendingApprovals = approvalsResult.count ?? 0;
+      const activePlans = plansResult.count ?? 0;
+      const renewalLimit = Date.now() + 7 * 24 * 60 * 60 * 1000;
+      const liveAlerts = alertsResult.data.filter(
+        (subscription) =>
+          (subscription.renewsAt !== null &&
+            new Date(subscription.renewsAt).getTime() < renewalLimit) ||
+          subscription.payments.length === 0
+      ).length;
 
       return {
         profile: {
@@ -148,7 +142,7 @@ export class AdminProfileRepository {
           location: "Studio HQ",
           bio: "Manages leads, clients, schedules, and day-to-day studio operations.",
           initials: getInitials(user.name, user.email),
-          joinedLabel: `Joined ${dateFormatter.format(user.createdAt)}`,
+          joinedLabel: `Joined ${dateFormatter.format(new Date(user.createdAt))}`,
           credentialsNote: "Password changes are available from this profile and are applied to your signed-in account.",
         },
         metrics: [
