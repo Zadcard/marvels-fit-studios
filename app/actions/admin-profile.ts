@@ -4,7 +4,7 @@ import { UserRole } from "@/lib/supabase/domain";
 import { revalidatePath } from "next/cache";
 
 import { requireRole } from "@/lib/auth/session";
-import { getPrisma } from "@/lib/prisma";
+import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 type SaveAdminProfileInput = {
   fullName: string;
@@ -13,7 +13,7 @@ type SaveAdminProfileInput = {
 
 export async function saveAdminProfile(input: SaveAdminProfileInput) {
   const user = await requireRole(UserRole.ADMIN);
-  const prisma = getPrisma();
+  const supabase = getSupabaseServerClient();
   const fullName = input.fullName.trim();
   const email = input.email.trim().toLowerCase();
 
@@ -25,22 +25,22 @@ export async function saveAdminProfile(input: SaveAdminProfileInput) {
     throw new Error("Admin email is required.");
   }
 
-  const existingUser = await prisma.user.findUnique({
-    where: { email },
-    select: { id: true },
-  });
+  const { data: existingUser, error: findError } = await supabase
+    .from("User")
+    .select("id")
+    .eq("email", email)
+    .maybeSingle();
+  if (findError) throw findError;
 
   if (existingUser && existingUser.id !== user.id) {
     throw new Error("Another user already uses this email.");
   }
 
-  await prisma.user.update({
-    where: { id: user.id },
-    data: {
-      name: fullName,
-      email,
-    },
-  });
+  const { error } = await supabase
+    .from("User")
+    .update({ name: fullName, email })
+    .eq("id", user.id);
+  if (error) throw error;
 
   revalidatePath("/admin");
   revalidatePath("/admin/profile");

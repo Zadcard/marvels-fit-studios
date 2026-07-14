@@ -4,62 +4,66 @@ import { UserRole } from "@/lib/supabase/domain";
 import { revalidatePath } from "next/cache";
 
 import { requireRole } from "@/lib/auth/session";
-import { getPrisma } from "@/lib/prisma";
+import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 export async function saveClientPrivateNote(input: {
   noteId?: string | null;
   content: string;
 }) {
   const user = await requireRole(UserRole.CLIENT);
-  const prisma = getPrisma();
+  const supabase = getSupabaseServerClient();
   const content = input.content.trim();
 
   if (!content) {
     throw new Error("Note cannot be empty.");
   }
 
-  const client = await prisma.client.findUnique({
-    where: { userId: user.id },
-    select: { id: true },
-  });
+  const { data: client, error: clientError } = await supabase
+    .from("Client")
+    .select("id")
+    .eq("userId", user.id)
+    .maybeSingle();
+  if (clientError) throw clientError;
 
   if (!client) {
     throw new Error("Client profile not found.");
   }
 
   if (input.noteId) {
-    const note = await prisma.workoutNote.findFirst({
-      where: {
-        id: input.noteId,
-        clientId: client.id,
-        authorId: user.id,
-        isPrivate: true,
-      },
-      select: { id: true },
-    });
+    const { data: note, error: noteError } = await supabase
+      .from("WorkoutNote")
+      .select("id")
+      .eq("id", input.noteId)
+      .eq("clientId", client.id)
+      .eq("authorId", user.id)
+      .eq("isPrivate", true)
+      .maybeSingle();
+    if (noteError) throw noteError;
 
     if (!note) {
       throw new Error("Private note not found.");
     }
 
-    await prisma.workoutNote.update({
-      where: { id: note.id },
-      data: {
+    const { error } = await supabase
+      .from("WorkoutNote")
+      .update({
         content,
-        date: new Date(),
+        date: new Date().toISOString(),
         isPrivate: true,
         authorId: user.id,
-      },
-    });
+      })
+      .eq("id", note.id);
+    if (error) throw error;
   } else {
-    await prisma.workoutNote.create({
-      data: {
+    const { error } = await supabase
+      .from("WorkoutNote")
+      .insert({
         clientId: client.id,
         content,
         isPrivate: true,
         authorId: user.id,
-      },
-    });
+      });
+    if (error) throw error;
   }
 
   revalidatePath("/client");
