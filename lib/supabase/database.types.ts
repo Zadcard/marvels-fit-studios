@@ -913,6 +913,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      delete_coach: { Args: { p_coach_id: string }; Returns: undefined }
       register_client: {
         Args: {
           p_client_id: string
@@ -935,6 +936,17 @@ export type Database = {
           p_phone: string
           p_preferred_session_time: string
           p_user_id: string
+        }
+        Returns: undefined
+      }
+      save_coach: {
+        Args: {
+          p_coach_id: string
+          p_email: string
+          p_full_name: string
+          p_password_hash: string
+          p_phone: string
+          p_specialization: Database["public"]["Enums"]["CoachSpecialization"]
         }
         Returns: undefined
       }

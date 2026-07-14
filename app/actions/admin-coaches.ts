@@ -5,7 +5,7 @@ import { CoachSpecialization, UserRole } from "@/lib/supabase/domain";
 import { revalidatePath } from "next/cache";
 
 import { requireRole } from "@/lib/auth/session";
-import { getPrisma } from "@/lib/prisma";
+import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 type SaveCoachInput = {
   coachId?: string | null;
@@ -42,10 +42,9 @@ function buildGeneratedCoachPassword(email: string) {
 
 export async function saveCoach(input: SaveCoachInput) {
   await requireRole(UserRole.ADMIN);
-  const prisma = getPrisma();
   const fullName = input.fullName.trim();
   const email = input.email.trim().toLowerCase();
-  const phone = input.phone?.trim() || null;
+  const phone = input.phone?.trim() || "";
   const specialization = toCoachSpecialization(input.specialization);
 
   if (!fullName) {
@@ -56,87 +55,20 @@ export async function saveCoach(input: SaveCoachInput) {
     throw new Error("Coach email is required.");
   }
 
-  const existingUser = await prisma.user.findUnique({
-    where: { email },
-    select: {
-      id: true,
-      coachProfile: {
-        select: {
-          id: true,
-        },
-      },
-    },
+  const password = input.coachId
+    ? ""
+    : await bcrypt.hash(buildGeneratedCoachPassword(email), 12);
+  const { error } = await getSupabaseServerClient().rpc("save_coach", {
+    p_coach_id: input.coachId ?? "",
+    p_email: email,
+    p_full_name: fullName,
+    p_password_hash: password,
+    p_phone: phone,
+    p_specialization: specialization,
   });
-
-  if (input.coachId) {
-    const existingCoach = await prisma.coach.findUnique({
-      where: { id: input.coachId },
-      select: {
-        id: true,
-        userId: true,
-      },
-    });
-
-    if (!existingCoach) {
-      throw new Error("Coach record not found.");
-    }
-
-    if (existingUser && existingUser.id !== existingCoach.userId) {
-      throw new Error("Another user already uses this email.");
-    }
-
-    await prisma.$transaction(async (tx) => {
-      await tx.user.update({
-        where: { id: existingCoach.userId },
-        data: {
-          name: fullName,
-          email,
-        },
-      });
-
-      await tx.coach.update({
-        where: { id: existingCoach.id },
-        data: {
-          fullName,
-          phone,
-          specialization,
-        },
-      });
-    });
-  } else {
-    if (existingUser?.coachProfile) {
-      throw new Error("A coach with this email already exists.");
-    }
-
-    if (existingUser && !existingUser.coachProfile) {
-      throw new Error("A user with this email already exists. Use a different email.");
-    }
-
-    const password = await bcrypt.hash(buildGeneratedCoachPassword(email), 12);
-
-    await prisma.$transaction(async (tx) => {
-      const createdUser = await tx.user.create({
-        data: {
-          name: fullName,
-          email,
-          password,
-          role: "COACH",
-        },
-        select: {
-          id: true,
-        },
-      });
-
-      await tx.coach.create({
-        data: {
-          fullName,
-          phone,
-          specialization,
-          userId: createdUser.id,
-        },
-      });
-    });
-  }
+  if (error?.code === "P0002") throw new Error("Coach record not found.");
+  if (error?.code === "23505") throw new Error("Another user already uses this email.");
+  if (error) throw error;
 
   revalidatePath("/admin");
   revalidatePath("/admin/coaches");
@@ -144,41 +76,19 @@ export async function saveCoach(input: SaveCoachInput) {
 
 export async function deleteCoach(input: DeleteCoachInput) {
   await requireRole(UserRole.ADMIN);
-  const prisma = getPrisma();
 
   if (input.confirmationText.trim() !== "Delete") {
     throw new Error('Type "Delete" to confirm coach deletion.');
   }
 
-  const coach = await prisma.coach.findUnique({
-    where: { id: input.coachId },
-    select: {
-      id: true,
-      userId: true,
-      _count: {
-        select: {
-          groups: true,
-          trainingSessions: true,
-        },
-      },
-    },
+  const { error } = await getSupabaseServerClient().rpc("delete_coach", {
+    p_coach_id: input.coachId,
   });
-
-  if (!coach) {
-    throw new Error("Coach record not found.");
+  if (error?.code === "P0002") throw new Error("Coach record not found.");
+  if (error?.code === "23503") {
+    throw new Error("This coach still has assigned groups or sessions. Reassign or delete those first.");
   }
-
-  if (coach._count.groups > 0 || coach._count.trainingSessions > 0) {
-    throw new Error(
-      "This coach still has assigned groups or sessions. Reassign or delete those first."
-    );
-  }
-
-  await prisma.user.delete({
-    where: {
-      id: coach.userId,
-    },
-  });
+  if (error) throw error;
 
   revalidatePath("/admin");
   revalidatePath("/admin/coaches");
