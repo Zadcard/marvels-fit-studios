@@ -2,8 +2,9 @@
 import { mockGetPrisma, createMockPrisma } from '@/tests/test-utils';
 import { vi } from 'vitest';
 
-vi.mock('@/lib/prisma', () => ({
-  getPrisma: mockGetPrisma,
+vi.mock('@/lib/services/attendance-store', () => ({
+  runAttendanceTransaction: (_input: unknown, operation: (tx: unknown) => unknown) =>
+    mockGetPrisma().$transaction(operation),
 }));
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
@@ -11,7 +12,7 @@ import {
   BookingStatus,
   TrainingSessionStatus,
   TrainingSessionType,
-} from '@prisma/client';
+} from '@/lib/supabase/domain';
 import { updateSessionAttendance } from './attendance-service';
 
 describe('Attendance Service', () => {

@@ -34,21 +34,6 @@ export interface ChangePasswordInput {
   newPassword: string;
 }
 
-const authUserSelect = {
-  id: true,
-  name: true,
-  clientId: true,
-  email: true,
-  password: true,
-  mustChangePassword: true,
-  role: true,
-  clientProfile: {
-    select: {
-      fullName: true,
-    },
-  },
-} as const;
-
 type AuthUserRecord = {
   id: string;
   name: string | null;

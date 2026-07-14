@@ -968,6 +968,16 @@ export type Database = {
         }
         Returns: undefined
       }
+      update_session_attendance: {
+        Args: {
+          p_client_id: string
+          p_status: Database["public"]["Enums"]["BookingStatus"]
+          p_training_session_id: string
+        }
+        Returns: {
+          id: string
+        }[]
+      }
     }
     Enums: {
       BillingCycle: "MONTHLY" | "WEEKLY" | "CUSTOM"

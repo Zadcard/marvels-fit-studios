@@ -4,9 +4,9 @@ import {
   BookingStatus,
   TrainingSessionStatus,
   TrainingSessionType,
-} from "@prisma/client";
+} from "@/lib/supabase/domain";
 
-import { getPrisma } from "@/lib/prisma";
+import { runAttendanceTransaction } from "@/lib/services/attendance-store";
 import type { UpdateSessionAttendanceInput } from "@/lib/validators/session-booking";
 
 function getSubscriptionWindowEnd(subscription: {
@@ -33,9 +33,7 @@ function isSessionWithinSubscriptionWindow(
 }
 
 export async function updateSessionAttendance(input: UpdateSessionAttendanceInput) {
-  const prisma = getPrisma();
-
-  return prisma.$transaction(async (tx) => {
+  return runAttendanceTransaction(input, async (tx) => {
     const booking = await tx.sessionBooking.findUnique({
       where: {
         trainingSessionId_clientId: {
