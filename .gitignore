@@ -9,11 +9,15 @@ dist
 
 # Test / coverage output
 coverage/
+playwright-report/
+test-results/
 
 # Environment
 .env
 .env.local
+.env.*
 .env*.local
+!.env.example
 
 # Temp files
 tmp-*.cjs
