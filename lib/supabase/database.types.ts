@@ -913,6 +913,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      bulk_update_training_sessions: {
+        Args: {
+          p_action: string
+          p_capacity: number
+          p_coach_id: string
+          p_location: string
+          p_session_ids: string[]
+        }
+        Returns: number
+      }
+      cancel_training_session: {
+        Args: { p_session_id: string }
+        Returns: {
+          id: string
+        }[]
+      }
       delete_coach: { Args: { p_coach_id: string }; Returns: undefined }
       register_client: {
         Args: {
@@ -973,6 +989,23 @@ export type Database = {
           p_client_id: string
           p_status: Database["public"]["Enums"]["BookingStatus"]
           p_training_session_id: string
+        }
+        Returns: {
+          id: string
+        }[]
+      }
+      update_training_session: {
+        Args: {
+          p_capacity: number
+          p_coach_id: string
+          p_description: string
+          p_ends_at: string
+          p_location: string
+          p_session_id: string
+          p_starts_at: string
+          p_status: Database["public"]["Enums"]["TrainingSessionStatus"]
+          p_title: string
+          p_type: Database["public"]["Enums"]["TrainingSessionType"]
         }
         Returns: {
           id: string
