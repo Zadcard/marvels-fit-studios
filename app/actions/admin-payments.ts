@@ -4,7 +4,7 @@ import { UserRole } from "@/lib/supabase/domain";
 import { revalidatePath } from "next/cache";
 
 import { requireRole } from "@/lib/auth/session";
-import { getPrisma } from "@/lib/prisma";
+import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 type SaveClientPaymentInput = {
   clientId: string;
@@ -23,59 +23,23 @@ function parseAmount(value: string | undefined) {
 
 export async function saveClientPaymentStatus(input: SaveClientPaymentInput) {
   await requireRole(UserRole.ADMIN);
-  const prisma = getPrisma();
-  const client = await prisma.client.findUnique({
-    where: { id: input.clientId },
-    select: {
-      id: true,
-      subscriptions: {
-        orderBy: [{ startsAt: "desc" }],
-        take: 1,
-        select: {
-          id: true,
-        },
-      },
-    },
-  });
-
-  if (!client) {
-    throw new Error("Client not found.");
+  const amount = parseAmount(input.paymentAmount);
+  if (input.paymentStatus === "Paid" && !amount) {
+    throw new Error("Enter a valid payment amount before marking the client paid.");
   }
 
-  if (input.paymentStatus === "Paid") {
-    const amount = parseAmount(input.paymentAmount);
-
-    if (!amount) {
-      throw new Error("Enter a valid payment amount before marking the client paid.");
-    }
-
-    await prisma.$transaction([
-      prisma.client.update({
-        where: { id: client.id },
-        data: {
-          isPaid: true,
-          paymentStatus: "PAID",
-        },
-      }),
-      prisma.payment.create({
-        data: {
-          amount,
-          currency: "EGP",
-          note: "Marked paid from the admin dashboard.",
-          clientId: client.id,
-          clientSubscriptionId: client.subscriptions[0]?.id,
-        },
-      }),
-    ]);
-  } else {
-    await prisma.client.update({
-      where: { id: client.id },
-      data: {
-        isPaid: false,
-        paymentStatus: input.paymentStatus === "Due soon" ? "DUE_SOON" : "UNPAID",
-      },
-    });
-  }
+  const status =
+    input.paymentStatus === "Paid"
+      ? "PAID"
+      : input.paymentStatus === "Due soon"
+        ? "DUE_SOON"
+        : "UNPAID";
+  const { error } = await getSupabaseServerClient().rpc(
+    "set_client_payment_status",
+    { p_amount: amount ?? 0, p_client_id: input.clientId, p_status: status }
+  );
+  if (error?.code === "P0002") throw new Error("Client not found.");
+  if (error) throw error;
 
   revalidatePath("/admin");
   revalidatePath("/admin/clients");

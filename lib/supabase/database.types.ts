@@ -937,6 +937,14 @@ export type Database = {
         }
         Returns: undefined
       }
+      set_client_payment_status: {
+        Args: {
+          p_amount: number
+          p_client_id: string
+          p_status: Database["public"]["Enums"]["ClientPaymentStatus"]
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       BillingCycle: "MONTHLY" | "WEEKLY" | "CUSTOM"
