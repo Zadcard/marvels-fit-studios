@@ -1,4 +1,4 @@
-export type Json =
+﻿export type Json =
   | string
   | number
   | boolean
@@ -913,6 +913,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_delete_client: {
+        Args: { target_client_id: string }
+        Returns: undefined
+      }
+      admin_mutate_subscription: {
+        Args: { target_action: string; target_id: string }
+        Returns: Json
+      }
+      admin_save_client: { Args: { payload: Json }; Returns: string }
+      admin_save_subscription: { Args: { payload: Json }; Returns: Json }
       bulk_update_training_sessions: {
         Args: {
           p_action: string
@@ -930,6 +940,14 @@ export type Database = {
         }[]
       }
       delete_coach: { Args: { p_coach_id: string }; Returns: undefined }
+      promote_lead_to_client: {
+        Args: {
+          generated_client_id: string
+          hashed_password: string
+          target_lead_id: string
+        }
+        Returns: Json
+      }
       register_client: {
         Args: {
           p_client_id: string

@@ -1,11 +1,15 @@
 "use server";
 
 import bcrypt from "bcryptjs";
-import { ClientLifecycleStatus, ClientPaymentStatus, UserRole } from "@/lib/supabase/domain";
+import {
+  ClientLifecycleStatus,
+  ClientPaymentStatus,
+  UserRole,
+} from "@/lib/supabase/domain";
 import { revalidatePath } from "next/cache";
 
 import { requireRole } from "@/lib/auth/session";
-import { getPrisma } from "@/lib/prisma";
+import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { clientIdGenerator } from "@/lib/services/client-id-generator";
 import { passwordGenerator } from "@/lib/services/password-generator";
 
@@ -26,7 +30,7 @@ type DeleteAdminClientInput = {
 };
 
 function toClientStatus(
-  status: SaveAdminClientInput["status"]
+  status: SaveAdminClientInput["status"],
 ): ClientLifecycleStatus {
   switch (status) {
     case "Active":
@@ -39,7 +43,7 @@ function toClientStatus(
 }
 
 function toPaymentStatus(
-  status: SaveAdminClientInput["paymentStatus"]
+  status: SaveAdminClientInput["paymentStatus"],
 ): ClientPaymentStatus {
   switch (status) {
     case "Paid":
@@ -66,20 +70,26 @@ function normalizeEmail(value: string | undefined) {
 }
 
 async function generateUniqueClientId() {
-  const prisma = getPrisma();
+  const supabase = getSupabaseServerClient();
   const firstCandidate = await clientIdGenerator.getNextAvailableSlot();
 
   for (let offset = 0; offset < 1200; offset += 1) {
-    const baseDate = new Date(firstCandidate.year, firstCandidate.month - 1 + offset, 1);
+    const baseDate = new Date(
+      firstCandidate.year,
+      firstCandidate.month - 1 + offset,
+      1,
+    );
     const slot = await clientIdGenerator.getNextAvailableSlot(
       baseDate.getMonth() + 1,
-      baseDate.getFullYear()
+      baseDate.getFullYear(),
     );
     const candidate = clientIdGenerator.generateId(slot);
-    const existing = await prisma.user.findUnique({
-      where: { clientId: candidate },
-      select: { id: true },
-    });
+    const { data: existing, error } = await supabase
+      .from("User")
+      .select("id")
+      .eq("clientId", candidate)
+      .maybeSingle();
+    if (error) throw error;
 
     if (!existing) {
       return candidate;
@@ -91,7 +101,7 @@ async function generateUniqueClientId() {
 
 export async function saveAdminClient(input: SaveAdminClientInput) {
   await requireRole(UserRole.ADMIN);
-  const prisma = getPrisma();
+  const supabase = getSupabaseServerClient();
   const fullName = input.fullName.trim();
   const email = normalizeEmail(input.email);
   const phone = input.phone?.trim() || null;
@@ -104,148 +114,33 @@ export async function saveAdminClient(input: SaveAdminClientInput) {
     throw new Error("Client full name is required.");
   }
 
-  const existingUser = email
-    ? await prisma.user.findUnique({
-        where: { email },
-        select: {
-          id: true,
-          clientProfile: {
-            select: {
-              id: true,
-            },
-          },
-        },
-      })
+  const generatedClientId = input.clientId
+    ? null
+    : await generateUniqueClientId();
+  const password = generatedClientId
+    ? await bcrypt.hash(
+        passwordGenerator.generatePassword(generatedClientId),
+        12,
+      )
     : null;
-
-  let savedClientId = input.clientId ?? null;
-
-  if (input.clientId) {
-    const client = await prisma.client.findUnique({
-      where: { id: input.clientId },
-      select: {
-        id: true,
-        userId: true,
-        subscriptions: {
-          orderBy: [{ startsAt: "desc" }],
-          take: 1,
-          select: {
-            id: true,
-          },
-        },
+  const { data: savedClientId, error } = await supabase.rpc(
+    "admin_save_client",
+    {
+      payload: {
+        clientId: input.clientId ?? null,
+        fullName,
+        email,
+        phone,
+        status,
+        paymentStatus,
+        amount,
+        groupId,
+        loginClientId: generatedClientId,
+        password,
       },
-    });
-
-    if (!client) {
-      throw new Error("Client not found.");
-    }
-
-    if (email && existingUser && existingUser.id !== client.userId) {
-      throw new Error("Another user already uses this email.");
-    }
-
-    await prisma.$transaction(async (tx) => {
-      await tx.user.update({
-        where: { id: client.userId },
-        data: {
-          name: fullName,
-          email,
-        },
-      });
-
-      await tx.client.update({
-        where: { id: client.id },
-        data: {
-          fullName,
-          phone,
-          groupId,
-          isPaid: paymentStatus === "PAID",
-          paymentStatus,
-          status,
-        },
-      });
-
-      if (paymentStatus === "PAID") {
-        if (!amount) {
-          throw new Error("Enter a valid payment amount before marking the client paid.");
-        }
-
-        await tx.payment.create({
-          data: {
-            amount,
-            currency: "EGP",
-            note: "Marked paid from the admin client editor.",
-            clientId: client.id,
-            clientSubscriptionId: client.subscriptions[0]?.id,
-          },
-        });
-      }
-    });
-
-    savedClientId = client.id;
-  } else {
-    if (email && existingUser?.clientProfile) {
-      throw new Error("A client with this email already exists.");
-    }
-
-    if (email && existingUser && !existingUser.clientProfile) {
-      throw new Error("A user with this email already exists. Use a different email.");
-    }
-
-    const generatedClientId = await generateUniqueClientId();
-    const password = await bcrypt.hash(
-      passwordGenerator.generatePassword(generatedClientId),
-      12
-    );
-
-    await prisma.$transaction(async (tx) => {
-      const createdUser = await tx.user.create({
-        data: {
-          name: fullName,
-          clientId: generatedClientId,
-          email,
-          password,
-          mustChangePassword: false,
-          role: "CLIENT",
-        },
-        select: {
-          id: true,
-        },
-      });
-
-      const createdClient = await tx.client.create({
-        data: {
-          fullName,
-          phone,
-          groupId,
-          status,
-          isPaid: paymentStatus === "PAID",
-          paymentStatus,
-          userId: createdUser.id,
-        },
-        select: {
-          id: true,
-        },
-      });
-
-      if (paymentStatus === "PAID") {
-        if (!amount) {
-          throw new Error("Enter a valid payment amount before marking the client paid.");
-        }
-
-        await tx.payment.create({
-          data: {
-            amount,
-            currency: "EGP",
-            note: "Initial payment recorded from the admin client editor.",
-            clientId: createdClient.id,
-          },
-        });
-      }
-
-      savedClientId = createdClient.id;
-    });
-  }
+    },
+  );
+  if (error) throw error;
 
   if (!savedClientId) {
     throw new Error("Client record could not be resolved after save.");
@@ -259,86 +154,15 @@ export async function saveAdminClient(input: SaveAdminClientInput) {
 
 export async function deleteAdminClient(input: DeleteAdminClientInput) {
   await requireRole(UserRole.ADMIN);
-  const prisma = getPrisma();
 
   if (input.confirmationText.trim() !== "Delete") {
     throw new Error('Type "Delete" to confirm client deletion.');
   }
 
-  const client = await prisma.client.findUnique({
-    where: { id: input.clientId },
-    select: {
-      id: true,
-      userId: true,
-      _count: {
-        select: {
-          bookings: true,
-          payments: true,
-          subscriptions: true,
-        },
-      },
-    },
+  const { error } = await getSupabaseServerClient().rpc("admin_delete_client", {
+    target_client_id: input.clientId,
   });
-
-  if (!client) {
-    throw new Error("Client not found.");
-  }
-
-  await prisma.$transaction(async (tx) => {
-    await tx.sessionBooking.deleteMany({
-      where: {
-        clientId: client.id,
-      },
-    });
-
-    await tx.payment.deleteMany({
-      where: {
-        clientId: client.id,
-      },
-    });
-
-    await tx.clientSubscription.deleteMany({
-      where: {
-        clientId: client.id,
-      },
-    });
-
-    await tx.file.deleteMany({
-      where: {
-        clientId: client.id,
-      },
-    });
-
-    await tx.workoutNote.deleteMany({
-      where: {
-        clientId: client.id,
-      },
-    });
-
-    await tx.sessionCompensation.deleteMany({
-      where: {
-        clientId: client.id,
-      },
-    });
-
-    await tx.clientPreferences.deleteMany({
-      where: {
-        clientId: client.id,
-      },
-    });
-
-    await tx.client.delete({
-      where: {
-        id: client.id,
-      },
-    });
-
-    await tx.user.delete({
-      where: {
-        id: client.userId,
-      },
-    });
-  });
+  if (error) throw error;
 
   revalidatePath("/admin");
   revalidatePath("/admin/clients");

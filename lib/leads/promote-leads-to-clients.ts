@@ -4,7 +4,7 @@ import { LeadStatus, UserRole } from "@/lib/supabase/domain";
 import { readLeadCredentialClientId } from "@/lib/leads/lead-credential-metadata";
 import { clientIdGenerator } from "@/lib/services/client-id-generator";
 import { passwordGenerator } from "@/lib/services/password-generator";
-import { getPrisma } from "../prisma";
+import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 export type PromoteLeadsInput = {
   emails?: string[];
@@ -51,35 +51,23 @@ function normalizeEmails(emails?: string[]) {
 }
 
 export async function promoteLeadsToClients(
-  input: PromoteLeadsInput = {}
+  input: PromoteLeadsInput = {},
 ): Promise<PromoteLeadsSummary> {
-  const prisma = getPrisma();
+  const supabase = getSupabaseServerClient();
   const emails = normalizeEmails(input.emails);
   const includeStatuses = input.includeStatuses ?? DEFAULT_INCLUDE_STATUSES;
 
-  const leads = await prisma.lead.findMany({
-    where: {
-      ...(input.leadIds && input.leadIds.length > 0
-        ? {
-            id: {
-              in: input.leadIds,
-            },
-          }
-        : emails && emails.length > 0
-        ? {
-            email: {
-              in: emails,
-            },
-          }
-        : {
-            status: {
-              in: includeStatuses,
-            },
-          }),
-    },
-    orderBy: [{ createdAt: "asc" }],
-    ...(input.limit ? { take: input.limit } : {}),
-  });
+  let leadsQuery = supabase.from("Lead").select("*").order("createdAt");
+  if (input.leadIds?.length) {
+    leadsQuery = leadsQuery.in("id", input.leadIds);
+  } else if (emails?.length) {
+    leadsQuery = leadsQuery.in("email", emails);
+  } else {
+    leadsQuery = leadsQuery.in("status", includeStatuses);
+  }
+  if (input.limit) leadsQuery = leadsQuery.limit(input.limit);
+  const { data: leads, error: leadsError } = await leadsQuery;
+  if (leadsError) throw leadsError;
 
   const results: PromoteLeadResult[] = [];
 
@@ -87,19 +75,20 @@ export async function promoteLeadsToClients(
     const normalizedEmail = lead.email?.trim().toLowerCase() ?? null;
     const reservedClientId = readLeadCredentialClientId(lead.message);
 
-    const existingUser = normalizedEmail
-      ? await prisma.user.findUnique({
-          where: { email: normalizedEmail },
-          include: {
-            clientProfile: true,
-          },
-        })
-      : null;
+    const existingUserResult = normalizedEmail
+      ? await supabase
+          .from("User")
+          .select("id, role, clientId, clientProfile:Client(id)")
+          .eq("email", normalizedEmail)
+          .maybeSingle()
+      : { data: null, error: null };
+    if (existingUserResult.error) throw existingUserResult.error;
+    const existingUser = existingUserResult.data;
 
     if (
       existingUser &&
       existingUser.role !== UserRole.CLIENT &&
-      !existingUser.clientProfile
+      existingUser.clientProfile.length === 0
     ) {
       results.push({
         leadId: lead.id,
@@ -114,7 +103,8 @@ export async function promoteLeadsToClients(
       reservedClientId ??
       existingUser?.clientId ??
       (await clientIdGenerator.getNextAvailableId());
-    const temporaryPassword = passwordGenerator.generatePassword(generatedClientId);
+    const temporaryPassword =
+      passwordGenerator.generatePassword(generatedClientId);
 
     if (input.dryRun) {
       results.push({
@@ -134,51 +124,29 @@ export async function promoteLeadsToClients(
       ? lead.passwordHash
       : await bcryptjs.hash(temporaryPassword, 10);
 
-    await prisma.$transaction(async (tx) => {
-      const user =
-        existingUser ??
-        (await tx.user.create({
-          data: {
-            email: normalizedEmail,
-            name: lead.fullName,
-            clientId: generatedClientId,
-            password: hashedPassword,
-            mustChangePassword: true,
-            role: UserRole.CLIENT,
-          },
-        }));
-
-      if (existingUser) {
-        await tx.user.update({
-          where: { id: user.id },
-          data: {
-            name: user.name ?? lead.fullName,
-            email: user.email ?? normalizedEmail,
-            clientId: user.clientId ?? generatedClientId,
-            password: hashedPassword,
-            mustChangePassword: true,
-            role: UserRole.CLIENT,
-          },
-        });
-      }
-
-      if (!existingUser?.clientProfile) {
-        await tx.client.create({
-          data: {
-            fullName: lead.fullName,
-            phone: lead.phone,
-            userId: user.id,
-          },
-        });
-      }
-
-      await tx.lead.update({
-        where: { id: lead.id },
-        data: {
-          status: LeadStatus.CONVERTED,
-        },
+    const { data: promotion, error: promotionError } = await supabase.rpc(
+      "promote_lead_to_client",
+      {
+        generated_client_id: generatedClientId,
+        hashed_password: hashedPassword,
+        target_lead_id: lead.id,
+      },
+    );
+    if (promotionError) throw promotionError;
+    if (
+      promotion &&
+      typeof promotion === "object" &&
+      !Array.isArray(promotion) &&
+      promotion.outcome === "skipped"
+    ) {
+      results.push({
+        leadId: lead.id,
+        email: normalizedEmail,
+        outcome: "skipped",
+        details: "Existing non-client account was preserved.",
       });
-    });
+      continue;
+    }
 
     results.push({
       leadId: lead.id,
@@ -192,7 +160,9 @@ export async function promoteLeadsToClients(
     });
   }
 
-  const promoted = results.filter((result) => result.outcome === "promoted").length;
+  const promoted = results.filter(
+    (result) => result.outcome === "promoted",
+  ).length;
   const skipped = results.length - promoted;
 
   return {
