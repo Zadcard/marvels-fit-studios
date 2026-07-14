@@ -5,7 +5,8 @@ import type {
   AdminPrivateSessionRecord,
   AdminSessionStatus,
 } from "@/lib/mocks/admin-sessions";
-import { getPrisma, withPrismaFallback } from "@/lib/prisma";
+import { withSupabaseFallback } from "@/lib/supabase/errors";
+import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 const dayFormatter = new Intl.DateTimeFormat("en-US", { weekday: "short" });
 const timeFormatter = new Intl.DateTimeFormat("en-US", {
@@ -31,7 +32,7 @@ function getDayLabel(date: Date) {
 
 function mapStatus(
   status: "DRAFT" | "SCHEDULED" | "COMPLETED" | "CANCELED",
-  isAtCapacity: boolean
+  isAtCapacity: boolean,
 ): AdminSessionStatus {
   if (status === "CANCELED") {
     return "Canceled";
@@ -53,7 +54,7 @@ function mapStatus(
 }
 
 function mapBookedClientStatus(
-  status: "BOOKED" | "ATTENDED" | "MISSED" | "CANCELED" | "WAITLIST"
+  status: "BOOKED" | "ATTENDED" | "MISSED" | "CANCELED" | "WAITLIST",
 ): AdminSessionEditorRecord["bookedClients"][number]["status"] | null {
   switch (status) {
     case "BOOKED":
@@ -97,10 +98,6 @@ export type AdminSessionClientOption = {
 };
 
 export class AdminSessionRepository {
-  private get prisma() {
-    return getPrisma();
-  }
-
   async list(): Promise<{
     groupRecords: AdminGroupSessionRecord[];
     privateRecords: AdminPrivateSessionRecord[];
@@ -108,179 +105,129 @@ export class AdminSessionRepository {
     coachOptions: AdminSessionCoachOption[];
     clientOptions: AdminSessionClientOption[];
   }> {
-    return withPrismaFallback(async () => {
-      const sessionsPromise = this.prisma.trainingSession.findMany({
-      orderBy: [{ startsAt: "asc" }],
-      select: {
-        id: true,
-        title: true,
-        description: true,
-        startsAt: true,
-        endsAt: true,
-        location: true,
-        status: true,
-        type: true,
-        capacity: true,
-        coachId: true,
-        groupId: true,
-        coach: {
-          select: {
-            fullName: true,
-          },
-        },
-        group: {
-          select: {
-            name: true,
-          },
-        },
-        bookings: {
-          where: {
-            status: {
-              in: ["BOOKED", "ATTENDED", "MISSED", "WAITLIST"],
-            },
-          },
-          orderBy: [{ bookedAt: "asc" }],
-          select: {
-            status: true,
-            client: {
-              select: {
-                id: true,
-                fullName: true,
-              },
-            },
-          },
-        },
-        notes: {
-          orderBy: [{ createdAt: "desc" }],
-          take: 1,
-          select: {
-            content: true,
-          },
-        },
-      },
-    });
+    return withSupabaseFallback(
+      async () => {
+        const supabase = getSupabaseServerClient();
+        const sessionsPromise = supabase
+          .from("TrainingSession")
+          .select(
+            `
+          id, title, description, startsAt, endsAt, location, status, type,
+          capacity, coachId, groupId,
+          coach:Coach(fullName),
+          group:Group(name),
+          bookings:SessionBooking(status, bookedAt, client:Client(id, fullName)),
+          notes:SessionNote(content, createdAt)
+        `,
+          )
+          .order("startsAt", { ascending: true });
 
-      const [sessions, coaches, clients] = await Promise.all([
-      sessionsPromise,
-      this.prisma.coach.findMany({
-        orderBy: [{ fullName: "asc" }],
-        select: {
-          id: true,
-          fullName: true,
-        },
-      }),
-      this.prisma.client.findMany({
-        orderBy: [{ fullName: "asc" }],
-        select: {
-          id: true,
-          fullName: true,
-        },
-      }),
-    ]);
-      const groupRecords: AdminGroupSessionRecord[] = [];
-      const privateRecords: AdminPrivateSessionRecord[] = [];
-      const editorRecords: AdminSessionEditorRecord[] = [];
+        const [sessionsResult, coachesResult, clientsResult] =
+          await Promise.all([
+            sessionsPromise,
+            supabase.from("Coach").select("id, fullName").order("fullName"),
+            supabase.from("Client").select("id, fullName").order("fullName"),
+          ]);
+        if (sessionsResult.error) throw sessionsResult.error;
+        if (coachesResult.error) throw coachesResult.error;
+        if (clientsResult.error) throw clientsResult.error;
 
-      for (const session of sessions) {
-      const scheduleSession = session as unknown as {
-        id: string;
-        title: string;
-        description: string | null;
-        startsAt: Date;
-        endsAt: Date;
-        location: string | null;
-        status: "DRAFT" | "SCHEDULED" | "COMPLETED" | "CANCELED";
-        type: "GROUP" | "PRIVATE";
-        capacity: number | null;
-        coachId: string;
-        groupId: string | null;
-        coach: { fullName: string };
-        group?: { name: string } | null;
-        bookings: Array<{
-          status: "BOOKED" | "ATTENDED" | "MISSED" | "CANCELED" | "WAITLIST";
-          client: { id: string; fullName: string };
-        }>;
-        notes: Array<{ content: string }>;
-      };
-      const bookedClients = scheduleSession.bookings
-        .map((booking) => {
-          const status = mapBookedClientStatus(booking.status);
+        const sessions = sessionsResult.data;
+        const coaches = coachesResult.data;
+        const clients = clientsResult.data;
+        const groupRecords: AdminGroupSessionRecord[] = [];
+        const privateRecords: AdminPrivateSessionRecord[] = [];
+        const editorRecords: AdminSessionEditorRecord[] = [];
 
-          if (!status) {
-            return null;
-          }
+        for (const session of sessions) {
+          const startsAt = new Date(session.startsAt);
+          const bookedClients = session.bookings
+            .filter((booking) => booking.status !== "CANCELED")
+            .sort((left, right) => left.bookedAt.localeCompare(right.bookedAt))
+            .map((booking) => {
+              const status = mapBookedClientStatus(booking.status);
 
-          return {
-            id: booking.client.id,
-            fullName: booking.client.fullName,
-            status,
+              if (!status) {
+                return null;
+              }
+
+              return {
+                id: booking.client.id,
+                fullName: booking.client.fullName,
+                status,
+              };
+            })
+            .filter(
+              (
+                booking,
+              ): booking is AdminSessionEditorRecord["bookedClients"][number] =>
+                booking !== null,
+            );
+          const enrolled = bookedClients.length;
+          const isAtCapacity =
+            session.capacity !== null &&
+            session.capacity > 0 &&
+            enrolled >= session.capacity;
+          const baseRecord = {
+            id: session.id,
+            title: session.title,
+            coachName: session.coach.fullName,
+            dayLabel: getDayLabel(startsAt),
+            timeLabel: timeFormatter.format(startsAt),
+            location: session.location ?? "Studio floor",
+            status: mapStatus(session.status, isAtCapacity),
           };
-        })
-        .filter(
-          (
-            booking
-          ): booking is AdminSessionEditorRecord["bookedClients"][number] => booking !== null
-        );
-      const enrolled = bookedClients.length;
-      const isAtCapacity =
-        scheduleSession.capacity !== null &&
-        scheduleSession.capacity > 0 &&
-        enrolled >= scheduleSession.capacity;
-      const baseRecord = {
-        id: scheduleSession.id,
-        title: scheduleSession.title,
-        coachName: scheduleSession.coach.fullName,
-        dayLabel: getDayLabel(scheduleSession.startsAt),
-        timeLabel: timeFormatter.format(scheduleSession.startsAt),
-        location: scheduleSession.location ?? "Studio floor",
-        status: mapStatus(scheduleSession.status, isAtCapacity),
-      };
 
-      editorRecords.push({
-        id: scheduleSession.id,
-        title: scheduleSession.title,
-        description: scheduleSession.description ?? "",
-        type: scheduleSession.type,
-        status: scheduleSession.status,
-        coachId: scheduleSession.coachId,
-        groupId: scheduleSession.groupId,
-        groupName: scheduleSession.group?.name ?? "No linked group",
-        location: scheduleSession.location ?? "",
-        startsAt: scheduleSession.startsAt.toISOString(),
-        endsAt: scheduleSession.endsAt.toISOString(),
-        capacity: scheduleSession.capacity,
-        bookedClients,
-      });
+          editorRecords.push({
+            id: session.id,
+            title: session.title,
+            description: session.description ?? "",
+            type: session.type,
+            status: session.status,
+            coachId: session.coachId,
+            groupId: session.groupId,
+            groupName: session.group?.name ?? "No linked group",
+            location: session.location ?? "",
+            startsAt: session.startsAt,
+            endsAt: session.endsAt,
+            capacity: session.capacity,
+            bookedClients,
+          });
 
-      if (scheduleSession.type === "PRIVATE") {
-        privateRecords.push({
-          ...baseRecord,
-          clientName: bookedClients[0]?.fullName ?? "Unassigned",
-          focus: scheduleSession.notes[0]?.content ?? "Private coaching session",
-        });
-      } else {
-        groupRecords.push({
-          ...baseRecord,
-          capacity: scheduleSession.capacity ?? Math.max(enrolled, 1),
-          enrolled,
-        });
-      }
-      }
+          if (session.type === "PRIVATE") {
+            const latestNote = session.notes.sort((left, right) =>
+              right.createdAt.localeCompare(left.createdAt),
+            )[0];
+            privateRecords.push({
+              ...baseRecord,
+              clientName: bookedClients[0]?.fullName ?? "Unassigned",
+              focus: latestNote?.content ?? "Private coaching session",
+            });
+          } else {
+            groupRecords.push({
+              ...baseRecord,
+              capacity: session.capacity ?? Math.max(enrolled, 1),
+              enrolled,
+            });
+          }
+        }
 
-      return {
-        groupRecords,
-        privateRecords,
-        editorRecords,
-        coachOptions: coaches,
-        clientOptions: clients,
-      };
-    }, {
-      groupRecords: [],
-      privateRecords: [],
-      editorRecords: [],
-      coachOptions: [],
-      clientOptions: [],
-    });
+        return {
+          groupRecords,
+          privateRecords,
+          editorRecords,
+          coachOptions: coaches,
+          clientOptions: clients,
+        };
+      },
+      {
+        groupRecords: [],
+        privateRecords: [],
+        editorRecords: [],
+        coachOptions: [],
+        clientOptions: [],
+      },
+    );
   }
 }
 
