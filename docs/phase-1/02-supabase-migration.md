@@ -21,4 +21,4 @@ No legacy records were imported. The destination was deliberately verified empty
 
 ## Validation
 
-Migration history is aligned through `20260714001200`. Schema lint, generated types, application checks, and row-count verification are recorded in `07-verification-report.md`.
+Migration history is aligned through `20260714001500`. Schema lint, generated types, transactional workflow checks, application checks, and row-count verification are recorded in `07-verification-report.md`.

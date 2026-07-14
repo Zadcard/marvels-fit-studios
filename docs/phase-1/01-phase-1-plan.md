@@ -10,7 +10,7 @@
 | Legacy database packages and configuration removal | Complete |
 | Empty hosted database verification | Complete |
 | Documentation and handoff | Complete |
-| Local lint, typecheck, tests, and build | See verification report |
+| Local lint, typecheck, tests, and build | Complete |
 
 ## Rollback
 

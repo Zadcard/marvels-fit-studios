@@ -3,7 +3,7 @@
 ## Supabase foundation
 
 - Added version-controlled schema, RLS, indexes, triggers, generated database types, server client, domain enums, and centralized fallback handling.
-- Linked and applied migrations through `20260714001200`.
+- Linked and applied migrations through `20260714001500`.
 
 ## Data access
 
