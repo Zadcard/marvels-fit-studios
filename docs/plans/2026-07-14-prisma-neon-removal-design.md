@@ -33,10 +33,10 @@ Make Supabase the application's only database platform and remove Prisma and Neo
 
 ## Existing Data
 
-The target Supabase schema is already applied and currently empty. Existing Neon data cannot be copied until a valid read-only Neon connection string is supplied. Neon must remain untouched as the rollback source. This blocker does not require Prisma to remain in the application runtime.
+The user explicitly chose a fresh start on 2026-07-14. The target Supabase schema is applied and all 19 application tables are intentionally empty. No Neon export, import, comparison, or connection string is required. The application must not reconnect to Neon during the remaining code cutover.
 
 ## Rollback
 
-- Keep Neon and the pre-cutover Git commit unchanged.
+- Keep the pre-cutover Git commit available.
 - Revert the cutover commits if application validation fails.
 - Do not point production at Supabase until schema, data, authentication relationships, and representative workflows have been validated.

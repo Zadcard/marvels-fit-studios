@@ -13,7 +13,7 @@ The source connection values available during this run were placeholders, not va
 - Region: `eu-west-2`
 - PostgreSQL: 17
 - Initial destination state: healthy, no public tables, no migration history
-- Applied migrations: `20260714000100_initial_schema.sql` and `20260714000200_server_defaults_and_rls.sql`
+- Applied migrations: the initial schema, server defaults/RLS hardening, and two client-registration function migrations through `20260714000400_registration_optional_group.sql`
 
 The first migration is a consolidated baseline generated from the validated final Prisma schema. The second adds PostgreSQL-generated text UUID defaults for new direct Supabase inserts, database-managed `updatedAt` triggers, the existing file-expiry default, grants, and RLS hardening.
 
@@ -46,41 +46,14 @@ The Auth.js Prisma adapter was removed because JWT credentials sessions do not r
 
 ## Schema migration result
 
-`supabase db push --linked` applied both migrations to the empty destination. The Docker-based catalog cache emitted a warning because Docker Desktop is unavailable, but the migration itself succeeded. Verification showed local and remote versions aligned 2/2. `supabase db lint --linked --level warning` found no schema errors, and database advisors found no issues.
+`supabase db push --linked` applied all four migrations to the empty destination. The Docker-based catalog cache emitted a warning because Docker Desktop is unavailable, but the migrations succeeded. `supabase db lint --linked --level warning` found no schema errors, and database advisors found no issues.
 
-## Data migration procedure
+## Fresh-start data decision
 
-Data migration remains blocked by the missing valid Neon source URL. Once `NEON_DATABASE_URL` is provided, use a timestamped directory outside the repository:
+On 2026-07-14 the user explicitly selected an empty Supabase database. Data migration from Neon is intentionally out of scope, not blocked. `NEON_DATABASE_URL` is not required and has been removed from the environment contract. No old users, clients, credentials, subscriptions, payments, sessions, or other records will be imported.
 
-```powershell
-$timestamp = Get-Date -Format 'yyyyMMdd-HHmmss'
-$backupDir = Join-Path $HOME "marvels-fit-backups\$timestamp"
-New-Item -ItemType Directory -Path $backupDir
-pg_dump --dbname $env:NEON_DATABASE_URL --format=custom --data-only --no-owner --no-privileges --file (Join-Path $backupDir 'neon-data.dump')
-pg_restore --list (Join-Path $backupDir 'neon-data.dump')
-```
-
-Before restoring, run row-count and integrity queries against Neon and save the results. Restore only into the development Supabase project:
-
-```powershell
-pg_restore --dbname $env:SUPABASE_DB_URL --data-only --no-owner --no-privileges --single-transaction (Join-Path $backupDir 'neon-data.dump')
-npm run supabase:validate
-```
-
-If custom-format restore ordering is incompatible, generate a data-only SQL export with explicit inserts and review it before applying. Never use `db reset`, `drop`, `truncate`, or `--clean` against either hosted database.
-
-## Validation requirements after import
-
-- Row counts for every table match the Neon inventory.
-- Required fields contain no unexpected nulls.
-- Primary keys and unique fields have no duplicates.
-- Foreign-key orphan checks return zero.
-- Credential users retain password hashes and role/profile relationships.
-- Representative admin, coach, and client records match.
-- Login, role redirects, dashboards, lead intake/promotion, registration, sessions/bookings, settings, notes/files, and password changes pass against Supabase.
-
-The checked-in `supabase/verification/validate_migration.sql` covers core counts and integrity checks. Add the source-side results to `07-verification-report.md` when credentials are available.
+The linked database was checked after this decision: all 19 application tables reported zero rows. New records will be created through the Supabase-backed application after the runtime cutover.
 
 ## Rollback
 
-Keep Neon unchanged. If Supabase validation fails, stop using the destination, correct a forward migration, and leave application `DATABASE_URL`/`DIRECT_URL` on the verified source. Do not delete destination data merely to retry; use a new development project or an explicitly approved local reset. Production cutover and Neon retirement require separate explicit approval.
+If Supabase validation fails, correct it with a forward migration or revert the application commit. Do not reconnect the application to Neon or import old records. Do not delete hosted destination data merely to retry; use an explicitly approved local reset for local development.

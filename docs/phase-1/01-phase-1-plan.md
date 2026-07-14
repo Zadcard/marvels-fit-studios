@@ -42,7 +42,7 @@ Establish the reproducible Supabase schema, security posture, server client, mig
 | Server Supabase boundary | Complete | Typed server/browser factories and sanitized errors added. |
 | Neon export and validation tooling | Blocked | Commands prepared; local source URL is an invalid placeholder. |
 | Supabase link and remote schema migration | Complete | Target empty before push; two local/remote migrations aligned. |
-| Remote data migration | Blocked | Must remain separate from schema migration and require a rollback-safe export. |
+| Remote data migration | Intentionally skipped | User selected a fresh empty Supabase database; Neon data must not be imported. |
 | Prisma data-access replacement | Blocked | Auth adapter removed; remaining paths need migrated data and live behavior checks. |
 | Prisma/Neon dependency removal | Blocked | Source data/runtime cutover unavailable; compatibility layer documented. |
 | Environment and README updates | Complete | Template and exact setup added. |

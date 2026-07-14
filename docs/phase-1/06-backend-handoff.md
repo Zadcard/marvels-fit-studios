@@ -2,7 +2,7 @@
 
 ## Current state
 
-The hosted development Supabase project `ggrddqflqumokoyzpjic` has the complete empty schema applied through two version-controlled migrations. Local/remote histories align. RLS is enabled on all 19 application tables, and no browser role has application-table access.
+The hosted development Supabase project `ggrddqflqumokoyzpjic` has the complete empty schema applied through four version-controlled migrations. Local/remote histories align. RLS is enabled on all 19 application tables, and no browser role has application-table access.
 
 Auth remains Auth.js credentials with JWT sessions. Do not replace it with Supabase Auth or enable Supabase email signup as an incidental database-migration step.
 
@@ -12,7 +12,8 @@ Auth remains Auth.js credentials with JWT sessions. Do not replace it with Supab
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `SUPABASE_DB_URL`
 - `DATABASE_URL` and `DIRECT_URL` during Prisma compatibility
-- `NEON_DATABASE_URL` only until export/validation completes
+
+No Neon connection variable is required. The user explicitly selected a fresh empty Supabase database; do not import old Neon records.
 
 Public values are limited to `NEXT_PUBLIC_SUPABASE_URL` and a publishable/anon key. A service-role key in any browser bundle is a critical incident and must be rotated.
 

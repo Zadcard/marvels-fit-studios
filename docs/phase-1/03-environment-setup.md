@@ -5,13 +5,13 @@
 - Node 22 and npm
 - Docker Desktop for local Supabase
 - Supabase CLI (repository dev dependency)
-- PostgreSQL client tools (`pg_dump`, `pg_restore`, `psql`) for remote data transfer
+- PostgreSQL client tools (`psql`) for optional database diagnostics
 
 ```powershell
 nvm use 22
 npm ci
 npx supabase --version
-pg_dump --version
+psql --version
 ```
 
 The machine used for Phase 1 had system Node 25, which is outside the supported range. A bundled Node 24 runtime was used for verification. Teammates should use the repository-standard Node 22.
@@ -35,7 +35,6 @@ These are safe to embed in browser bundles only because RLS/grants protect data.
 - `SUPABASE_DB_URL`
 - `DATABASE_URL`
 - `DIRECT_URL`
-- `NEON_DATABASE_URL` (migration source only; remove after validated cutover)
 - `VERCEL_OIDC_TOKEN` when Vercel supplies it
 
 Never prefix server-only variables with `NEXT_PUBLIC_`.
@@ -86,4 +85,3 @@ Use a real local `AUTH_SECRET` for routine development. The inline value above i
 - `P1001` or `ENOTFOUND base`: `DATABASE_URL` is missing/placeholder or the database is unreachable.
 - Browser client reports missing key: set one of `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` or `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
 - Server client reports missing key: add `SUPABASE_SERVICE_ROLE_KEY` only to server/local/Vercel secret storage.
-

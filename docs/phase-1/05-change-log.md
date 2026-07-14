@@ -26,6 +26,14 @@
 - Risks: destination contains no migrated Neon data.
 - Validation: remote push passed; migration list 2/2; lint and advisors clean; zero integrity failures on empty destination.
 
+### Fresh-start database decision
+
+- Files changed: `.env.example`, Phase 1 migration/setup/handoff/verification/manual-action documents, and the Prisma-removal design.
+- Reason: the user explicitly selected an empty Supabase database and does not want Neon records migrated.
+- Previous behavior: documentation treated the missing Neon source URL as a blocker and requested `NEON_DATABASE_URL`.
+- New behavior: Neon import is intentionally skipped, the source variable is removed, and Supabase remains the only target.
+- Validation: the linked database reported zero estimated rows for every application table; migration functions added no application records.
+
 ## Supabase application boundary
 
 - Files: `lib/supabase/*`, `.env.example`, `auth.ts`.
