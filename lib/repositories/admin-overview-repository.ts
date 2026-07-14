@@ -17,7 +17,8 @@ import type {
   AdminStudioSnapshot,
   AdminUpcomingSession,
 } from "@/lib/mocks/admin-overview";
-import { getPrisma, withPrismaFallback } from "@/lib/prisma";
+import { withSupabaseFallback } from "@/lib/supabase/errors";
+import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 const numberFormatter = new Intl.NumberFormat("en-US");
 const currencyFormatter = new Intl.NumberFormat("en-US", {
@@ -65,7 +66,7 @@ function getDayLabel(date: Date) {
 function getRelativeLabel(date: Date) {
   const diffMinutes = Math.max(
     1,
-    Math.round((Date.now() - date.getTime()) / 60000)
+    Math.round((Date.now() - date.getTime()) / 60000),
   );
 
   if (diffMinutes < 60) {
@@ -82,11 +83,8 @@ function getRelativeLabel(date: Date) {
 }
 
 export class AdminOverviewRepository {
-  private get prisma() {
-    return getPrisma();
-  }
-
   async getOverview(): Promise<AdminOverviewData> {
+    const supabase = getSupabaseServerClient();
     const now = new Date();
     const in48Hours = new Date(now.getTime() + 48 * 60 * 60 * 1000);
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -106,165 +104,132 @@ export class AdminOverviewRepository {
       privateSubscriptions,
       attendedBookings,
     ] = await Promise.all([
-      withPrismaFallback(() => this.prisma.client.count(), 0),
-      withPrismaFallback(() => this.prisma.coach.count(), 0),
-      withPrismaFallback(
-        () => this.prisma.trainingSession.count({
-          where: {
-            status: {
-              not: "CANCELED",
-            },
-            startsAt: {
-              gte: now,
-              lte: weekEnd,
-            },
-          },
-        }),
-        0
-      ),
-      withPrismaFallback(
-        () => this.prisma.payment.aggregate({
-          _sum: { amount: true },
-          where: {
-            date: { gte: startOfMonth },
-          },
-        }),
-        { _sum: { amount: null } }
-      ),
-      withPrismaFallback(
-        () => this.prisma.lead.count({
-          where: {
-            status: {
-              in: ["NEW", "CONTACTED"],
-            },
-          },
-        }),
-        0
-      ),
-      withPrismaFallback(
-        () => this.prisma.trainingSession.findMany({
-          where: {
-            status: "SCHEDULED",
-            startsAt: {
-              gte: now,
-              lte: in48Hours,
-            },
-          },
-          orderBy: { startsAt: "asc" },
-          take: 4,
-          select: {
-            id: true,
-            title: true,
-            startsAt: true,
-            type: true,
-            location: true,
-            capacity: true,
-            coach: {
-              select: {
-                fullName: true,
-              },
-            },
-            bookings: {
-              where: {
-                status: {
-                  in: ["BOOKED", "ATTENDED", "WAITLIST"],
-                },
-              },
-              select: {
-                id: true,
-              },
-            },
-          },
-        }),
-        []
-      ),
-      withPrismaFallback(
-        () => this.prisma.lead.findMany({
-          orderBy: { createdAt: "desc" },
-          take: 2,
-          select: {
-            id: true,
-            fullName: true,
-            status: true,
-            createdAt: true,
-          },
-        }),
-        []
-      ),
-      withPrismaFallback(
-        () => this.prisma.payment.findMany({
-          orderBy: { date: "desc" },
-          take: 2,
-          select: {
-            id: true,
-            amount: true,
-            currency: true,
-            date: true,
-            client: {
-              select: {
-                fullName: true,
-              },
-            },
-          },
-        }),
-        []
-      ),
-      withPrismaFallback(
-        () => this.prisma.sessionNote.findMany({
-          orderBy: { createdAt: "desc" },
-          take: 2,
-          select: {
-            id: true,
-            createdAt: true,
-            author: {
-              select: {
-                name: true,
-              },
-            },
-            trainingSession: {
-              select: {
-                title: true,
-              },
-            },
-          },
-        }),
-        []
-      ),
-      withPrismaFallback(
-        () => this.prisma.clientSubscription.count({
-          where: {
-            status: "ACTIVE",
-          },
-        }),
-        0
-      ),
-      withPrismaFallback(
-        () => this.prisma.clientSubscription.count({
-          where: {
-            status: "ACTIVE",
-            plan: {
-              name: {
-                contains: "private",
-                mode: "insensitive",
-              },
-            },
-          },
-        }),
-        0
-      ),
-      withPrismaFallback(
-        () => this.prisma.sessionBooking.count({
-          where: {
-            status: "ATTENDED",
-            trainingSession: {
-              status: {
-                not: "CANCELED",
-              },
-            },
-          },
-        }),
-        0
-      ),
+      withSupabaseFallback(async () => {
+        const { count, error } = await supabase
+          .from("Client")
+          .select("id", { count: "exact", head: true });
+        if (error) throw error;
+        return count ?? 0;
+      }, 0),
+      withSupabaseFallback(async () => {
+        const { count, error } = await supabase
+          .from("Coach")
+          .select("id", { count: "exact", head: true });
+        if (error) throw error;
+        return count ?? 0;
+      }, 0),
+      withSupabaseFallback(async () => {
+        const { count, error } = await supabase
+          .from("TrainingSession")
+          .select("id", { count: "exact", head: true })
+          .neq("status", "CANCELED")
+          .gte("startsAt", now.toISOString())
+          .lte("startsAt", weekEnd.toISOString());
+        if (error) throw error;
+        return count ?? 0;
+      }, 0),
+      withSupabaseFallback(async () => {
+        const { data, error } = await supabase
+          .from("Payment")
+          .select("amount")
+          .gte("date", startOfMonth.toISOString());
+        if (error) throw error;
+        return data.reduce((sum, payment) => sum + payment.amount, 0);
+      }, 0),
+      withSupabaseFallback(async () => {
+        const { count, error } = await supabase
+          .from("Lead")
+          .select("id", { count: "exact", head: true })
+          .in("status", ["NEW", "CONTACTED"]);
+        if (error) throw error;
+        return count ?? 0;
+      }, 0),
+      withSupabaseFallback(async () => {
+        const { data, error } = await supabase
+          .from("TrainingSession")
+          .select(
+            "id, title, startsAt, type, location, capacity, coach:Coach(fullName), bookings:SessionBooking(id, status)",
+          )
+          .eq("status", "SCHEDULED")
+          .gte("startsAt", now.toISOString())
+          .lte("startsAt", in48Hours.toISOString())
+          .order("startsAt")
+          .limit(4);
+        if (error) throw error;
+        return data.map((session) => ({
+          ...session,
+          startsAt: new Date(session.startsAt),
+          bookings: session.bookings.filter((booking) =>
+            ["BOOKED", "ATTENDED", "WAITLIST"].includes(booking.status),
+          ),
+        }));
+      }, []),
+      withSupabaseFallback(async () => {
+        const { data, error } = await supabase
+          .from("Lead")
+          .select("id, fullName, status, createdAt")
+          .order("createdAt", { ascending: false })
+          .limit(2);
+        if (error) throw error;
+        return data.map((lead) => ({
+          ...lead,
+          createdAt: new Date(lead.createdAt),
+        }));
+      }, []),
+      withSupabaseFallback(async () => {
+        const { data, error } = await supabase
+          .from("Payment")
+          .select("id, amount, currency, date, client:Client(fullName)")
+          .order("date", { ascending: false })
+          .limit(2);
+        if (error) throw error;
+        return data.map((payment) => ({
+          ...payment,
+          date: new Date(payment.date),
+        }));
+      }, []),
+      withSupabaseFallback(async () => {
+        const { data, error } = await supabase
+          .from("SessionNote")
+          .select(
+            "id, createdAt, author:User(name), trainingSession:TrainingSession(title)",
+          )
+          .order("createdAt", { ascending: false })
+          .limit(2);
+        if (error) throw error;
+        return data.map((note) => ({
+          ...note,
+          createdAt: new Date(note.createdAt),
+        }));
+      }, []),
+      withSupabaseFallback(async () => {
+        const { count, error } = await supabase
+          .from("ClientSubscription")
+          .select("id", { count: "exact", head: true })
+          .eq("status", "ACTIVE");
+        if (error) throw error;
+        return count ?? 0;
+      }, 0),
+      withSupabaseFallback(async () => {
+        const { data, error } = await supabase
+          .from("ClientSubscription")
+          .select("plan:SubscriptionPlan(name)")
+          .eq("status", "ACTIVE");
+        if (error) throw error;
+        return data.filter((subscription) =>
+          subscription.plan.name.toLowerCase().includes("private"),
+        ).length;
+      }, 0),
+      withSupabaseFallback(async () => {
+        const { data, error } = await supabase
+          .from("SessionBooking")
+          .select("trainingSession:TrainingSession(status)")
+          .eq("status", "ATTENDED");
+        if (error) throw error;
+        return data.filter(
+          (booking) => booking.trainingSession.status !== "CANCELED",
+        ).length;
+      }, 0),
     ]);
 
     const stats: AdminOverviewStat[] = [
@@ -301,12 +266,12 @@ export class AdminOverviewRepository {
       {
         id: "revenue",
         label: "Month revenue",
-        value: currencyFormatter.format(revenueAggregate._sum.amount ?? 0),
+        value: currencyFormatter.format(revenueAggregate),
         change: `${activeSubscriptions} active plans`,
         detail: "Payments captured this month.",
         note: "Billing live",
         icon: CircleDollarSign,
-        tone: revenueAggregate._sum.amount ? "success" : "warning",
+        tone: revenueAggregate ? "success" : "warning",
       },
     ];
 
@@ -332,7 +297,7 @@ export class AdminOverviewRepository {
                 ? "Needs follow-up"
                 : "On track",
         };
-      }
+      },
     );
 
     const recentActivityItems = [
@@ -342,7 +307,8 @@ export class AdminOverviewRepository {
         description: `${lead.fullName} moved to ${lead.status.toLowerCase()}.`,
         timeLabel: getRelativeLabel(lead.createdAt),
         occurredAt: lead.createdAt.getTime(),
-        tone: lead.status === "NEW" ? ("success" as const) : ("warning" as const),
+        tone:
+          lead.status === "NEW" ? ("success" as const) : ("warning" as const),
       })),
       ...latestPayments.map((payment) => ({
         id: `payment-${payment.id}`,
@@ -370,90 +336,94 @@ export class AdminOverviewRepository {
         return item;
       });
 
-    const quickActions: AdminQuickAction[] = activeLeadCount > 0
-      ? [
-          {
-            id: "action-1",
-            label: "Clear join requests",
-            description: "Review waiting requests and convert the ready ones.",
-            ctaLabel: "Review",
-            href: "/admin/join-requests",
-            icon: ClipboardPlus,
-            emphasis: "primary",
-          },
-          {
-            id: "action-2",
-            label: "Add client",
-            description: "Open the roster and add a new client record.",
-            ctaLabel: "Open",
-            href: "/admin/clients",
-            icon: UserPlus,
-            emphasis: "secondary",
-          },
-          {
-            id: "action-3",
-            label: "Create session",
-            description: "Build the next session or adjust a live one.",
-            ctaLabel: "Launch",
-            href: "/admin/sessions",
-            icon: CalendarPlus2,
-            emphasis: "secondary",
-          },
-          {
-            id: "action-4",
-            label: "Check coach coverage",
-            description: "Review coach load before adding more capacity.",
-            ctaLabel: "Review",
-            href: "/admin/coaches",
-            icon: ShieldUser,
-            emphasis: "secondary",
-          },
-        ]
-      : [
-          {
-            id: "action-1",
-            label: "Add client",
-            description: "Open the roster and add a new client record.",
-            ctaLabel: "Open",
-            href: "/admin/clients",
-            icon: UserPlus,
-            emphasis: "primary",
-          },
-          {
-            id: "action-2",
-            label: "Create session",
-            description: "Build the next session or adjust a live one.",
-            ctaLabel: "Launch",
-            href: "/admin/sessions",
-            icon: CalendarPlus2,
-            emphasis: "secondary",
-          },
-          {
-            id: "action-3",
-            label: "Check coach coverage",
-            description: "Review coach load before adding more capacity.",
-            ctaLabel: "Review",
-            href: "/admin/coaches",
-            icon: ShieldUser,
-            emphasis: "secondary",
-          },
-          {
-            id: "action-4",
-            label: "Review package pressure",
-            description: "Check renewal pressure before client sessions run out.",
-            ctaLabel: "Open",
-            href: "/admin/clients",
-            icon: CircleDollarSign,
-            emphasis: "secondary",
-          },
-        ];
+    const quickActions: AdminQuickAction[] =
+      activeLeadCount > 0
+        ? [
+            {
+              id: "action-1",
+              label: "Clear join requests",
+              description:
+                "Review waiting requests and convert the ready ones.",
+              ctaLabel: "Review",
+              href: "/admin/join-requests",
+              icon: ClipboardPlus,
+              emphasis: "primary",
+            },
+            {
+              id: "action-2",
+              label: "Add client",
+              description: "Open the roster and add a new client record.",
+              ctaLabel: "Open",
+              href: "/admin/clients",
+              icon: UserPlus,
+              emphasis: "secondary",
+            },
+            {
+              id: "action-3",
+              label: "Create session",
+              description: "Build the next session or adjust a live one.",
+              ctaLabel: "Launch",
+              href: "/admin/sessions",
+              icon: CalendarPlus2,
+              emphasis: "secondary",
+            },
+            {
+              id: "action-4",
+              label: "Check coach coverage",
+              description: "Review coach load before adding more capacity.",
+              ctaLabel: "Review",
+              href: "/admin/coaches",
+              icon: ShieldUser,
+              emphasis: "secondary",
+            },
+          ]
+        : [
+            {
+              id: "action-1",
+              label: "Add client",
+              description: "Open the roster and add a new client record.",
+              ctaLabel: "Open",
+              href: "/admin/clients",
+              icon: UserPlus,
+              emphasis: "primary",
+            },
+            {
+              id: "action-2",
+              label: "Create session",
+              description: "Build the next session or adjust a live one.",
+              ctaLabel: "Launch",
+              href: "/admin/sessions",
+              icon: CalendarPlus2,
+              emphasis: "secondary",
+            },
+            {
+              id: "action-3",
+              label: "Check coach coverage",
+              description: "Review coach load before adding more capacity.",
+              ctaLabel: "Review",
+              href: "/admin/coaches",
+              icon: ShieldUser,
+              emphasis: "secondary",
+            },
+            {
+              id: "action-4",
+              label: "Review package pressure",
+              description:
+                "Check renewal pressure before client sessions run out.",
+              ctaLabel: "Open",
+              href: "/admin/clients",
+              icon: CircleDollarSign,
+              emphasis: "secondary",
+            },
+          ];
 
     const groupShare =
       activeSubscriptions === 0
         ? 0
         : Math.round(
-            ((activeSubscriptions - privateSubscriptions) / activeSubscriptions) *
-              100
+            ((activeSubscriptions - privateSubscriptions) /
+              activeSubscriptions) *
+              100,
           );
 
     const studioSnapshot: AdminStudioSnapshot[] = [
