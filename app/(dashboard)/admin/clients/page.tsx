@@ -1,6 +1,6 @@
 import { AdminClientsWorkspace } from "@/components/dashboard/admin-clients-workspace";
-import { getPrisma } from "@/lib/prisma";
 import { adminClientRepository } from "@/lib/repositories/admin-client-repository";
+import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 export const metadata = {
   title: "Clients Management",
@@ -25,13 +25,11 @@ export default async function AdminClientsPage(
     initial: initial || null,
     sort,
   });
-  const groupOptions = await getPrisma().group.findMany({
-    orderBy: { name: "asc" },
-    select: {
-      id: true,
-      name: true,
-    },
-  });
+  const { data: groupOptions, error } = await getSupabaseServerClient()
+    .from("Group")
+    .select("id,name")
+    .order("name");
+  if (error) throw error;
 
   return (
     <AdminClientsWorkspace
@@ -43,7 +41,7 @@ export default async function AdminClientsPage(
       totalCount={clientDirectory.totalCount}
       filteredCount={clientDirectory.filteredCount}
       initialOptions={clientDirectory.initialOptions}
-      groupOptions={groupOptions}
+      groupOptions={groupOptions ?? []}
     />
   );
 }

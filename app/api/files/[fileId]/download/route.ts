@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { UserRole } from "@/lib/supabase/domain";
 
 import { requireUser } from "@/lib/auth/session";
-import { getPrisma } from "@/lib/prisma";
+import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 export async function GET(
   _request: NextRequest,
@@ -10,43 +10,23 @@ export async function GET(
 ) {
   const user = await requireUser();
   const { fileId } = await context.params;
-  const prisma = getPrisma();
+  const supabase = getSupabaseServerClient();
 
-  const file = await prisma.file.findUnique({
-    where: { id: fileId },
-    select: {
-      id: true,
-      name: true,
-      mimeType: true,
-      data: true,
-      expiresAt: true,
-      deletedAt: true,
-      clientId: true,
-      groupId: true,
-      uploadedById: true,
-      client: {
-        select: {
-          userId: true,
-        },
-      },
-      group: {
-        select: {
-          clients: {
-            select: {
-              userId: true,
-            },
-          },
-          coach: {
-            select: {
-              userId: true,
-            },
-          },
-        },
-      },
-    },
-  });
+  const { data: file, error } = await supabase
+    .from("File")
+    .select(
+      "id,name,mimeType,data,expiresAt,deletedAt,clientId,groupId,uploadedById,client:Client(userId),group:Group(clients:Client(userId),coach:Coach(userId))"
+    )
+    .eq("id", fileId)
+    .maybeSingle();
+  if (error) throw error;
 
-  if (!file || !file.data || file.deletedAt || file.expiresAt <= new Date()) {
+  if (
+    !file ||
+    !file.data ||
+    file.deletedAt ||
+    new Date(file.expiresAt) <= new Date()
+  ) {
     return NextResponse.json({ error: "File not found." }, { status: 404 });
   }
 
@@ -54,19 +34,18 @@ export async function GET(
     user.role === UserRole.ADMIN ||
     file.uploadedById === user.id ||
     file.client?.userId === user.id ||
-    file.group?.coach.userId === user.id ||
+    file.group?.coach?.userId === user.id ||
     file.group?.clients.some((client) => client.userId === user.id);
 
   if (!canDownload) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 403 });
   }
 
-  await prisma.file.update({
-    where: { id: file.id },
-    data: {
-      downloadedAt: new Date(),
-    },
-  });
+  const { error: updateError } = await supabase
+    .from("File")
+    .update({ downloadedAt: new Date().toISOString() })
+    .eq("id", file.id);
+  if (updateError) throw updateError;
 
   return new Response(file.data, {
     headers: {

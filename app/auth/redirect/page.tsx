@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 
 import { auth } from "@/auth";
 import { getDashboardHomeForUserRole } from "@/lib/auth/authorization-policy";
-import { getPrisma } from "@/lib/prisma";
+import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 export const metadata = {
   title: "Redirecting",
@@ -18,12 +18,11 @@ export default async function AuthRedirectPage() {
 
   if (session.user.id) {
     try {
-      const user = await getPrisma().user.findUnique({
-        where: { id: session.user.id },
-        select: {
-          mustChangePassword: true,
-        },
-      });
+      const { data: user } = await getSupabaseServerClient()
+        .from("User")
+        .select("mustChangePassword")
+        .eq("id", session.user.id)
+        .maybeSingle();
 
       if (user?.mustChangePassword) {
         redirect("/change-password");

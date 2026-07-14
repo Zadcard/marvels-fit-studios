@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { RequiredPasswordChangeForm } from "@/app/change-password/change-password-form";
 import { getDashboardHomeForUserRole } from "@/lib/auth/authorization-policy";
-import { getPrisma } from "@/lib/prisma";
+import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 export const metadata = {
   title: "Change Password",
@@ -18,12 +18,11 @@ export default async function ChangePasswordPage() {
     redirect("/login");
   }
 
-  const user = await getPrisma().user.findUnique({
-    where: { id: session.user.id },
-    select: {
-      mustChangePassword: true,
-    },
-  });
+  const { data: user } = await getSupabaseServerClient()
+    .from("User")
+    .select("mustChangePassword")
+    .eq("id", session.user.id)
+    .maybeSingle();
 
   if (!user?.mustChangePassword) {
     redirect(getDashboardHomeForUserRole(session.user.role));
