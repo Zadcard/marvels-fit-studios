@@ -1,5 +1,5 @@
 import bcryptjs from "bcryptjs";
-import { LeadStatus, UserRole } from "@prisma/client";
+import { LeadStatus, UserRole } from "@/lib/supabase/domain";
 
 import { readLeadCredentialClientId } from "@/lib/leads/lead-credential-metadata";
 import { clientIdGenerator } from "@/lib/services/client-id-generator";

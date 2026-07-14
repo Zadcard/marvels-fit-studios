@@ -1,16 +1,11 @@
 import "server-only";
 
-import { Prisma, UserRole } from "@prisma/client";
+import { UserRole } from "@/lib/supabase/domain";
 
 import { auth } from "@/auth";
-import { getPrisma } from "@/lib/prisma";
+import { getSupabaseServerClient } from "@/lib/supabase/server";
 
-function isRecoverablePrismaError(error: unknown) {
-  return (
-    error instanceof Prisma.PrismaClientKnownRequestError &&
-    (error.code === "P2021" || error.code === "P2022")
-  );
-}
+const sessionUserColumns = "id,email,name,mustChangePassword,role" as const;
 
 async function ensurePersistedSessionUser(sessionUser: {
   id: string;
@@ -18,18 +13,15 @@ async function ensurePersistedSessionUser(sessionUser: {
   name?: string | null;
   role?: UserRole;
 }) {
-  const prisma = getPrisma();
+  const supabase = getSupabaseServerClient();
   try {
-    const existingById = await prisma.user.findUnique({
-      where: { id: sessionUser.id },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        mustChangePassword: true,
-        role: true,
-      },
-    });
+    const { data: existingById, error: idError } = await supabase
+      .from("User")
+      .select(sessionUserColumns)
+      .eq("id", sessionUser.id)
+      .maybeSingle();
+
+    if (idError) throw idError;
 
     if (existingById) {
       return existingById;
@@ -39,16 +31,13 @@ async function ensurePersistedSessionUser(sessionUser: {
       throw new Error("Unauthorized");
     }
 
-    const existingByEmail = await prisma.user.findUnique({
-      where: { email: sessionUser.email },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        mustChangePassword: true,
-        role: true,
-      },
-    });
+    const { data: existingByEmail, error: emailError } = await supabase
+      .from("User")
+      .select(sessionUserColumns)
+      .eq("email", sessionUser.email)
+      .maybeSingle();
+
+    if (emailError) throw emailError;
 
     if (existingByEmail) {
       return existingByEmail;
@@ -58,38 +47,35 @@ async function ensurePersistedSessionUser(sessionUser: {
       throw new Error("Unauthorized");
     }
 
-    return prisma.user.create({
-      data: {
+    const { data: createdUser, error: createError } = await supabase
+      .from("User")
+      .insert({
+        id: sessionUser.id,
         email: sessionUser.email,
         name: sessionUser.name ?? sessionUser.email,
         role: sessionUser.role,
-        coachProfile:
-          sessionUser.role === UserRole.COACH
-            ? {
-                create: {
-                  fullName: sessionUser.name ?? sessionUser.email,
-                },
-              }
-            : undefined,
-        clientProfile:
-          sessionUser.role === UserRole.CLIENT
-            ? {
-                create: {
-                  fullName: sessionUser.name ?? sessionUser.email,
-                },
-              }
-            : undefined,
-      },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        mustChangePassword: true,
-        role: true,
-      },
-    });
+      })
+      .select(sessionUserColumns)
+      .single();
+
+    if (createError) throw createError;
+
+    const fullName = sessionUser.name ?? sessionUser.email;
+    if (sessionUser.role === UserRole.COACH) {
+      const { error } = await supabase
+        .from("Coach")
+        .insert({ fullName, userId: createdUser.id });
+      if (error) throw error;
+    } else if (sessionUser.role === UserRole.CLIENT) {
+      const { error } = await supabase
+        .from("Client")
+        .insert({ fullName, userId: createdUser.id });
+      if (error) throw error;
+    }
+
+    return createdUser;
   } catch (error) {
-    if (isRecoverablePrismaError(error) && sessionUser.role) {
+    if (sessionUser.role) {
       return {
         id: sessionUser.id,
         email: sessionUser.email ?? null,

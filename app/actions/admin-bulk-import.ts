@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { UserRole } from "@prisma/client";
+import { UserRole } from "@/lib/supabase/domain";
 
 import { requireRole } from "@/lib/auth/session";
 import {

@@ -4,7 +4,7 @@ import { auth } from "@/auth";
 import { DashboardRoleShell } from "@/components/dashboard/dashboard-role-shell";
 import { getDashboardHomeForUserRole } from "@/lib/auth/authorization-policy";
 import { getPrisma } from "@/lib/prisma";
-import { UserRole } from "@prisma/client";
+import { UserRole } from "@/lib/supabase/domain";
 
 function getInitials(name: string) {
   return name

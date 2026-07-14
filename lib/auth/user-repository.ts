@@ -1,6 +1,6 @@
-import type { UserRole } from "@prisma/client";
+import type { UserRole } from "@/lib/supabase/domain";
 
-import { getPrisma, withPrismaFallback } from "@/lib/prisma";
+import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 export type PersistedAuthUser = {
   id: string;
@@ -18,25 +18,36 @@ export interface UserRepository {
   findById(id: string): Promise<PersistedAuthUser | null>;
 }
 
-export class PrismaUserRepository implements UserRepository {
+const authUserColumns =
+  "id,email,clientId,name,password,mustChangePassword,role" as const;
+
+async function findUser(
+  column: "email" | "clientId" | "id",
+  value: string
+): Promise<PersistedAuthUser | null> {
+  const { data, error } = await getSupabaseServerClient()
+    .from("User")
+    .select(authUserColumns)
+    .eq(column, value)
+    .maybeSingle();
+
+  if (error) {
+    return null;
+  }
+
+  return data;
+}
+
+export class SupabaseUserRepository implements UserRepository {
   async findByEmail(email: string): Promise<PersistedAuthUser | null> {
-    return withPrismaFallback(
-      () => getPrisma().user.findUnique({ where: { email } }),
-      null
-    );
+    return findUser("email", email);
   }
 
   async findByClientId(clientId: string): Promise<PersistedAuthUser | null> {
-    return withPrismaFallback(
-      () => getPrisma().user.findUnique({ where: { clientId } }),
-      null
-    );
+    return findUser("clientId", clientId);
   }
 
   async findById(id: string): Promise<PersistedAuthUser | null> {
-    return withPrismaFallback(
-      () => getPrisma().user.findUnique({ where: { id } }),
-      null
-    );
+    return findUser("id", id);
   }
 }

@@ -913,7 +913,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      register_client: {
+        Args: {
+          p_client_id: string
+          p_email: string
+          p_full_name: string
+          p_group_id: string
+          p_password_hash: string
+          p_phone: string
+        }
+        Returns: {
+          clientId: string
+          userId: string
+        }[]
+      }
     }
     Enums: {
       BillingCycle: "MONTHLY" | "WEEKLY" | "CUSTOM"

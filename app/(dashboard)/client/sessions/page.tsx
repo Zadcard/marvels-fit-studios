@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { UserRole } from "@prisma/client";
+import { UserRole } from "@/lib/supabase/domain";
 
 import { ClientSessionsWorkspace } from "@/components/dashboard/client-sessions-workspace";
 import { requireRole } from "@/lib/auth/session";

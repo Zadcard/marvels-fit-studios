@@ -1,6 +1,6 @@
 import "server-only";
 
-import { LeadStatus, Prisma } from "@prisma/client";
+import { LeadStatus } from "@/lib/supabase/domain";
 
 import { readLeadCredentialClientId } from "@/lib/leads/lead-credential-metadata";
 import type { AdminLeadRecord, AdminLeadStatus } from "@/lib/dashboard/admin-dashboard-data";
@@ -49,7 +49,7 @@ function normalizeListInput(input?: {
 }): {
   search: string;
   initial: string | null;
-  sort: Prisma.SortOrder;
+  sort: "asc" | "desc";
 } {
   return {
     search: input?.search?.trim() ?? "",

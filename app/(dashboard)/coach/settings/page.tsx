@@ -1,4 +1,4 @@
-import { UserRole } from "@prisma/client";
+import { UserRole } from "@/lib/supabase/domain";
 
 import { CoachSettingsWorkspace } from "@/components/dashboard/coach-settings-workspace";
 import { requireRole } from "@/lib/auth/session";

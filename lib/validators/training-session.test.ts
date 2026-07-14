@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { TrainingSessionType, TrainingSessionStatus } from '@prisma/client';
+import { TrainingSessionType, TrainingSessionStatus } from '@/lib/supabase/domain';
 import {
   createTrainingSessionSchema,
   updateTrainingSessionSchema,

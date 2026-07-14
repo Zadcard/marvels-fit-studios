@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { UserRole } from "@prisma/client";
+import { UserRole } from "@/lib/supabase/domain";
 
 import { requireUser } from "@/lib/auth/session";
 import { getPrisma } from "@/lib/prisma";

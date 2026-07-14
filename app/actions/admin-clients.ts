@@ -1,7 +1,7 @@
 "use server";
 
 import bcrypt from "bcryptjs";
-import { ClientLifecycleStatus, ClientPaymentStatus, UserRole } from "@prisma/client";
+import { ClientLifecycleStatus, ClientPaymentStatus, UserRole } from "@/lib/supabase/domain";
 import { revalidatePath } from "next/cache";
 
 import { requireRole } from "@/lib/auth/session";

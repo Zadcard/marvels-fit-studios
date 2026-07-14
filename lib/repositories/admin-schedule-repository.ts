@@ -1,6 +1,6 @@
 import "server-only";
 
-import { TrainingSessionStatus, TrainingSessionType } from "@prisma/client";
+import { TrainingSessionStatus, TrainingSessionType } from "@/lib/supabase/domain";
 import type {
   AdminScheduleSessionRecord,
   AdminScheduleSessionStatus,

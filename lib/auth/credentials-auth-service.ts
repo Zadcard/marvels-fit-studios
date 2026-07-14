@@ -1,4 +1,4 @@
-import type { UserRole } from "@prisma/client";
+import type { UserRole } from "@/lib/supabase/domain";
 
 import { parseCredentials } from "@/lib/auth/credentials";
 import type {

@@ -3,7 +3,7 @@ import "server-only";
 import bcryptjs from "bcryptjs";
 import { getPrisma } from "@/lib/prisma";
 import { BcryptPasswordVerifier } from "@/lib/auth/password-verifier";
-import type { UserRole } from "@prisma/client";
+import type { UserRole } from "@/lib/supabase/domain";
 
 export interface LoginInput {
   clientId: string;

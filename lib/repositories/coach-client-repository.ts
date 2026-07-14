@@ -1,6 +1,6 @@
 import "server-only";
 
-import { UserRole } from "@prisma/client";
+import { UserRole } from "@/lib/supabase/domain";
 
 import type { CoachClientPlan, CoachClientRecord, CoachClientStatus } from "@/lib/dashboard/coach-client-record";
 import { getPrisma, withPrismaFallback } from "@/lib/prisma";

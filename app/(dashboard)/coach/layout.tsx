@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { DashboardRoleShell } from "@/components/dashboard/dashboard-role-shell";
 import { getDashboardHomeForUserRole } from "@/lib/auth/authorization-policy";
-import { UserRole } from "@prisma/client";
+import { UserRole } from "@/lib/supabase/domain";
 
 export default async function CoachDashboardLayout({
   children,

@@ -1,4 +1,4 @@
-import { TrainingSessionStatus, TrainingSessionType } from "@prisma/client";
+import { TrainingSessionStatus, TrainingSessionType } from "@/lib/supabase/domain";
 import { z } from "zod";
 
 const baseSessionSchema = z

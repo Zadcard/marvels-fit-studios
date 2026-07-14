@@ -1,6 +1,6 @@
 "use server";
 
-import { CoachSpecialization, UserRole } from "@prisma/client";
+import { CoachSpecialization, UserRole } from "@/lib/supabase/domain";
 import { revalidatePath } from "next/cache";
 
 import { requireRole } from "@/lib/auth/session";

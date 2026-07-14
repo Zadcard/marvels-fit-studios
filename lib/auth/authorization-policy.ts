@@ -1,4 +1,4 @@
-import { UserRole } from "@prisma/client";
+import { UserRole } from "@/lib/supabase/domain";
 
 export type DashboardRole = "admin" | "coach" | "client";
 export type RouteArea = DashboardRole | "login" | "api-auth" | "public";
