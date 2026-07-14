@@ -5,7 +5,8 @@ import type {
   AdminCoachSpecialization,
 } from "@/lib/mocks/admin-coaches";
 import { isPlaceholderCoachName } from "@/lib/coaches/placeholder-coaches";
-import { getPrisma, withPrismaFallback } from "@/lib/prisma";
+import { withSupabaseFallback } from "@/lib/supabase/errors";
+import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 function toAdminCoachSpecialization(
   specialization: "STRENGTH" | "CONDITIONING" | "MOBILITY" | "PRIVATE_COACHING"
@@ -23,62 +24,36 @@ function toAdminCoachSpecialization(
 }
 
 export class AdminCoachRepository {
-  private get prisma() {
-    return getPrisma();
-  }
-
   async list(): Promise<AdminCoachRecord[]> {
-    return withPrismaFallback(async () => {
+    return withSupabaseFallback(async () => {
       const now = new Date();
       const weekEnd = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
-      const coaches = await this.prisma.coach.findMany({
-        orderBy: { fullName: "asc" },
-        select: {
-          id: true,
-          fullName: true,
-          phone: true,
-          specialization: true,
-          user: {
-            select: {
-              email: true,
-            },
-          },
-          groups: {
-            select: {
-              type: true,
-              _count: {
-                select: {
-                  clients: true,
-                },
-              },
-            },
-          },
-          trainingSessions: {
-            select: {
-              type: true,
-              startsAt: true,
-              endsAt: true,
-            },
-          },
-        },
-      });
+      const { data: coaches, error } = await getSupabaseServerClient()
+        .from("Coach")
+        .select(
+          "id,fullName,phone,specialization,user:User(email),groups:Group(type,clients:Client(id)),trainingSessions:TrainingSession(type,startsAt,endsAt)"
+        )
+        .order("fullName");
+      if (error) throw error;
 
       return coaches
         .filter((coach) => !isPlaceholderCoachName(coach.fullName))
         .map((coach) => {
           const activeClients = coach.groups.reduce(
-            (total, group) => total + group._count.clients,
+            (total, group) => total + group.clients.length,
             0
           );
           const weeklySessions = coach.trainingSessions.filter(
-            (session) => session.startsAt >= now && session.startsAt <= weekEnd
+            (session) =>
+              new Date(session.startsAt) >= now &&
+              new Date(session.startsAt) <= weekEnd
           );
           const sessionsThisWeek = weeklySessions.length;
           const sessionsByDay = new Map<string, number>();
 
           for (const session of weeklySessions) {
-            const day = session.startsAt.toLocaleDateString("en-US", {
+            const day = new Date(session.startsAt).toLocaleDateString("en-US", {
               weekday: "short",
             });
             sessionsByDay.set(day, (sessionsByDay.get(day) ?? 0) + 1);
@@ -88,8 +63,8 @@ export class AdminCoachRepository {
             const overlaps = weeklySessions.some(
               (otherSession, otherIndex) =>
                 otherIndex !== index &&
-                otherSession.startsAt < session.endsAt &&
-                session.startsAt < otherSession.endsAt
+                new Date(otherSession.startsAt) < new Date(session.endsAt) &&
+                new Date(session.startsAt) < new Date(otherSession.endsAt)
             );
             return total + (overlaps ? 1 : 0);
           }, 0);
@@ -109,7 +84,7 @@ export class AdminCoachRepository {
                 sessions: sessionsByDay.get(day) ?? 0,
               })
             ),
-            email: coach.user.email ?? "No email",
+            email: coach.user?.email ?? "No email",
             phone: coach.phone ?? "No phone",
             summary:
               activeClients > 0

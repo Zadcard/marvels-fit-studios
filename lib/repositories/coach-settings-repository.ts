@@ -1,7 +1,8 @@
 import "server-only";
 
 import type { CoachSettingsRecord } from "@/lib/mocks/coach-settings";
-import { getPrisma, withPrismaFallback } from "@/lib/prisma";
+import { withSupabaseFallback } from "@/lib/supabase/errors";
+import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 function toCoachSpecializationLabel(
   specialization: "STRENGTH" | "CONDITIONING" | "MOBILITY" | "PRIVATE_COACHING"
@@ -19,40 +20,28 @@ function toCoachSpecializationLabel(
 }
 
 export class CoachSettingsRepository {
-  private get prisma() {
-    return getPrisma();
-  }
-
   async getByUserId(userId: string): Promise<CoachSettingsRecord | null> {
-    return withPrismaFallback(async () => {
-      const user = await this.prisma.user.findUnique({
-        where: { id: userId },
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          coachProfile: {
-            select: {
-              id: true,
-              fullName: true,
-              phone: true,
-              specialization: true,
-            },
-          },
-        },
-      });
+    return withSupabaseFallback(async () => {
+      const { data: user, error } = await getSupabaseServerClient()
+        .from("User")
+        .select("id,name,email,coachProfile:Coach(id,fullName,phone,specialization)")
+        .eq("id", userId)
+        .maybeSingle();
+      if (error) throw error;
 
-      if (!user?.coachProfile) {
+      const coachProfile = user?.coachProfile[0];
+
+      if (!coachProfile) {
         return null;
       }
 
       return {
-        fullName: user.coachProfile.fullName,
+        fullName: coachProfile.fullName,
         roleLabel: "Coach",
         email: user.email ?? "No email",
-        phone: user.coachProfile.phone ?? "No phone",
+        phone: coachProfile.phone ?? "No phone",
         bio: "Coach profile details are now persisted through your main account fields.",
-        specialization: toCoachSpecializationLabel(user.coachProfile.specialization),
+        specialization: toCoachSpecializationLabel(coachProfile.specialization),
         preferredView: "Sessions list",
         reminderLeadTime: "30 minutes",
         availabilityNote: "Availability is currently coordinated through assigned sessions and schedules.",

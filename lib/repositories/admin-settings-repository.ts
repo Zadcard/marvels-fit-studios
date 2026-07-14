@@ -1,7 +1,8 @@
 import "server-only";
 
 import type { AdminStudioSettings } from "@/lib/mocks/admin-settings";
-import { getPrisma, withPrismaFallback } from "@/lib/prisma";
+import { withSupabaseFallback } from "@/lib/supabase/errors";
+import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 const DEFAULT_SETTINGS_ID = "default";
 
@@ -19,33 +20,19 @@ const defaultSettings: AdminStudioSettings = {
 };
 
 export class AdminSettingsRepository {
-  private get prisma() {
-    return getPrisma();
-  }
-
   async get(): Promise<AdminStudioSettings> {
-    return withPrismaFallback(
-      () =>
-        this.prisma.studioSettings.upsert({
-          where: { id: DEFAULT_SETTINGS_ID },
-          create: {
-            id: DEFAULT_SETTINGS_ID,
-            ...defaultSettings,
-          },
-          update: {},
-          select: {
-            studioName: true,
-            supportEmail: true,
-            supportPhone: true,
-            timezone: true,
-            defaultSessionLength: true,
-            intakeLeadTime: true,
-            overbookWaitlist: true,
-            cancellationWindow: true,
-            privateSessionBuffer: true,
-            scheduleStartDay: true,
-          },
-        }),
+    return withSupabaseFallback(
+      async () => {
+        const { data, error } = await getSupabaseServerClient()
+          .from("StudioSettings")
+          .upsert({ id: DEFAULT_SETTINGS_ID, ...defaultSettings })
+          .select(
+            "studioName,supportEmail,supportPhone,timezone,defaultSessionLength,intakeLeadTime,overbookWaitlist,cancellationWindow,privateSessionBuffer,scheduleStartDay"
+          )
+          .single();
+        if (error) throw error;
+        return data;
+      },
       defaultSettings
     );
   }
