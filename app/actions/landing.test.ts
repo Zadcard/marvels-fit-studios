@@ -1,7 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@/lib/prisma", () => ({
-  getPrisma: vi.fn(),
+vi.mock("@/lib/leads/landing-lead-store", () => ({
+  landingLeadStore: {
+    listPendingCredentialMessages: vi.fn(),
+    phoneExists: vi.fn(),
+    create: vi.fn(),
+  },
 }));
 
 vi.mock("@/lib/services/client-id-generator", () => ({
@@ -18,15 +22,7 @@ vi.mock("@/lib/services/password-generator", () => ({
 }));
 
 describe("landing lead action", () => {
-  let prisma: {
-    user: { findFirst: ReturnType<typeof vi.fn> };
-    client: { findUnique: ReturnType<typeof vi.fn> };
-    lead: {
-      findFirst: ReturnType<typeof vi.fn>;
-      findMany: ReturnType<typeof vi.fn>;
-      create: ReturnType<typeof vi.fn>;
-    };
-  };
+  let leadStore: typeof import("@/lib/leads/landing-lead-store").landingLeadStore;
   let submitJoinNowLead: typeof import("@/app/actions/landing").submitJoinNowLead;
   let initialJoinNowState: typeof import("@/app/actions/join-now-types").initialJoinNowState;
   let clientIdGenerator: typeof import("@/lib/services/client-id-generator").clientIdGenerator;
@@ -34,21 +30,7 @@ describe("landing lead action", () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    prisma = {
-      user: {
-        findFirst: vi.fn(),
-      },
-      client: {
-        findUnique: vi.fn(),
-      },
-      lead: {
-        findFirst: vi.fn(),
-        findMany: vi.fn(),
-        create: vi.fn(),
-      },
-    };
-    const { getPrisma } = await import("@/lib/prisma");
-    vi.mocked(getPrisma).mockReturnValue(prisma as never);
+    leadStore = (await import("@/lib/leads/landing-lead-store")).landingLeadStore;
     clientIdGenerator = (await import("@/lib/services/client-id-generator"))
       .clientIdGenerator;
     passwordGenerator = (await import("@/lib/services/password-generator"))
@@ -58,10 +40,8 @@ describe("landing lead action", () => {
   });
 
   it("stores a lead with reserved credentials and waits for admin approval before account creation", async () => {
-    prisma.user.findFirst.mockResolvedValue(null);
-    prisma.client.findUnique.mockResolvedValue(null);
-    prisma.lead.findFirst.mockResolvedValue(null);
-    prisma.lead.findMany.mockResolvedValue([]);
+    vi.mocked(leadStore.phoneExists).mockResolvedValue({ client: false, lead: false });
+    vi.mocked(leadStore.listPendingCredentialMessages).mockResolvedValue([]);
     vi.mocked(clientIdGenerator.getNextAvailableSlot).mockResolvedValue({
       year: 2026,
       month: 5,
@@ -76,15 +56,15 @@ describe("landing lead action", () => {
 
     const result = await submitJoinNowLead(initialJoinNowState, formData);
 
-    expect(prisma.lead.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({
+    expect(leadStore.create).toHaveBeenCalledWith(
+      expect.objectContaining({
         fullName: "John Doe",
         phone: "+201012345678",
         message: "__join_credentials__:2605001",
         status: "NEW",
         source: "landing-join-now",
-      }),
-    });
+      })
+    );
     expect(result.status).toBe("success");
     expect(result.credentials).toEqual({
       clientId: "2605001",
@@ -95,10 +75,8 @@ describe("landing lead action", () => {
   });
 
   it("does not create duplicate pending leads", async () => {
-    prisma.user.findFirst.mockResolvedValue(null);
-    prisma.client.findUnique.mockResolvedValue(null);
-    prisma.lead.findFirst.mockResolvedValue({ id: "lead-1" });
-    prisma.lead.findMany.mockResolvedValue([]);
+    vi.mocked(leadStore.phoneExists).mockResolvedValue({ client: false, lead: true });
+    vi.mocked(leadStore.listPendingCredentialMessages).mockResolvedValue([]);
 
     const formData = new FormData();
     formData.set("name", "John Doe");
@@ -106,7 +84,7 @@ describe("landing lead action", () => {
 
     const result = await submitJoinNowLead(initialJoinNowState, formData);
 
-    expect(prisma.lead.create).not.toHaveBeenCalled();
+    expect(leadStore.create).not.toHaveBeenCalled();
     expect(result.status).toBe("error");
   });
 });

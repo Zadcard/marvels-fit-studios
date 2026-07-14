@@ -1,4 +1,4 @@
-import { getPrisma } from "@/lib/prisma";
+import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 export interface ClientIdGeneratorOptions {
   year?: number;
@@ -19,10 +19,24 @@ export interface NextClientIdSlot {
   clientNumber: number;
 }
 
+export type LatestClientIdFinder = (
+  prefix: string
+) => Promise<{ clientId: string | null } | null>;
+
+async function findLatestClientId(prefix: string) {
+  const { data, error } = await getSupabaseServerClient()
+    .from("User")
+    .select("clientId")
+    .like("clientId", `${prefix}%`)
+    .order("clientId", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
 export class ClientIdGenerator {
-  private get prisma() {
-    return getPrisma();
-  }
+  constructor(private readonly latestClientIdFinder: LatestClientIdFinder = findLatestClientId) {}
 
   private normalizeDateParts(month?: number, year?: number) {
     const now = new Date();
@@ -98,15 +112,7 @@ export class ClientIdGenerator {
     const monthStr = String(targetMonth).padStart(2, "0");
     const prefix = `${yearStr}${monthStr}`;
 
-    const latestClient = await this.prisma.user.findFirst({
-      where: {
-        clientId: {
-          startsWith: prefix,
-        },
-      },
-      orderBy: { clientId: "desc" },
-      select: { clientId: true },
-    });
+    const latestClient = await this.latestClientIdFinder(prefix);
 
     if (!latestClient?.clientId) {
       return 1;

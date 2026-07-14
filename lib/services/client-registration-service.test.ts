@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import * as bcryptjs from "bcryptjs";
 
-vi.mock("@/lib/prisma");
 vi.mock("bcryptjs");
 vi.mock("@/lib/services/client-id-generator");
 vi.mock("@/lib/services/password-generator");
@@ -35,9 +34,6 @@ describe("ClientRegistrationService", () => {
       $transaction: vi.fn((callback) => callback(mockTx)),
     };
 
-    const prismaModule = await import("@/lib/prisma");
-    vi.mocked(prismaModule.getPrisma).mockReturnValue(mockPrisma);
-
     vi.mocked(bcryptjs.hash).mockResolvedValue("hashed_password" as never);
 
     mockClientIdGenerator = {
@@ -63,7 +59,35 @@ describe("ClientRegistrationService", () => {
     const {
       ClientRegistrationService: Cls,
     } = await import("@/lib/services/client-registration-service");
-    service = new Cls();
+    service = new Cls({
+      register: (input: any) =>
+        mockPrisma.$transaction(async (tx: any) => {
+          const user = await tx.user.create({
+            data: {
+              name: input.fullName,
+              clientId: input.clientId,
+              email: input.email || null,
+              password: input.passwordHash,
+              mustChangePassword: true,
+              role: "CLIENT",
+            },
+            select: { id: true },
+          });
+          await tx.client.create({
+            data: {
+              userId: user.id,
+              fullName: input.fullName,
+              phone: input.phone,
+              groupId: input.groupId ?? null,
+              status: "ACTIVE",
+            },
+          });
+          return { userId: user.id, clientId: input.clientId };
+        }),
+      findClientByPhone: (phone: string) =>
+        mockPrisma.client.findUnique({ where: { phone } }),
+      findGroupByName: vi.fn(),
+    });
   });
 
   describe("registerClient", () => {

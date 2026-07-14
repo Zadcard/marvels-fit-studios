@@ -1,8 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { ClientIdGenerator } from "@/lib/services/client-id-generator";
-import * as prismaModule from "@/lib/prisma";
-
-vi.mock("@/lib/prisma");
 
 describe("ClientIdGenerator", () => {
   let generator: ClientIdGenerator;
@@ -14,8 +11,13 @@ describe("ClientIdGenerator", () => {
         findFirst: vi.fn(),
       },
     };
-    vi.mocked(prismaModule.getPrisma).mockReturnValue(mockPrisma);
-    generator = new ClientIdGenerator();
+    generator = new ClientIdGenerator(async (prefix) =>
+      mockPrisma.user.findFirst({
+        where: { clientId: { startsWith: prefix } },
+        orderBy: { clientId: "desc" },
+        select: { clientId: true },
+      })
+    );
   });
 
   describe("generateId", () => {

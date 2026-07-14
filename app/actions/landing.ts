@@ -4,7 +4,7 @@ import bcryptjs from "bcryptjs";
 import { z } from "zod";
 
 import { readLeadCredentialClientId, serializeLeadCredentialMetadata } from "@/lib/leads/lead-credential-metadata";
-import { getPrisma } from "@/lib/prisma";
+import { landingLeadStore } from "@/lib/leads/landing-lead-store";
 import { clientIdGenerator } from "@/lib/services/client-id-generator";
 import { passwordGenerator } from "@/lib/services/password-generator";
 import {
@@ -20,20 +20,7 @@ const joinNowSchema = z.object({
 });
 
 async function reserveNextClientId() {
-  const prisma = getPrisma();
-  const pendingLeads = await prisma.lead.findMany({
-    where: {
-      status: {
-        in: ["NEW", "CONTACTED"],
-      },
-      message: {
-        startsWith: "__join_credentials__:",
-      },
-    },
-    select: {
-      message: true,
-    },
-  });
+  const pendingLeads = await landingLeadStore.listPendingCredentialMessages();
 
   let slot = await clientIdGenerator.getNextAvailableSlot();
 
@@ -86,29 +73,14 @@ export async function submitJoinNowLead(
     };
   }
 
-  const prisma = getPrisma();
   const normalizedPhone = normalizePhoneNumber(parsed.data.phone);
   const reservedClientId = await reserveNextClientId();
   const temporaryPassword = passwordGenerator.generatePassword(reservedClientId);
   const passwordHash = await bcryptjs.hash(temporaryPassword, 12);
 
-  const [existingClient, existingLead] = await Promise.all([
-    prisma.client.findUnique({
-      where: { phone: normalizedPhone },
-      select: { id: true },
-    }),
-    prisma.lead.findFirst({
-      where: {
-        phone: normalizedPhone,
-        status: {
-          in: ["NEW", "CONTACTED"],
-        },
-      },
-      select: { id: true },
-    }),
-  ]);
+  const existing = await landingLeadStore.phoneExists(normalizedPhone);
 
-  if (existingClient) {
+  if (existing.client) {
     return {
       status: "error",
       message: "This phone number is already linked to an account.",
@@ -118,7 +90,7 @@ export async function submitJoinNowLead(
     };
   }
 
-  if (existingLead) {
+  if (existing.lead) {
     return {
       status: "error",
       message: "This phone number has already been submitted.",
@@ -128,8 +100,7 @@ export async function submitJoinNowLead(
     };
   }
 
-  await prisma.lead.create({
-    data: {
+  await landingLeadStore.create({
       fullName: parsed.data.name,
       phone: normalizedPhone,
       passwordHash,
@@ -137,7 +108,6 @@ export async function submitJoinNowLead(
       consentAccepted: true,
       source: "landing-join-now",
       status: "NEW",
-    },
   });
 
   return {
