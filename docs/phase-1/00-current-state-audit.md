@@ -38,7 +38,7 @@ The UI generally calls Server Actions or server-side repositories. Database acce
 
 ## Current database architecture
 
-The Prisma schema contains 18 models and 12 enums. The main domains are:
+The Prisma schema contains 19 models and 12 enums. The main domains are:
 
 - Auth and identity: `User`, `Account`, `Session`, `VerificationToken`.
 - Studio configuration: `StudioSettings`.
@@ -50,7 +50,7 @@ The Prisma schema contains 18 models and 12 enums. The main domains are:
 
 The migration history preserves primary keys, unique constraints, indexes, foreign keys, enum types, defaults, and delete/update behavior. Later migrations remove the obsolete recurring `ScheduleBlock` domain and add file/note lifecycle fields.
 
-Prisma usage is extensive: 61 non-test application/script files directly import Prisma types/client access, with additional tests and CI coupling. Auth.js also uses `@auth/prisma-adapter`. An unverified all-at-once rewrite would put authentication, transactions, nested relation queries, file downloads, and all three dashboards at risk.
+Prisma usage is extensive: 71 non-test application/script files directly import Prisma types/client access, with additional tests and CI coupling. Auth.js also uses `@auth/prisma-adapter`. An unverified all-at-once rewrite would put authentication, transactions, nested relation queries, file downloads, and all three dashboards at risk.
 
 ## Authentication and authorization
 
@@ -100,7 +100,7 @@ No tracked `.env` files, service-role keys, GitHub tokens, private keys, or Open
 ## Risks and findings before modification
 
 1. **High - vulnerable framework patch.** Production dependency audit reports patched vulnerabilities affecting Next.js 16.2.4, including proxy bypass and denial-of-service advisories. Upgrade to a patched 16.2.x release without changing framework architecture.
-2. **High - migration blast radius.** Prisma appears in 61 non-test files and supplies generated enums/types, nested relational queries, and transactions. Removing it without staged behavioral coverage risks broad regressions.
+2. **High - migration blast radius.** Prisma appears in 71 non-test files and supplies generated enums/types, nested relational queries, and transactions. Removing it without staged behavioral coverage risks broad regressions.
 3. **High - remote data safety.** The Supabase project is healthy but not CLI-linked, and no Supabase database password/direct connection variable was found by name. No remote migration should run before backup/export and target confirmation.
 4. **Medium - schema history contains difficult legacy transitions.** Early Prisma migrations include required-column changes and a later removal of schedule-block tables. Replaying all historical migrations directly is less reliable than a consolidated, idempotent Supabase baseline representing the final schema.
 5. **Medium - authorization remains application-managed.** Auth.js credentials/JWT sessions do not map to Supabase Auth users. Browser database access would therefore lack a trustworthy Supabase user JWT. Phase 1 should keep application data access server-only and deny public PostgREST access by default.
@@ -109,4 +109,3 @@ No tracked `.env` files, service-role keys, GitHub tokens, private keys, or Open
 8. **Medium - dependency audit.** The production audit reports 13 vulnerabilities (3 high, 9 moderate, 1 low). Several are transitive through Prisma tooling; the direct Next.js issue is patchable. Remaining findings need reassessment after dependency changes.
 9. **Low - Node mismatch on this machine.** System Node 25 is unsupported; use Node 22 (preferred) or another version below 25.
 10. **Low - broken local skill-directory links.** Git commands warn that two `.claude/skills/` entries point to missing locations. They are tooling artifacts and not application runtime code.
-

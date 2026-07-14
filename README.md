@@ -1,139 +1,66 @@
 # Marvel Fit Studios
 
-This project is currently set up for local development only.
+Next.js 16 application for the Marvel Fit Studios admin, coach, and client portals.
 
-- Database: Neon Postgres
-- App stack: Next.js + NextAuth/Auth.js + Prisma
+## Phase 1 database status
 
-## Navigation For Humans
+- Destination: Supabase Postgres project `marvels-fit-studios`.
+- Version-controlled schema: `supabase/migrations/`.
+- Authentication: Auth.js credentials with JWT sessions; Supabase Auth is intentionally disabled for signups.
+- Security: application tables have RLS enabled and no browser-role policies. Runtime access is server-only.
+- Compatibility: Prisma still powers existing repositories/services while Neon data export and behavioral migration are pending. The unnecessary Auth.js Prisma adapter has been removed.
+- Source safety: Neon has not been deleted or modified.
 
-If you feel lost finding the right file for a change, start here:
+See [`docs/phase-1/`](./docs/phase-1/) for the audit, migration guide, environment setup, deployment workflow, handoff, and verification report.
 
-- [`docs/WHERE_TO_EDIT.md`](./docs/WHERE_TO_EDIT.md)
+## Requirements
 
-## Required Environment Variables
+- Node 22 (`.nvmrc`)
+- npm
+- Docker Desktop for the full local Supabase stack
+- Supabase CLI (installed as a dev dependency)
 
-Set these in your local `.env`:
-
-```bash
-DATABASE_URL="postgresql://..."
-DIRECT_URL="postgresql://..."
-AUTH_SECRET="replace-with-a-long-random-secret"
-APP_URL="http://localhost:3000"
-```
-
-Notes:
-
-- `DATABASE_URL` should be your pooled Neon connection string using the `-pooler` host and `sslmode=require`.
-- `DIRECT_URL` should be your direct Neon connection string without the `-pooler` host. Prisma CLI operations use this when present; the app runtime continues to use `DATABASE_URL`.
-- `AUTH_SECRET` is required for Auth.js session security.
-- `APP_URL` is used as the metadata base URL locally. If omitted, the app falls back to `http://localhost:3000`.
-- `AUTH_URL` or `NEXTAUTH_URL` is not required by default because host detection is handled through Auth.js with `trustHost: true`.
-
-## Local Setup
-
-Use Node `22` from [`.nvmrc`](./.nvmrc).
+## Local setup
 
 ```bash
 nvm use
-npm install
-npx prisma generate
-npx prisma migrate deploy
-npm run build
+npm ci
+copy .env.example .env.local
+npm run supabase:start
+npm run supabase:reset
 npm run dev
 ```
 
-Open `http://localhost:3000`.
+Fill `.env.local` with development values only. Never commit real secrets. Until data migration is complete, `DATABASE_URL` and `DIRECT_URL` are the temporary Prisma compatibility connections and should point to the development Supabase project—not production.
 
-## Optional Seed Data
-
-If you want demo users in your database:
+## Validation
 
 ```bash
-npx prisma db seed
+npm run verify
+npm run test:e2e
+npm run supabase:migrations
+npm run supabase:lint
+npm run supabase:validate
 ```
 
-## Promote Leads To Clients
+`npm run verify` runs ESLint, TypeScript, Vitest, and the production build. The E2E suite starts the app and checks the landing/login/invalid-credentials flows.
 
-If a person signed up through `Join Now`, they are stored in `Lead` and cannot log in until they are promoted into a real `User` + `Client`.
+## Database workflow
 
-Use the bulk promotion script:
+Create migrations locally rather than editing hosted tables in the dashboard:
 
 ```bash
-npm run promote:leads -- --all
+npx supabase migration new descriptive_name
+npm run supabase:reset
+npm run supabase:types
+npm run verify
 ```
 
-To preview changes without writing anything:
+Review schema changes, open a pull request, and apply them to the development project before production. Production migration commands and rollback rules are documented in [`docs/phase-1/02-supabase-migration.md`](./docs/phase-1/02-supabase-migration.md).
 
-```bash
-npm run promote:leads -- --all --dry-run
-```
+## Important boundaries
 
-To convert a single lead by email:
-
-```bash
-npm run promote:leads -- --email user@example.com
-```
-
-What the script does:
-
-- creates a `User` if one does not exist
-- reuses the lead password hash for credentials login
-- creates a linked `Client` profile
-- marks the `Lead` as `CONVERTED`
-
-Seeded demo accounts:
-
-- `admin@test.com`
-- `coach@test.com`
-- `client@test.com`
-
-Password for all seeded demo users:
-
-```bash
-password123
-```
-
-## Database Workflow
-
-After schema changes, run:
-
-```bash
-npx prisma migrate deploy
-```
-
-The project build already runs `prisma generate` automatically through `prebuild`.
-
-## Current Database Domains
-
-The schema now covers:
-
-- Auth and users
-- Landing leads
-- Coaches, clients, groups, payments, files, and workout notes
-- Training sessions and session bookings
-- Subscription plans and client subscriptions
-
-The new session and subscription tables are introduced by the migration at
-`prisma/migrations/20260408103000_add_session_and_subscription_domain/`.
-
-If you want demo data for the new domain tables, run:
-
-```bash
-npx prisma db seed
-```
-
-## Verification Checklist
-
-Run these before pushing a deployment change:
-
-```bash
-npx prisma generate
-npm run build
-```
-
-Then verify the login flow and role redirects for:
-
-- admin -> `/admin`
-- coach -> `/coach`
-- client -> `/client`
+- Never put `SUPABASE_SERVICE_ROLE_KEY`, database URLs, passwords, or Auth.js secrets in client code.
+- Do not add browser table policies while identity is managed by Auth.js unless a verified JWT/RLS design is approved.
+- Do not remove Neon until Supabase data counts, integrity checks, application queries, and role flows all pass and removal is explicitly approved.
+- Do not remove Prisma until repository scans reach zero and transaction/auth behavior has equivalent coverage.

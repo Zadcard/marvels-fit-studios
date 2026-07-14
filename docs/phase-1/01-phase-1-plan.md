@@ -17,7 +17,7 @@ Use a staged server-only migration.
 
 ### A. All-at-once Prisma-to-PostgREST rewrite
 
-This would satisfy the desired end state immediately, but it would require translating nested queries and transactions across 61 non-test files plus authentication and operational scripts. Existing tests mock Prisma shapes, so passing tests could conceal relational or transactional differences. Rejected as too risky for a behavior-preserving cleanup phase.
+This would satisfy the desired end state immediately, but it would require translating nested queries and transactions across 71 non-test files plus authentication and operational scripts. Existing tests mock Prisma shapes, so passing tests could conceal relational or transactional differences. Rejected as too risky for a behavior-preserving cleanup phase.
 
 ### B. Point Prisma at Supabase and stop
 
@@ -34,21 +34,21 @@ Establish the reproducible Supabase schema, security posture, server client, mig
 | Protect Git baseline and create branch | Complete | Pre-existing untracked tooling directories preserved. |
 | Repository and dependency audit | Complete | Baseline documented in `00-current-state-audit.md`. |
 | Baseline lint/type/test/build | Complete | All pass after Prisma client generation. |
-| Patch vulnerable direct dependencies | In progress | Upgrade only patched compatible releases. |
-| Supabase CLI scaffold | Pending | Add config, migrations, seed, and scripts. |
-| Consolidated final schema | Pending | Derived from final Prisma schema plus migration-only constraints. |
-| RLS and grants | Pending | Deny public access because app auth is not Supabase Auth. |
-| Generated database types | Pending | Generate locally or provide deterministic checked-in equivalent pending link credentials. |
-| Server Supabase boundary | Pending | Server-only, typed, no service role in browser code. |
-| Neon export and validation tooling | Pending | Read-only inventory first; no remote writes without backup. |
-| Supabase link and remote schema migration | Blocked | Requires verified database credentials/backup; target project ref is known. |
+| Patch vulnerable direct dependencies | Complete | Next.js 16.2.10; five moderate transitive issues remain without safe non-breaking fixes. |
+| Supabase CLI scaffold | Complete | Config, migrations, seed, scripts, and validation SQL added. |
+| Consolidated final schema | Complete | Generated from final Prisma schema and applied to hosted development. |
+| RLS and grants | Complete | All application tables deny browser roles and allow server role. |
+| Generated database types | Complete | Generated from linked hosted schema. |
+| Server Supabase boundary | Complete | Typed server/browser factories and sanitized errors added. |
+| Neon export and validation tooling | Blocked | Commands prepared; local source URL is an invalid placeholder. |
+| Supabase link and remote schema migration | Complete | Target empty before push; two local/remote migrations aligned. |
 | Remote data migration | Blocked | Must remain separate from schema migration and require a rollback-safe export. |
-| Prisma data-access replacement | Pending | Migrate only paths with adequate behavioral verification. |
-| Prisma/Neon dependency removal | Pending | Remove only after usage reaches zero; otherwise document bounded blocker. |
-| Environment and README updates | Pending | Add `.env.example` and exact setup. |
-| Preview deployment workflow | Pending | Repository-side workflow/docs only; production untouched. |
-| Playwright and manual smoke testing | Pending | Run after architecture changes. |
-| Final verification/handoff | Pending | Complete all Phase 1 reports. |
+| Prisma data-access replacement | Blocked | Auth adapter removed; remaining paths need migrated data and live behavior checks. |
+| Prisma/Neon dependency removal | Blocked | Source data/runtime cutover unavailable; compatibility layer documented. |
+| Environment and README updates | Complete | Template and exact setup added. |
+| Preview deployment workflow | Complete | Repository-side workflow documented; production untouched. |
+| Playwright and manual smoke testing | Partially complete | 3/3 browser tests pass; valid role/database flows blocked. |
+| Final verification/handoff | Complete | Reports and manual actions documented. |
 
 ## Migration sequence
 
@@ -79,4 +79,3 @@ Establish the reproducible Supabase schema, security posture, server client, mig
 - Use a separate preview/development Supabase project; do not point preview builds at production data.
 - Revert application environment variables to the Neon URLs if the Supabase compatibility stage fails.
 - Do not remove Prisma schema/history until all Prisma usage is zero and a clean build/test/database validation passes.
-
