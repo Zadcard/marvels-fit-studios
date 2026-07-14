@@ -13,8 +13,8 @@ import {
   type ClientSubscriptionRecord,
   type ClientUpcomingSession,
 } from "@/lib/dashboard/client-dashboard-data";
-import { isMissingCustomPriceColumn } from "@/lib/custom-price-compat";
-import { getPrisma, withPrismaFallback } from "@/lib/prisma";
+import { withSupabaseFallback } from "@/lib/supabase/errors";
+import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
   month: "short",
@@ -89,8 +89,12 @@ function inferPreferredSessionTime(startsAtValues: Date[]) {
     return "Flexible";
   }
 
-  const eveningCount = startsAtValues.filter((value) => value.getHours() >= 15).length;
-  const morningCount = startsAtValues.filter((value) => value.getHours() < 12).length;
+  const eveningCount = startsAtValues.filter(
+    (value) => value.getHours() >= 15,
+  ).length;
+  const morningCount = startsAtValues.filter(
+    (value) => value.getHours() < 12,
+  ).length;
 
   if (eveningCount > morningCount) {
     return "Evenings";
@@ -105,32 +109,6 @@ function inferPreferredSessionTime(startsAtValues: Date[]) {
 
 const defaultClientGoal =
   "Build steady strength and improve movement confidence.";
-
-function isUnknownPrismaField(error: unknown, fieldName: string) {
-  const message = error instanceof Error ? error.message : String(error);
-
-  return (
-    message.includes(`Unknown field \`${fieldName}\``) ||
-    message.includes(`Unknown argument \`${fieldName}\``) ||
-    message.includes(`${fieldName}`)
-  );
-}
-
-function isMissingPreferencesRelation(error: unknown) {
-  return isUnknownPrismaField(error, "preferences");
-}
-
-function isMissingFileAssetColumn(error: unknown) {
-  return ["expiresAt", "deletedAt", "note", "data", "uploadedById"].some((field) =>
-    isUnknownPrismaField(error, field)
-  );
-}
-
-function isMissingWorkoutNotePrivacyColumn(error: unknown) {
-  return ["isPrivate", "authorId", "updatedAt"].some((field) =>
-    isUnknownPrismaField(error, field)
-  );
-}
 
 function inferPaymentStatus(subscription: {
   status: string;
@@ -147,7 +125,11 @@ function inferPaymentStatus(subscription: {
     return "Paused";
   }
 
-  if (subscription.status === "ACTIVE" && latestPayment && subscription.renewsAt) {
+  if (
+    subscription.status === "ACTIVE" &&
+    latestPayment &&
+    subscription.renewsAt
+  ) {
     const activeWindowStart = new Date(subscription.renewsAt);
     activeWindowStart.setUTCDate(activeWindowStart.getUTCDate() - 45);
 
@@ -170,7 +152,9 @@ function buildBenefits(subscription: {
   const benefits: string[] = [];
 
   if (subscription.plan.sessionsIncluded) {
-    benefits.push(`${subscription.plan.sessionsIncluded} sessions included each cycle`);
+    benefits.push(
+      `${subscription.plan.sessionsIncluded} sessions included each cycle`,
+    );
   }
 
   if (subscription.plan.description) {
@@ -178,13 +162,17 @@ function buildBenefits(subscription: {
   }
 
   benefits.push(
-    subscription.isAutoRenew ? "Auto-renew is enabled" : "Auto-renew is currently off"
+    subscription.isAutoRenew
+      ? "Auto-renew is enabled"
+      : "Auto-renew is currently off",
   );
 
   return benefits;
 }
 
-type ClientDashboardQuery = Awaited<ReturnType<ClientDashboardRepository["getClientDashboardQuery"]>>;
+type ClientDashboardQuery = Awaited<
+  ReturnType<ClientDashboardRepository["getClientDashboardQuery"]>
+>;
 
 type ClientDashboardSessionEntry = {
   id: string;
@@ -198,7 +186,8 @@ type ClientDashboardSessionEntry = {
   coachEmail: string | null;
   coachPhone: string | null;
   coachSpecialization: string | null;
-  bookingStatus: "BOOKED" | "ATTENDED" | "MISSED" | "CANCELED" | "WAITLIST" | null;
+  bookingStatus:
+    "BOOKED" | "ATTENDED" | "MISSED" | "CANCELED" | "WAITLIST" | null;
   attendedAt: Date | null;
 };
 
@@ -212,7 +201,7 @@ type ClientPrimaryCoach = {
 
 function resolvePrimaryCoach(
   client: NonNullable<ClientDashboardQuery>,
-  visibleSessions: ClientDashboardSessionEntry[]
+  visibleSessions: ClientDashboardSessionEntry[],
 ): ClientPrimaryCoach {
   const sessionCoach =
     visibleSessions.find(isUpcomingVisibleSession) ?? visibleSessions[0];
@@ -224,7 +213,9 @@ function resolvePrimaryCoach(
       phone: sessionCoach.coachPhone ?? "Not available",
       specialization:
         sessionCoach.coachSpecialization ??
-        (sessionCoach.type === "PRIVATE" ? "Private Coaching" : "Coaching support"),
+        (sessionCoach.type === "PRIVATE"
+          ? "Private Coaching"
+          : "Coaching support"),
       bio: `Assigned through ${sessionCoach.title}.`,
     };
   }
@@ -249,7 +240,7 @@ function resolvePrimaryCoach(
 }
 
 function buildClientSessionEntries(
-  client: NonNullable<ClientDashboardQuery>
+  client: NonNullable<ClientDashboardQuery>,
 ): ClientDashboardSessionEntry[] {
   const sessionMap = new Map<string, ClientDashboardSessionEntry>();
 
@@ -298,7 +289,7 @@ function buildClientSessionEntries(
   }
 
   return [...sessionMap.values()].sort(
-    (left, right) => left.startsAt.getTime() - right.startsAt.getTime()
+    (left, right) => left.startsAt.getTime() - right.startsAt.getTime(),
   );
 }
 
@@ -336,7 +327,7 @@ function mapClientFiles(client: {
     [...(client.files ?? []), ...(client.group?.files ?? [])].map((file) => [
       file.id,
       file,
-    ])
+    ]),
   );
 
   return [...filesById.values()].map((file) => ({
@@ -365,558 +356,376 @@ function mapClientPrivateNotes(client: {
 }
 
 export class ClientDashboardRepository {
-  private get prisma() {
-    return getPrisma();
-  }
-
-  private async getClientDashboardQueryWithShape(
-    userId: string,
-    includeCustomPrice: boolean,
-    includePreferences: boolean,
-    includeFiles: boolean,
-    includePrivateNotes: boolean
-  ) {
-    return this.prisma.client.findUnique({
-      where: { userId },
-      select: {
-        id: true,
-        fullName: true,
-        phone: true,
-        membershipType: true,
-        sessionsLeft: true,
-        isPaid: true,
-        createdAt: true,
-        ...(includePreferences
-          ? {
-              preferences: {
-                select: {
-                  goalLabel: true,
-                  preferredSessionTime: true,
-                },
-              },
-            }
-          : {}),
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-        group: {
-          select: {
-            name: true,
-            ...(includeFiles
-              ? {
-                  files: {
-                    where: {
-                      deletedAt: null,
-                      expiresAt: {
-                        gt: new Date(),
-                      },
-                    },
-                    orderBy: [{ createdAt: "desc" }],
-                    select: {
-                      id: true,
-                      name: true,
-                      note: true,
-                      createdAt: true,
-                      expiresAt: true,
-                    },
-                  },
-                }
-              : {}),
-            coach: {
-              select: {
-                fullName: true,
-                phone: true,
-                user: {
-                  select: {
-                    email: true,
-                  },
-                },
-              },
-            },
-            trainingSessions: {
-              where: {
-                status: {
-                  in: ["SCHEDULED", "COMPLETED"],
-                },
-              },
-              orderBy: [{ startsAt: "asc" }],
-              select: {
-                id: true,
-                title: true,
-                type: true,
-                startsAt: true,
-                endsAt: true,
-                location: true,
-                description: true,
-                coach: {
-                  select: {
-                    fullName: true,
-                    phone: true,
-                    user: {
-                      select: {
-                        email: true,
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-        subscriptions: {
-          orderBy: [{ updatedAt: "desc" }, { startsAt: "desc" }],
-          take: 1,
-          select: {
-            status: true,
-            startsAt: true,
-            endsAt: true,
-            renewsAt: true,
-            updatedAt: true,
-            ...(includeCustomPrice ? { customPrice: true } : {}),
-            sessionsTotal: true,
-            sessionsUsed: true,
-            isAutoRenew: true,
-            payments: {
-              orderBy: [{ date: "desc" }],
-              take: 3,
-              select: {
-                amount: true,
-                currency: true,
-                date: true,
-              },
-            },
-            plan: {
-              select: {
-                name: true,
-                description: true,
-                billingCycle: true,
-                sessionsIncluded: true,
-                price: true,
-                currency: true,
-              },
-            },
-          },
-        },
-        bookings: {
-          where: {
-            status: {
-              in: ["BOOKED", "ATTENDED", "MISSED", "CANCELED", "WAITLIST"],
-            },
-            trainingSession: {
-              status: {
-                in: ["SCHEDULED", "COMPLETED"],
-              },
-            },
-          },
-          orderBy: [{ trainingSession: { startsAt: "asc" } }],
-          select: {
-            status: true,
-            attendedAt: true,
-            updatedAt: true,
-            trainingSession: {
-              select: {
-                id: true,
-                title: true,
-                type: true,
-                startsAt: true,
-                endsAt: true,
-                location: true,
-                description: true,
-                coach: {
-                  select: {
-                    fullName: true,
-                    phone: true,
-                    user: {
-                      select: {
-                        email: true,
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-        ...(includeFiles
-          ? {
-              files: {
-                where: {
-                  deletedAt: null,
-                  expiresAt: {
-                    gt: new Date(),
-                  },
-                },
-                orderBy: [{ createdAt: "desc" }],
-                select: {
-                  id: true,
-                  name: true,
-                  note: true,
-                  createdAt: true,
-                  expiresAt: true,
-                },
-              },
-            }
-          : {}),
-        ...(includePrivateNotes
-          ? {
-              workoutNotes: {
-                where: {
-                  isPrivate: true,
-                  authorId: userId,
-                },
-                orderBy: [{ updatedAt: "desc" }, { date: "desc" }],
-                select: {
-                  id: true,
-                  content: true,
-                  date: true,
-                  updatedAt: true,
-                },
-              },
-            }
-          : {}),
-      },
-    });
-  }
-
   private async getClientDashboardQuery(userId: string) {
-    const shapes = [true, false].flatMap((includeCustomPrice) =>
-      [true, false].flatMap((includePreferences) =>
-        [true, false].flatMap((includeFiles) =>
-          [true, false].map((includePrivateNotes) => ({
-            includeCustomPrice,
-            includePreferences,
-            includeFiles,
-            includePrivateNotes,
-          }))
-        )
+    const supabase = getSupabaseServerClient();
+    const { data, error } = await supabase
+      .from("Client")
+      .select(
+        `
+        id, fullName, phone, membershipType, sessionsLeft, isPaid, createdAt,
+        preferences:ClientPreferences(goalLabel, preferredSessionTime),
+        user:User(id, name, email),
+        group:Group(name,
+          files:File(id, name, note, createdAt, expiresAt, deletedAt),
+          coach:Coach(fullName, phone, user:User(email)),
+          trainingSessions:TrainingSession(id, title, type, status, startsAt,
+            endsAt, location, description,
+            coach:Coach(fullName, phone, user:User(email)))),
+        subscriptions:ClientSubscription(id, status, startsAt, endsAt, renewsAt,
+          updatedAt, customPrice, sessionsTotal, sessionsUsed, isAutoRenew,
+          payments:Payment(id, amount, currency, date, note, createdAt),
+          plan:SubscriptionPlan(name, description, billingCycle,
+            sessionsIncluded, price, currency)),
+        bookings:SessionBooking(status, attendedAt, updatedAt,
+          trainingSession:TrainingSession(id, title, type, status, startsAt,
+            endsAt, location, description,
+            coach:Coach(fullName, phone, user:User(email)))),
+        files:File(id, name, note, createdAt, expiresAt, deletedAt),
+        workoutNotes:WorkoutNote(id, content, date, updatedAt, isPrivate, authorId)
+      `,
       )
-    );
-    let lastShapeError: unknown;
+      .eq("userId", userId)
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) return null;
 
-    for (const shape of shapes) {
-      try {
-        return await this.getClientDashboardQueryWithShape(
-          userId,
-          shape.includeCustomPrice,
-          shape.includePreferences,
-          shape.includeFiles,
-          shape.includePrivateNotes
-        );
-      } catch (error) {
-        if (
-          isMissingCustomPriceColumn(error) ||
-          isMissingPreferencesRelation(error) ||
-          isMissingFileAssetColumn(error) ||
-          isMissingWorkoutNotePrivacyColumn(error)
-        ) {
-          lastShapeError = error;
-          continue;
-        }
-
-        throw error;
-      }
-    }
-
-    throw lastShapeError;
-  }
-
-  private async getSubscriptionWithShape(
-    clientId: string,
-    includeCustomPrice: boolean
-  ) {
-    return this.prisma.clientSubscription.findFirst({
-      where: {
-        clientId,
-      },
-      orderBy: [{ updatedAt: "desc" }, { startsAt: "desc" }],
-      select: {
-        id: true,
-        status: true,
-        startsAt: true,
-        endsAt: true,
-        renewsAt: true,
-        ...(includeCustomPrice ? { customPrice: true } : {}),
-        sessionsTotal: true,
-        sessionsUsed: true,
-        isAutoRenew: true,
-        plan: {
-          select: {
-            name: true,
-            description: true,
-            billingCycle: true,
-            sessionsIncluded: true,
-            price: true,
-            currency: true,
-          },
-        },
-      },
+    const now = Date.now();
+    const normalizeFile = (file: (typeof data.files)[number]) => ({
+      ...file,
+      createdAt: new Date(file.createdAt),
+      expiresAt: new Date(file.expiresAt),
     });
-  }
+    const normalizeSession = (
+      session: (typeof data.bookings)[number]["trainingSession"],
+    ) => ({
+      ...session,
+      startsAt: new Date(session.startsAt),
+      endsAt: new Date(session.endsAt),
+    });
 
-  private async getSubscriptionRecord(clientId: string) {
-    try {
-      return await this.getSubscriptionWithShape(clientId, true);
-    } catch (error) {
-      if (isMissingCustomPriceColumn(error)) {
-        return this.getSubscriptionWithShape(clientId, false);
-      }
-
-      throw error;
-    }
+    return {
+      ...data,
+      createdAt: new Date(data.createdAt),
+      preferences: data.preferences[0] ?? null,
+      files: data.files
+        .filter(
+          (file) => !file.deletedAt && new Date(file.expiresAt).getTime() > now,
+        )
+        .sort((left, right) => right.createdAt.localeCompare(left.createdAt))
+        .map(normalizeFile),
+      workoutNotes: data.workoutNotes
+        .filter((note) => note.isPrivate && note.authorId === userId)
+        .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))
+        .map((note) => ({
+          ...note,
+          date: new Date(note.date),
+          updatedAt: new Date(note.updatedAt),
+        })),
+      subscriptions: data.subscriptions
+        .sort(
+          (left, right) =>
+            right.updatedAt.localeCompare(left.updatedAt) ||
+            right.startsAt.localeCompare(left.startsAt),
+        )
+        .slice(0, 1)
+        .map((subscription) => ({
+          ...subscription,
+          startsAt: new Date(subscription.startsAt),
+          endsAt: subscription.endsAt ? new Date(subscription.endsAt) : null,
+          renewsAt: subscription.renewsAt
+            ? new Date(subscription.renewsAt)
+            : null,
+          updatedAt: new Date(subscription.updatedAt),
+          payments: subscription.payments
+            .sort((left, right) => right.date.localeCompare(left.date))
+            .map((payment) => ({ ...payment, date: new Date(payment.date) })),
+        })),
+      bookings: data.bookings
+        .filter((booking) =>
+          ["SCHEDULED", "COMPLETED"].includes(booking.trainingSession.status),
+        )
+        .map((booking) => ({
+          ...booking,
+          attendedAt: booking.attendedAt ? new Date(booking.attendedAt) : null,
+          updatedAt: new Date(booking.updatedAt),
+          trainingSession: normalizeSession(booking.trainingSession),
+        }))
+        .sort(
+          (left, right) =>
+            left.trainingSession.startsAt.getTime() -
+            right.trainingSession.startsAt.getTime(),
+        ),
+      group: data.group
+        ? {
+            ...data.group,
+            files: data.group.files
+              .filter(
+                (file) =>
+                  !file.deletedAt && new Date(file.expiresAt).getTime() > now,
+              )
+              .sort((left, right) =>
+                right.createdAt.localeCompare(left.createdAt),
+              )
+              .map(normalizeFile),
+            trainingSessions: data.group.trainingSessions
+              .filter((session) =>
+                ["SCHEDULED", "COMPLETED"].includes(session.status),
+              )
+              .map(normalizeSession)
+              .sort(
+                (left, right) =>
+                  left.startsAt.getTime() - right.startsAt.getTime(),
+              ),
+          }
+        : null,
+    };
   }
 
   async getOverview(userId: string): Promise<ClientOverviewData | null> {
-    return withPrismaFallback(async () => {
+    return withSupabaseFallback(async () => {
       const client = await this.getClientDashboardQuery(userId);
 
       if (!client) {
         return null;
       }
 
-    const sessionEntries = buildClientSessionEntries(client);
-    const upcomingBookings = sessionEntries.filter(isUpcomingVisibleSession);
-    const completedBookings = sessionEntries.filter(isAttendedSession);
-    const activeSubscription = client.subscriptions[0] ?? null;
-    const primaryCoach = resolvePrimaryCoach(client, sessionEntries);
-    const activeFiles = mapClientFiles(client);
-    const privateNotes = mapClientPrivateNotes(client);
+      const sessionEntries = buildClientSessionEntries(client);
+      const upcomingBookings = sessionEntries.filter(isUpcomingVisibleSession);
+      const completedBookings = sessionEntries.filter(isAttendedSession);
+      const activeSubscription = client.subscriptions[0] ?? null;
+      const primaryCoach = resolvePrimaryCoach(client, sessionEntries);
+      const activeFiles = mapClientFiles(client);
+      const privateNotes = mapClientPrivateNotes(client);
 
-    const upcomingSessions: ClientUpcomingSession[] = upcomingBookings.slice(0, 3).map((booking) => ({
-      id: booking.id,
-      title: booking.title,
-      dayLabel: getDayLabel(booking.startsAt),
-      timeLabel: formatTime(booking.startsAt),
-      sessionType: booking.type === "PRIVATE" ? "Private" : "Group",
-      location: booking.location ?? "Studio floor",
-      coachName: booking.coachName,
-      status:
-        booking.bookingStatus === "WAITLIST"
-          ? "Waitlist"
-          : booking.startsAt.getTime() - Date.now() <= 24 * 60 * 60 * 1000
-            ? "Check-in ready"
-            : "Booked",
-    }));
+      const upcomingSessions: ClientUpcomingSession[] = upcomingBookings
+        .slice(0, 3)
+        .map((booking) => ({
+          id: booking.id,
+          title: booking.title,
+          dayLabel: getDayLabel(booking.startsAt),
+          timeLabel: formatTime(booking.startsAt),
+          sessionType: booking.type === "PRIVATE" ? "Private" : "Group",
+          location: booking.location ?? "Studio floor",
+          coachName: booking.coachName,
+          status:
+            booking.bookingStatus === "WAITLIST"
+              ? "Waitlist"
+              : booking.startsAt.getTime() - Date.now() <= 24 * 60 * 60 * 1000
+                ? "Check-in ready"
+                : "Booked",
+        }));
 
-    const recentActivity: DashboardActivityFeedItem[] = [];
+      const recentActivity: DashboardActivityFeedItem[] = [];
 
-    if (activeSubscription?.payments[0]) {
-      recentActivity.push({
-        id: "client-activity-payment",
-        title: "Payment recorded",
-        description: `${activeSubscription.payments[0].currency} ${activeSubscription.payments[0].amount.toFixed(0)} captured for your current plan.`,
-        timeLabel: formatDate(activeSubscription.payments[0].date),
-        tone: "neutral",
-      });
-    }
+      if (activeSubscription?.payments[0]) {
+        recentActivity.push({
+          id: "client-activity-payment",
+          title: "Payment recorded",
+          description: `${activeSubscription.payments[0].currency} ${activeSubscription.payments[0].amount.toFixed(0)} captured for your current plan.`,
+          timeLabel: formatDate(activeSubscription.payments[0].date),
+          tone: "neutral",
+        });
+      }
 
-    if (upcomingBookings[0]) {
-      recentActivity.push({
-        id: "client-activity-booking",
-        title: "Next session confirmed",
-        description: `${upcomingBookings[0].title} is booked with ${upcomingBookings[0].coachName}.`,
-        timeLabel: formatDate(upcomingBookings[0].startsAt),
-        tone: "warning",
-      });
-    }
+      if (upcomingBookings[0]) {
+        recentActivity.push({
+          id: "client-activity-booking",
+          title: "Next session confirmed",
+          description: `${upcomingBookings[0].title} is booked with ${upcomingBookings[0].coachName}.`,
+          timeLabel: formatDate(upcomingBookings[0].startsAt),
+          tone: "warning",
+        });
+      }
 
-    if (activeFiles.length > 0) {
-      recentActivity.unshift({
-        id: "client-activity-files",
-        title: `${activeFiles.length} file${activeFiles.length === 1 ? "" : "s"} available`,
-        description: "Your coach uploaded downloadable files for your training.",
-        timeLabel: activeFiles[0].uploadedAtLabel,
-        tone: "neutral",
-      });
-    }
+      if (activeFiles.length > 0) {
+        recentActivity.unshift({
+          id: "client-activity-files",
+          title: `${activeFiles.length} file${activeFiles.length === 1 ? "" : "s"} available`,
+          description:
+            "Your coach uploaded downloadable files for your training.",
+          timeLabel: activeFiles[0].uploadedAtLabel,
+          tone: "neutral",
+        });
+      }
 
-    const nextTouchpoint = upcomingBookings[0]
-      ? formatDateTime(upcomingBookings[0].startsAt)
-      : "No session booked";
+      const nextTouchpoint = upcomingBookings[0]
+        ? formatDateTime(upcomingBookings[0].startsAt)
+        : "No session booked";
 
       return {
-      stats: [
-        {
-          id: "sessions-booked",
-          label: "Sessions booked",
-          value: String(upcomingBookings.length).padStart(2, "0"),
-          change: `${completedBookings.length} completed`,
-          detail: "Live view of your upcoming and completed booked sessions.",
-          note: "Database-backed",
-          icon: clientOverviewStatIcons.sessions,
-          tone: "accent",
+        stats: [
+          {
+            id: "sessions-booked",
+            label: "Sessions booked",
+            value: String(upcomingBookings.length).padStart(2, "0"),
+            change: `${completedBookings.length} completed`,
+            detail: "Live view of your upcoming and completed booked sessions.",
+            note: "Database-backed",
+            icon: clientOverviewStatIcons.sessions,
+            tone: "accent",
+          },
+          {
+            id: "sessions-left",
+            label: "Sessions left",
+            value:
+              activeSubscription?.sessionsTotal != null
+                ? String(
+                    Math.max(
+                      activeSubscription.sessionsTotal -
+                        (activeSubscription.sessionsUsed ?? 0),
+                      0,
+                    ),
+                  )
+                : String(client.sessionsLeft),
+            change:
+              activeSubscription?.sessionsTotal != null
+                ? `${activeSubscription.sessionsUsed ?? 0} used`
+                : "Legacy membership counter",
+            detail: "Based on your latest subscription when available.",
+            note: "Database-backed",
+            icon: clientOverviewStatIcons.attendance,
+            tone: "success",
+          },
+          {
+            id: "current-focus",
+            label: "Current focus",
+            value: titleCase(client.membershipType),
+            change: activeSubscription?.plan.name ?? "Profile signal",
+            detail:
+              "Your membership, attendance, and next session details appear here.",
+            note: "Database-backed",
+            icon: clientOverviewStatIcons.focus,
+            tone: "neutral",
+          },
+        ],
+        upcomingSessions,
+        recentActivity,
+        coachSnapshot: {
+          fullName: primaryCoach.fullName,
+          roleLabel: "Assigned Coach",
+          specialization: primaryCoach.specialization,
+          nextTouchpoint,
+          note: primaryCoach.bio,
         },
-        {
-          id: "sessions-left",
-          label: "Sessions left",
-          value: activeSubscription?.sessionsTotal != null
-            ? String(
-                Math.max(
-                  activeSubscription.sessionsTotal - (activeSubscription.sessionsUsed ?? 0),
-                  0
-                )
-              )
-            : String(client.sessionsLeft),
-          change: activeSubscription?.sessionsTotal != null
-            ? `${activeSubscription.sessionsUsed ?? 0} used`
-            : "Legacy membership counter",
-          detail: "Based on your latest subscription when available.",
-          note: "Database-backed",
-          icon: clientOverviewStatIcons.attendance,
-          tone: "success",
+        subscriptionSnapshot: {
+          planName: activeSubscription?.plan.name ?? "No active plan",
+          renewalLabel: activeSubscription?.renewsAt
+            ? `Renews ${formatDate(activeSubscription.renewsAt)}`
+            : activeSubscription?.endsAt
+              ? `Ends ${formatDate(activeSubscription.endsAt)}`
+              : "No renewal date set",
+          paymentStatus: activeSubscription
+            ? inferPaymentStatus(activeSubscription)
+            : client.isPaid
+              ? "Paid"
+              : "Unpaid",
+          benefitLine:
+            activeSubscription?.plan.description ??
+            `Membership type: ${titleCase(client.membershipType)}`,
         },
-        {
-          id: "current-focus",
-          label: "Current focus",
-          value: titleCase(client.membershipType),
-          change: activeSubscription?.plan.name ?? "Profile signal",
-          detail: "Your membership, attendance, and next session details appear here.",
-          note: "Database-backed",
-          icon: clientOverviewStatIcons.focus,
-          tone: "neutral",
-        },
-      ],
-      upcomingSessions,
-      recentActivity,
-      coachSnapshot: {
-        fullName: primaryCoach.fullName,
-        roleLabel: "Assigned Coach",
-        specialization: primaryCoach.specialization,
-        nextTouchpoint,
-        note: primaryCoach.bio,
-      },
-      subscriptionSnapshot: {
-        planName: activeSubscription?.plan.name ?? "No active plan",
-        renewalLabel: activeSubscription?.renewsAt
-          ? `Renews ${formatDate(activeSubscription.renewsAt)}`
-          : activeSubscription?.endsAt
-            ? `Ends ${formatDate(activeSubscription.endsAt)}`
-            : "No renewal date set",
-        paymentStatus: activeSubscription
-          ? inferPaymentStatus(activeSubscription)
-          : client.isPaid
-            ? "Paid"
-            : "Unpaid",
-        benefitLine:
-          activeSubscription?.plan.description ??
-          `Membership type: ${titleCase(client.membershipType)}`,
-      },
-      quickActions: clientQuickActions,
-      activeFiles,
-      privateNotes,
+        quickActions: clientQuickActions,
+        activeFiles,
+        privateNotes,
       };
     }, null);
   }
 
   async getCoach(userId: string): Promise<ClientCoachRecord | null> {
-    return withPrismaFallback(async () => {
+    return withSupabaseFallback(async () => {
       const client = await this.getClientDashboardQuery(userId);
 
       if (!client) {
         return null;
       }
 
-    const visibleSessions = buildClientSessionEntries(client);
-    const nextBooking =
-      visibleSessions.find(isUpcomingVisibleSession) ?? visibleSessions[0];
-    const primaryCoach = resolvePrimaryCoach(client, visibleSessions);
+      const visibleSessions = buildClientSessionEntries(client);
+      const nextBooking =
+        visibleSessions.find(isUpcomingVisibleSession) ?? visibleSessions[0];
+      const primaryCoach = resolvePrimaryCoach(client, visibleSessions);
 
       return {
-      fullName: primaryCoach.fullName,
-      roleLabel: "Assigned Coach",
-      specialization: primaryCoach.specialization,
-      email: primaryCoach.email,
-      phone: primaryCoach.phone,
-      bio: primaryCoach.bio,
-      nextSession: nextBooking
-        ? `${formatDateTime(nextBooking.startsAt)} - ${nextBooking.title}`
-        : "No session booked",
-      coachingNote:
-        nextBooking
+        fullName: primaryCoach.fullName,
+        roleLabel: "Assigned Coach",
+        specialization: primaryCoach.specialization,
+        email: primaryCoach.email,
+        phone: primaryCoach.phone,
+        bio: primaryCoach.bio,
+        nextSession: nextBooking
+          ? `${formatDateTime(nextBooking.startsAt)} - ${nextBooking.title}`
+          : "No session booked",
+        coachingNote: nextBooking
           ? `${nextBooking.title} is your next planned touchpoint with ${primaryCoach.fullName}.`
           : "Your coach details and next touchpoint will appear here once a session is booked.",
       };
     }, null);
   }
 
-  async getSubscription(userId: string): Promise<ClientSubscriptionRecord | null> {
-    return withPrismaFallback(async () => {
+  async getSubscription(
+    userId: string,
+  ): Promise<ClientSubscriptionRecord | null> {
+    return withSupabaseFallback(async () => {
       const client = await this.getClientDashboardQuery(userId);
 
       if (!client) {
         return null;
       }
 
-      const subscription = await this.getSubscriptionRecord(client.id);
+      const subscription = client.subscriptions[0] ?? null;
 
       if (!subscription) {
         return {
-        planName: "No active plan",
-        status: client.isPaid ? "Paid" : "Pending",
-        paymentStatus: client.isPaid ? "Paid" : "Unpaid",
-        renewalDate: "No renewal date set",
-        amountLabel: "EGP 0",
-        billingCycle: titleCase(client.membershipType),
-        benefits: ["No active subscription has been attached to this client yet."],
-        note: "Subscription details will appear here once a plan is assigned.",
-        paymentHistory: [],
+          planName: "No active plan",
+          status: client.isPaid ? "Paid" : "Pending",
+          paymentStatus: client.isPaid ? "Paid" : "Unpaid",
+          renewalDate: "No renewal date set",
+          amountLabel: "EGP 0",
+          billingCycle: titleCase(client.membershipType),
+          benefits: [
+            "No active subscription has been attached to this client yet.",
+          ],
+          note: "Subscription details will appear here once a plan is assigned.",
+          paymentHistory: [],
         };
       }
 
-      const paymentHistory = await this.prisma.payment.findMany({
-      where: {
-        clientSubscriptionId: subscription.id,
-      },
-      orderBy: [{ date: "desc" }, { createdAt: "desc" }],
-      take: 5,
-      select: {
-        id: true,
-        amount: true,
-        currency: true,
-        date: true,
-        note: true,
-      },
-    });
+      const paymentHistory = subscription.payments.slice(0, 5);
       const latestPayment = paymentHistory[0] ?? null;
 
       return {
-      planName: subscription.plan.name,
-      status: titleCase(subscription.status),
-      paymentStatus: inferPaymentStatus({
-        status: subscription.status,
-        renewsAt: subscription.renewsAt,
-        payments: latestPayment ? [{ date: latestPayment.date }] : [],
-      }),
-      renewalDate: subscription.renewsAt
-        ? formatDate(subscription.renewsAt)
-        : subscription.endsAt
-          ? formatDate(subscription.endsAt)
-          : "No renewal date set",
-      amountLabel: `${latestPayment?.currency ?? subscription.plan.currency} ${(
-        latestPayment?.amount ??
-        ("customPrice" in subscription ? subscription.customPrice : null) ??
-        subscription.plan.price
-      ).toFixed(0)}`,
-      billingCycle: titleCase(subscription.plan.billingCycle),
-      benefits: buildBenefits(subscription),
-      note:
-        subscription.plan.description ??
-        "Current membership summary and billing state.",
-      paymentHistory: paymentHistory.map((payment) => ({
-        id: payment.id,
-        amountLabel: formatCurrency(payment.amount, payment.currency),
-        dateLabel: formatDate(payment.date),
-        note: payment.note ?? "Payment recorded.",
-      })),
+        planName: subscription.plan.name,
+        status: titleCase(subscription.status),
+        paymentStatus: inferPaymentStatus({
+          status: subscription.status,
+          renewsAt: subscription.renewsAt,
+          payments: latestPayment ? [{ date: latestPayment.date }] : [],
+        }),
+        renewalDate: subscription.renewsAt
+          ? formatDate(subscription.renewsAt)
+          : subscription.endsAt
+            ? formatDate(subscription.endsAt)
+            : "No renewal date set",
+        amountLabel: `${latestPayment?.currency ?? subscription.plan.currency} ${(
+          latestPayment?.amount ??
+          subscription.customPrice ??
+          subscription.plan.price
+        ).toFixed(0)}`,
+        billingCycle: titleCase(subscription.plan.billingCycle),
+        benefits: buildBenefits(subscription),
+        note:
+          subscription.plan.description ??
+          "Current membership summary and billing state.",
+        paymentHistory: paymentHistory.map((payment) => ({
+          id: payment.id,
+          amountLabel: formatCurrency(payment.amount, payment.currency),
+          dateLabel: formatDate(payment.date),
+          note: payment.note ?? "Payment recorded.",
+        })),
       };
     }, null);
   }
 
   async getSessions(userId: string): Promise<ClientSessionRecord[]> {
-    return withPrismaFallback(async () => {
+    return withSupabaseFallback(async () => {
       const client = await this.getClientDashboardQuery(userId);
 
       if (!client) {
@@ -924,59 +733,61 @@ export class ClientDashboardRepository {
       }
 
       return buildClientSessionEntries(client).map((booking) => {
-      const isPast = booking.startsAt.getTime() < Date.now();
-      const status =
-        booking.bookingStatus === "CANCELED"
-          ? "Cancelled"
-          : booking.bookingStatus === "MISSED"
-            ? "You missed"
-            : isAttendedSession(booking)
-              ? "You attended"
-              : booking.bookingStatus === "WAITLIST"
-                ? "Waitlist"
-                : !isPast &&
-                    booking.startsAt.getTime() - Date.now() <= 24 * 60 * 60 * 1000
-                  ? "Check-in ready"
-                  : "Booked";
+        const isPast = booking.startsAt.getTime() < Date.now();
+        const status =
+          booking.bookingStatus === "CANCELED"
+            ? "Cancelled"
+            : booking.bookingStatus === "MISSED"
+              ? "You missed"
+              : isAttendedSession(booking)
+                ? "You attended"
+                : booking.bookingStatus === "WAITLIST"
+                  ? "Waitlist"
+                  : !isPast &&
+                      booking.startsAt.getTime() - Date.now() <=
+                        24 * 60 * 60 * 1000
+                    ? "Check-in ready"
+                    : "Booked";
 
-      return {
-        id: booking.id,
-        title: booking.title,
-        sessionType: booking.type === "PRIVATE" ? "Private" : "Group",
-        status,
-        period: isPast ? "Past" : "Upcoming",
-        dayLabel: getDayLabel(booking.startsAt),
-        timeLabel: formatTime(booking.startsAt),
-        location: booking.location ?? "Studio floor",
-        coachName: booking.coachName,
-        note:
-          booking.description ??
-          "Session details and attendance updates will appear here.",
-      };
+        return {
+          id: booking.id,
+          title: booking.title,
+          sessionType: booking.type === "PRIVATE" ? "Private" : "Group",
+          status,
+          period: isPast ? "Past" : "Upcoming",
+          dayLabel: getDayLabel(booking.startsAt),
+          timeLabel: formatTime(booking.startsAt),
+          location: booking.location ?? "Studio floor",
+          coachName: booking.coachName,
+          note:
+            booking.description ??
+            "Session details and attendance updates will appear here.",
+        };
       });
     }, []);
   }
 
   async getSettings(userId: string): Promise<ClientSettingsRecord | null> {
-    return withPrismaFallback(async () => {
+    return withSupabaseFallback(async () => {
       const client = await this.getClientDashboardQuery(userId);
 
       if (!client) {
         return null;
       }
 
-    const preferences = "preferences" in client ? client.preferences : null;
-    const sessionTimes = buildClientSessionEntries(client)
-      .filter((booking) => booking.startsAt.getTime() >= Date.now())
-      .map((booking) => booking.startsAt);
+      const preferences = "preferences" in client ? client.preferences : null;
+      const sessionTimes = buildClientSessionEntries(client)
+        .filter((booking) => booking.startsAt.getTime() >= Date.now())
+        .map((booking) => booking.startsAt);
 
       return {
-      fullName: client.fullName || client.user.name || "Client",
-      email: client.user.email ?? "",
-      phone: client.phone ?? "",
-      goalLabel: preferences?.goalLabel ?? defaultClientGoal,
-      preferredSessionTime:
-        preferences?.preferredSessionTime ?? inferPreferredSessionTime(sessionTimes),
+        fullName: client.fullName || client.user.name || "Client",
+        email: client.user.email ?? "",
+        phone: client.phone ?? "",
+        goalLabel: preferences?.goalLabel ?? defaultClientGoal,
+        preferredSessionTime:
+          preferences?.preferredSessionTime ??
+          inferPreferredSessionTime(sessionTimes),
       };
     }, null);
   }
