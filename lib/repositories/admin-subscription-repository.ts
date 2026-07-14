@@ -7,8 +7,8 @@ import type {
   AdminSubscriptionStatus,
 } from "@/lib/mocks/admin-subscriptions";
 import { getAssignedCoachLabel } from "@/lib/coaches/placeholder-coaches";
-import { isMissingCustomPriceColumn } from "@/lib/custom-price-compat";
-import { getPrisma, withPrismaFallback } from "@/lib/prisma";
+import { withSupabaseFallback } from "@/lib/supabase/errors";
+import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 const currencyFormatter = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -29,10 +29,10 @@ function mapPlanName(record: {
 }): AdminPlanType {
   const normalized = record.plan.name.toLowerCase();
   const hasPrivate = record.client.bookings.some(
-    (booking) => booking.trainingSession.type === "PRIVATE"
+    (booking) => booking.trainingSession.type === "PRIVATE",
   );
   const hasGroup = record.client.bookings.some(
-    (booking) => booking.trainingSession.type === "GROUP"
+    (booking) => booking.trainingSession.type === "GROUP",
   );
 
   if (normalized.includes("starter")) {
@@ -50,7 +50,10 @@ function mapPlanName(record: {
   return "Group Membership";
 }
 
-function mapSubscriptionStatus(status: string, renewsAt: Date | null): AdminSubscriptionStatus {
+function mapSubscriptionStatus(
+  status: string,
+  renewsAt: Date | null,
+): AdminSubscriptionStatus {
   if (status === "TRIAL") {
     return "Trial";
   }
@@ -109,140 +112,6 @@ function mapBillingCycleLabel(value: string) {
 }
 
 export class AdminSubscriptionRepository {
-  private get prisma() {
-    return getPrisma();
-  }
-
-  private async getSubscriptions(includeCustomPrice: boolean) {
-    return this.prisma.clientSubscription.findMany({
-      orderBy: [{ startsAt: "desc" }],
-      select: {
-        id: true,
-        status: true,
-        renewsAt: true,
-        ...(includeCustomPrice ? { customPrice: true } : {}),
-        plan: {
-          select: {
-            id: true,
-            name: true,
-            billingCycle: true,
-            price: true,
-          },
-        },
-        client: {
-          select: {
-            id: true,
-            fullName: true,
-            isPaid: true,
-            group: {
-              select: {
-                coach: {
-                  select: {
-                    fullName: true,
-                  },
-                },
-              },
-            },
-            bookings: {
-              where: {
-                status: {
-                  in: ["BOOKED", "ATTENDED", "MISSED", "WAITLIST"],
-                },
-                trainingSession: {
-                  status: {
-                    not: "CANCELED",
-                  },
-                },
-              },
-              select: {
-                trainingSession: {
-                  select: {
-                    type: true,
-                    coach: {
-                      select: {
-                        fullName: true,
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-        payments: {
-          orderBy: [{ date: "desc" }],
-          take: 5,
-          select: {
-            id: true,
-            amount: true,
-            currency: true,
-            date: true,
-            note: true,
-          },
-        },
-      },
-    });
-  }
-
-  private async ensureDefaultPlans() {
-    const existingPlanCount = await this.prisma.subscriptionPlan.count();
-
-    if (existingPlanCount > 0) {
-      return;
-    }
-
-    await this.prisma.$transaction([
-      this.prisma.subscriptionPlan.create({
-        data: {
-          name: "Group Membership",
-          slug: "group-membership",
-          description: "Core recurring plan for coached group training.",
-          billingCycle: "MONTHLY",
-          sessionsIncluded: 8,
-          price: 1850,
-          currency: "EGP",
-          isActive: true,
-        },
-      }),
-      this.prisma.subscriptionPlan.create({
-        data: {
-          name: "Private Coaching",
-          slug: "private-coaching",
-          description: "One-to-one coaching plan with private sessions.",
-          billingCycle: "MONTHLY",
-          sessionsIncluded: 8,
-          price: 4200,
-          currency: "EGP",
-          isActive: true,
-        },
-      }),
-      this.prisma.subscriptionPlan.create({
-        data: {
-          name: "Hybrid Elite",
-          slug: "hybrid-elite",
-          description: "Mix of group and private training support.",
-          billingCycle: "MONTHLY",
-          sessionsIncluded: 12,
-          price: 3400,
-          currency: "EGP",
-          isActive: true,
-        },
-      }),
-      this.prisma.subscriptionPlan.create({
-        data: {
-          name: "Starter Reset",
-          slug: "starter-reset",
-          description: "Short onboarding plan for new clients.",
-          billingCycle: "CUSTOM",
-          sessionsIncluded: 4,
-          price: 950,
-          currency: "EGP",
-          isActive: true,
-        },
-      }),
-    ]);
-  }
-
   async list(): Promise<{
     stats: Array<{
       id: string;
@@ -251,219 +120,232 @@ export class AdminSubscriptionRepository {
       change: string;
       detail: string;
       note: string;
-      iconKey: "shield-check" | "refresh-ccw" | "circle-dollar-sign" | "badge-dollar-sign";
+      iconKey:
+        | "shield-check"
+        | "refresh-ccw"
+        | "circle-dollar-sign"
+        | "badge-dollar-sign";
       tone: "accent" | "success" | "warning" | "neutral";
     }>;
     records: AdminSubscriptionRecord[];
     clientOptions: Array<{ id: string; label: string }>;
     planOptions: Array<{ id: string; label: string; amountLabel: string }>;
   }> {
-    return withPrismaFallback(async () => {
-      await this.ensureDefaultPlans();
+    return withSupabaseFallback(
+      async () => {
+        const supabase = getSupabaseServerClient();
+        const now = new Date();
+        const in7Days = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-      const now = new Date();
-      const in7Days = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-
-      const [
-        subscriptions,
-        activePlans,
-        renewalsThisWeek,
-        collectedThisCycle,
-        atRiskAccounts,
-        clients,
-        plans,
-      ] =
-        await Promise.all([
-          this.getSubscriptions(true).catch((error) => {
-            if (isMissingCustomPriceColumn(error)) {
-              return this.getSubscriptions(false);
-            }
-
-            throw error;
-          }),
-          this.prisma.clientSubscription.count({
-            where: { status: "ACTIVE" },
-          }),
-          this.prisma.clientSubscription.count({
-            where: {
-              renewsAt: {
-                gte: now,
-                lte: in7Days,
-              },
-            },
-          }),
-          this.prisma.payment.aggregate({
-            _sum: { amount: true },
-            where: {
-              date: { gte: startOfMonth },
-            },
-          }),
-          this.prisma.clientSubscription.count({
-            where: {
-              OR: [
-                {
-                  renewsAt: {
-                    lt: now,
-                  },
-                  payments: {
-                    none: {},
-                  },
-                },
-                {
-                  status: {
-                    in: ["PAUSED", "EXPIRED", "CANCELED"],
-                  },
-                },
-              ],
-            },
-          }),
-          this.prisma.client.findMany({
-            orderBy: [{ fullName: "asc" }],
-            select: {
-              id: true,
-              fullName: true,
-            },
-          }),
-          this.prisma.subscriptionPlan.findMany({
-            where: { isActive: true },
-            orderBy: [{ name: "asc" }],
-            select: {
-              id: true,
-              name: true,
-              price: true,
-              currency: true,
-            },
-          }),
+        const [
+          subscriptionsResult,
+          clientsResult,
+          plansResult,
+          paymentsResult,
+        ] = await Promise.all([
+          supabase
+            .from("ClientSubscription")
+            .select(
+              `
+              id, status, renewsAt, customPrice, startsAt,
+              plan:SubscriptionPlan(id, name, billingCycle, price),
+              client:Client(id, fullName, isPaid,
+                group:Group(coach:Coach(fullName)),
+                bookings:SessionBooking(status,
+                  trainingSession:TrainingSession(type, status,
+                    coach:Coach(fullName)))),
+              payments:Payment(id, amount, currency, date, note)
+            `,
+            )
+            .order("startsAt", { ascending: false }),
+          supabase.from("Client").select("id, fullName").order("fullName"),
+          supabase
+            .from("SubscriptionPlan")
+            .select("id, name, price, currency")
+            .eq("isActive", true)
+            .order("name"),
+          supabase.from("Payment").select("amount, date"),
         ]);
+        if (subscriptionsResult.error) throw subscriptionsResult.error;
+        if (clientsResult.error) throw clientsResult.error;
+        if (plansResult.error) throw plansResult.error;
+        if (paymentsResult.error) throw paymentsResult.error;
 
-      const records = subscriptions.map((subscription) => {
-      const planName = mapPlanName(subscription);
-      const subscriptionStatus = mapSubscriptionStatus(
-        subscription.status,
-        subscription.renewsAt
-      );
-      const paymentStatus = mapPaymentStatus(subscription);
-      const effectiveAmount =
-        ("customPrice" in subscription ? subscription.customPrice : null) ??
-        subscription.plan.price;
+        const clients = clientsResult.data;
+        const plans = plansResult.data;
+        const subscriptions = subscriptionsResult.data.map((subscription) => ({
+          ...subscription,
+          renewsAt: subscription.renewsAt
+            ? new Date(subscription.renewsAt)
+            : null,
+          client: {
+            ...subscription.client,
+            bookings: subscription.client.bookings.filter(
+              (booking) =>
+                ["BOOKED", "ATTENDED", "MISSED", "WAITLIST"].includes(
+                  booking.status,
+                ) && booking.trainingSession.status !== "CANCELED",
+            ),
+          },
+          payments: subscription.payments
+            .sort((left, right) => right.date.localeCompare(left.date))
+            .slice(0, 5)
+            .map((payment) => ({ ...payment, date: new Date(payment.date) })),
+        }));
+        const activePlans = subscriptions.filter(
+          (subscription) => subscription.status === "ACTIVE",
+        ).length;
+        const renewalsThisWeek = subscriptions.filter(
+          (subscription) =>
+            subscription.renewsAt &&
+            subscription.renewsAt >= now &&
+            subscription.renewsAt <= in7Days,
+        ).length;
+        const collectedThisCycle = paymentsResult.data
+          .filter((payment) => new Date(payment.date) >= startOfMonth)
+          .reduce((sum, payment) => sum + payment.amount, 0);
+        const atRiskAccounts = subscriptions.filter(
+          (subscription) =>
+            ["PAUSED", "EXPIRED", "CANCELED"].includes(subscription.status) ||
+            (!!subscription.renewsAt &&
+              subscription.renewsAt < now &&
+              subscription.payments.length === 0),
+        ).length;
 
-      return {
-        id: subscription.id,
-        clientId: (subscription as typeof subscription & { client: { id?: string } }).client.id,
-        planId: subscription.plan.id,
-        memberName: subscription.client.fullName,
-        planName,
-        subscriptionStatus,
-        paymentStatus,
-        assignedCoach: getAssignedCoachLabel(
-          subscription.client.group?.coach.fullName ??
-            subscription.client.bookings[0]?.trainingSession.coach.fullName ??
-            null
-        ),
-        renewalDate: subscription.renewsAt
-          ? dateFormatter.format(subscription.renewsAt)
-          : "No renewal set",
-        renewalDateValue: subscription.renewsAt
-          ? subscription.renewsAt.toISOString().slice(0, 10)
-          : "",
-        amountLabel: currencyFormatter.format(effectiveAmount),
-        amountValue: String(effectiveAmount),
-        billingCycle: mapBillingCycleLabel(subscription.plan.billingCycle),
-        note:
-          paymentStatus === "Paid"
-            ? "Latest payment is recorded."
-            : subscriptionStatus === "Canceled"
-              ? "This subscription has been canceled."
-              : "Payment follow-up is still needed.",
-        paymentHistory: subscription.payments.map((payment) => ({
-          id: payment.id,
-          amountLabel: new Intl.NumberFormat("en-US", {
-            style: "currency",
-            currency: payment.currency,
-            maximumFractionDigits: 0,
-          }).format(payment.amount),
-          dateLabel: dateFormatter.format(payment.date),
-          note: payment.note ?? "Payment recorded.",
-        })),
-      } satisfies AdminSubscriptionRecord;
-      });
+        const records = subscriptions.map((subscription) => {
+          const planName = mapPlanName(subscription);
+          const subscriptionStatus = mapSubscriptionStatus(
+            subscription.status,
+            subscription.renewsAt,
+          );
+          const paymentStatus = mapPaymentStatus(subscription);
+          const effectiveAmount =
+            subscription.customPrice ?? subscription.plan.price;
 
-      const stats: Array<{
-      id: string;
-      label: string;
-      value: string;
-      change: string;
-      detail: string;
-      note: string;
-      iconKey: "shield-check" | "refresh-ccw" | "circle-dollar-sign" | "badge-dollar-sign";
-      tone: "accent" | "success" | "warning" | "neutral";
-    }> = [
-      {
-        id: "active-plans",
-        label: "Active plans",
-        value: `${activePlans}`,
-        change: `${records.filter((record) => record.subscriptionStatus === "Trial").length} trial accounts`,
-        detail: "Live client subscriptions in the database.",
-        note: "Database-backed",
-        iconKey: "shield-check" as const,
-        tone: "accent",
+          return {
+            id: subscription.id,
+            clientId: subscription.client.id,
+            planId: subscription.plan.id,
+            memberName: subscription.client.fullName,
+            planName,
+            subscriptionStatus,
+            paymentStatus,
+            assignedCoach: getAssignedCoachLabel(
+              subscription.client.group?.coach.fullName ??
+                subscription.client.bookings[0]?.trainingSession.coach
+                  .fullName ??
+                null,
+            ),
+            renewalDate: subscription.renewsAt
+              ? dateFormatter.format(subscription.renewsAt)
+              : "No renewal set",
+            renewalDateValue: subscription.renewsAt
+              ? subscription.renewsAt.toISOString().slice(0, 10)
+              : "",
+            amountLabel: currencyFormatter.format(effectiveAmount),
+            amountValue: String(effectiveAmount),
+            billingCycle: mapBillingCycleLabel(subscription.plan.billingCycle),
+            note:
+              paymentStatus === "Paid"
+                ? "Latest payment is recorded."
+                : subscriptionStatus === "Canceled"
+                  ? "This subscription has been canceled."
+                  : "Payment follow-up is still needed.",
+            paymentHistory: subscription.payments.map((payment) => ({
+              id: payment.id,
+              amountLabel: new Intl.NumberFormat("en-US", {
+                style: "currency",
+                currency: payment.currency,
+                maximumFractionDigits: 0,
+              }).format(payment.amount),
+              dateLabel: dateFormatter.format(payment.date),
+              note: payment.note ?? "Payment recorded.",
+            })),
+          } satisfies AdminSubscriptionRecord;
+        });
+
+        const stats: Array<{
+          id: string;
+          label: string;
+          value: string;
+          change: string;
+          detail: string;
+          note: string;
+          iconKey:
+            | "shield-check"
+            | "refresh-ccw"
+            | "circle-dollar-sign"
+            | "badge-dollar-sign";
+          tone: "accent" | "success" | "warning" | "neutral";
+        }> = [
+          {
+            id: "active-plans",
+            label: "Active plans",
+            value: `${activePlans}`,
+            change: `${records.filter((record) => record.subscriptionStatus === "Trial").length} trial accounts`,
+            detail: "Live client subscriptions in the database.",
+            note: "Database-backed",
+            iconKey: "shield-check" as const,
+            tone: "accent",
+          },
+          {
+            id: "renewals",
+            label: "Renewals this week",
+            value: `${renewalsThisWeek}`,
+            change: `${records.filter((record) => record.paymentStatus === "Due soon").length} due soon`,
+            detail: "Subscriptions approaching renewal in the next seven days.",
+            note: "Database-backed",
+            iconKey: "refresh-ccw" as const,
+            tone: renewalsThisWeek > 0 ? "warning" : "neutral",
+          },
+          {
+            id: "collected",
+            label: "Collected this cycle",
+            value: currencyFormatter.format(collectedThisCycle),
+            change: "Current month",
+            detail: "Payments recorded since the start of the month.",
+            note: "Database-backed",
+            iconKey: "circle-dollar-sign" as const,
+            tone: "success",
+          },
+          {
+            id: "at-risk",
+            label: "At-risk accounts",
+            value: `${atRiskAccounts}`,
+            change: `${records.filter((record) => record.paymentStatus === "Overdue").length} overdue`,
+            detail: "Accounts needing renewal or payment attention.",
+            note: "Database-backed",
+            iconKey: "badge-dollar-sign" as const,
+            tone: atRiskAccounts > 0 ? "warning" : "neutral",
+          },
+        ];
+
+        return {
+          stats,
+          records,
+          clientOptions: clients.map((client) => ({
+            id: client.id,
+            label: client.fullName,
+          })),
+          planOptions: plans.map((plan) => ({
+            id: plan.id,
+            label: plan.name,
+            amountLabel: new Intl.NumberFormat("en-US", {
+              style: "currency",
+              currency: plan.currency,
+              maximumFractionDigits: 0,
+            }).format(plan.price),
+          })),
+        };
       },
       {
-        id: "renewals",
-        label: "Renewals this week",
-        value: `${renewalsThisWeek}`,
-        change: `${records.filter((record) => record.paymentStatus === "Due soon").length} due soon`,
-        detail: "Subscriptions approaching renewal in the next seven days.",
-        note: "Database-backed",
-        iconKey: "refresh-ccw" as const,
-        tone: renewalsThisWeek > 0 ? "warning" : "neutral",
+        stats: [],
+        records: [],
+        clientOptions: [],
+        planOptions: [],
       },
-      {
-        id: "collected",
-        label: "Collected this cycle",
-        value: currencyFormatter.format(collectedThisCycle._sum.amount ?? 0),
-        change: "Current month",
-        detail: "Payments recorded since the start of the month.",
-        note: "Database-backed",
-        iconKey: "circle-dollar-sign" as const,
-        tone: "success",
-      },
-      {
-        id: "at-risk",
-        label: "At-risk accounts",
-        value: `${atRiskAccounts}`,
-        change: `${records.filter((record) => record.paymentStatus === "Overdue").length} overdue`,
-        detail: "Accounts needing renewal or payment attention.",
-        note: "Database-backed",
-        iconKey: "badge-dollar-sign" as const,
-        tone: atRiskAccounts > 0 ? "warning" : "neutral",
-      },
-    ];
-
-      return {
-        stats,
-        records,
-        clientOptions: clients.map((client) => ({
-          id: client.id,
-          label: client.fullName,
-        })),
-        planOptions: plans.map((plan) => ({
-          id: plan.id,
-          label: plan.name,
-          amountLabel: new Intl.NumberFormat("en-US", {
-            style: "currency",
-            currency: plan.currency,
-            maximumFractionDigits: 0,
-          }).format(plan.price),
-        })),
-      };
-    }, {
-      stats: [],
-      records: [],
-      clientOptions: [],
-      planOptions: [],
-    });
+    );
   }
 }
 
