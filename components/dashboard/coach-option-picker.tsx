@@ -33,6 +33,8 @@ export function CoachOptionPicker({
     <div className="dashboard-coach-picker">
       <input
         className="dashboard-input"
+        type="search"
+        aria-label="Search coaches by name"
         placeholder="Search coaches by name"
         value={searchTerm}
         onChange={(event) => setSearchTerm(event.target.value)}
@@ -42,6 +44,7 @@ export function CoachOptionPicker({
         <>
           <select
             className="dashboard-select"
+            aria-label="Select coach for assignment"
             value={
               filteredOptions.some((coach) => coach.id === value)
                 ? value
