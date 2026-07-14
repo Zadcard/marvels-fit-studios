@@ -2,7 +2,8 @@ import "server-only";
 
 import type { CoachOverviewData } from "@/lib/dashboard/coach-overview-data";
 import type { CoachClientRecord, CoachClientStatus } from "@/lib/dashboard/coach-client-record";
-import { getPrisma, withPrismaFallback } from "@/lib/prisma";
+import { withSupabaseFallback } from "@/lib/supabase/errors";
+import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { coachSessionRepository } from "@/lib/repositories/coach-session-repository";
 
 const dateTimeFormatter = new Intl.DateTimeFormat("en-US", {
@@ -44,73 +45,53 @@ function determineOverviewClientStatus(client: {
 async function listOverviewClientsForCoachUserId(
   userId: string
 ): Promise<Array<Pick<CoachClientRecord, "id" | "fullName" | "currentFocus" | "nextSession" | "status">>> {
-  return withPrismaFallback(async () => {
-    const clients = await getPrisma().client.findMany({
-      where: {
-        OR: [
-          {
-            group: {
-              coach: {
-                userId,
-              },
-            },
-          },
-          {
-            bookings: {
-              some: {
-                status: {
-                  in: ["BOOKED", "ATTENDED", "MISSED", "WAITLIST"],
-                },
-                trainingSession: {
-                  status: {
-                    not: "CANCELED",
-                  },
-                  coach: {
-                    userId,
-                  },
-                },
-              },
-            },
-          },
-        ],
-      },
-      select: {
-        id: true,
-        fullName: true,
-        createdAt: true,
-        bookings: {
-          where: {
-            status: {
-              in: ["BOOKED", "ATTENDED", "MISSED", "WAITLIST"],
-            },
+  return withSupabaseFallback(async () => {
+    const { data, error } = await getSupabaseServerClient()
+      .from("Client")
+      .select(
+        "id,fullName,createdAt,group:Group(coach:Coach(userId)),bookings:SessionBooking(status,trainingSession:TrainingSession(startsAt,status,coach:Coach(userId))),workoutNotes:WorkoutNote(content,date)"
+      )
+      .order("fullName");
+    if (error) throw error;
+
+    const clients = data
+      .filter(
+        (client) =>
+          client.group?.coach.userId === userId ||
+          client.bookings.some(
+            (booking) =>
+              ["BOOKED", "ATTENDED", "MISSED", "WAITLIST"].includes(
+                booking.status
+              ) &&
+              booking.trainingSession.status !== "CANCELED" &&
+              booking.trainingSession.coach.userId === userId
+          )
+      )
+      .map((client) => ({
+        ...client,
+        createdAt: new Date(client.createdAt),
+        bookings: client.bookings
+          .filter(
+            (booking) =>
+              ["BOOKED", "ATTENDED", "MISSED", "WAITLIST"].includes(
+                booking.status
+              ) &&
+              booking.trainingSession.status !== "CANCELED" &&
+              booking.trainingSession.coach.userId === userId
+          )
+          .sort((a, b) =>
+            a.trainingSession.startsAt.localeCompare(b.trainingSession.startsAt)
+          )
+          .map((booking) => ({
             trainingSession: {
-              status: {
-                not: "CANCELED",
-              },
-              coach: {
-                userId,
-              },
+              startsAt: new Date(booking.trainingSession.startsAt),
             },
-          },
-          orderBy: [{ trainingSession: { startsAt: "asc" } }],
-          select: {
-            trainingSession: {
-              select: {
-                startsAt: true,
-              },
-            },
-          },
-        },
-        workoutNotes: {
-          orderBy: [{ date: "desc" }],
-          take: 1,
-          select: {
-            content: true,
-          },
-        },
-      },
-      orderBy: [{ fullName: "asc" }],
-    });
+          })),
+        workoutNotes: client.workoutNotes
+          .sort((a, b) => b.date.localeCompare(a.date))
+          .slice(0, 1)
+          .map(({ content }) => ({ content })),
+      }));
 
     return clients.map((client) => {
       const upcomingBooking =
