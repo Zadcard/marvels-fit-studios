@@ -2,8 +2,30 @@
 import { mockGetPrisma, createMockPrisma } from '@/tests/test-utils';
 import { vi } from 'vitest';
 
-vi.mock('@/lib/prisma', () => ({
-  getPrisma: mockGetPrisma,
+vi.mock('@/lib/services/session-booking-store', () => ({
+  getSessionBookingStore: () => {
+    const database = mockGetPrisma();
+    return {
+      findSession: (id: string) => database.trainingSession.findUnique({
+        where: { id },
+        select: expect.anything(),
+      }),
+      findClient: (id: string) => database.client.findUnique({ where: { id }, select: { id: true } }),
+      findBooking: (trainingSessionId: string, clientId: string) => database.sessionBooking.findUnique({
+        where: { trainingSessionId_clientId: { trainingSessionId, clientId } },
+        select: { id: true, status: true },
+      }),
+      updateBooking: (id: string, data: Record<string, unknown>) =>
+        database.sessionBooking.update(
+          data.status === "CANCELED" && !("attendedAt" in data)
+            ? { where: { id }, data }
+            : { where: { id }, data, select: { id: true } }
+        ),
+      createBooking: (data: unknown) => database.sessionBooking.create({
+        data, select: { id: true },
+      }),
+    };
+  },
 }));
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
@@ -12,7 +34,7 @@ import {
   BookingStatus,
   TrainingSessionStatus,
   TrainingSessionType,
-} from '@prisma/client';
+} from '@/lib/supabase/domain';
 import { createSessionBooking, cancelSessionBooking } from './session-booking-service';
 
 describe('Session Booking Service', () => {

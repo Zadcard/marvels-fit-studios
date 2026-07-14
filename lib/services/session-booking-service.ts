@@ -5,37 +5,16 @@ import {
   BookingStatus,
   TrainingSessionStatus,
   TrainingSessionType,
-} from "@prisma/client";
+} from "@/lib/supabase/domain";
 
-import { getPrisma } from "@/lib/prisma";
+import { getSessionBookingStore } from "@/lib/services/session-booking-store";
 import type {
   CancelSessionBookingInput,
   CreateSessionBookingInput,
 } from "@/lib/validators/session-booking";
 
 async function getSessionOrThrow(trainingSessionId: string) {
-  const prisma = getPrisma();
-  const session = await prisma.trainingSession.findUnique({
-    where: { id: trainingSessionId },
-    select: {
-      id: true,
-      type: true,
-      status: true,
-      capacity: true,
-      bookings: {
-        where: {
-          status: {
-            in: [BookingStatus.BOOKED, BookingStatus.ATTENDED, BookingStatus.WAITLIST],
-          },
-        },
-        select: {
-          id: true,
-          clientId: true,
-          status: true,
-        },
-      },
-    },
-  });
+  const session = await getSessionBookingStore().findSession(trainingSessionId);
 
   if (!session) {
     throw new Error("Session record not found.");
@@ -45,11 +24,7 @@ async function getSessionOrThrow(trainingSessionId: string) {
 }
 
 async function ensureClientExists(clientId: string) {
-  const prisma = getPrisma();
-  const client = await prisma.client.findUnique({
-    where: { id: clientId },
-    select: { id: true },
-  });
+  const client = await getSessionBookingStore().findClient(clientId);
 
   if (!client) {
     throw new Error("Client record not found.");
@@ -57,7 +32,7 @@ async function ensureClientExists(clientId: string) {
 }
 
 export async function createSessionBooking(input: CreateSessionBookingInput) {
-  const prisma = getPrisma();
+  const store = getSessionBookingStore();
   const session = await getSessionOrThrow(input.trainingSessionId);
 
   if (
@@ -69,18 +44,7 @@ export async function createSessionBooking(input: CreateSessionBookingInput) {
 
   await ensureClientExists(input.clientId);
 
-  const existingBooking = await prisma.sessionBooking.findUnique({
-    where: {
-      trainingSessionId_clientId: {
-        trainingSessionId: input.trainingSessionId,
-        clientId: input.clientId,
-      },
-    },
-    select: {
-      id: true,
-      status: true,
-    },
-  });
+  const existingBooking = await store.findBooking(input.trainingSessionId, input.clientId);
 
   if (
     existingBooking &&
@@ -95,14 +59,9 @@ export async function createSessionBooking(input: CreateSessionBookingInput) {
     const activePrivateBooking = session.bookings[0];
 
     if (activePrivateBooking && activePrivateBooking.clientId !== input.clientId) {
-      await prisma.sessionBooking.update({
-        where: {
-          id: activePrivateBooking.id,
-        },
-        data: {
+      await store.updateBooking(activePrivateBooking.id, {
           status: BookingStatus.CANCELED,
           canceledAt: new Date(),
-        },
       });
     }
   }
@@ -116,51 +75,27 @@ export async function createSessionBooking(input: CreateSessionBookingInput) {
   }
 
   if (existingBooking) {
-    return prisma.sessionBooking.update({
-      where: {
-        id: existingBooking.id,
-      },
-      data: {
+    return store.updateBooking(existingBooking.id, {
         status: BookingStatus.BOOKED,
         source: BookingSource.MANUAL,
         bookedAt: new Date(),
         attendedAt: null,
         canceledAt: null,
-      },
-      select: {
-        id: true,
-      },
     });
   }
 
-  return prisma.sessionBooking.create({
-    data: {
+  return store.createBooking({
       trainingSessionId: input.trainingSessionId,
       clientId: input.clientId,
       status: BookingStatus.BOOKED,
       source: BookingSource.MANUAL,
-    },
-    select: {
-      id: true,
-    },
   });
 }
 
 export async function cancelSessionBooking(input: CancelSessionBookingInput) {
-  const prisma = getPrisma();
+  const store = getSessionBookingStore();
 
-  const booking = await prisma.sessionBooking.findUnique({
-    where: {
-      trainingSessionId_clientId: {
-        trainingSessionId: input.trainingSessionId,
-        clientId: input.clientId,
-      },
-    },
-    select: {
-      id: true,
-      status: true,
-    },
-  });
+  const booking = await store.findBooking(input.trainingSessionId, input.clientId);
 
   if (!booking) {
     throw new Error("Booking record not found.");
@@ -170,15 +105,9 @@ export async function cancelSessionBooking(input: CancelSessionBookingInput) {
     return booking;
   }
 
-  return prisma.sessionBooking.update({
-    where: { id: booking.id },
-    data: {
+  return store.updateBooking(booking.id, {
       status: BookingStatus.CANCELED,
       attendedAt: null,
       canceledAt: new Date(),
-    },
-    select: {
-      id: true,
-    },
   });
 }
