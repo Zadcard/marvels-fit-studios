@@ -11,6 +11,13 @@
 | Empty hosted database verification | Complete |
 | Documentation and handoff | Complete |
 | Local lint, typecheck, tests, and build | Complete |
+| Auth hardening and database failure visibility | Complete |
+| Private file storage migration | Complete |
+| Transformation assessment/program/progress workflow | Complete |
+| Recurring schedule templates | Complete |
+| Session and renewal notification automation | Complete |
+| Billing ledger and protected receipts | Complete |
+| Browser smoke and role-boundary verification | Complete |
 
 ## Rollback
 

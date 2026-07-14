@@ -245,15 +245,15 @@ body.dashboard-nav-open {
 }
 
 .dashboard-badge--success {
-  border-color: rgba(230, 36, 41, 0.22);
-  color: var(--mv-muted-strong);
-  background: rgba(230, 36, 41, 0.07);
+  border-color: rgba(52, 211, 153, 0.3);
+  color: #6ee7b7;
+  background: rgba(16, 185, 129, 0.13);
 }
 
 .dashboard-badge--warning {
-  border-color: rgba(230, 36, 41, 0.34);
-  color: #ffb5b8;
-  background: rgba(230, 36, 41, 0.14);
+  border-color: rgba(251, 191, 36, 0.32);
+  color: #fcd34d;
+  background: rgba(245, 158, 11, 0.14);
 }
 
 .dashboard-sidebar__account {
@@ -399,15 +399,18 @@ body.dashboard-nav-open {
 .dashboard-topbar__search-hint {
   min-width: 28px;
   height: 28px;
+  padding: 0 10px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 999px;
   background: rgba(0, 0, 0, 0.22);
-  color: rgba(255, 255, 255, 0.72);
-  font-size: 0.74rem;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.66rem;
   font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .dashboard-topbar__profile {
@@ -1497,15 +1500,15 @@ body.dashboard-nav-open {
 }
 
 .dashboard-activity-feed__item--success {
-  color: #d8d1d1;
+  color: #6ee7b7;
 }
 
 .dashboard-activity-feed__item--warning {
-  color: #ffb5b8;
+  color: #fcd34d;
 }
 
 .dashboard-activity-feed__item--neutral {
-  color: #ff8b8f;
+  color: var(--mv-muted-strong);
 }
 
 .dashboard-quick-grid {

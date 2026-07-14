@@ -70,9 +70,10 @@
   --mv-accent: #ff0000;
   --mv-accent-soft: #1d0b0c;
 
-  /* Semantic Colors */
-  --mv-success: #f04449;
-  --mv-warning: #ff6b70;
+  /* Semantic Colors — distinct hues so status states stay scannable
+     against the red brand (danger/attention stays red). */
+  --mv-success: #34d399;
+  --mv-warning: #f59e0b;
   --mv-danger: #ef4444;
 
   /* Shadows */

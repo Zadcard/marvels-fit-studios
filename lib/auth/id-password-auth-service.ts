@@ -60,6 +60,13 @@ export interface IdPasswordAuthStore {
   }): Promise<void>;
 }
 
+export class InvalidCredentialsError extends Error {
+  constructor() {
+    super("Invalid client ID, phone, or password");
+    this.name = "InvalidCredentialsError";
+  }
+}
+
 const supabaseAuthStore: IdPasswordAuthStore = {
   async findByClientId(clientId) {
     const { data, error } = await getSupabaseServerClient()
@@ -169,7 +176,7 @@ export class IdPasswordAuthService {
     const user = await this.findUserByLoginIdentifier(input.clientId);
 
     if (!user || !user.password) {
-      throw new Error("Invalid client ID, phone, or password");
+      throw new InvalidCredentialsError();
     }
 
     const isValid = await this.passwordVerifier.verify(
@@ -178,7 +185,7 @@ export class IdPasswordAuthService {
     );
 
     if (!isValid) {
-      throw new Error("Invalid client ID, phone, or password");
+      throw new InvalidCredentialsError();
     }
 
     await this.store.updateUser(user.id, { lastLoginAt: new Date() });

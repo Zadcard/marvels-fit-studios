@@ -8,8 +8,9 @@ import {
   useTransition,
   type FormEvent,
 } from "react";
+import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { MessageCircle, Plus, Search } from "lucide-react";
+import { MessageCircle, Plus, Search, UploadCloud } from "lucide-react";
 
 import { deleteAdminClient, saveAdminClient } from "@/app/actions/admin-clients";
 import { DashboardEmptyState } from "@/components/dashboard/dashboard-empty-state";
@@ -202,10 +203,16 @@ export function AdminClientsWorkspace({
       <DashboardPageHeader
         eyebrow="Admin clients"
         actions={
-          <button type="button" className="mv-btn mv-btn-primary" onClick={openCreateModal}>
-            <Plus size={16} />
-            Add Client
-          </button>
+          <>
+            <Link href="/admin/bulk-import" className="mv-btn mv-btn-outline">
+              <UploadCloud size={16} />
+              Import CSV
+            </Link>
+            <button type="button" className="mv-btn mv-btn-primary" onClick={openCreateModal}>
+              <Plus size={16} />
+              Add Client
+            </button>
+          </>
         }
       />
 

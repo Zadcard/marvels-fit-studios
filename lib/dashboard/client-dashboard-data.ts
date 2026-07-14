@@ -103,6 +103,8 @@ export type ClientSubscriptionRecord = {
     amountLabel: string;
     dateLabel: string;
     note: string;
+    receiptNumber: string;
+    receiptHref: string;
   }>;
 };
 

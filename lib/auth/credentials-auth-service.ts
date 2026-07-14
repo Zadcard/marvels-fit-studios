@@ -1,15 +1,19 @@
 import type { UserRole } from "@/lib/supabase/domain";
 
 import { parseCredentials } from "@/lib/auth/credentials";
-import type {
-  AuthenticatedUser,
-  AuthFallbackPolicy,
-} from "@/lib/auth/demo-users";
 import type { PasswordVerifier } from "@/lib/auth/password-verifier";
 import type {
   PersistedAuthUser,
   UserRepository,
 } from "@/lib/auth/user-repository";
+
+export type AuthenticatedUser = {
+  id: string;
+  email: string;
+  name: string;
+  role: UserRole;
+  mustChangePassword?: boolean;
+};
 
 function toAuthenticatedUser(user: PersistedAuthUser): AuthenticatedUser | null {
   if (!user.email) {
@@ -28,8 +32,7 @@ function toAuthenticatedUser(user: PersistedAuthUser): AuthenticatedUser | null 
 export class CredentialsAuthService {
   constructor(
     private readonly userRepository: UserRepository,
-    private readonly passwordVerifier: PasswordVerifier,
-    private readonly fallbackPolicy: AuthFallbackPolicy
+    private readonly passwordVerifier: PasswordVerifier
   ) {}
 
   async authorize(credentials: unknown): Promise<AuthenticatedUser | null> {
@@ -40,17 +43,10 @@ export class CredentialsAuthService {
     }
 
     const { email, password } = parsedCredentials;
-    const fallbackUser = () => this.fallbackPolicy.getUser(email, password);
-
-    let user;
-    try {
-      user = await this.userRepository.findByEmail(email);
-    } catch {
-      return fallbackUser();
-    }
+    const user = await this.userRepository.findByEmail(email);
 
     if (!user?.password) {
-      return fallbackUser();
+      return null;
     }
 
     const passwordsMatch = await this.passwordVerifier.verify(

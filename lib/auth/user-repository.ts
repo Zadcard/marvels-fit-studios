@@ -32,7 +32,7 @@ async function findUser(
     .maybeSingle();
 
   if (error) {
-    return null;
+    throw error;
   }
 
   return data;

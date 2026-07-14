@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useDeferredValue, useEffect, useMemo, useState, useTransition } from "react";
 import { Download, MessageCircle, Save, UploadCloud, UserRoundSearch } from "lucide-react";
 
@@ -274,13 +275,21 @@ export function CoachClientsWorkspace({ records }: CoachClientsWorkspaceProps) {
                           <td>{client.nextSession}</td>
                           <td>{client.lastTouchpoint}</td>
                           <td>
-                            <button
-                              type="button"
-                              className="dashboard-inline-button"
-                              onClick={() => openDetail(client.id)}
-                            >
-                              Open detail
-                            </button>
+                            <div className="dashboard-row-actions">
+                              <Link
+                                className="dashboard-inline-button"
+                                href={`/coach/clients/${client.id}/transformation`}
+                              >
+                                Transformation
+                              </Link>
+                              <button
+                                type="button"
+                                className="dashboard-inline-button"
+                                onClick={() => openDetail(client.id)}
+                              >
+                                Notes &amp; files
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -307,6 +316,12 @@ export function CoachClientsWorkspace({ records }: CoachClientsWorkspaceProps) {
                       </div>
                       <p className="dashboard-record-card__note">{client.progressNote}</p>
                       <div className="dashboard-row-actions">
+                        <Link
+                          className="dashboard-inline-button"
+                          href={`/coach/clients/${client.id}/transformation`}
+                        >
+                          Transformation
+                        </Link>
                         <button
                           type="button"
                           className="dashboard-inline-button"
@@ -387,6 +402,13 @@ export function CoachClientsWorkspace({ records }: CoachClientsWorkspaceProps) {
                 <strong>Suggested next move</strong>
                 <p>{getSuggestedAction(selectedClient.status)}</p>
               </div>
+
+              <Link
+                href={`/coach/clients/${selectedClient.id}/transformation`}
+                className="mv-btn mv-btn-primary"
+              >
+                Open transformation plan
+              </Link>
             </>
           ) : (
             <DashboardEmptyState

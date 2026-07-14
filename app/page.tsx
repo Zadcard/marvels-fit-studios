@@ -9,6 +9,7 @@ import {
   LandingReviewsSection,
   LandingServicesSection,
 } from "@/components/landing/landing-sections";
+import { LandingStructuredData } from "@/components/landing/landing-structured-data";
 
 import "./landing.css";
 
@@ -18,11 +19,17 @@ export const metadata: Metadata = {
   },
   description:
     "Marvel's Fit Studios is a premium performance training studio in Giza, Egypt with group training, private coaching, expert trainers, and a structured membership experience.",
+  alternates: {
+    canonical: "/",
+  },
   openGraph: {
     title: "Marvel's Fit Studios | Premium Performance Training in Giza",
     description:
       "Join a structured, premium training experience with expert coaches, private support, and measurable progress.",
     type: "website",
+    url: "/",
+    siteName: "Marvel's Fit Studios",
+    locale: "en_US",
   },
   twitter: {
     card: "summary_large_image",
@@ -35,6 +42,7 @@ export const metadata: Metadata = {
 export default function LandingPage() {
   return (
     <>
+      <LandingStructuredData />
       <div className="site-shell">
         <a href="#main" className="skip-link">
           Skip to main content

@@ -25,4 +25,11 @@ test.describe('Authentication', () => {
     await page.getByRole('button', { name: /sign in/i }).click();
     await expect(page.getByText(/invalid/i)).toBeVisible({ timeout: 45_000 });
   });
+
+  for (const route of ['/admin', '/coach', '/client']) {
+    test(`redirects anonymous visitors away from ${route}`, async ({ page }) => {
+      await page.goto(route);
+      await expect(page).toHaveURL(/\/login/);
+    });
+  }
 });

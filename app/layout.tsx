@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
-import type { CSSProperties } from "react";
 
 import { AuthProvider } from "@/components/providers/session-provider";
+import { manrope, spaceGrotesk } from "./fonts";
 
 import "./globals.css";
 
@@ -29,14 +29,7 @@ export default function RootLayout({
     <html
       lang="en"
       data-scroll-behavior="smooth"
-      style={
-        {
-          "--font-body":
-            '"Aptos", "Segoe UI", "Helvetica Neue", ui-sans-serif, system-ui, sans-serif',
-          "--font-display":
-            '"Bahnschrift", "Trebuchet MS", "Arial Narrow", ui-sans-serif, system-ui, sans-serif',
-        } as CSSProperties
-      }
+      className={`${manrope.variable} ${spaceGrotesk.variable}`}
     >
       <body>
         <AuthProvider>{children}</AuthProvider>

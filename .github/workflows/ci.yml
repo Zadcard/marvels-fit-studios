@@ -7,6 +7,34 @@ on:
     branches: [main]
 
 jobs:
+  supabase-schema:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Start local Supabase and apply migrations
+        run: npx supabase start
+
+      - name: Rebuild the local database from migrations
+        run: npx supabase db reset --local
+
+      - name: Lint the rebuilt local schema
+        run: npx supabase db lint --local --level warning --fail-on warning
+
+      - name: Stop local Supabase
+        if: always()
+        run: npx supabase stop --no-backup
+
   lint-and-test:
     runs-on: ubuntu-latest
 

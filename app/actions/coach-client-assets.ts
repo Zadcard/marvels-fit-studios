@@ -4,34 +4,14 @@ import { UserRole } from "@/lib/supabase/domain";
 import { revalidatePath } from "next/cache";
 
 import { requireRole } from "@/lib/auth/session";
+import { requireCoachClientAccess } from "@/lib/auth/coach-client-access";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
-
-const MAX_FILE_SIZE = 10 * 1024 * 1024;
-
-async function assertCoachCanAccessClient(userId: string, clientId: string) {
-  const supabase = getSupabaseServerClient();
-  const { data: client, error } = await supabase
-    .from("Client")
-    .select(
-      `
-      id, group:Group(coach:Coach(userId)),
-      bookings:SessionBooking(trainingSession:TrainingSession(coach:Coach(userId)))
-    `,
-    )
-    .eq("id", clientId)
-    .maybeSingle();
-  if (error) throw error;
-
-  if (
-    !client ||
-    (client.group?.coach.userId !== userId &&
-      !client.bookings.some(
-        (booking) => booking.trainingSession.coach.userId === userId,
-      ))
-  ) {
-    throw new Error("Client is not assigned to this coach.");
-  }
-}
+import {
+  ALLOWED_COACH_FILE_TYPES,
+  COACH_FILES_BUCKET,
+  createCoachFilePath,
+  MAX_COACH_FILE_SIZE,
+} from "@/lib/storage/coach-files";
 
 async function assertCoachCanAccessGroup(userId: string, groupId: string) {
   const { data: group, error } = await getSupabaseServerClient()
@@ -65,7 +45,7 @@ export async function savePrivateClientNote(input: {
     throw new Error("Note cannot be empty.");
   }
 
-  await assertCoachCanAccessClient(coach.id, clientId);
+  await requireCoachClientAccess(coach.id, clientId);
 
   if (input.noteId) {
     const { data: note, error } = await supabase
@@ -126,12 +106,18 @@ export async function uploadCoachFile(formData: FormData) {
     throw new Error("File is empty.");
   }
 
-  if (file.size > MAX_FILE_SIZE) {
+  if (file.size > MAX_COACH_FILE_SIZE) {
     throw new Error("Files must be 10 MB or smaller.");
   }
 
+  if (!ALLOWED_COACH_FILE_TYPES.has(file.type)) {
+    throw new Error(
+      "Upload a PDF, image, text, Word, or Excel training file."
+    );
+  }
+
   if (scope === "client") {
-    await assertCoachCanAccessClient(coach.id, targetId);
+    await requireCoachClientAccess(coach.id, targetId);
   } else if (scope === "group") {
     await assertCoachCanAccessGroup(coach.id, targetId);
   } else {
@@ -140,29 +126,66 @@ export async function uploadCoachFile(formData: FormData) {
 
   const expiresAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
   const bytes = Buffer.from(await file.arrayBuffer());
+  const path = createCoachFilePath(scope, targetId, file.name);
+
+  const { error: uploadError } = await supabase.storage
+    .from(COACH_FILES_BUCKET)
+    .upload(path, bytes, {
+      contentType: file.type,
+      upsert: false,
+    });
+  if (uploadError) throw uploadError;
 
   const { error } = await supabase.from("File").insert({
     name: file.name,
-    mimeType: file.type || "application/octet-stream",
+    path,
+    mimeType: file.type,
     size: file.size,
-    data: `\\x${bytes.toString("hex")}`,
     note: note || null,
     expiresAt: expiresAt.toISOString(),
     uploadedById: coach.id,
     clientId: scope === "client" ? targetId : null,
     groupId: scope === "group" ? targetId : null,
   });
-  if (error) throw error;
+  if (error) {
+    const { error: cleanupError } = await supabase.storage
+      .from(COACH_FILES_BUCKET)
+      .remove([path]);
+    if (cleanupError) {
+      console.error(
+        "[coach-files] failed to remove an orphaned upload:",
+        cleanupError
+      );
+    }
+    throw error;
+  }
 
   revalidateClientAssetViews();
 }
 
 export async function cleanupExpiredCoachFiles() {
   await requireRole(UserRole.ADMIN);
-  const { error } = await getSupabaseServerClient()
+  const supabase = getSupabaseServerClient();
+  const now = new Date().toISOString();
+  const { data: expiredFiles, error: findError } = await supabase
+    .from("File")
+    .select("id,path")
+    .lte("expiresAt", now);
+  if (findError) throw findError;
+
+  if (expiredFiles.length === 0) {
+    return;
+  }
+
+  const { error: storageError } = await supabase.storage
+    .from(COACH_FILES_BUCKET)
+    .remove(expiredFiles.map((file) => file.path));
+  if (storageError) throw storageError;
+
+  const { error } = await supabase
     .from("File")
     .delete()
-    .lte("expiresAt", new Date().toISOString());
+    .in("id", expiredFiles.map((file) => file.id));
   if (error) throw error;
 
   revalidateClientAssetViews();

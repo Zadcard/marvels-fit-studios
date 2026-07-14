@@ -67,6 +67,137 @@ export type Database = {
           },
         ]
       }
+      AuthThrottle: {
+        Row: {
+          blockedUntil: string | null
+          failureCount: number
+          keyHash: string
+          lastAttemptAt: string
+          windowStartedAt: string
+        }
+        Insert: {
+          blockedUntil?: string | null
+          failureCount?: number
+          keyHash: string
+          lastAttemptAt?: string
+          windowStartedAt?: string
+        }
+        Update: {
+          blockedUntil?: string | null
+          failureCount?: number
+          keyHash?: string
+          lastAttemptAt?: string
+          windowStartedAt?: string
+        }
+        Relationships: []
+      }
+      AutomationRun: {
+        Row: {
+          errorMessage: string | null
+          finishedAt: string | null
+          id: string
+          jobName: string
+          notificationsCreated: number
+          startedAt: string
+          status: string
+        }
+        Insert: {
+          errorMessage?: string | null
+          finishedAt?: string | null
+          id?: string
+          jobName: string
+          notificationsCreated?: number
+          startedAt?: string
+          status: string
+        }
+        Update: {
+          errorMessage?: string | null
+          finishedAt?: string | null
+          id?: string
+          jobName?: string
+          notificationsCreated?: number
+          startedAt?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      BillingLedgerEntry: {
+        Row: {
+          amount: number
+          clientId: string
+          clientSubscriptionId: string | null
+          createdAt: string
+          createdById: string | null
+          currency: string
+          description: string
+          id: string
+          occurredAt: string
+          paymentId: string | null
+          receiptNumber: string
+          status: Database["public"]["Enums"]["LedgerEntryStatus"]
+          type: Database["public"]["Enums"]["LedgerEntryType"]
+        }
+        Insert: {
+          amount: number
+          clientId: string
+          clientSubscriptionId?: string | null
+          createdAt?: string
+          createdById?: string | null
+          currency?: string
+          description: string
+          id?: string
+          occurredAt?: string
+          paymentId?: string | null
+          receiptNumber: string
+          status?: Database["public"]["Enums"]["LedgerEntryStatus"]
+          type: Database["public"]["Enums"]["LedgerEntryType"]
+        }
+        Update: {
+          amount?: number
+          clientId?: string
+          clientSubscriptionId?: string | null
+          createdAt?: string
+          createdById?: string | null
+          currency?: string
+          description?: string
+          id?: string
+          occurredAt?: string
+          paymentId?: string | null
+          receiptNumber?: string
+          status?: Database["public"]["Enums"]["LedgerEntryStatus"]
+          type?: Database["public"]["Enums"]["LedgerEntryType"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "BillingLedgerEntry_clientId_fkey"
+            columns: ["clientId"]
+            isOneToOne: false
+            referencedRelation: "Client"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "BillingLedgerEntry_clientSubscriptionId_fkey"
+            columns: ["clientSubscriptionId"]
+            isOneToOne: false
+            referencedRelation: "ClientSubscription"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "BillingLedgerEntry_createdById_fkey"
+            columns: ["createdById"]
+            isOneToOne: false
+            referencedRelation: "User"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "BillingLedgerEntry_paymentId_fkey"
+            columns: ["paymentId"]
+            isOneToOne: true
+            referencedRelation: "Payment"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       Client: {
         Row: {
           createdAt: string
@@ -124,6 +255,210 @@ export type Database = {
           {
             foreignKeyName: "Client_userId_fkey"
             columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "User"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ClientAssessment: {
+        Row: {
+          assessedAt: string
+          assessorId: string
+          baselineSummary: string | null
+          clientId: string
+          consentAcknowledgedAt: string | null
+          createdAt: string
+          experienceLevel: string
+          id: string
+          injuriesLimitations: string | null
+          medicalNotes: string | null
+          primaryGoal: string
+          secondaryGoals: string | null
+          status: Database["public"]["Enums"]["AssessmentStatus"]
+          updatedAt: string
+        }
+        Insert: {
+          assessedAt?: string
+          assessorId: string
+          baselineSummary?: string | null
+          clientId: string
+          consentAcknowledgedAt?: string | null
+          createdAt?: string
+          experienceLevel: string
+          id?: string
+          injuriesLimitations?: string | null
+          medicalNotes?: string | null
+          primaryGoal: string
+          secondaryGoals?: string | null
+          status?: Database["public"]["Enums"]["AssessmentStatus"]
+          updatedAt?: string
+        }
+        Update: {
+          assessedAt?: string
+          assessorId?: string
+          baselineSummary?: string | null
+          clientId?: string
+          consentAcknowledgedAt?: string | null
+          createdAt?: string
+          experienceLevel?: string
+          id?: string
+          injuriesLimitations?: string | null
+          medicalNotes?: string | null
+          primaryGoal?: string
+          secondaryGoals?: string | null
+          status?: Database["public"]["Enums"]["AssessmentStatus"]
+          updatedAt?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ClientAssessment_assessorId_fkey"
+            columns: ["assessorId"]
+            isOneToOne: false
+            referencedRelation: "User"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ClientAssessment_clientId_fkey"
+            columns: ["clientId"]
+            isOneToOne: false
+            referencedRelation: "Client"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ClientCheckIn: {
+        Row: {
+          clientId: string
+          coachResponse: string | null
+          createdAt: string
+          energyLevel: number
+          id: string
+          memberNote: string | null
+          painDetails: string | null
+          painPresent: boolean
+          respondedAt: string | null
+          respondedById: string | null
+          sleepQuality: number
+          sorenessLevel: number
+          stressLevel: number
+          submittedAt: string
+          updatedAt: string
+        }
+        Insert: {
+          clientId: string
+          coachResponse?: string | null
+          createdAt?: string
+          energyLevel: number
+          id?: string
+          memberNote?: string | null
+          painDetails?: string | null
+          painPresent?: boolean
+          respondedAt?: string | null
+          respondedById?: string | null
+          sleepQuality: number
+          sorenessLevel: number
+          stressLevel: number
+          submittedAt?: string
+          updatedAt?: string
+        }
+        Update: {
+          clientId?: string
+          coachResponse?: string | null
+          createdAt?: string
+          energyLevel?: number
+          id?: string
+          memberNote?: string | null
+          painDetails?: string | null
+          painPresent?: boolean
+          respondedAt?: string | null
+          respondedById?: string | null
+          sleepQuality?: number
+          sorenessLevel?: number
+          stressLevel?: number
+          submittedAt?: string
+          updatedAt?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ClientCheckIn_clientId_fkey"
+            columns: ["clientId"]
+            isOneToOne: false
+            referencedRelation: "Client"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ClientCheckIn_respondedById_fkey"
+            columns: ["respondedById"]
+            isOneToOne: false
+            referencedRelation: "User"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ClientGoal: {
+        Row: {
+          achievedAt: string | null
+          baselineValue: number | null
+          clientId: string
+          createdAt: string
+          createdById: string
+          currentValue: number | null
+          description: string | null
+          id: string
+          metricType: string | null
+          status: Database["public"]["Enums"]["GoalStatus"]
+          targetDate: string | null
+          targetValue: number | null
+          title: string
+          unit: string | null
+          updatedAt: string
+        }
+        Insert: {
+          achievedAt?: string | null
+          baselineValue?: number | null
+          clientId: string
+          createdAt?: string
+          createdById: string
+          currentValue?: number | null
+          description?: string | null
+          id?: string
+          metricType?: string | null
+          status?: Database["public"]["Enums"]["GoalStatus"]
+          targetDate?: string | null
+          targetValue?: number | null
+          title: string
+          unit?: string | null
+          updatedAt?: string
+        }
+        Update: {
+          achievedAt?: string | null
+          baselineValue?: number | null
+          clientId?: string
+          createdAt?: string
+          createdById?: string
+          currentValue?: number | null
+          description?: string | null
+          id?: string
+          metricType?: string | null
+          status?: Database["public"]["Enums"]["GoalStatus"]
+          targetDate?: string | null
+          targetValue?: number | null
+          title?: string
+          unit?: string | null
+          updatedAt?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ClientGoal_clientId_fkey"
+            columns: ["clientId"]
+            isOneToOne: false
+            referencedRelation: "Client"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ClientGoal_createdById_fkey"
+            columns: ["createdById"]
             isOneToOne: false
             referencedRelation: "User"
             referencedColumns: ["id"]
@@ -263,11 +598,54 @@ export type Database = {
           },
         ]
       }
+      Exercise: {
+        Row: {
+          category: string
+          createdAt: string
+          createdById: string | null
+          defaultUnit: string | null
+          id: string
+          instructions: string | null
+          isActive: boolean
+          name: string
+          updatedAt: string
+        }
+        Insert: {
+          category: string
+          createdAt?: string
+          createdById?: string | null
+          defaultUnit?: string | null
+          id?: string
+          instructions?: string | null
+          isActive?: boolean
+          name: string
+          updatedAt?: string
+        }
+        Update: {
+          category?: string
+          createdAt?: string
+          createdById?: string | null
+          defaultUnit?: string | null
+          id?: string
+          instructions?: string | null
+          isActive?: boolean
+          name?: string
+          updatedAt?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "Exercise_createdById_fkey"
+            columns: ["createdById"]
+            isOneToOne: false
+            referencedRelation: "User"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       File: {
         Row: {
           clientId: string | null
           createdAt: string
-          data: string | null
           deletedAt: string | null
           downloadedAt: string | null
           expiresAt: string
@@ -284,7 +662,6 @@ export type Database = {
         Insert: {
           clientId?: string | null
           createdAt?: string
-          data?: string | null
           deletedAt?: string | null
           downloadedAt?: string | null
           expiresAt?: string
@@ -293,7 +670,7 @@ export type Database = {
           mimeType?: string | null
           name: string
           note?: string | null
-          path?: string
+          path: string
           size?: number
           updatedAt?: string
           uploadedById?: string | null
@@ -301,7 +678,6 @@ export type Database = {
         Update: {
           clientId?: string | null
           createdAt?: string
-          data?: string | null
           deletedAt?: string | null
           downloadedAt?: string | null
           expiresAt?: string
@@ -413,6 +789,59 @@ export type Database = {
         }
         Relationships: []
       }
+      Notification: {
+        Row: {
+          body: string
+          createdAt: string
+          dedupeKey: string
+          href: string | null
+          id: string
+          kind: Database["public"]["Enums"]["NotificationKind"]
+          metadata: Json
+          readAt: string | null
+          recipientId: string
+          sentAt: string
+          status: Database["public"]["Enums"]["NotificationStatus"]
+          title: string
+        }
+        Insert: {
+          body: string
+          createdAt?: string
+          dedupeKey: string
+          href?: string | null
+          id?: string
+          kind: Database["public"]["Enums"]["NotificationKind"]
+          metadata?: Json
+          readAt?: string | null
+          recipientId: string
+          sentAt?: string
+          status?: Database["public"]["Enums"]["NotificationStatus"]
+          title: string
+        }
+        Update: {
+          body?: string
+          createdAt?: string
+          dedupeKey?: string
+          href?: string | null
+          id?: string
+          kind?: Database["public"]["Enums"]["NotificationKind"]
+          metadata?: Json
+          readAt?: string | null
+          recipientId?: string
+          sentAt?: string
+          status?: Database["public"]["Enums"]["NotificationStatus"]
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "Notification_recipientId_fkey"
+            columns: ["recipientId"]
+            isOneToOne: false
+            referencedRelation: "User"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       Payment: {
         Row: {
           amount: number
@@ -457,6 +886,230 @@ export type Database = {
             columns: ["clientSubscriptionId"]
             isOneToOne: false
             referencedRelation: "ClientSubscription"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ProgramWorkout: {
+        Row: {
+          createdAt: string
+          dayOrder: number
+          id: string
+          notes: string | null
+          programId: string
+          title: string
+          updatedAt: string
+        }
+        Insert: {
+          createdAt?: string
+          dayOrder: number
+          id?: string
+          notes?: string | null
+          programId: string
+          title: string
+          updatedAt?: string
+        }
+        Update: {
+          createdAt?: string
+          dayOrder?: number
+          id?: string
+          notes?: string | null
+          programId?: string
+          title?: string
+          updatedAt?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ProgramWorkout_programId_fkey"
+            columns: ["programId"]
+            isOneToOne: false
+            referencedRelation: "TrainingProgram"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ProgressMetric: {
+        Row: {
+          clientId: string
+          createdAt: string
+          id: string
+          measuredAt: string
+          metricType: string
+          note: string | null
+          recordedById: string
+          unit: string
+          value: number
+        }
+        Insert: {
+          clientId: string
+          createdAt?: string
+          id?: string
+          measuredAt?: string
+          metricType: string
+          note?: string | null
+          recordedById: string
+          unit: string
+          value: number
+        }
+        Update: {
+          clientId?: string
+          createdAt?: string
+          id?: string
+          measuredAt?: string
+          metricType?: string
+          note?: string | null
+          recordedById?: string
+          unit?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ProgressMetric_clientId_fkey"
+            columns: ["clientId"]
+            isOneToOne: false
+            referencedRelation: "Client"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ProgressMetric_recordedById_fkey"
+            columns: ["recordedById"]
+            isOneToOne: false
+            referencedRelation: "User"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      RecurringSessionTemplate: {
+        Row: {
+          active: boolean
+          capacity: number | null
+          coachId: string
+          createdAt: string
+          createdById: string
+          description: string | null
+          durationMinutes: number
+          endsOn: string | null
+          groupId: string | null
+          id: string
+          lastGeneratedThrough: string | null
+          localStartTime: string
+          location: string | null
+          startsOn: string
+          status: Database["public"]["Enums"]["TrainingSessionStatus"]
+          timezone: string
+          title: string
+          type: Database["public"]["Enums"]["TrainingSessionType"]
+          updatedAt: string
+          weekday: number
+        }
+        Insert: {
+          active?: boolean
+          capacity?: number | null
+          coachId: string
+          createdAt?: string
+          createdById: string
+          description?: string | null
+          durationMinutes: number
+          endsOn?: string | null
+          groupId?: string | null
+          id?: string
+          lastGeneratedThrough?: string | null
+          localStartTime: string
+          location?: string | null
+          startsOn: string
+          status?: Database["public"]["Enums"]["TrainingSessionStatus"]
+          timezone?: string
+          title: string
+          type: Database["public"]["Enums"]["TrainingSessionType"]
+          updatedAt?: string
+          weekday: number
+        }
+        Update: {
+          active?: boolean
+          capacity?: number | null
+          coachId?: string
+          createdAt?: string
+          createdById?: string
+          description?: string | null
+          durationMinutes?: number
+          endsOn?: string | null
+          groupId?: string | null
+          id?: string
+          lastGeneratedThrough?: string | null
+          localStartTime?: string
+          location?: string | null
+          startsOn?: string
+          status?: Database["public"]["Enums"]["TrainingSessionStatus"]
+          timezone?: string
+          title?: string
+          type?: Database["public"]["Enums"]["TrainingSessionType"]
+          updatedAt?: string
+          weekday?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "RecurringSessionTemplate_coachId_fkey"
+            columns: ["coachId"]
+            isOneToOne: false
+            referencedRelation: "Coach"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "RecurringSessionTemplate_createdById_fkey"
+            columns: ["createdById"]
+            isOneToOne: false
+            referencedRelation: "User"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "RecurringSessionTemplate_groupId_fkey"
+            columns: ["groupId"]
+            isOneToOne: false
+            referencedRelation: "Group"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      SecurityEvent: {
+        Row: {
+          authMethod: string | null
+          createdAt: string
+          eventType: string
+          id: string
+          identifierHash: string | null
+          ipHash: string | null
+          metadata: Json
+          outcome: string
+          userId: string | null
+        }
+        Insert: {
+          authMethod?: string | null
+          createdAt?: string
+          eventType: string
+          id?: string
+          identifierHash?: string | null
+          ipHash?: string | null
+          metadata?: Json
+          outcome: string
+          userId?: string | null
+        }
+        Update: {
+          authMethod?: string | null
+          createdAt?: string
+          eventType?: string
+          id?: string
+          identifierHash?: string | null
+          ipHash?: string | null
+          metadata?: Json
+          outcome?: string
+          userId?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "SecurityEvent_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "User"
             referencedColumns: ["id"]
           },
         ]
@@ -718,6 +1371,60 @@ export type Database = {
         }
         Relationships: []
       }
+      TrainingProgram: {
+        Row: {
+          clientId: string
+          coachId: string
+          createdAt: string
+          endsAt: string | null
+          goalSummary: string | null
+          id: string
+          name: string
+          startsAt: string
+          status: Database["public"]["Enums"]["ProgramStatus"]
+          updatedAt: string
+        }
+        Insert: {
+          clientId: string
+          coachId: string
+          createdAt?: string
+          endsAt?: string | null
+          goalSummary?: string | null
+          id?: string
+          name: string
+          startsAt: string
+          status?: Database["public"]["Enums"]["ProgramStatus"]
+          updatedAt?: string
+        }
+        Update: {
+          clientId?: string
+          coachId?: string
+          createdAt?: string
+          endsAt?: string | null
+          goalSummary?: string | null
+          id?: string
+          name?: string
+          startsAt?: string
+          status?: Database["public"]["Enums"]["ProgramStatus"]
+          updatedAt?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "TrainingProgram_clientId_fkey"
+            columns: ["clientId"]
+            isOneToOne: false
+            referencedRelation: "Client"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "TrainingProgram_coachId_fkey"
+            columns: ["coachId"]
+            isOneToOne: false
+            referencedRelation: "Coach"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       TrainingSession: {
         Row: {
           capacity: number | null
@@ -729,6 +1436,7 @@ export type Database = {
           groupId: string | null
           id: string
           location: string | null
+          sourceTemplateId: string | null
           startsAt: string
           status: Database["public"]["Enums"]["TrainingSessionStatus"]
           title: string
@@ -745,6 +1453,7 @@ export type Database = {
           groupId?: string | null
           id?: string
           location?: string | null
+          sourceTemplateId?: string | null
           startsAt: string
           status?: Database["public"]["Enums"]["TrainingSessionStatus"]
           title: string
@@ -761,6 +1470,7 @@ export type Database = {
           groupId?: string | null
           id?: string
           location?: string | null
+          sourceTemplateId?: string | null
           startsAt?: string
           status?: Database["public"]["Enums"]["TrainingSessionStatus"]
           title?: string
@@ -787,6 +1497,13 @@ export type Database = {
             columns: ["groupId"]
             isOneToOne: false
             referencedRelation: "Group"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "TrainingSession_sourceTemplateId_fkey"
+            columns: ["sourceTemplateId"]
+            isOneToOne: false
+            referencedRelation: "RecurringSessionTemplate"
             referencedColumns: ["id"]
           },
         ]
@@ -860,6 +1577,140 @@ export type Database = {
         }
         Relationships: []
       }
+      WorkoutExercise: {
+        Row: {
+          createdAt: string
+          exerciseId: string
+          id: string
+          loadUnit: string | null
+          notes: string | null
+          orderIndex: number
+          reps: string
+          restSeconds: number | null
+          sets: number
+          targetLoad: number | null
+          tempo: string | null
+          updatedAt: string
+          workoutId: string
+        }
+        Insert: {
+          createdAt?: string
+          exerciseId: string
+          id?: string
+          loadUnit?: string | null
+          notes?: string | null
+          orderIndex: number
+          reps: string
+          restSeconds?: number | null
+          sets?: number
+          targetLoad?: number | null
+          tempo?: string | null
+          updatedAt?: string
+          workoutId: string
+        }
+        Update: {
+          createdAt?: string
+          exerciseId?: string
+          id?: string
+          loadUnit?: string | null
+          notes?: string | null
+          orderIndex?: number
+          reps?: string
+          restSeconds?: number | null
+          sets?: number
+          targetLoad?: number | null
+          tempo?: string | null
+          updatedAt?: string
+          workoutId?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "WorkoutExercise_exerciseId_fkey"
+            columns: ["exerciseId"]
+            isOneToOne: false
+            referencedRelation: "Exercise"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "WorkoutExercise_workoutId_fkey"
+            columns: ["workoutId"]
+            isOneToOne: false
+            referencedRelation: "ProgramWorkout"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      WorkoutLog: {
+        Row: {
+          clientId: string
+          createdAt: string
+          durationMinutes: number | null
+          id: string
+          notes: string | null
+          performedAt: string
+          programWorkoutId: string | null
+          recordedById: string
+          sessionRpe: number | null
+          trainingSessionId: string | null
+          updatedAt: string
+        }
+        Insert: {
+          clientId: string
+          createdAt?: string
+          durationMinutes?: number | null
+          id?: string
+          notes?: string | null
+          performedAt?: string
+          programWorkoutId?: string | null
+          recordedById: string
+          sessionRpe?: number | null
+          trainingSessionId?: string | null
+          updatedAt?: string
+        }
+        Update: {
+          clientId?: string
+          createdAt?: string
+          durationMinutes?: number | null
+          id?: string
+          notes?: string | null
+          performedAt?: string
+          programWorkoutId?: string | null
+          recordedById?: string
+          sessionRpe?: number | null
+          trainingSessionId?: string | null
+          updatedAt?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "WorkoutLog_clientId_fkey"
+            columns: ["clientId"]
+            isOneToOne: false
+            referencedRelation: "Client"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "WorkoutLog_programWorkoutId_fkey"
+            columns: ["programWorkoutId"]
+            isOneToOne: false
+            referencedRelation: "ProgramWorkout"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "WorkoutLog_recordedById_fkey"
+            columns: ["recordedById"]
+            isOneToOne: false
+            referencedRelation: "User"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "WorkoutLog_trainingSessionId_fkey"
+            columns: ["trainingSessionId"]
+            isOneToOne: false
+            referencedRelation: "TrainingSession"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       WorkoutNote: {
         Row: {
           authorId: string | null
@@ -908,6 +1759,63 @@ export type Database = {
           },
         ]
       }
+      WorkoutSetLog: {
+        Row: {
+          completed: boolean
+          createdAt: string
+          exerciseId: string
+          id: string
+          load: number | null
+          loadUnit: string | null
+          notes: string | null
+          reps: number | null
+          rpe: number | null
+          setNumber: number
+          workoutLogId: string
+        }
+        Insert: {
+          completed?: boolean
+          createdAt?: string
+          exerciseId: string
+          id?: string
+          load?: number | null
+          loadUnit?: string | null
+          notes?: string | null
+          reps?: number | null
+          rpe?: number | null
+          setNumber: number
+          workoutLogId: string
+        }
+        Update: {
+          completed?: boolean
+          createdAt?: string
+          exerciseId?: string
+          id?: string
+          load?: number | null
+          loadUnit?: string | null
+          notes?: string | null
+          reps?: number | null
+          rpe?: number | null
+          setNumber?: number
+          workoutLogId?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "WorkoutSetLog_exerciseId_fkey"
+            columns: ["exerciseId"]
+            isOneToOne: false
+            referencedRelation: "Exercise"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "WorkoutSetLog_workoutLogId_fkey"
+            columns: ["workoutLogId"]
+            isOneToOne: false
+            referencedRelation: "WorkoutLog"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -939,7 +1847,16 @@ export type Database = {
           id: string
         }[]
       }
+      check_auth_throttle: { Args: { p_key_hash: string }; Returns: Json }
       delete_coach: { Args: { p_coach_id: string }; Returns: undefined }
+      enqueue_studio_notifications: {
+        Args: { p_now?: string }
+        Returns: number
+      }
+      generate_recurring_sessions: {
+        Args: { p_template_id: string; p_through_date: string }
+        Returns: number
+      }
       promote_lead_to_client: {
         Args: {
           generated_client_id: string
@@ -947,6 +1864,58 @@ export type Database = {
           target_lead_id: string
         }
         Returns: Json
+      }
+      record_auth_attempt: {
+        Args: {
+          p_auth_method: string
+          p_identifier_hash: string
+          p_ip_hash: string
+          p_key_hash: string
+          p_success: boolean
+          p_user_id?: string
+        }
+        Returns: Json
+      }
+      record_ledger_adjustment: {
+        Args: {
+          p_amount: number
+          p_client_id: string
+          p_created_by_id: string
+          p_currency: string
+          p_description: string
+          p_subscription_id: string
+          p_type: Database["public"]["Enums"]["LedgerEntryType"]
+        }
+        Returns: string
+      }
+      record_security_event: {
+        Args: {
+          p_auth_method?: string
+          p_event_type: string
+          p_identifier_hash?: string
+          p_ip_hash?: string
+          p_metadata?: Json
+          p_outcome: string
+          p_user_id?: string
+        }
+        Returns: string
+      }
+      record_workout_performance: {
+        Args: {
+          p_client_id: string
+          p_duration_minutes: number
+          p_exercise_id: string
+          p_load: number
+          p_load_unit: string
+          p_notes: string
+          p_program_workout_id: string
+          p_recorded_by_id: string
+          p_reps: number
+          p_rpe: number
+          p_session_rpe: number
+          p_set_number: number
+        }
+        Returns: string
       }
       register_client: {
         Args: {
@@ -994,6 +1963,19 @@ export type Database = {
         }
         Returns: undefined
       }
+      save_training_program: {
+        Args: {
+          p_client_id: string
+          p_coach_id: string
+          p_ends_at: string
+          p_goal_summary: string
+          p_name: string
+          p_program_id: string
+          p_starts_at: string
+          p_status: Database["public"]["Enums"]["ProgramStatus"]
+        }
+        Returns: string
+      }
       set_client_payment_status: {
         Args: {
           p_amount: number
@@ -1031,6 +2013,7 @@ export type Database = {
       }
     }
     Enums: {
+      AssessmentStatus: "DRAFT" | "COMPLETE"
       BillingCycle: "MONTHLY" | "WEEKLY" | "CUSTOM"
       BookingSource: "BLOCK" | "MANUAL"
       BookingStatus: "BOOKED" | "ATTENDED" | "MISSED" | "CANCELED" | "WAITLIST"
@@ -1041,8 +2024,14 @@ export type Database = {
         | "CONDITIONING"
         | "MOBILITY"
         | "PRIVATE_COACHING"
+      GoalStatus: "ACTIVE" | "ACHIEVED" | "PAUSED" | "CANCELED"
       GroupType: "GROUP" | "PRIVATE"
       LeadStatus: "NEW" | "CONTACTED" | "CONVERTED" | "CLOSED"
+      LedgerEntryStatus: "POSTED" | "VOID"
+      LedgerEntryType: "PAYMENT" | "CHARGE" | "CREDIT" | "REFUND"
+      NotificationKind: "SESSION_REMINDER" | "RENEWAL_REMINDER" | "SYSTEM"
+      NotificationStatus: "SENT" | "READ" | "FAILED"
+      ProgramStatus: "DRAFT" | "ACTIVE" | "COMPLETED" | "ARCHIVED"
       SubscriptionStatus: "ACTIVE" | "TRIAL" | "PAUSED" | "EXPIRED" | "CANCELED"
       TrainingSessionStatus: "DRAFT" | "SCHEDULED" | "COMPLETED" | "CANCELED"
       TrainingSessionType: "GROUP" | "PRIVATE"
@@ -1174,6 +2163,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      AssessmentStatus: ["DRAFT", "COMPLETE"],
       BillingCycle: ["MONTHLY", "WEEKLY", "CUSTOM"],
       BookingSource: ["BLOCK", "MANUAL"],
       BookingStatus: ["BOOKED", "ATTENDED", "MISSED", "CANCELED", "WAITLIST"],
@@ -1185,8 +2175,14 @@ export const Constants = {
         "MOBILITY",
         "PRIVATE_COACHING",
       ],
+      GoalStatus: ["ACTIVE", "ACHIEVED", "PAUSED", "CANCELED"],
       GroupType: ["GROUP", "PRIVATE"],
       LeadStatus: ["NEW", "CONTACTED", "CONVERTED", "CLOSED"],
+      LedgerEntryStatus: ["POSTED", "VOID"],
+      LedgerEntryType: ["PAYMENT", "CHARGE", "CREDIT", "REFUND"],
+      NotificationKind: ["SESSION_REMINDER", "RENEWAL_REMINDER", "SYSTEM"],
+      NotificationStatus: ["SENT", "READ", "FAILED"],
+      ProgramStatus: ["DRAFT", "ACTIVE", "COMPLETED", "ARCHIVED"],
       SubscriptionStatus: ["ACTIVE", "TRIAL", "PAUSED", "EXPIRED", "CANCELED"],
       TrainingSessionStatus: ["DRAFT", "SCHEDULED", "COMPLETED", "CANCELED"],
       TrainingSessionType: ["GROUP", "PRIVATE"],

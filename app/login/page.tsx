@@ -122,8 +122,7 @@ function LoginForm() {
             const identifier =
               loginMethod === "clientId" ? "Client ID, phone" : "email";
             setFormError(`Invalid ${identifier} or password.`);
-            (loginMethod === "clientId" ? passwordInputRef : passwordInputRef)
-              .current?.focus();
+            passwordInputRef.current?.focus();
           } else {
             setFormError("Something went wrong. Try again.");
           }
@@ -206,11 +205,18 @@ function LoginForm() {
         onSubmit={handleSubmit}
         noValidate
       >
-        <div className="login-method-tabs" role="tablist">
+        <div
+          className="login-method-tabs"
+          role="tablist"
+          aria-label="Choose how to sign in"
+        >
           <button
             type="button"
             role="tab"
+            id="login-tab-clientId"
             aria-selected={loginMethod === "clientId"}
+            aria-controls="login-identifier-panel"
+            tabIndex={loginMethod === "clientId" ? 0 : -1}
             onClick={() => {
               setLoginMethod("clientId");
               setFieldErrors({});
@@ -226,7 +232,10 @@ function LoginForm() {
           <button
             type="button"
             role="tab"
+            id="login-tab-email"
             aria-selected={loginMethod === "email"}
+            aria-controls="login-identifier-panel"
+            tabIndex={loginMethod === "email" ? 0 : -1}
             onClick={() => {
               setLoginMethod("email");
               setFieldErrors({});
@@ -242,7 +251,12 @@ function LoginForm() {
         </div>
 
         {loginMethod === "clientId" && (
-          <div className="login-field-group">
+          <div
+            className="login-field-group"
+            id="login-identifier-panel"
+            role="tabpanel"
+            aria-labelledby="login-tab-clientId"
+          >
             <label className="login-field-label" htmlFor="login-client-id">
               Client ID or phone number
             </label>
@@ -273,7 +287,12 @@ function LoginForm() {
         )}
 
         {loginMethod === "email" && (
-          <div className="login-field-group">
+          <div
+            className="login-field-group"
+            id="login-identifier-panel"
+            role="tabpanel"
+            aria-labelledby="login-tab-email"
+          >
             <label className="login-field-label" htmlFor="login-email">
               Email address
             </label>

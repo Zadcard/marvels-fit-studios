@@ -1,4 +1,5 @@
 import { CreditCard, Sparkles } from "lucide-react";
+import Link from "next/link";
 
 import { DashboardMiniStat } from "@/components/dashboard/dashboard-mini-stat";
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
@@ -123,6 +124,12 @@ export function ClientSubscriptionWorkspace({ data }: ClientSubscriptionWorkspac
                 <strong>{payment.amountLabel}</strong>
                 <span>{payment.dateLabel}</span>
                 <span>{payment.note}</span>
+                <small>{payment.receiptNumber}</small>
+                {payment.receiptHref ? (
+                  <Link className="mv-btn mv-btn-outline" href={payment.receiptHref} target="_blank">
+                    View receipt
+                  </Link>
+                ) : null}
               </div>
             ))}
           </div>

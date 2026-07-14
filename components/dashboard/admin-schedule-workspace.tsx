@@ -2,7 +2,7 @@
 
 import { useDeferredValue, useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
-import { CalendarPlus2, XCircle, RefreshCw, ChevronDown, ChevronUp } from "lucide-react";
+import { CalendarPlus2, XCircle, RefreshCw, ChevronDown, ChevronUp, Repeat2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import {
@@ -343,10 +343,16 @@ export function AdminScheduleWorkspace({
       <DashboardPageHeader
         eyebrow="Admin schedule"
         actions={
-          <Link href="/admin/sessions" className="mv-btn mv-btn-primary">
-            <CalendarPlus2 size={16} />
-            Create Session
-          </Link>
+          <>
+            <Link href="/admin/schedule/templates" className="mv-btn mv-btn-outline">
+              <Repeat2 size={16} />
+              Recurring templates
+            </Link>
+            <Link href="/admin/sessions" className="mv-btn mv-btn-primary">
+              <CalendarPlus2 size={16} />
+              Create Session
+            </Link>
+          </>
         }
       />
 

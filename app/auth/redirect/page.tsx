@@ -1,36 +1,26 @@
 import { redirect } from "next/navigation";
 
-import { auth } from "@/auth";
 import { getDashboardHomeForUserRole } from "@/lib/auth/authorization-policy";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { requireUser, UnauthorizedError } from "@/lib/auth/session";
 
 export const metadata = {
   title: "Redirecting",
 };
 
 export default async function AuthRedirectPage() {
-  const session = await auth();
-  const userRole = session?.user?.role;
-
-  if (!userRole) {
-    redirect("/login");
-  }
-
-  if (session.user.id) {
-    try {
-      const { data: user } = await getSupabaseServerClient()
-        .from("User")
-        .select("mustChangePassword")
-        .eq("id", session.user.id)
-        .maybeSingle();
-
-      if (user?.mustChangePassword) {
-        redirect("/change-password");
-      }
-    } catch {
-      // DB unavailable (local dev without env vars) — skip the check
+  let user;
+  try {
+    user = await requireUser();
+  } catch (error) {
+    if (error instanceof UnauthorizedError) {
+      redirect("/login");
     }
+    throw error;
   }
 
-  redirect(getDashboardHomeForUserRole(userRole));
+  if (user.mustChangePassword) {
+    redirect("/change-password");
+  }
+
+  redirect(getDashboardHomeForUserRole(user.role));
 }

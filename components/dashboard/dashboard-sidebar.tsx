@@ -8,7 +8,7 @@ import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 
 import {
-  getDashboardNav,
+  getDashboardSidebarNav,
   getDashboardProfileMeta,
   getDashboardRoleLabel,
   isDashboardNavItemActive,
@@ -39,7 +39,7 @@ export function DashboardSidebar({
 }: DashboardSidebarProps) {
   const pathname = usePathname();
   const { data: session } = useSession();
-  const navItems = getDashboardNav(role);
+  const navItems = getDashboardSidebarNav(role);
   const profileMeta = getDashboardProfileMeta(role);
   const roleLabel = getDashboardRoleLabel(role);
   const groupedItems = {

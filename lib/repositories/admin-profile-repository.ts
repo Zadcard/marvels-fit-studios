@@ -6,21 +6,12 @@ import type {
 } from "@/lib/mocks/admin-profile";
 import { withSupabaseFallback } from "@/lib/supabase/errors";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getInitials } from "@/lib/utils";
 
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
   month: "long",
   year: "numeric",
 });
-
-function getInitials(name: string | null | undefined, email: string | null | undefined) {
-  const source = name?.trim() || email?.trim() || "Admin User";
-  return source
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part.charAt(0).toUpperCase())
-    .join("");
-}
 
 function getDefaultAdminProfileData(): {
   profile: AdminProfileRecord;
@@ -141,7 +132,7 @@ export class AdminProfileRepository {
           phone: "No phone on file",
           location: "Studio HQ",
           bio: "Manages leads, clients, schedules, and day-to-day studio operations.",
-          initials: getInitials(user.name, user.email),
+          initials: getInitials(user.name, user.email, "Admin User"),
           joinedLabel: `Joined ${dateFormatter.format(new Date(user.createdAt))}`,
           credentialsNote: "Password changes are available from this profile and are applied to your signed-in account.",
         },

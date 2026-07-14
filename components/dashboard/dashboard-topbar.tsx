@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Menu, Search } from "lucide-react";
+import { Bell, Menu } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 
@@ -10,10 +10,10 @@ import {
   getDashboardProfileHref,
   getDashboardRouteMeta,
   getDashboardRoleLabel,
-  getDashboardSearchPrompt,
 } from "@/lib/navigation/dashboard-nav";
 import type { DashboardRole } from "@/lib/auth/authorization-policy";
 import type { DashboardAccountSummary } from "@/components/dashboard/dashboard-role-shell";
+import { getInitials } from "@/lib/utils";
 
 type DashboardTopbarProps = {
   role: DashboardRole;
@@ -40,13 +40,8 @@ export function DashboardTopbar({
     account?.subtitle?.trim() ||
     session?.user?.email?.trim() ||
     profileMeta.subtitle;
-  const displayInitials = account?.initials?.trim() || displayName
-    .split(" ")
-    .map((part) => part[0])
-    .filter(Boolean)
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
+  const displayInitials =
+    account?.initials?.trim() || getInitials(displayName);
 
   return (
     <header className="dashboard-topbar">
@@ -68,21 +63,14 @@ export function DashboardTopbar({
       </div>
 
       <div className="dashboard-topbar__right">
-        <div
-          className="dashboard-topbar__search"
-          role="note"
-          aria-label={`${getDashboardSearchPrompt(role)}. Search is not available on this screen yet.`}
+        <Link
+          href={`/${role.toLowerCase()}/notifications`}
+          className="mv-btn mv-btn-outline"
+          aria-label="Open notifications"
         >
-          <Search size={16} />
-          <span className="dashboard-topbar__search-copy">
-            <strong>Quick find</strong>
-            <span>{getDashboardSearchPrompt(role)}</span>
-          </span>
-          <span className="dashboard-topbar__search-hint" aria-hidden="true">
-            /
-          </span>
-        </div>
-
+          <Bell size={17} />
+          Notifications
+        </Link>
         <Link href={getDashboardProfileHref(role)} className="dashboard-topbar__profile">
           <span className="dashboard-topbar__avatar">
             {displayInitials || profileMeta.initials}

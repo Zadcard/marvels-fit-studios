@@ -5,7 +5,6 @@ import type {
   AdminClientStatus,
   AdminPaymentStatus,
 } from "@/lib/dashboard/admin-dashboard-data";
-import { getAssignedCoachLabel } from "@/lib/coaches/placeholder-coaches";
 
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
   month: "short",
@@ -261,11 +260,10 @@ export function buildInitialOptions(
 export function mapAdminClientRecord(client: AdminClientListRecord): AdminClientRecord {
   const nextBooking = client.bookings[0];
   const membership = inferMembership(client);
-  const assignedCoach = getAssignedCoachLabel(
+  const assignedCoach =
     client.group?.coach.fullName ??
       nextBooking?.trainingSession.coach.fullName ??
-      null
-  );
+      "Unassigned";
 
   return {
     id: client.id,

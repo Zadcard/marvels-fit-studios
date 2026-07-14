@@ -3,18 +3,10 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { DashboardRoleShell } from "@/components/dashboard/dashboard-role-shell";
 import { getDashboardHomeForUserRole } from "@/lib/auth/authorization-policy";
+import { requireRole } from "@/lib/auth/session";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { UserRole } from "@/lib/supabase/domain";
-
-function getInitials(name: string) {
-  return name
-    .split(" ")
-    .map((part) => part[0])
-    .filter(Boolean)
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
-}
+import { getInitials } from "@/lib/utils";
 
 export default async function ClientDashboardLayout({
   children,
@@ -31,15 +23,21 @@ export default async function ClientDashboardLayout({
     redirect(getDashboardHomeForUserRole(session.user.role));
   }
 
+  const persistedUser = await requireRole(UserRole.CLIENT);
+
   const { data: user, error } = await getSupabaseServerClient()
     .from("User")
-    .select("name,email,clientId,mustChangePassword,clientProfile:Client(fullName)")
+    .select("name,email,clientId,clientProfile:Client(fullName)")
     .eq("id", session.user.id)
     .maybeSingle();
   if (error) throw error;
 
-  if (user?.mustChangePassword) {
+  if (persistedUser.mustChangePassword) {
     redirect("/change-password");
+  }
+
+  if (!user) {
+    redirect("/login");
   }
 
   const displayName =

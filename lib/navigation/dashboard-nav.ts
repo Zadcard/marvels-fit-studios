@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   Settings,
   ShieldUser,
+  Target,
   UserRound,
   Users,
   UploadCloud,
@@ -21,6 +22,7 @@ export type DashboardNavItem = {
   description: string;
   section: DashboardNavSection;
   available: boolean;
+  hidden?: boolean;
   badge?: string;
   exact?: boolean;
 };
@@ -75,20 +77,21 @@ const dashboardNavConfig: Record<DashboardRole, DashboardNavItem[]> = {
       description: "Live sessions",
       section: "primary",
       available: true,
+      hidden: true,
     },
     {
-      label: "Schedule",
+      label: "Calendar",
       href: "/admin/schedule",
       icon: CalendarRange,
-      description: "Sessions calendar",
+      description: "Schedule and capacity",
       section: "primary",
       available: true,
     },
     {
-      label: "Join Requests",
+      label: "Leads",
       href: "/admin/join-requests",
       icon: ClipboardList,
-      description: "Intake and conversion",
+      description: "Pipeline and conversion",
       section: "primary",
       available: true,
     },
@@ -99,6 +102,7 @@ const dashboardNavConfig: Record<DashboardRole, DashboardNavItem[]> = {
       description: "CSV client import",
       section: "primary",
       available: true,
+      hidden: true,
     },
     {
       label: "Settings",
@@ -115,6 +119,7 @@ const dashboardNavConfig: Record<DashboardRole, DashboardNavItem[]> = {
       description: "Account and access",
       section: "secondary",
       available: true,
+      hidden: true,
     },
   ],
   coach: [
@@ -179,6 +184,14 @@ const dashboardNavConfig: Record<DashboardRole, DashboardNavItem[]> = {
       available: true,
     },
     {
+      label: "Progress",
+      href: "/client/progress",
+      icon: Target,
+      description: "Goals and training plan",
+      section: "primary",
+      available: true,
+    },
+    {
       label: "Coach",
       href: "/client/coach",
       icon: ShieldUser,
@@ -212,9 +225,9 @@ const dashboardRoleUiConfig: Record<DashboardRole, DashboardRoleUiMeta> = {
     defaultSubtitle: "Live priorities and studio control.",
     eyebrow: "Admin portal",
     profile: {
-      name: "Layla Mourad",
-      subtitle: "Studio director",
-      initials: "LM",
+      name: "Admin account",
+      subtitle: "Studio admin",
+      initials: "AD",
     },
     searchPrompt: "Search requests, clients, or sessions",
     profileHref: "/admin/profile",
@@ -225,9 +238,9 @@ const dashboardRoleUiConfig: Record<DashboardRole, DashboardRoleUiMeta> = {
     defaultSubtitle: "Sessions, roster, and follow-up.",
     eyebrow: "Coach portal",
     profile: {
-      name: "Ahmed Waheed",
-      subtitle: "Strength coach",
-      initials: "AW",
+      name: "Coach account",
+      subtitle: "Coach portal",
+      initials: "CO",
     },
     searchPrompt: "Search sessions or clients",
     profileHref: "/coach/settings",
@@ -238,9 +251,9 @@ const dashboardRoleUiConfig: Record<DashboardRole, DashboardRoleUiMeta> = {
     defaultSubtitle: "Sessions, plan, and progress.",
     eyebrow: "Client portal",
     profile: {
-      name: "Nour Hassan",
-      subtitle: "Hybrid elite",
-      initials: "NH",
+      name: "Client account",
+      subtitle: "Client portal",
+      initials: "CL",
     },
     searchPrompt: "Search sessions or plans",
     profileHref: "/client/settings",
@@ -265,6 +278,10 @@ export function getDashboardProfileHref(role: DashboardRole) {
 
 export function getDashboardNav(role: DashboardRole) {
   return dashboardNavConfig[role];
+}
+
+export function getDashboardSidebarNav(role: DashboardRole) {
+  return getDashboardNav(role).filter((item) => !item.hidden);
 }
 
 export function isDashboardNavItemActive(

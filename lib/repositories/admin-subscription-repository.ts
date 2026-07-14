@@ -6,7 +6,6 @@ import type {
   AdminSubscriptionRecord,
   AdminSubscriptionStatus,
 } from "@/lib/mocks/admin-subscriptions";
-import { getAssignedCoachLabel } from "@/lib/coaches/placeholder-coaches";
 import { withSupabaseFallback } from "@/lib/supabase/errors";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -231,12 +230,11 @@ export class AdminSubscriptionRepository {
             planName,
             subscriptionStatus,
             paymentStatus,
-            assignedCoach: getAssignedCoachLabel(
+            assignedCoach:
               subscription.client.group?.coach.fullName ??
                 subscription.client.bookings[0]?.trainingSession.coach
                   .fullName ??
-                null,
-            ),
+                "Unassigned",
             renewalDate: subscription.renewsAt
               ? dateFormatter.format(subscription.renewsAt)
               : "No renewal set",

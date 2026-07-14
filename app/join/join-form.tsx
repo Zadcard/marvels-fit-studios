@@ -8,6 +8,7 @@ import {
   initialJoinNowState,
   type JoinNowActionState,
 } from "@/app/actions/join-now-types";
+import { JoinCredentialsScreen } from "@/components/join-credentials-screen";
 
 function FieldError({ errors }: { errors?: string[] }) {
   if (!errors?.length) {
@@ -39,30 +40,16 @@ export function JoinForm() {
       </div>
 
       {state.status === "success" && state.credentials ? (
-        <div className="join-credentials-screen" role="alert">
-          <div className="join-credentials-screen__header">
-            <div className="mv-eyebrow">Your Account Details</div>
-            <h2 className="login-form-title">Save these login details</h2>
-          </div>
-
-          <div className="join-credentials-screen__stack">
-            <div className="join-credentials-screen__card">
-              <span>Client ID</span>
-              <strong>{state.credentials.clientId}</strong>
-            </div>
-            <div className="join-credentials-screen__card">
-              <span>Password</span>
-              <strong>{state.credentials.password}</strong>
-            </div>
-          </div>
-
-          <p className="join-credentials-screen__note">
-            Someone from the studio team will accept your request.
-          </p>
-          <p className="join-credentials-screen__note">
-            *Note: when logging in the password must be changed by a strong password.
-          </p>
-        </div>
+        <JoinCredentialsScreen
+          clientId={state.credentials.clientId}
+          password={state.credentials.password}
+          header={
+            <>
+              <div className="mv-eyebrow">Your Account Details</div>
+              <h2 className="login-form-title">Save these login details</h2>
+            </>
+          }
+        />
       ) : null}
 
       {state.status === "error" && state.message ? (
@@ -71,6 +58,7 @@ export function JoinForm() {
         </div>
       ) : null}
 
+      {state.status !== "success" ? (
       <form className="login-form" action={action} noValidate>
         <div className="login-field-group">
           <label className="login-field-label" htmlFor="join-full-name">
@@ -124,9 +112,12 @@ export function JoinForm() {
           </span>
         </button>
       </form>
+      ) : null}
 
       <Link href="/login" className="login-back">
-        Already have credentials? Sign in
+        {state.status === "success"
+          ? "Continue to sign in"
+          : "Already have credentials? Sign in"}
       </Link>
     </div>
   );

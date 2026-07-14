@@ -9,11 +9,7 @@ import { DashboardFormSection } from "@/components/dashboard/dashboard-form-sect
 import { DashboardMiniStat } from "@/components/dashboard/dashboard-mini-stat";
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
 import { DashboardSurfaceNote } from "@/components/dashboard/dashboard-surface-note";
-import { DashboardSwitch } from "@/components/dashboard/dashboard-switch";
-import {
-  type AdminProfilePreferences,
-  type AdminProfileRecord,
-} from "@/lib/mocks/admin-profile";
+import type { AdminProfileRecord } from "@/lib/mocks/admin-profile";
 
 const defaultProfile: AdminProfileRecord = {
   fullName: "Admin User",
@@ -21,15 +17,10 @@ const defaultProfile: AdminProfileRecord = {
   email: "No email",
   phone: "No phone on file",
   location: "Studio HQ",
-  bio: "Admin profile data is not available yet.",
+  bio: "Manages studio operations.",
   initials: "AU",
   joinedLabel: "Joined recently",
-  credentialsNote: "Password updates are protected by current-password verification.",
-};
-const defaultPreferences: AdminProfilePreferences = {
-  emailUpdates: true,
-  mobileAlerts: true,
-  renewalEscalations: false,
+  credentialsNote: "Password updates require the current password.",
 };
 
 type AdminProfileWorkspaceProps = {
@@ -41,34 +32,38 @@ type AdminProfileWorkspaceProps = {
     detail: string;
     iconKey: "shield-check" | "timer-reset" | "trophy" | "bell-ring";
   }>;
-  preferences?: AdminProfilePreferences | null;
 };
 
 export function AdminProfileWorkspace({
   profile: initialProfile,
   metrics = [],
-  preferences: initialPreferences,
 }: AdminProfileWorkspaceProps) {
+  const initialValue = initialProfile ?? defaultProfile;
+  const [profile, setProfile] = useState(initialValue);
+  const [savedProfile, setSavedProfile] = useState(initialValue);
+  const [saveMessage, setSaveMessage] = useState("Profile is up to date.");
   const [isSaving, startTransition] = useTransition();
-  const [profile, setProfile] = useState<AdminProfileRecord>(
-    initialProfile ?? defaultProfile
-  );
-  const [preferences] =
-    useState<AdminProfilePreferences>(initialPreferences ?? defaultPreferences);
-  const [saveMessage, setSaveMessage] = useState("Live profile loaded.");
-  const pendingMetric = metrics.find((metric) => metric.id === "approvals") ?? metrics[0];
-  const responseMetric =
-    metrics.find((metric) => metric.id === "response-time") ?? metrics[1] ?? metrics[0];
-  const alertMetric = metrics.find((metric) => metric.id === "alerts") ?? metrics[3] ?? metrics[0];
+  const hasChanges =
+    profile.fullName !== savedProfile.fullName ||
+    profile.email !== savedProfile.email;
 
-  const updateProfile = <Key extends keyof AdminProfileRecord>(
-    field: Key,
-    value: AdminProfileRecord[Key]
-  ) => {
-    setProfile((current) => ({
-      ...current,
-      [field]: value,
-    }));
+  const saveProfile = () => {
+    startTransition(async () => {
+      try {
+        await saveAdminProfile({
+          fullName: profile.fullName,
+          email: profile.email,
+        });
+        setSavedProfile(profile);
+        setSaveMessage("Admin profile saved.");
+      } catch (error) {
+        setSaveMessage(
+          error instanceof Error
+            ? error.message
+            : "Could not save admin profile."
+        );
+      }
+    });
   };
 
   return (
@@ -79,195 +74,96 @@ export function AdminProfileWorkspace({
           <button
             type="button"
             className="mv-btn mv-btn-primary"
-            onClick={() =>
-              startTransition(async () => {
-                try {
-                  await saveAdminProfile({
-                    fullName: profile.fullName,
-                    email: profile.email,
-                  });
-                  setSaveMessage("Admin profile saved.");
-                } catch (error) {
-                  setSaveMessage(
-                    error instanceof Error ? error.message : "Could not save admin profile."
-                  );
-                }
-              })
-            }
+            disabled={!hasChanges || isSaving}
+            onClick={saveProfile}
           >
             <Save size={16} />
-            {isSaving ? "Saving..." : "Save Profile"}
+            {isSaving ? "Saving..." : "Save profile"}
           </button>
         }
       />
 
       <DashboardSurfaceNote
         eyebrow="Account control"
-        title={`${profile.fullName} manages the admin workspace from this account.`}
-        description="Review identity details, keep notification defaults intentional, and treat this screen as the control point for admin-level communication."
-        items={[
-          `${pendingMetric?.value ?? "0"} items still need admin follow-up.`,
-          `${alertMetric?.value ?? "0"} live account alerts can escalate into renewals or billing issues.`,
-          saveMessage,
-        ]}
+        title="Your admin identity and security settings."
+        description="This page now shows only persisted controls. Studio-wide contact details remain in Studio Settings."
+        items={[saveMessage]}
       />
 
-      <section
-        className="dashboard-mini-grid dashboard-admin-priority-grid"
-        aria-label="Admin profile highlights"
-      >
-        <DashboardMiniStat
-          tone="accent"
-          label={pendingMetric?.label ?? "Pending approvals"}
-          value={pendingMetric?.value ?? "0"}
-          description="Work queue tied to this admin account."
-        />
-        <DashboardMiniStat
-          tone={preferences.mobileAlerts ? "success" : "warning"}
-          label="Mobile alerts"
-          value={preferences.mobileAlerts ? "Enabled" : "Muted"}
-          description="Urgent schedule and client alerts."
-        />
-        <DashboardMiniStat
-          tone={preferences.renewalEscalations ? "warning" : "success"}
-          label={responseMetric?.label ?? "Ops response"}
-          value={responseMetric?.value ?? "Clear"}
-          description={
-            preferences.renewalEscalations
-              ? "Renewal escalations are active."
-              : "Renewal escalations are quiet."
-          }
-        />
-      </section>
-
-      <section className="dashboard-panel dashboard-panel--accent dashboard-profile-hero">
-        <div className="dashboard-profile-hero__identity">
-          <div className="dashboard-profile-avatar">{profile.initials}</div>
-          <div className="dashboard-profile-hero__copy">
-            <span className="mv-eyebrow">{profile.roleLabel}</span>
-            <h2>{profile.fullName}</h2>
-            <p>{profile.bio}</p>
-          </div>
-        </div>
-
-        <div className="dashboard-record-card__meta">
-          <span>{profile.location}</span>
-          <span>{profile.joinedLabel}</span>
-          <span>{profile.email}</span>
-        </div>
-      </section>
+      {metrics.length > 0 ? (
+        <section className="dashboard-mini-grid" aria-label="Admin highlights">
+          {metrics.slice(0, 3).map((metric) => (
+            <DashboardMiniStat
+              key={metric.id}
+              label={metric.label}
+              value={metric.value}
+              description={metric.detail}
+            />
+          ))}
+        </section>
+      ) : null}
 
       <section className="dashboard-detail-layout">
-        <div className="dashboard-stack">
-          <DashboardFormSection
-            eyebrow="Identity"
-            title="Personal details"
-            description="Admin profile details."
-          >
-            <div className="dashboard-form-columns">
-              <label className="dashboard-form-field">
-                <span>Full name</span>
-                <input
-                  className="dashboard-input"
-                  value={profile.fullName}
-                  onChange={(event) => updateProfile("fullName", event.target.value)}
-                />
-              </label>
-              <label className="dashboard-form-field">
-                <span>Email</span>
-                <input
-                  className="dashboard-input"
-                  value={profile.email}
-                  onChange={(event) => updateProfile("email", event.target.value)}
-                />
-              </label>
-              <label className="dashboard-form-field">
-                <span>Phone</span>
-                <input
-                  className="dashboard-input"
-                  value={profile.phone}
-                  disabled
-                  readOnly
-                />
-              </label>
-              <label className="dashboard-form-field">
-                <span>Location</span>
-                <input
-                  className="dashboard-input"
-                  value={profile.location}
-                  disabled
-                  readOnly
-                />
-              </label>
-            </div>
-
+        <DashboardFormSection
+          eyebrow="Identity"
+          title="Personal details"
+          description="Name and email are used throughout the admin portal."
+        >
+          <div className="dashboard-form-columns">
             <label className="dashboard-form-field">
-              <span>Bio</span>
-              <textarea
-                className="dashboard-textarea"
-                value={profile.bio}
-                disabled
-                readOnly
-                rows={5}
+              <span>Full name</span>
+              <input
+                className="dashboard-input"
+                value={profile.fullName}
+                onChange={(event) => {
+                  setProfile((current) => ({
+                    ...current,
+                    fullName: event.target.value,
+                  }));
+                  setSaveMessage("Unsaved profile changes.");
+                }}
               />
             </label>
-          </DashboardFormSection>
+            <label className="dashboard-form-field">
+              <span>Email</span>
+              <input
+                className="dashboard-input"
+                type="email"
+                value={profile.email}
+                onChange={(event) => {
+                  setProfile((current) => ({
+                    ...current,
+                    email: event.target.value,
+                  }));
+                  setSaveMessage("Unsaved profile changes.");
+                }}
+              />
+            </label>
+          </div>
+        </DashboardFormSection>
 
-          <DashboardFormSection
-            eyebrow="Preferences"
-            title="Communication signals"
-            description="These signals are derived from current studio settings and account state."
-          >
-            <div className="dashboard-stack">
-              <DashboardSwitch
-                checked={preferences.emailUpdates}
-                onCheckedChange={() => {}}
-                label="Email updates"
-                description="Weekly summaries by email."
-                disabled
-              />
-              <DashboardSwitch
-                checked={preferences.mobileAlerts}
-                onCheckedChange={() => {}}
-                label="Mobile alerts"
-                description="Time-sensitive schedule alerts."
-                disabled
-              />
-              <DashboardSwitch
-                checked={preferences.renewalEscalations}
-                onCheckedChange={() => {}}
-                label="Renewal escalations"
-                description="At-risk membership alerts."
-                disabled
-              />
-            </div>
-          </DashboardFormSection>
-        </div>
-
-        <aside className="dashboard-detail-panel dashboard-stack">
+        <aside className="dashboard-stack">
           <AccountSecurityPanel />
-
-          <article className="dashboard-panel">
+          <article className="dashboard-panel dashboard-detail-panel">
             <div className="dashboard-panel__header">
               <div>
-                <span className="mv-eyebrow">Account note</span>
-                <h2>Current profile state</h2>
-                <p>{saveMessage}</p>
+                <div className="mv-eyebrow">Account summary</div>
+                <h2>{profile.fullName}</h2>
+                <p>{profile.joinedLabel}</p>
               </div>
             </div>
-
             <div className="dashboard-summary-list">
               <div className="dashboard-summary-row">
                 <strong>Role</strong>
                 <span>{profile.roleLabel}</span>
               </div>
               <div className="dashboard-summary-row">
-                <strong>Joined</strong>
-                <span>{profile.joinedLabel}</span>
+                <strong>Email</strong>
+                <span>{profile.email}</span>
               </div>
               <div className="dashboard-summary-row">
-                <strong>Alerts</strong>
-                <span>{preferences.mobileAlerts ? "Enabled" : "Muted"}</span>
+                <strong>Save state</strong>
+                <span>{hasChanges ? "Edits pending" : "Up to date"}</span>
               </div>
             </div>
           </article>

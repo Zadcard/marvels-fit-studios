@@ -8,6 +8,7 @@ import {
   initialJoinNowState,
   type JoinNowActionState,
 } from "@/app/actions/join-now-types";
+import { JoinCredentialsScreen } from "@/components/join-credentials-screen";
 import { trackEvent } from "@/lib/analytics/client";
 
 function SubmitButton() {
@@ -113,75 +114,57 @@ export function JoinNowForm() {
       }}
       noValidate
     >
-      <div className="field-grid">
-        <label>
-          <span>Full name</span>
-          <input
-            className="field"
-            id="cf-name"
-            name="name"
-            type="text"
-            placeholder="Enter your full name"
-            autoComplete="name"
-            aria-invalid={state.fieldErrors?.name ? "true" : undefined}
-            required
-          />
-          <FieldError errors={state.fieldErrors?.name} />
-        </label>
-        <label>
-          <span>Phone number</span>
-          <input
-            className="field"
-            id="cf-phone"
-            name="phone"
-            type="tel"
-            placeholder="+20 1XX XXX XXXX"
-            autoComplete="tel"
-            inputMode="tel"
-            enterKeyHint="done"
-            aria-invalid={state.fieldErrors?.phone ? "true" : undefined}
-            required
-          />
-          <FieldError errors={state.fieldErrors?.phone} />
-        </label>
-      </div>
-
-      <SubmitButton />
-
       {state.status === "success" && state.credentials ? (
-        <div className="join-credentials-screen join-credentials-screen--landing show" id="join-success" role="alert">
-          <div className="join-credentials-screen__header">
-            <strong>Your account details</strong>
-          </div>
-
-          <div className="join-credentials-screen__stack">
-            <div className="join-credentials-screen__card">
-              <span>Client ID</span>
-              <strong>{state.credentials.clientId}</strong>
-            </div>
-            <div className="join-credentials-screen__card">
-              <span>Password</span>
-              <strong>{state.credentials.password}</strong>
-            </div>
-          </div>
-
-          <p className="join-credentials-screen__note">
-            Someone from the studio team will accept your request.
-          </p>
-          <p className="join-credentials-screen__note">
-            *Note: when logging in the password must be changed by a strong password.
-          </p>
-        </div>
+        <JoinCredentialsScreen
+          clientId={state.credentials.clientId}
+          password={state.credentials.password}
+          className="join-credentials-screen--landing show"
+          header={<strong>Your account details</strong>}
+        />
       ) : (
-        <p className="form-success" id="join-success" aria-live="polite" />
+        <>
+          <div className="field-grid">
+            <label>
+              <span>Full name</span>
+              <input
+                className="field"
+                id="cf-name"
+                name="name"
+                type="text"
+                placeholder="Enter your full name"
+                autoComplete="name"
+                aria-invalid={state.fieldErrors?.name ? "true" : undefined}
+                required
+              />
+              <FieldError errors={state.fieldErrors?.name} />
+            </label>
+            <label>
+              <span>Phone number</span>
+              <input
+                className="field"
+                id="cf-phone"
+                name="phone"
+                type="tel"
+                placeholder="+20 1XX XXX XXXX"
+                autoComplete="tel"
+                inputMode="tel"
+                enterKeyHint="done"
+                aria-invalid={state.fieldErrors?.phone ? "true" : undefined}
+                required
+              />
+              <FieldError errors={state.fieldErrors?.phone} />
+            </label>
+          </div>
+
+          <SubmitButton />
+
+          {state.status === "error" && state.message ? (
+            <p className="form-error" role="alert" aria-live="polite">
+              {state.message}
+            </p>
+          ) : null}
+        </>
       )}
-
-      {state.status === "error" && state.message ? (
-        <p className="form-error" role="alert" aria-live="polite">
-          {state.message}
-        </p>
-      ) : null}
-
     </form>
   );
 }

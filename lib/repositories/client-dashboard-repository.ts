@@ -688,6 +688,15 @@ export class ClientDashboardRepository {
         };
       }
 
+      const { data: ledger, error: ledgerError } = await getSupabaseServerClient()
+        .from("BillingLedgerEntry")
+        .select("id, paymentId, receiptNumber")
+        .eq("clientId", client.id)
+        .eq("type", "PAYMENT");
+      if (ledgerError) throw ledgerError;
+      const ledgerByPayment = new Map(
+        ledger.filter((entry) => entry.paymentId).map((entry) => [entry.paymentId, entry]),
+      );
       const paymentHistory = subscription.payments.slice(0, 5);
       const latestPayment = paymentHistory[0] ?? null;
 
@@ -714,12 +723,17 @@ export class ClientDashboardRepository {
         note:
           subscription.plan.description ??
           "Current membership summary and billing state.",
-        paymentHistory: paymentHistory.map((payment) => ({
-          id: payment.id,
-          amountLabel: formatCurrency(payment.amount, payment.currency),
-          dateLabel: formatDate(payment.date),
-          note: payment.note ?? "Payment recorded.",
-        })),
+        paymentHistory: paymentHistory.map((payment) => {
+          const receipt = ledgerByPayment.get(payment.id);
+          return {
+            id: payment.id,
+            amountLabel: formatCurrency(payment.amount, payment.currency),
+            dateLabel: formatDate(payment.date),
+            note: payment.note ?? "Payment recorded.",
+            receiptNumber: receipt?.receiptNumber ?? "Receipt pending",
+            receiptHref: receipt ? `/api/receipts/${receipt.id}` : "",
+          };
+        }),
       };
     }, null);
   }

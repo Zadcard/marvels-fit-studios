@@ -14,7 +14,6 @@ export default async function AdminProfilePage() {
     <AdminProfileWorkspace
       profile={data?.profile}
       metrics={data?.metrics}
-      preferences={data?.preferences}
     />
   );
 }
