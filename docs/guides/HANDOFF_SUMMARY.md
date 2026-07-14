@@ -42,7 +42,7 @@ app/
 
 auth.ts & auth.config.ts        ✅ NextAuth configured
 next-auth.d.ts                  ✅ Types updated
-prisma/schema.prisma            ✅ Schema ready for migration
+legacy ORM/schema.legacy ORM            ✅ Schema ready for migration
 ```
 
 ### 2. **Documentation (Complete)**
@@ -182,7 +182,7 @@ lib/auth/user-repository.ts (Added clientId lookup methods)
 auth.ts                     (Added ID-based credentials)
 auth.config.ts              (Added clientId to JWT/session)
 next-auth.d.ts              (Added clientId type)
-prisma/schema.prisma        (Added clientId fields)
+legacy ORM/schema.legacy ORM        (Added clientId fields)
 ```
 
 ---

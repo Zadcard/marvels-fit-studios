@@ -2,7 +2,7 @@
 
 This document records the backend, database, auth, and dashboard work completed today in `marvels-fit-studios`.
 
-## 1. Database and Prisma Domain Expansion
+## 1. Database and legacy ORM Domain Expansion
 
 Added the next backend database domain for sessions and subscriptions.
 
@@ -21,14 +21,14 @@ Added the next backend database domain for sessions and subscriptions.
 - `Payment`
 
 ### Files
-- [schema.prisma](C:/Users/DELL/Desktop/marvels-fit-studios/marvels-fit-studios/prisma/schema.prisma:1)
-- [migration.sql](C:/Users/DELL/Desktop/marvels-fit-studios/marvels-fit-studios/prisma/migrations/20260408103000_add_session_and_subscription_domain/migration.sql:1)
-- [seed.ts](C:/Users/DELL/Desktop/marvels-fit-studios/marvels-fit-studios/prisma/seed.ts:1)
+- [schema.legacy ORM](C:/Users/DELL/Desktop/marvels-fit-studios/marvels-fit-studios/legacy ORM/schema.legacy ORM:1)
+- [migration.sql](C:/Users/DELL/Desktop/marvels-fit-studios/marvels-fit-studios/legacy ORM/migrations/20260408103000_add_session_and_subscription_domain/migration.sql:1)
+- [seed.ts](C:/Users/DELL/Desktop/marvels-fit-studios/marvels-fit-studios/legacy ORM/seed.ts:1)
 - [DATABASE_SESSION_AND_SUBSCRIPTION_UPDATE.md](C:/Users/DELL/Desktop/marvels-fit-studios/marvels-fit-studios/DATABASE_SESSION_AND_SUBSCRIPTION_UPDATE.md:1)
 
 ### Validation
-- `npx prisma validate`
-- `npx prisma generate`
+- `npx legacy ORM validate`
+- `npx legacy ORM generate`
 
 ## 2. Auth.js Session Fix
 
@@ -106,9 +106,9 @@ Fixed the client dashboard shell so the top-right user/profile area no longer us
 - [dashboard-topbar.tsx](C:/Users/DELL/Desktop/marvels-fit-studios/marvels-fit-studios/components/dashboard/dashboard-topbar.tsx:1)
 - [dashboard-sidebar.tsx](C:/Users/DELL/Desktop/marvels-fit-studios/marvels-fit-studios/components/dashboard/dashboard-sidebar.tsx:1)
 
-## 7. Prisma Migration Deployment
+## 7. legacy ORM Migration Deployment
 
-Applied missing Prisma migrations to the live configured database after runtime errors showed session tables were missing.
+Applied missing legacy ORM migrations to the live configured database after runtime errors showed session tables were missing.
 
 ### Applied migration
 - `20260408103000_add_session_and_subscription_domain`
@@ -247,8 +247,8 @@ Added a real stored client payment-status field so admin can reliably save:
 - applied migration to the live configured database
 
 ### Files
-- [schema.prisma](C:/Users/DELL/Desktop/marvels-fit-studios/marvels-fit-studios/prisma/schema.prisma:1)
-- [migration.sql](C:/Users/DELL/Desktop/marvels-fit-studios/marvels-fit-studios/prisma/migrations/20260408143000_add_client_payment_status_override/migration.sql:1)
+- [schema.legacy ORM](C:/Users/DELL/Desktop/marvels-fit-studios/marvels-fit-studios/legacy ORM/schema.legacy ORM:1)
+- [migration.sql](C:/Users/DELL/Desktop/marvels-fit-studios/marvels-fit-studios/legacy ORM/migrations/20260408143000_add_client_payment_status_override/migration.sql:1)
 - [admin-payments.ts](C:/Users/DELL/Desktop/marvels-fit-studios/marvels-fit-studios/app/actions/admin-payments.ts:1)
 - [admin-client-repository.ts](C:/Users/DELL/Desktop/marvels-fit-studios/marvels-fit-studios/lib/repositories/admin-client-repository.ts:1)
 
@@ -273,10 +273,10 @@ Made payment options explicit in the admin clients UI instead of relying only on
 
 Repeatedly used verification and deployment commands as changes were made:
 
-- `npx prisma validate`
-- `npx prisma generate`
-- `npx prisma migrate deploy`
-- `npx prisma db seed`
+- `npx legacy ORM validate`
+- `npx legacy ORM generate`
+- `npx legacy ORM migrate deploy`
+- `npx legacy ORM db seed`
 - `npx tsc --noEmit`
 - `npm run build`
 

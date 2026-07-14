@@ -2,7 +2,7 @@
 
 ## Goal
 
-Convert existing `Lead` records into real login-capable `User` and `Client` records without doing row-by-row manual work in Prisma Studio.
+Convert existing `Lead` records into real login-capable `User` and `Client` records without doing row-by-row manual work in legacy ORM Studio.
 
 ## What was added
 

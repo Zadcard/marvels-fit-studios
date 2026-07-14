@@ -17,7 +17,7 @@ A complete **ID-based authentication system** has been implemented for Marvel Fi
 ## ✅ Completed Work (7 Phases)
 
 ### Phase 1: Database Schema Changes
-**File:** `prisma/schema.prisma`
+**File:** `legacy ORM/schema.legacy ORM`
 
 - Added `clientId` field to User model (YYMMXXX format, unique, indexed)
 - Made `email` field optional for backward compatibility
@@ -504,7 +504,7 @@ Existing Tests:                 225 tests ✓
 
 ### 3. Database Migration (High Priority)
 ```bash
-npx prisma migrate dev --name add_id_based_auth
+npx legacy ORM migrate dev --name add_id_based_auth
 ```
 
 ### 4. Testing & QA (High Priority)
@@ -544,7 +544,7 @@ npx prisma migrate dev --name add_id_based_auth
 - `app/actions/landing.ts` - Server actions (updated)
 
 ### Database
-- `prisma/schema.prisma` - Schema (updated, migration pending)
+- `legacy ORM/schema.legacy ORM` - Schema (updated, migration pending)
 
 ### Tests
 - `lib/services/*.test.ts` - Service tests (435 total)

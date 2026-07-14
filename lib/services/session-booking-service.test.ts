@@ -1,10 +1,10 @@
 // Mock must be first
-import { mockGetPrisma, createMockPrisma } from '@/tests/test-utils';
+import { mockGetDataStore, createMockDataStore } from '@/tests/test-utils';
 import { vi } from 'vitest';
 
 vi.mock('@/lib/services/session-booking-store', () => ({
   getSessionBookingStore: () => {
-    const database = mockGetPrisma();
+    const database = mockGetDataStore();
     return {
       findSession: (id: string) => database.trainingSession.findUnique({
         where: { id },
@@ -38,11 +38,11 @@ import {
 import { createSessionBooking, cancelSessionBooking } from './session-booking-service';
 
 describe('Session Booking Service', () => {
-  let mockPrisma: ReturnType<typeof createMockPrisma>;
+  let mockDataStore: ReturnType<typeof createMockDataStore>;
 
   beforeEach(() => {
-    mockPrisma = createMockPrisma();
-    mockGetPrisma.mockReturnValue(mockPrisma);
+    mockDataStore = createMockDataStore();
+    mockGetDataStore.mockReturnValue(mockDataStore);
     vi.clearAllMocks();
   });
 
@@ -58,7 +58,7 @@ describe('Session Booking Service', () => {
 
     describe('Validation', () => {
       it('should throw error when session does not exist', async () => {
-        mockPrisma.trainingSession.findUnique.mockResolvedValue(null);
+        mockDataStore.trainingSession.findUnique.mockResolvedValue(null);
 
         await expect(
           createSessionBooking(validInput)
@@ -66,14 +66,14 @@ describe('Session Booking Service', () => {
       });
 
       it('should throw error when client does not exist', async () => {
-        mockPrisma.trainingSession.findUnique.mockResolvedValue({
+        mockDataStore.trainingSession.findUnique.mockResolvedValue({
           id: 'session-123',
           type: TrainingSessionType.GROUP,
           status: TrainingSessionStatus.SCHEDULED,
           capacity: 10,
           bookings: [],
         });
-        mockPrisma.client.findUnique.mockResolvedValue(null);
+        mockDataStore.client.findUnique.mockResolvedValue(null);
 
         await expect(
           createSessionBooking(validInput)
@@ -81,14 +81,14 @@ describe('Session Booking Service', () => {
       });
 
       it('should throw error when session is canceled', async () => {
-        mockPrisma.trainingSession.findUnique.mockResolvedValue({
+        mockDataStore.trainingSession.findUnique.mockResolvedValue({
           id: 'session-123',
           type: TrainingSessionType.GROUP,
           status: TrainingSessionStatus.CANCELED,
           capacity: 10,
           bookings: [],
         });
-        mockPrisma.client.findUnique.mockResolvedValue({ id: 'client-456' });
+        mockDataStore.client.findUnique.mockResolvedValue({ id: 'client-456' });
 
         await expect(
           createSessionBooking(validInput)
@@ -96,14 +96,14 @@ describe('Session Booking Service', () => {
       });
 
       it('should throw error when session is completed', async () => {
-        mockPrisma.trainingSession.findUnique.mockResolvedValue({
+        mockDataStore.trainingSession.findUnique.mockResolvedValue({
           id: 'session-123',
           type: TrainingSessionType.GROUP,
           status: TrainingSessionStatus.COMPLETED,
           capacity: 10,
           bookings: [],
         });
-        mockPrisma.client.findUnique.mockResolvedValue({ id: 'client-456' });
+        mockDataStore.client.findUnique.mockResolvedValue({ id: 'client-456' });
 
         await expect(
           createSessionBooking(validInput)
@@ -113,15 +113,15 @@ describe('Session Booking Service', () => {
 
     describe('Duplicate Booking Prevention', () => {
       it('should throw error when client already has active booking', async () => {
-        mockPrisma.trainingSession.findUnique.mockResolvedValue({
+        mockDataStore.trainingSession.findUnique.mockResolvedValue({
           id: 'session-123',
           type: TrainingSessionType.GROUP,
           status: TrainingSessionStatus.SCHEDULED,
           capacity: 10,
           bookings: [],
         });
-        mockPrisma.client.findUnique.mockResolvedValue({ id: 'client-456' });
-        mockPrisma.sessionBooking.findUnique.mockResolvedValue({
+        mockDataStore.client.findUnique.mockResolvedValue({ id: 'client-456' });
+        mockDataStore.sessionBooking.findUnique.mockResolvedValue({
           id: 'booking-1',
           status: BookingStatus.BOOKED,
         });
@@ -132,15 +132,15 @@ describe('Session Booking Service', () => {
       });
 
       it('should throw error when client has attended booking', async () => {
-        mockPrisma.trainingSession.findUnique.mockResolvedValue({
+        mockDataStore.trainingSession.findUnique.mockResolvedValue({
           id: 'session-123',
           type: TrainingSessionType.GROUP,
           status: TrainingSessionStatus.SCHEDULED,
           capacity: 10,
           bookings: [],
         });
-        mockPrisma.client.findUnique.mockResolvedValue({ id: 'client-456' });
-        mockPrisma.sessionBooking.findUnique.mockResolvedValue({
+        mockDataStore.client.findUnique.mockResolvedValue({ id: 'client-456' });
+        mockDataStore.sessionBooking.findUnique.mockResolvedValue({
           id: 'booking-1',
           status: BookingStatus.ATTENDED,
         });
@@ -151,15 +151,15 @@ describe('Session Booking Service', () => {
       });
 
       it('should throw error when client is on waitlist', async () => {
-        mockPrisma.trainingSession.findUnique.mockResolvedValue({
+        mockDataStore.trainingSession.findUnique.mockResolvedValue({
           id: 'session-123',
           type: TrainingSessionType.GROUP,
           status: TrainingSessionStatus.SCHEDULED,
           capacity: 10,
           bookings: [],
         });
-        mockPrisma.client.findUnique.mockResolvedValue({ id: 'client-456' });
-        mockPrisma.sessionBooking.findUnique.mockResolvedValue({
+        mockDataStore.client.findUnique.mockResolvedValue({ id: 'client-456' });
+        mockDataStore.sessionBooking.findUnique.mockResolvedValue({
           id: 'booking-1',
           status: BookingStatus.WAITLIST,
         });
@@ -171,26 +171,26 @@ describe('Session Booking Service', () => {
 
       it('should allow re-booking if previous booking was canceled', async () => {
         const existingBookingId = 'existing-booking-1';
-        mockPrisma.trainingSession.findUnique.mockResolvedValue({
+        mockDataStore.trainingSession.findUnique.mockResolvedValue({
           id: 'session-123',
           type: TrainingSessionType.GROUP,
           status: TrainingSessionStatus.SCHEDULED,
           capacity: 10,
           bookings: [],
         });
-        mockPrisma.client.findUnique.mockResolvedValue({ id: 'client-456' });
-        mockPrisma.sessionBooking.findUnique.mockResolvedValue({
+        mockDataStore.client.findUnique.mockResolvedValue({ id: 'client-456' });
+        mockDataStore.sessionBooking.findUnique.mockResolvedValue({
           id: existingBookingId,
           status: BookingStatus.CANCELED,
         });
-        mockPrisma.sessionBooking.update.mockResolvedValue({
+        mockDataStore.sessionBooking.update.mockResolvedValue({
           id: existingBookingId,
         });
 
         const result = await createSessionBooking(validInput);
 
         expect(result).toEqual({ id: existingBookingId });
-        expect(mockPrisma.sessionBooking.update).toHaveBeenCalledWith({
+        expect(mockDataStore.sessionBooking.update).toHaveBeenCalledWith({
           where: { id: existingBookingId },
           data: {
             status: BookingStatus.BOOKED,
@@ -206,7 +206,7 @@ describe('Session Booking Service', () => {
 
     describe('Capacity Management', () => {
       it('should throw error when session is at capacity (GROUP)', async () => {
-        mockPrisma.trainingSession.findUnique.mockResolvedValue({
+        mockDataStore.trainingSession.findUnique.mockResolvedValue({
           id: 'session-123',
           type: TrainingSessionType.GROUP,
           status: TrainingSessionStatus.SCHEDULED,
@@ -224,8 +224,8 @@ describe('Session Booking Service', () => {
             },
           ],
         });
-        mockPrisma.client.findUnique.mockResolvedValue({ id: 'client-456' });
-        mockPrisma.sessionBooking.findUnique.mockResolvedValue(null);
+        mockDataStore.client.findUnique.mockResolvedValue({ id: 'client-456' });
+        mockDataStore.sessionBooking.findUnique.mockResolvedValue(null);
 
         await expect(
           createSessionBooking(validInput)
@@ -234,7 +234,7 @@ describe('Session Booking Service', () => {
 
       it('should allow booking when session has available capacity', async () => {
         const newBookingId = 'new-booking-1';
-        mockPrisma.trainingSession.findUnique.mockResolvedValue({
+        mockDataStore.trainingSession.findUnique.mockResolvedValue({
           id: 'session-123',
           type: TrainingSessionType.GROUP,
           status: TrainingSessionStatus.SCHEDULED,
@@ -247,21 +247,21 @@ describe('Session Booking Service', () => {
             },
           ],
         });
-        mockPrisma.client.findUnique.mockResolvedValue({ id: 'client-456' });
-        mockPrisma.sessionBooking.findUnique.mockResolvedValue(null);
-        mockPrisma.sessionBooking.create.mockResolvedValue({
+        mockDataStore.client.findUnique.mockResolvedValue({ id: 'client-456' });
+        mockDataStore.sessionBooking.findUnique.mockResolvedValue(null);
+        mockDataStore.sessionBooking.create.mockResolvedValue({
           id: newBookingId,
         });
 
         const result = await createSessionBooking(validInput);
 
         expect(result).toEqual({ id: newBookingId });
-        expect(mockPrisma.sessionBooking.create).toHaveBeenCalled();
+        expect(mockDataStore.sessionBooking.create).toHaveBeenCalled();
       });
 
       it('should not enforce capacity limit for sessions with null capacity', async () => {
         const newBookingId = 'new-booking-1';
-        mockPrisma.trainingSession.findUnique.mockResolvedValue({
+        mockDataStore.trainingSession.findUnique.mockResolvedValue({
           id: 'session-123',
           type: TrainingSessionType.GROUP,
           status: TrainingSessionStatus.SCHEDULED,
@@ -272,9 +272,9 @@ describe('Session Booking Service', () => {
             status: BookingStatus.BOOKED,
           })),
         });
-        mockPrisma.client.findUnique.mockResolvedValue({ id: 'client-456' });
-        mockPrisma.sessionBooking.findUnique.mockResolvedValue(null);
-        mockPrisma.sessionBooking.create.mockResolvedValue({
+        mockDataStore.client.findUnique.mockResolvedValue({ id: 'client-456' });
+        mockDataStore.sessionBooking.findUnique.mockResolvedValue(null);
+        mockDataStore.sessionBooking.create.mockResolvedValue({
           id: newBookingId,
         });
 
@@ -289,7 +289,7 @@ describe('Session Booking Service', () => {
         const previousBookingId = 'previous-booking-1';
         const newBookingId = 'new-booking-1';
 
-        mockPrisma.trainingSession.findUnique.mockResolvedValue({
+        mockDataStore.trainingSession.findUnique.mockResolvedValue({
           id: 'session-123',
           type: TrainingSessionType.PRIVATE,
           status: TrainingSessionStatus.SCHEDULED,
@@ -302,32 +302,32 @@ describe('Session Booking Service', () => {
             },
           ],
         });
-        mockPrisma.client.findUnique.mockResolvedValue({ id: 'client-456' });
-        mockPrisma.sessionBooking.findUnique.mockResolvedValue(null);
-        mockPrisma.sessionBooking.update.mockResolvedValue({
+        mockDataStore.client.findUnique.mockResolvedValue({ id: 'client-456' });
+        mockDataStore.sessionBooking.findUnique.mockResolvedValue(null);
+        mockDataStore.sessionBooking.update.mockResolvedValue({
           id: previousBookingId,
         });
-        mockPrisma.sessionBooking.create.mockResolvedValue({
+        mockDataStore.sessionBooking.create.mockResolvedValue({
           id: newBookingId,
         });
 
         const result = await createSessionBooking(validInput);
 
-        expect(mockPrisma.sessionBooking.update).toHaveBeenCalledWith({
+        expect(mockDataStore.sessionBooking.update).toHaveBeenCalledWith({
           where: { id: previousBookingId },
           data: {
             status: BookingStatus.CANCELED,
             canceledAt: expect.any(Date),
           },
         });
-        expect(mockPrisma.sessionBooking.create).toHaveBeenCalled();
+        expect(mockDataStore.sessionBooking.create).toHaveBeenCalled();
         expect(result).toEqual({ id: newBookingId });
       });
 
       it('should not cancel previous booking when assigning same client to PRIVATE session', async () => {
         const bookingId = 'booking-1';
 
-        mockPrisma.trainingSession.findUnique.mockResolvedValue({
+        mockDataStore.trainingSession.findUnique.mockResolvedValue({
           id: 'session-123',
           type: TrainingSessionType.PRIVATE,
           status: TrainingSessionStatus.SCHEDULED,
@@ -340,8 +340,8 @@ describe('Session Booking Service', () => {
             },
           ],
         });
-        mockPrisma.client.findUnique.mockResolvedValue({ id: 'client-456' });
-        mockPrisma.sessionBooking.findUnique.mockResolvedValue({
+        mockDataStore.client.findUnique.mockResolvedValue({ id: 'client-456' });
+        mockDataStore.sessionBooking.findUnique.mockResolvedValue({
           id: bookingId,
           status: BookingStatus.BOOKED,
         });
@@ -354,23 +354,23 @@ describe('Session Booking Service', () => {
       it('should allow booking PRIVATE session when it has no bookings', async () => {
         const newBookingId = 'new-booking-1';
 
-        mockPrisma.trainingSession.findUnique.mockResolvedValue({
+        mockDataStore.trainingSession.findUnique.mockResolvedValue({
           id: 'session-123',
           type: TrainingSessionType.PRIVATE,
           status: TrainingSessionStatus.SCHEDULED,
           capacity: 1,
           bookings: [],
         });
-        mockPrisma.client.findUnique.mockResolvedValue({ id: 'client-456' });
-        mockPrisma.sessionBooking.findUnique.mockResolvedValue(null);
-        mockPrisma.sessionBooking.create.mockResolvedValue({
+        mockDataStore.client.findUnique.mockResolvedValue({ id: 'client-456' });
+        mockDataStore.sessionBooking.findUnique.mockResolvedValue(null);
+        mockDataStore.sessionBooking.create.mockResolvedValue({
           id: newBookingId,
         });
 
         const result = await createSessionBooking(validInput);
 
         expect(result).toEqual({ id: newBookingId });
-        expect(mockPrisma.sessionBooking.create).toHaveBeenCalled();
+        expect(mockDataStore.sessionBooking.create).toHaveBeenCalled();
       });
     });
 
@@ -378,22 +378,22 @@ describe('Session Booking Service', () => {
       it('should create new booking with correct data', async () => {
         const newBookingId = 'new-booking-1';
 
-        mockPrisma.trainingSession.findUnique.mockResolvedValue({
+        mockDataStore.trainingSession.findUnique.mockResolvedValue({
           id: 'session-123',
           type: TrainingSessionType.GROUP,
           status: TrainingSessionStatus.SCHEDULED,
           capacity: 10,
           bookings: [],
         });
-        mockPrisma.client.findUnique.mockResolvedValue({ id: 'client-456' });
-        mockPrisma.sessionBooking.findUnique.mockResolvedValue(null);
-        mockPrisma.sessionBooking.create.mockResolvedValue({
+        mockDataStore.client.findUnique.mockResolvedValue({ id: 'client-456' });
+        mockDataStore.sessionBooking.findUnique.mockResolvedValue(null);
+        mockDataStore.sessionBooking.create.mockResolvedValue({
           id: newBookingId,
         });
 
         const result = await createSessionBooking(validInput);
 
-        expect(mockPrisma.sessionBooking.create).toHaveBeenCalledWith({
+        expect(mockDataStore.sessionBooking.create).toHaveBeenCalledWith({
           data: {
             trainingSessionId: validInput.trainingSessionId,
             clientId: validInput.clientId,
@@ -414,7 +414,7 @@ describe('Session Booking Service', () => {
     };
 
     it('should throw error when booking does not exist', async () => {
-      mockPrisma.sessionBooking.findUnique.mockResolvedValue(null);
+      mockDataStore.sessionBooking.findUnique.mockResolvedValue(null);
 
       await expect(
         cancelSessionBooking(validInput)
@@ -423,7 +423,7 @@ describe('Session Booking Service', () => {
 
     it('should return booking as-is if already canceled', async () => {
       const bookingId = 'booking-1';
-      mockPrisma.sessionBooking.findUnique.mockResolvedValue({
+      mockDataStore.sessionBooking.findUnique.mockResolvedValue({
         id: bookingId,
         status: BookingStatus.CANCELED,
       });
@@ -434,22 +434,22 @@ describe('Session Booking Service', () => {
         id: bookingId,
         status: BookingStatus.CANCELED,
       });
-      expect(mockPrisma.sessionBooking.update).not.toHaveBeenCalled();
+      expect(mockDataStore.sessionBooking.update).not.toHaveBeenCalled();
     });
 
     it('should cancel booking if currently booked', async () => {
       const bookingId = 'booking-1';
-      mockPrisma.sessionBooking.findUnique.mockResolvedValue({
+      mockDataStore.sessionBooking.findUnique.mockResolvedValue({
         id: bookingId,
         status: BookingStatus.BOOKED,
       });
-      mockPrisma.sessionBooking.update.mockResolvedValue({
+      mockDataStore.sessionBooking.update.mockResolvedValue({
         id: bookingId,
       });
 
       const result = await cancelSessionBooking(validInput);
 
-      expect(mockPrisma.sessionBooking.update).toHaveBeenCalledWith({
+      expect(mockDataStore.sessionBooking.update).toHaveBeenCalledWith({
         where: { id: bookingId },
         data: {
           status: BookingStatus.CANCELED,
@@ -463,49 +463,49 @@ describe('Session Booking Service', () => {
 
     it('should cancel booking if currently attended', async () => {
       const bookingId = 'booking-1';
-      mockPrisma.sessionBooking.findUnique.mockResolvedValue({
+      mockDataStore.sessionBooking.findUnique.mockResolvedValue({
         id: bookingId,
         status: BookingStatus.ATTENDED,
       });
-      mockPrisma.sessionBooking.update.mockResolvedValue({
+      mockDataStore.sessionBooking.update.mockResolvedValue({
         id: bookingId,
       });
 
       const result = await cancelSessionBooking(validInput);
 
-      expect(mockPrisma.sessionBooking.update).toHaveBeenCalled();
+      expect(mockDataStore.sessionBooking.update).toHaveBeenCalled();
       expect(result).toEqual({ id: bookingId });
     });
 
     it('should cancel booking if on waitlist', async () => {
       const bookingId = 'booking-1';
-      mockPrisma.sessionBooking.findUnique.mockResolvedValue({
+      mockDataStore.sessionBooking.findUnique.mockResolvedValue({
         id: bookingId,
         status: BookingStatus.WAITLIST,
       });
-      mockPrisma.sessionBooking.update.mockResolvedValue({
+      mockDataStore.sessionBooking.update.mockResolvedValue({
         id: bookingId,
       });
 
       const result = await cancelSessionBooking(validInput);
 
-      expect(mockPrisma.sessionBooking.update).toHaveBeenCalled();
+      expect(mockDataStore.sessionBooking.update).toHaveBeenCalled();
       expect(result).toEqual({ id: bookingId });
     });
 
     it('should clear attended and canceled dates on cancel', async () => {
       const bookingId = 'booking-1';
-      mockPrisma.sessionBooking.findUnique.mockResolvedValue({
+      mockDataStore.sessionBooking.findUnique.mockResolvedValue({
         id: bookingId,
         status: BookingStatus.BOOKED,
       });
-      mockPrisma.sessionBooking.update.mockResolvedValue({
+      mockDataStore.sessionBooking.update.mockResolvedValue({
         id: bookingId,
       });
 
       await cancelSessionBooking(validInput);
 
-      expect(mockPrisma.sessionBooking.update).toHaveBeenCalledWith({
+      expect(mockDataStore.sessionBooking.update).toHaveBeenCalledWith({
         where: { id: bookingId },
         data: {
           status: BookingStatus.CANCELED,

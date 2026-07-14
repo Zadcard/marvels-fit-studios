@@ -1,65 +1,19 @@
-# Backend Handoff
+# Backend handoff
 
-## Current state
+## Do not reverse these decisions
 
-The hosted development Supabase project `ggrddqflqumokoyzpjic` has the complete empty schema applied through four version-controlled migrations. Local/remote histories align. RLS is enabled on all 19 application tables, and no browser role has application-table access.
+- Supabase is the only database runtime.
+- Auth.js credentials and JWT sessions remain the auth layer.
+- Browser code must not receive the service-role key or direct table access.
+- Multi-table writes stay in version-controlled SQL functions with restricted execution.
+- The development database intentionally begins empty.
 
-Auth remains Auth.js credentials with JWT sessions. Do not replace it with Supabase Auth or enable Supabase email signup as an incidental database-migration step.
+## Routine workflow
 
-## Required server secrets
+1. Create a new file with `npx supabase migration new descriptive_name`.
+2. Apply and test locally with `npm run supabase:reset` when Docker is available.
+3. Link the intended development project and inspect `npm run supabase:migrations`.
+4. Apply the migration, regenerate `lib/supabase/database.types.ts`, and run `npm run verify`.
+5. Review SQL and application changes in a pull request before production promotion.
 
-- `AUTH_SECRET`
-- `SUPABASE_SERVICE_ROLE_KEY`
-- `SUPABASE_DB_URL`
-- `DATABASE_URL` and `DIRECT_URL` during Prisma compatibility
-
-No Neon connection variable is required. The user explicitly selected a fresh empty Supabase database; do not import old Neon records.
-
-Public values are limited to `NEXT_PUBLIC_SUPABASE_URL` and a publishable/anon key. A service-role key in any browser bundle is a critical incident and must be rotated.
-
-## Data access
-
-Use `lib/supabase/server.ts` only from server modules. `lib/supabase/client.ts` exists for future approved RLS-authenticated use but should not query application tables while Auth.js remains unmapped to Supabase JWT claims. Database errors should be mapped through `lib/supabase/errors.ts` before reaching UI code.
-
-Prisma remains a temporary compatibility layer across 71 runtime/script files. The Auth.js Prisma adapter has already been removed. Do not delete Prisma schema/packages or `prebuild` generation until import counts reach zero and transaction-heavy workflows have equivalent tests.
-
-## Migration commands
-
-```powershell
-npx supabase link --project-ref ggrddqflqumokoyzpjic
-npm run supabase:migrations
-npm run supabase:lint
-npm run supabase:types
-npm run supabase:validate
-```
-
-For a new schema change:
-
-```powershell
-npx supabase migration new descriptive_name
-npm run supabase:reset
-npm run supabase:types
-npm run verify
-```
-
-Apply to hosted development only after review with `npx supabase db push --linked --dry-run`, then `npx supabase db push --linked`.
-
-## Outstanding backend tasks
-
-1. Obtain a valid read-only Neon direct URL.
-2. Inventory and back up Neon.
-3. Import data into development Supabase and run the validation report.
-4. Set development `DATABASE_URL`/`DIRECT_URL` to Supabase and smoke test existing Prisma paths.
-5. Migrate repository/service groups to typed Supabase queries or reviewed database functions, prioritizing simple reads before transactions.
-6. Replace Prisma-generated enum/domain imports with application-owned/generated Supabase types.
-7. Remove Prisma only after zero-usage scans and full verification.
-8. Repeat reviewed migrations/data validation for a separate production Supabase project before production cutover.
-
-## Decisions not to reverse accidentally
-
-- Neon is the rollback source until explicit retirement approval.
-- Auth.js remains the sole identity system for Phase 1.
-- Browser roles remain denied until a verified JWT/RLS mapping exists.
-- Hosted database changes come from migrations, not dashboard-only edits.
-- Preview uses development data; production data is not a frontend sandbox.
-- No `service_role` value belongs in Git, logs, screenshots, client modules, or `NEXT_PUBLIC_*` variables.
+Required runtime secrets are `AUTH_SECRET` and `SUPABASE_SERVICE_ROLE_KEY`; public project values are documented in `.env.example`.

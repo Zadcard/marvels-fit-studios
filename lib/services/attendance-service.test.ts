@@ -1,10 +1,10 @@
 // Mock must be first
-import { mockGetPrisma, createMockPrisma } from '@/tests/test-utils';
+import { mockGetDataStore, createMockDataStore } from '@/tests/test-utils';
 import { vi } from 'vitest';
 
 vi.mock('@/lib/services/attendance-store', () => ({
   runAttendanceTransaction: (_input: unknown, operation: (tx: unknown) => unknown) =>
-    mockGetPrisma().$transaction(operation),
+    mockGetDataStore().$transaction(operation),
 }));
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
@@ -16,16 +16,16 @@ import {
 import { updateSessionAttendance } from './attendance-service';
 
 describe('Attendance Service', () => {
-  let mockPrisma: ReturnType<typeof createMockPrisma>;
-  let mockTx: ReturnType<typeof createMockPrisma>;
+  let mockDataStore: ReturnType<typeof createMockDataStore>;
+  let mockTx: ReturnType<typeof createMockDataStore>;
 
   beforeEach(() => {
-    mockPrisma = createMockPrisma();
-    mockTx = createMockPrisma();
-    mockGetPrisma.mockReturnValue(mockPrisma);
+    mockDataStore = createMockDataStore();
+    mockTx = createMockDataStore();
+    mockGetDataStore.mockReturnValue(mockDataStore);
 
     // Setup $transaction to execute callback immediately with mock tx
-    mockPrisma.$transaction = vi.fn(async (callback: any) => {
+    mockDataStore.$transaction = vi.fn(async (callback: any) => {
       return callback(mockTx);
     });
 
@@ -513,7 +513,7 @@ describe('Attendance Service', () => {
 
         await updateSessionAttendance(validInput);
 
-        expect(mockPrisma.$transaction).toHaveBeenCalled();
+        expect(mockDataStore.$transaction).toHaveBeenCalled();
       });
 
       it('should clear attended date for non-attended status', async () => {

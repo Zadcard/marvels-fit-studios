@@ -3,16 +3,16 @@ import { ClientIdGenerator } from "@/lib/services/client-id-generator";
 
 describe("ClientIdGenerator", () => {
   let generator: ClientIdGenerator;
-  let mockPrisma: any;
+  let mockDataStore: any;
 
   beforeEach(() => {
-    mockPrisma = {
+    mockDataStore = {
       user: {
         findFirst: vi.fn(),
       },
     };
     generator = new ClientIdGenerator(async (prefix) =>
-      mockPrisma.user.findFirst({
+      mockDataStore.user.findFirst({
         where: { clientId: { startsWith: prefix } },
         orderBy: { clientId: "desc" },
         select: { clientId: true },
@@ -180,7 +180,7 @@ describe("ClientIdGenerator", () => {
 
   describe("getNextClientNumber", () => {
     it("should return 1 when no clients exist", async () => {
-      mockPrisma.user.findFirst.mockResolvedValue(null);
+      mockDataStore.user.findFirst.mockResolvedValue(null);
 
       const nextNumber = await generator.getNextClientNumber();
 
@@ -188,7 +188,7 @@ describe("ClientIdGenerator", () => {
     });
 
     it("should return incremented number", async () => {
-      mockPrisma.user.findFirst.mockResolvedValue({
+      mockDataStore.user.findFirst.mockResolvedValue({
         clientId: "2605020",
       });
 
@@ -198,13 +198,13 @@ describe("ClientIdGenerator", () => {
     });
 
     it("should filter by month prefix", async () => {
-      mockPrisma.user.findFirst.mockResolvedValue({
+      mockDataStore.user.findFirst.mockResolvedValue({
         clientId: "2605015",
       });
 
       const nextNumber = await generator.getNextClientNumber();
 
-      expect(mockPrisma.user.findFirst).toHaveBeenCalledWith({
+      expect(mockDataStore.user.findFirst).toHaveBeenCalledWith({
         where: {
           clientId: {
             startsWith: expect.stringMatching(/^\d{4}$/),
@@ -218,11 +218,11 @@ describe("ClientIdGenerator", () => {
     });
 
     it("should accept custom month and year", async () => {
-      mockPrisma.user.findFirst.mockResolvedValue(null);
+      mockDataStore.user.findFirst.mockResolvedValue(null);
 
       await generator.getNextClientNumber(3, 2025);
 
-      expect(mockPrisma.user.findFirst).toHaveBeenCalledWith({
+      expect(mockDataStore.user.findFirst).toHaveBeenCalledWith({
         where: {
           clientId: {
             startsWith: "2503",
@@ -234,7 +234,7 @@ describe("ClientIdGenerator", () => {
     });
 
     it("should handle different months separately", async () => {
-      mockPrisma.user.findFirst.mockResolvedValue({
+      mockDataStore.user.findFirst.mockResolvedValue({
         clientId: "2604050",
       });
 
@@ -244,16 +244,16 @@ describe("ClientIdGenerator", () => {
     });
 
     it("should pad month in query", async () => {
-      mockPrisma.user.findFirst.mockResolvedValue(null);
+      mockDataStore.user.findFirst.mockResolvedValue(null);
 
       await generator.getNextClientNumber(1);
 
-      const callArgs = mockPrisma.user.findFirst.mock.calls[0][0];
+      const callArgs = mockDataStore.user.findFirst.mock.calls[0][0];
       expect(callArgs.where.clientId.startsWith).toMatch(/2601/);
     });
 
     it("should handle client number at boundary (999)", async () => {
-      mockPrisma.user.findFirst.mockResolvedValue({
+      mockDataStore.user.findFirst.mockResolvedValue({
         clientId: "2605999",
       });
 
@@ -263,7 +263,7 @@ describe("ClientIdGenerator", () => {
     });
 
     it("should use current month when not specified", async () => {
-      mockPrisma.user.findFirst.mockResolvedValue(null);
+      mockDataStore.user.findFirst.mockResolvedValue(null);
 
       await generator.getNextClientNumber();
 
@@ -271,18 +271,18 @@ describe("ClientIdGenerator", () => {
       const yearStr = now.getFullYear().toString().slice(-2);
       const monthStr = String(now.getMonth() + 1).padStart(2, "0");
 
-      const callArgs = mockPrisma.user.findFirst.mock.calls[0][0];
+      const callArgs = mockDataStore.user.findFirst.mock.calls[0][0];
       expect(callArgs.where.clientId.startsWith).toBe(`${yearStr}${monthStr}`);
     });
 
     it("should order by clientId descending to get latest", async () => {
-      mockPrisma.user.findFirst.mockResolvedValue({
+      mockDataStore.user.findFirst.mockResolvedValue({
         clientId: "2605050",
       });
 
       await generator.getNextClientNumber();
 
-      const callArgs = mockPrisma.user.findFirst.mock.calls[0][0];
+      const callArgs = mockDataStore.user.findFirst.mock.calls[0][0];
       expect(callArgs.orderBy).toEqual({ clientId: "desc" });
     });
   });
@@ -328,7 +328,7 @@ describe("ClientIdGenerator", () => {
 
   describe("getNextAvailableId", () => {
     it("should keep the current month when capacity remains", async () => {
-      mockPrisma.user.findFirst.mockResolvedValue({
+      mockDataStore.user.findFirst.mockResolvedValue({
         clientId: "2605042",
       });
 
@@ -338,7 +338,7 @@ describe("ClientIdGenerator", () => {
     });
 
     it("should roll over to the next month when the current month is full", async () => {
-      mockPrisma.user.findFirst
+      mockDataStore.user.findFirst
         .mockResolvedValueOnce({
           clientId: "2604999",
         })
@@ -350,7 +350,7 @@ describe("ClientIdGenerator", () => {
     });
 
     it("should roll over from December into January of the next year", async () => {
-      mockPrisma.user.findFirst
+      mockDataStore.user.findFirst
         .mockResolvedValueOnce({
           clientId: "2612999",
         })

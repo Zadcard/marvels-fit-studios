@@ -11,7 +11,7 @@ Today focused on:
 - turning remaining preview-only surfaces into real persisted backend flows
 - hardening subscription logic
 - stabilizing client, coach, and admin cross-role visibility
-- fixing several stale Prisma runtime issues by falling back to SQL for newly added fields when needed
+- fixing several stale legacy ORM runtime issues by falling back to SQL for newly added fields when needed
 - pushing the app closer to a reliable `~90% backend-complete` state
 
 ## Completed Today
@@ -20,7 +20,7 @@ Today focused on:
 
 Implemented:
 
-- new `StudioSettings` model in `prisma/schema.prisma`
+- new `StudioSettings` model in `legacy ORM/schema.legacy ORM`
 - new repository:
   - `lib/repositories/admin-settings-repository.ts`
 - new action:
@@ -32,12 +32,12 @@ Implemented:
 
 Important implementation detail:
 
-- Prisma runtime did not reliably expose `studioSettings`, so read/write paths were switched to SQL-backed insert/select/update against `"StudioSettings"` while keeping the DB schema real.
+- legacy ORM runtime did not reliably expose `studioSettings`, so read/write paths were switched to SQL-backed insert/select/update against `"StudioSettings"` while keeping the DB schema real.
 
 Verified:
 
-- `npx prisma generate`
-- `npx prisma db push`
+- `npx legacy ORM generate`
+- `npx legacy ORM db push`
 - `npx tsc --noEmit`
 
 Outcome:
@@ -121,7 +121,7 @@ Outcome:
 
 - debugging client portal failures became much faster.
 
-### 6. Client dashboard crash caused by stale `Coach.specialization` Prisma metadata was fixed
+### 6. Client dashboard crash caused by stale `Coach.specialization` legacy ORM metadata was fixed
 
 Updated:
 
@@ -129,19 +129,19 @@ Updated:
 
 Changes:
 
-- removed direct Prisma selects of `Coach.specialization`
+- removed direct legacy ORM selects of `Coach.specialization`
 - replaced specialization display with safe derived labels in the client portal
 
 Outcome:
 
-- client dashboard resumed loading without crashing on stale Prisma runtime metadata.
+- client dashboard resumed loading without crashing on stale legacy ORM runtime metadata.
 
 ### 7. Client settings became real and persisted per client
 
 Implemented:
 
 - new model:
-  - `ClientPreferences` in `prisma/schema.prisma`
+  - `ClientPreferences` in `legacy ORM/schema.legacy ORM`
 - new action:
   - `app/actions/client-settings.ts`
 - updated repository:
@@ -169,8 +169,8 @@ Important behavior:
 
 Verified:
 
-- `npx prisma generate`
-- `npx prisma db push`
+- `npx legacy ORM generate`
+- `npx legacy ORM db push`
 - `npx tsc --noEmit`
 
 Outcome:
@@ -251,7 +251,7 @@ Problem:
 
 Structural fix:
 
-- added `customPrice` to `ClientSubscription` in `prisma/schema.prisma`
+- added `customPrice` to `ClientSubscription` in `legacy ORM/schema.legacy ORM`
 
 Then adjusted:
 
@@ -261,7 +261,7 @@ Then adjusted:
 
 Important implementation detail:
 
-- Prisma runtime did not reliably expose `ClientSubscription.customPrice`
+- legacy ORM runtime did not reliably expose `ClientSubscription.customPrice`
 - therefore:
   - writes use SQL `UPDATE "ClientSubscription" SET "customPrice" = ...`
   - reads use SQL against `"ClientSubscription"` and map values back into the repository output
@@ -273,8 +273,8 @@ Outcome:
 
 Verified:
 
-- `npx prisma generate`
-- `npx prisma db push`
+- `npx legacy ORM generate`
+- `npx legacy ORM db push`
 - `npx tsc --noEmit`
 
 ### 12. Client subscription page now reads more directly from the latest subscription/payment pair
@@ -307,7 +307,7 @@ Outcome:
 
 ## Files Updated Today
 
-- `prisma/schema.prisma`
+- `legacy ORM/schema.legacy ORM`
 - `app/(dashboard)/admin/settings/page.tsx`
 - `components/dashboard/admin-settings-workspace.tsx`
 - `app/login/page.tsx`
@@ -324,7 +324,7 @@ Outcome:
 
 ## Runtime/Schema Workarounds Used Today
 
-These are deliberate and should be cleaned up later if Prisma runtime behavior is normalized:
+These are deliberate and should be cleaned up later if legacy ORM runtime behavior is normalized:
 
 - `StudioSettings` reads/writes are SQL-backed
 - `ClientSubscription.customPrice` reads/writes are SQL-backed

@@ -8,8 +8,8 @@ It is written for:
 
 - `Next.js App Router`
 - `Vercel`
-- `Neon Postgres`
-- `Prisma`
+- `legacy hosted database Postgres`
+- `legacy ORM`
 - `Auth.js`
 - a team of `2 developers` working in parallel
 
@@ -45,7 +45,7 @@ Compared to the earlier project state, the codebase already has some useful back
 - `lib/auth/password-verifier.ts`
 - `lib/auth/authorization-policy.ts`
 - role-specific server layouts for admin/coach/client dashboards
-- a reusable Prisma getter in `lib/prisma.ts`
+- a reusable legacy ORM getter in `lib/legacy ORM.ts`
 - early dashboard abstraction in `lib/dashboard/*`
 - early repository abstraction in `lib/repositories/*`
 
@@ -78,12 +78,12 @@ By the end of backend implementation, the app should support:
 
 Follow these rules from the start:
 
-1. UI components must not talk to Prisma directly.
+1. UI components must not talk to legacy ORM directly.
 2. All reads go through server-only data access modules.
 3. All mutations must validate input with `zod`.
 4. All mutations must check auth and authorization.
 5. Business rules live in services, not in pages.
-6. Prisma models should represent real business concepts, not frontend convenience.
+6. legacy ORM models should represent real business concepts, not frontend convenience.
 7. Mock data must be replaced gradually, page by page, not all at once.
 
 ## 4. Recommended Folder Structure
@@ -116,7 +116,7 @@ lib/
     guards.ts
     roles.ts
   db/
-    prisma.ts
+    legacy ORM.ts
   dal/
     users.ts
     clients.ts
@@ -157,8 +157,8 @@ lib/
 
 Notes:
 
-- keep `lib/prisma.ts` or move it to `lib/db/prisma.ts`
-- never import Prisma from client components
+- keep `lib/legacy ORM.ts` or move it to `lib/db/legacy ORM.ts`
+- never import legacy ORM from client components
 - use `server-only` in DAL files
 
 ## 5. Environment Variables
@@ -166,7 +166,7 @@ Notes:
 These env vars should exist locally and in Vercel:
 
 ```bash
-DATABASE_URL=
+LEGACY_DATABASE_CONNECTION=
 AUTH_SECRET=
 AUTH_TRUST_HOST=true
 ```
@@ -201,7 +201,7 @@ Tasks:
 
 1. fix ESLint config so `npm run lint` works
 2. ensure `AUTH_SECRET` is configured
-3. verify `prisma generate` and `prisma migrate deploy`
+3. verify `legacy ORM generate` and `legacy ORM migrate deploy`
 4. clean up auth env handling
 5. document local setup for both devs
 
@@ -232,7 +232,7 @@ Definition of done:
 
 - reads use DAL
 - mutations use validators + guards + services
-- no direct Prisma usage in pages
+- no direct legacy ORM usage in pages
 
 Updated note for current state:
 
@@ -317,7 +317,7 @@ Definition of done:
 
 - the app supports operational work beyond just membership and scheduling
 
-## 7. New Prisma Models You Should Add
+## 7. New legacy ORM Models You Should Add
 
 Current schema is missing the actual gym session domain.
 
@@ -331,7 +331,7 @@ Purpose:
 
 Suggested fields:
 
-```prisma
+```legacy ORM
 model TrainingSession {
   id            String   @id @default(cuid())
   title         String
@@ -358,7 +358,7 @@ model TrainingSession {
 
 Enums:
 
-```prisma
+```legacy ORM
 enum TrainingSessionType {
   GROUP
   PRIVATE
@@ -380,7 +380,7 @@ Purpose:
 
 Suggested fields:
 
-```prisma
+```legacy ORM
 model SessionBooking {
   id                String   @id @default(cuid())
   trainingSessionId String
@@ -401,7 +401,7 @@ model SessionBooking {
 
 Enum:
 
-```prisma
+```legacy ORM
 enum BookingStatus {
   BOOKED
   ATTENDED
@@ -419,7 +419,7 @@ Purpose:
 
 Suggested fields:
 
-```prisma
+```legacy ORM
 model SubscriptionPlan {
   id               String   @id @default(cuid())
   name             String
@@ -445,7 +445,7 @@ Purpose:
 
 Suggested fields:
 
-```prisma
+```legacy ORM
 model ClientSubscription {
   id            String   @id @default(cuid())
   clientId      String
@@ -468,7 +468,7 @@ model ClientSubscription {
 
 Enums:
 
-```prisma
+```legacy ORM
 enum SubscriptionStatus {
   ACTIVE
   TRIAL
@@ -492,7 +492,7 @@ Purpose:
 
 Suggested fields:
 
-```prisma
+```legacy ORM
 model Lead {
   id          String   @id @default(cuid())
   fullName    String
@@ -520,7 +520,7 @@ Purpose:
 
 Suggested fields:
 
-```prisma
+```legacy ORM
 model SessionNote {
   id                String   @id @default(cuid())
   trainingSessionId String
@@ -606,7 +606,7 @@ Each DAL module should:
 
 - be `server-only`
 - return safe DTOs
-- avoid returning raw full Prisma objects to UI unnecessarily
+- avoid returning raw full legacy ORM objects to UI unnecessarily
 - centralize query shape
 
 Example DAL responsibilities:
@@ -787,11 +787,11 @@ Rules:
 2. do not create overlapping schema branches in parallel
 3. agree on schema changes before implementation starts
 4. merge schema PR first if other work depends on it
-5. regenerate Prisma client after schema changes
+5. regenerate legacy ORM client after schema changes
 
 Recommended workflow:
 
-1. Dev A edits `prisma/schema.prisma`
+1. Dev A edits `legacy ORM/schema.legacy ORM`
 2. Dev A creates migration
 3. Dev A merges schema PR
 4. Dev B rebases and continues feature work on top
@@ -824,18 +824,18 @@ Minimum tests to add while building backend:
 - create/edit records
 - dashboard reads update after mutation
 
-## 17. Vercel + Neon Operational Notes
+## 17. Vercel + legacy hosted database Operational Notes
 
-### Prisma on Vercel
+### legacy ORM on Vercel
 
 Use:
 
-- `prisma generate` in build
-- `prisma migrate deploy` in deployment flow
+- `legacy ORM generate` in build
+- `legacy ORM migrate deploy` in deployment flow
 
-### Neon
+### legacy hosted database
 
-Use Neon as the main Postgres database.
+Use legacy hosted database as the main Postgres database.
 
 Recommendations:
 
@@ -845,8 +845,8 @@ Recommendations:
 
 ### Runtime notes
 
-- route handlers and server actions that use Prisma should assume Node runtime
-- avoid accidental edge-only patterns in Prisma-powered code
+- route handlers and server actions that use legacy ORM should assume Node runtime
+- avoid accidental edge-only patterns in legacy ORM-powered code
 
 ## 18. Two-Developer Collaboration Plan
 
@@ -866,7 +866,7 @@ It means ownership is clear.
 
 ### Dev A owns
 
-- Prisma schema changes
+- legacy ORM schema changes
 - migrations
 - DAL modules
 - service layer
@@ -889,7 +889,7 @@ Use this pattern in every milestone:
 1. Dev A lands foundational backend contracts first
 2. Dev B builds UI against those contracts
 3. Both agree on input/output types before implementation
-4. Dev B never directly invents Prisma queries inside pages
+4. Dev B never directly invents legacy ORM queries inside pages
 5. Dev A avoids editing feature UI unless needed for integration
 
 ## 18.3 Ownership by Milestone
@@ -900,7 +900,7 @@ Dev A:
 
 - fix lint
 - fix env handling
-- stabilize Prisma and auth helpers
+- stabilize legacy ORM and auth helpers
 
 Dev B:
 
@@ -988,7 +988,7 @@ Rules:
 
 - one branch per focused milestone or feature
 - schema branch merges first if it blocks others
-- avoid both devs editing `prisma/schema.prisma` at the same time
+- avoid both devs editing `legacy ORM/schema.legacy ORM` at the same time
 
 ## 18.5 PR Rules for 2 Devs
 
@@ -1017,7 +1017,7 @@ Fix the platform.
 - fix ESLint config
 - add `AUTH_SECRET`
 - confirm local login still works
-- confirm Prisma generate/migrate work in a proper networked dev environment
+- confirm legacy ORM generate/migrate work in a proper networked dev environment
 
 ### Step 2
 
@@ -1066,7 +1066,7 @@ Implement services for:
 Current-state adjustment:
 
 - keep the existing auth service style as the reference for code shape
-- do not bypass the new abstractions by writing Prisma calls directly inside dashboard components
+- do not bypass the new abstractions by writing legacy ORM calls directly inside dashboard components
 
 ### Step 6
 
@@ -1099,7 +1099,7 @@ Replace admin mock screens:
 Current-state adjustment:
 
 - `admin-clients` already has a repository abstraction, but it is mock-backed
-- start by replacing the repository implementation with Prisma-backed data access
+- start by replacing the repository implementation with legacy ORM-backed data access
 - then move the same pattern to coaches and overview aggregates
 
 ### Step 9
@@ -1179,7 +1179,7 @@ Reason:
 Do not do these:
 
 - do not keep building more screens on top of mocks
-- do not put Prisma queries in client components
+- do not put legacy ORM queries in client components
 - do not rely on `proxy.ts` alone for authorization
 - do not let both devs modify schema simultaneously
 - do not keep subscription truth split between UI labels and DB booleans forever
@@ -1196,7 +1196,7 @@ You can say the backend is substantially complete when:
 - booking and attendance are real
 - subscriptions and payments are real
 - no critical admin screens depend on `lib/mocks`
-- deploys work reliably on Vercel with Neon
+- deploys work reliably on Vercel with legacy hosted database
 
 ## 23. Recommended First Sprint
 

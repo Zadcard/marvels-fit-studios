@@ -7,8 +7,6 @@
   },
   "scripts": {
     "dev": "next dev",
-    "db:check": "prisma studio",
-    "prebuild": "prisma generate",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
@@ -21,7 +19,6 @@
     "supabase:lint": "supabase db lint --linked --level warning",
     "supabase:types": "supabase gen types typescript --linked --schema public > lib/supabase/database.types.ts",
     "supabase:validate": "supabase db query --linked --file supabase/verification/validate_migration.sql",
-    "check:backend": "node scripts/backend-smoke-check.cjs",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:run": "vitest run",
@@ -31,14 +28,9 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:design-system": "node tests/dashboard-mini-stat-adoption.test.mjs",
-    "audit:admin-data": "node scripts/admin-data-audit.cjs",
-    "repair:admin-data": "node scripts/admin-data-repair.cjs --apply",
-    "repair:admin-data:dry": "node scripts/admin-data-repair.cjs",
     "promote:leads": "node scripts/promote-leads-to-clients.cjs"
   },
   "dependencies": {
-    "@prisma/adapter-pg": "^7.6.0",
-    "@prisma/client": "^7.6.0",
     "@supabase/ssr": "^0.12.1",
     "@supabase/supabase-js": "^2.110.3",
     "@vercel/analytics": "^2.0.1",
@@ -49,7 +41,6 @@
     "lucide-react": "^1.7.0",
     "next": "^16.2.10",
     "next-auth": "^5.0.0-beta.30",
-    "pg": "^8.20.0",
     "radix-ui": "^1.4.3",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -71,10 +62,8 @@
     "eslint-config-next": "^16.2.10",
     "happy-dom": "^20.9.0",
     "pdf-parse": "^2.4.5",
-    "prisma": "^7.6.0",
     "supabase": "^2.109.1",
     "tailwindcss": "^4",
-    "ts-node": "^10.9.2",
     "typescript": "^5",
     "vitest": "^4.1.4"
   }

@@ -27,7 +27,7 @@ This file holds:
 - coach-facing status and plan types
 - filter option lists used by the coach clients UI
 
-### 2. Added a Prisma-backed repository
+### 2. Added a legacy ORM-backed repository
 
 Created:
 
@@ -71,7 +71,7 @@ The workspace now receives `records` as props instead of importing mock client r
 
 Updated:
 
-- `prisma/seed.ts`
+- `legacy ORM/seed.ts`
 
 The seed now also creates:
 

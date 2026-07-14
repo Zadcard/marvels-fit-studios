@@ -63,9 +63,9 @@ Still needed:
 - admin ability to inspect payment history, not just current status
 - optional refund/adjustment model if needed by the product
 
-## 3. Eliminate Remaining Prisma Runtime Workarounds
+## 3. Eliminate Remaining legacy ORM Runtime Workarounds
 
-Right now, some features rely on SQL because Prisma runtime stale-model issues appeared after schema changes.
+Right now, some features rely on SQL because legacy ORM runtime stale-model issues appeared after schema changes.
 
 Known/current workaround areas:
 
@@ -78,8 +78,8 @@ Known/current workaround areas:
 To fully finish backend quality:
 
 - identify every SQL workaround
-- verify generated Prisma client and runtime alignment
-- replace SQL with clean Prisma reads/writes where stable
+- verify generated legacy ORM client and runtime alignment
+- replace SQL with clean legacy ORM reads/writes where stable
 - keep only intentional SQL where it truly adds value
 
 This is a maintainability milestone, not just a bug fix milestone.
@@ -236,7 +236,7 @@ Still needed:
 1. Run the full end-to-end verification sweep.
 2. Fix every cross-role session/subscription bug found.
 3. Stabilize client subscription truth and multi-user correctness.
-4. Normalize Prisma/runtime mismatches and reduce SQL workaround surface.
+4. Normalize legacy ORM/runtime mismatches and reduce SQL workaround surface.
 5. Finish subscription/billing lifecycle operations.
 6. Finish coach/client onboarding and account lifecycle operations.
 7. Add automated test coverage for core flows.

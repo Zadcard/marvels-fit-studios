@@ -1,7 +1,7 @@
 import { expect, vi, type Mock } from 'vitest';
 
 /**
- * A mocked Prisma model delegate. Every method is a vitest Mock so tests can
+ * A mocked DataStore model delegate. Every method is a vitest Mock so tests can
  * chain `.mockResolvedValue(...)` etc. with full type safety.
  */
 type MockModelDelegate = {
@@ -16,11 +16,11 @@ type MockModelDelegate = {
 };
 
 /**
- * Shape of the object returned by {@link createMockPrisma}. Delegates are
- * non-optional (unlike `Partial<PrismaClient>`) so `mockPrisma.sessionBooking`
+ * Shape of the object returned by {@link createMockDataStore}. Delegates are
+ * non-optional (unlike `Partial<DataStoreClient>`) so `mockDataStore.sessionBooking`
  * is never `possibly undefined` in tests.
  */
-export type MockPrisma = {
+export type MockDataStore = {
   user: MockModelDelegate;
   client: MockModelDelegate;
   coach: MockModelDelegate;
@@ -47,10 +47,10 @@ function createMockDelegate(): MockModelDelegate {
 }
 
 /**
- * Mock Prisma client for testing
- * Usage: const mockPrisma = createMockPrisma();
+ * Mock DataStore client for testing
+ * Usage: const mockDataStore = createMockDataStore();
  */
-export function createMockPrisma(): MockPrisma {
+export function createMockDataStore(): MockDataStore {
   return {
     user: createMockDelegate(),
     client: createMockDelegate(),
@@ -66,9 +66,9 @@ export function createMockPrisma(): MockPrisma {
 }
 
 /**
- * Mock getPrisma function for use in vi.mock
+ * Mock getDataStore function for use in vi.mock
  */
-export const mockGetPrisma = vi.fn(() => createMockPrisma());
+export const mockGetDataStore = vi.fn(() => createMockDataStore());
 
 /**
  * Create a test user object

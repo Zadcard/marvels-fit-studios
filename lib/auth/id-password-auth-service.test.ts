@@ -11,10 +11,10 @@ describe("IdPasswordAuthService", () => {
     clientProfile: { select: { fullName: true } },
   } as const;
   let service: IdPasswordAuthService;
-  let mockPrisma: any;
+  let mockDataStore: any;
 
   beforeEach(() => {
-    mockPrisma = {
+    mockDataStore = {
       user: {
         findUnique: vi.fn(),
         findFirst: vi.fn(),
@@ -29,31 +29,31 @@ describe("IdPasswordAuthService", () => {
 
     service = new IdPasswordAuthService({
       findByClientId: (clientId) =>
-        mockPrisma.user.findUnique({ where: { clientId }, select: userSelect }),
+        mockDataStore.user.findUnique({ where: { clientId }, select: userSelect }),
       findByPhones: async (phones) => {
-        const result = await mockPrisma.client.findFirst({
+        const result = await mockDataStore.client.findFirst({
           where: { phone: { in: phones } },
           select: { user: { select: userSelect } },
         });
         return result?.user ?? null;
       },
       findResetToken: (token, now) =>
-        mockPrisma.user.findFirst({
+        mockDataStore.user.findFirst({
           where: { passwordResetToken: token, passwordResetExpires: { gt: now } },
           select: { id: true },
         }),
       findPassword: (userId) =>
-        mockPrisma.user.findUnique({ where: { id: userId }, select: { password: true } }),
+        mockDataStore.user.findUnique({ where: { id: userId }, select: { password: true } }),
       findIdByClientId: (clientId) =>
-        mockPrisma.user.findUnique({ where: { clientId }, select: { id: true } }),
+        mockDataStore.user.findUnique({ where: { clientId }, select: { id: true } }),
       updateUser: (userId, data) =>
-        mockPrisma.user.update({ where: { id: userId }, data }),
+        mockDataStore.user.update({ where: { id: userId }, data }),
     });
   });
 
   describe("authenticate", () => {
     it("should authenticate user with valid credentials", async () => {
-      mockPrisma.user.findUnique.mockResolvedValue({
+      mockDataStore.user.findUnique.mockResolvedValue({
         id: "user-123",
         clientId: "2605020",
         email: null,
@@ -85,8 +85,8 @@ describe("IdPasswordAuthService", () => {
     });
 
     it("should authenticate user by phone number when client ID is not found", async () => {
-      mockPrisma.user.findUnique.mockResolvedValue(null);
-      mockPrisma.client.findFirst.mockResolvedValue({
+      mockDataStore.user.findUnique.mockResolvedValue(null);
+      mockDataStore.client.findFirst.mockResolvedValue({
         user: {
           id: "user-123",
           clientId: "2605020",
@@ -109,7 +109,7 @@ describe("IdPasswordAuthService", () => {
         password: "MFS_2605020",
       });
 
-      expect(mockPrisma.client.findFirst).toHaveBeenCalledWith({
+      expect(mockDataStore.client.findFirst).toHaveBeenCalledWith({
         where: {
           phone: {
             in: ["01080481525", "+201080481525"],
@@ -125,7 +125,7 @@ describe("IdPasswordAuthService", () => {
     });
 
     it("should update lastLoginAt on successful authentication", async () => {
-      mockPrisma.user.findUnique.mockResolvedValue({
+      mockDataStore.user.findUnique.mockResolvedValue({
         id: "user-123",
         clientId: "2605020",
         password: "hashed_password",
@@ -140,14 +140,14 @@ describe("IdPasswordAuthService", () => {
         password: "MFS_2605020",
       });
 
-      expect(mockPrisma.user.update).toHaveBeenCalledWith({
+      expect(mockDataStore.user.update).toHaveBeenCalledWith({
         where: { id: "user-123" },
         data: { lastLoginAt: expect.any(Date) },
       });
     });
 
     it("should throw error when user not found", async () => {
-      mockPrisma.user.findUnique.mockResolvedValue(null);
+      mockDataStore.user.findUnique.mockResolvedValue(null);
 
       await expect(
         service.authenticate({
@@ -158,7 +158,7 @@ describe("IdPasswordAuthService", () => {
     });
 
     it("should throw error when user has no password", async () => {
-      mockPrisma.user.findUnique.mockResolvedValue({
+      mockDataStore.user.findUnique.mockResolvedValue({
         id: "user-123",
         clientId: "2605020",
         password: null,
@@ -174,7 +174,7 @@ describe("IdPasswordAuthService", () => {
     });
 
     it("should throw error when password is incorrect", async () => {
-      mockPrisma.user.findUnique.mockResolvedValue({
+      mockDataStore.user.findUnique.mockResolvedValue({
         id: "user-123",
         clientId: "2605020",
         password: "hashed_password",
@@ -193,7 +193,7 @@ describe("IdPasswordAuthService", () => {
     });
 
     it("should query by clientId", async () => {
-      mockPrisma.user.findUnique.mockResolvedValue({
+      mockDataStore.user.findUnique.mockResolvedValue({
         id: "user-123",
         clientId: "2605020",
         password: "hashed_password",
@@ -208,7 +208,7 @@ describe("IdPasswordAuthService", () => {
         password: "MFS_2605020",
       });
 
-      expect(mockPrisma.user.findUnique).toHaveBeenCalledWith({
+      expect(mockDataStore.user.findUnique).toHaveBeenCalledWith({
         where: { clientId: "2605020" },
         select: {
           id: true,
@@ -231,7 +231,7 @@ describe("IdPasswordAuthService", () => {
       const roles = ["CLIENT", "COACH", "ADMIN"];
 
       for (const role of roles) {
-        mockPrisma.user.findUnique.mockResolvedValue({
+        mockDataStore.user.findUnique.mockResolvedValue({
           id: "user-123",
           clientId: "2605020",
           password: "hashed_password",
@@ -253,19 +253,19 @@ describe("IdPasswordAuthService", () => {
 
   describe("requestPasswordReset", () => {
     it("should create reset token for valid user", async () => {
-      mockPrisma.user.findUnique.mockResolvedValue({
+      mockDataStore.user.findUnique.mockResolvedValue({
         id: "user-123",
       });
 
       await service.requestPasswordReset("2605020");
 
-      const updateCall = mockPrisma.user.update.mock.calls[0][0];
+      const updateCall = mockDataStore.user.update.mock.calls[0][0];
       expect(updateCall.data).toHaveProperty("passwordResetToken");
       expect(updateCall.data).toHaveProperty("passwordResetExpires");
     });
 
     it("should set reset token expiry to 24 hours", async () => {
-      mockPrisma.user.findUnique.mockResolvedValue({
+      mockDataStore.user.findUnique.mockResolvedValue({
         id: "user-123",
       });
 
@@ -273,7 +273,7 @@ describe("IdPasswordAuthService", () => {
       await service.requestPasswordReset("2605020");
       const after = Date.now();
 
-      const updateCall = mockPrisma.user.update.mock.calls[0][0];
+      const updateCall = mockDataStore.user.update.mock.calls[0][0];
       const expiresTime = updateCall.data.passwordResetExpires.getTime();
 
       expect(expiresTime).toBeGreaterThanOrEqual(before + 24 * 60 * 60 * 1000);
@@ -281,20 +281,20 @@ describe("IdPasswordAuthService", () => {
     });
 
     it("should generate 64-character hex token", async () => {
-      mockPrisma.user.findUnique.mockResolvedValue({
+      mockDataStore.user.findUnique.mockResolvedValue({
         id: "user-123",
       });
 
       await service.requestPasswordReset("2605020");
 
-      const updateCall = mockPrisma.user.update.mock.calls[0][0];
+      const updateCall = mockDataStore.user.update.mock.calls[0][0];
       const token = updateCall.data.passwordResetToken;
 
       expect(token).toMatch(/^[a-f0-9]{64}$/);
     });
 
     it("should not throw error if user not found", async () => {
-      mockPrisma.user.findUnique.mockResolvedValue(null);
+      mockDataStore.user.findUnique.mockResolvedValue(null);
 
       await expect(
         service.requestPasswordReset("invalid")
@@ -302,21 +302,21 @@ describe("IdPasswordAuthService", () => {
     });
 
     it("should not update if user not found", async () => {
-      mockPrisma.user.findUnique.mockResolvedValue(null);
+      mockDataStore.user.findUnique.mockResolvedValue(null);
 
       await service.requestPasswordReset("invalid");
 
-      expect(mockPrisma.user.update).not.toHaveBeenCalled();
+      expect(mockDataStore.user.update).not.toHaveBeenCalled();
     });
 
     it("should query by clientId", async () => {
-      mockPrisma.user.findUnique.mockResolvedValue({
+      mockDataStore.user.findUnique.mockResolvedValue({
         id: "user-123",
       });
 
       await service.requestPasswordReset("2605020");
 
-      expect(mockPrisma.user.findUnique).toHaveBeenCalledWith({
+      expect(mockDataStore.user.findUnique).toHaveBeenCalledWith({
         where: { clientId: "2605020" },
         select: { id: true },
       });
@@ -325,7 +325,7 @@ describe("IdPasswordAuthService", () => {
 
   describe("resetPassword", () => {
     it("should reset password with valid token", async () => {
-      mockPrisma.user.findFirst.mockResolvedValue({
+      mockDataStore.user.findFirst.mockResolvedValue({
         id: "user-123",
       });
 
@@ -335,13 +335,13 @@ describe("IdPasswordAuthService", () => {
     });
 
     it("should clear reset token after successful reset", async () => {
-      mockPrisma.user.findFirst.mockResolvedValue({
+      mockDataStore.user.findFirst.mockResolvedValue({
         id: "user-123",
       });
 
       await service.resetPassword("valid-token", "new_password");
 
-      const updateCall = mockPrisma.user.update.mock.calls[0][0];
+      const updateCall = mockDataStore.user.update.mock.calls[0][0];
       expect(updateCall.data).toEqual({
         password: "hashed_password",
         passwordResetToken: null,
@@ -350,7 +350,7 @@ describe("IdPasswordAuthService", () => {
     });
 
     it("should throw error for invalid token", async () => {
-      mockPrisma.user.findFirst.mockResolvedValue(null);
+      mockDataStore.user.findFirst.mockResolvedValue(null);
 
       await expect(
         service.resetPassword("invalid-token", "new_password")
@@ -358,7 +358,7 @@ describe("IdPasswordAuthService", () => {
     });
 
     it("should throw error for expired token", async () => {
-      mockPrisma.user.findFirst.mockResolvedValue(null);
+      mockDataStore.user.findFirst.mockResolvedValue(null);
 
       await expect(
         service.resetPassword("expired-token", "new_password")
@@ -366,13 +366,13 @@ describe("IdPasswordAuthService", () => {
     });
 
     it("should find user by non-expired reset token", async () => {
-      mockPrisma.user.findFirst.mockResolvedValue({
+      mockDataStore.user.findFirst.mockResolvedValue({
         id: "user-123",
       });
 
       await service.resetPassword("valid-token", "new_password");
 
-      const findFirstCall = mockPrisma.user.findFirst.mock.calls[0][0];
+      const findFirstCall = mockDataStore.user.findFirst.mock.calls[0][0];
       expect(findFirstCall.where).toEqual({
         passwordResetToken: "valid-token",
         passwordResetExpires: { gt: expect.any(Date) },
@@ -380,7 +380,7 @@ describe("IdPasswordAuthService", () => {
     });
 
     it("should hash new password", async () => {
-      mockPrisma.user.findFirst.mockResolvedValue({
+      mockDataStore.user.findFirst.mockResolvedValue({
         id: "user-123",
       });
 
@@ -392,7 +392,7 @@ describe("IdPasswordAuthService", () => {
 
   describe("changePassword", () => {
     it("should change password when current password is correct", async () => {
-      mockPrisma.user.findUnique.mockResolvedValue({
+      mockDataStore.user.findUnique.mockResolvedValue({
         id: "user-123",
         password: "hashed_current_password",
       });
@@ -410,7 +410,7 @@ describe("IdPasswordAuthService", () => {
     });
 
     it("should update user password", async () => {
-      mockPrisma.user.findUnique.mockResolvedValue({
+      mockDataStore.user.findUnique.mockResolvedValue({
         id: "user-123",
         password: "hashed_current_password",
       });
@@ -424,14 +424,14 @@ describe("IdPasswordAuthService", () => {
         "new_password"
       );
 
-      expect(mockPrisma.user.update).toHaveBeenCalledWith({
+      expect(mockDataStore.user.update).toHaveBeenCalledWith({
         where: { id: "user-123" },
         data: { password: "hashed_password", mustChangePassword: false },
       });
     });
 
     it("should throw error when user not found", async () => {
-      mockPrisma.user.findUnique.mockResolvedValue(null);
+      mockDataStore.user.findUnique.mockResolvedValue(null);
 
       await expect(
         service.changePassword("invalid", "current", "new")
@@ -439,7 +439,7 @@ describe("IdPasswordAuthService", () => {
     });
 
     it("should throw error when user has no password", async () => {
-      mockPrisma.user.findUnique.mockResolvedValue({
+      mockDataStore.user.findUnique.mockResolvedValue({
         id: "user-123",
         password: null,
       });
@@ -450,7 +450,7 @@ describe("IdPasswordAuthService", () => {
     });
 
     it("should throw error when current password is incorrect", async () => {
-      mockPrisma.user.findUnique.mockResolvedValue({
+      mockDataStore.user.findUnique.mockResolvedValue({
         id: "user-123",
         password: "hashed_current_password",
       });
@@ -464,7 +464,7 @@ describe("IdPasswordAuthService", () => {
     });
 
     it("should not update password if verification fails", async () => {
-      mockPrisma.user.findUnique.mockResolvedValue({
+      mockDataStore.user.findUnique.mockResolvedValue({
         id: "user-123",
         password: "hashed_current_password",
       });
@@ -478,11 +478,11 @@ describe("IdPasswordAuthService", () => {
         // Expected error
       }
 
-      expect(mockPrisma.user.update).not.toHaveBeenCalled();
+      expect(mockDataStore.user.update).not.toHaveBeenCalled();
     });
 
     it("should verify current password before changing", async () => {
-      mockPrisma.user.findUnique.mockResolvedValue({
+      mockDataStore.user.findUnique.mockResolvedValue({
         id: "user-123",
         password: "hashed_current_password",
       });
@@ -500,7 +500,7 @@ describe("IdPasswordAuthService", () => {
     });
 
     it("should hash new password with correct rounds", async () => {
-      mockPrisma.user.findUnique.mockResolvedValue({
+      mockDataStore.user.findUnique.mockResolvedValue({
         id: "user-123",
         password: "hashed_current_password",
       });
@@ -517,13 +517,13 @@ describe("IdPasswordAuthService", () => {
 
   describe("authentication flow with password reset", () => {
     it("should allow authentication after password reset", async () => {
-      mockPrisma.user.findFirst.mockResolvedValue({
+      mockDataStore.user.findFirst.mockResolvedValue({
         id: "user-123",
       });
 
       await service.resetPassword("valid-token", "new_password");
 
-      mockPrisma.user.findUnique.mockResolvedValue({
+      mockDataStore.user.findUnique.mockResolvedValue({
         id: "user-123",
         clientId: "2605020",
         password: "hashed_new_password",
@@ -542,13 +542,13 @@ describe("IdPasswordAuthService", () => {
     });
 
     it("should clear reset token on successful reset", async () => {
-      mockPrisma.user.findFirst.mockResolvedValue({
+      mockDataStore.user.findFirst.mockResolvedValue({
         id: "user-123",
       });
 
       await service.resetPassword("valid-token", "new_password");
 
-      const updateCall = mockPrisma.user.update.mock.calls[0][0];
+      const updateCall = mockDataStore.user.update.mock.calls[0][0];
       expect(updateCall.data.passwordResetToken).toBeNull();
       expect(updateCall.data.passwordResetExpires).toBeNull();
     });

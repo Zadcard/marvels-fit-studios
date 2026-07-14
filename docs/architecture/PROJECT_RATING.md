@@ -32,7 +32,7 @@
 
 #### 1. **Database Design** (8/10)
 - ✅ Comprehensive schema with proper relationships
-- ✅ Good use of Prisma ORM
+- ✅ Good use of legacy ORM ORM
 - ✅ Proper enums for state management
 - ✅ Clear foreign keys and constraints
 - ✅ Appropriate indexes and scalability considerations

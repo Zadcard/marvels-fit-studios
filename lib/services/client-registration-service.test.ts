@@ -6,7 +6,7 @@ vi.mock("@/lib/services/client-id-generator");
 vi.mock("@/lib/services/password-generator");
 
 describe("ClientRegistrationService", () => {
-  let mockPrisma: any;
+  let mockDataStore: any;
   let mockTx: any;
   let mockClientIdGenerator: any;
   let mockPasswordGenerator: any;
@@ -24,7 +24,7 @@ describe("ClientRegistrationService", () => {
       },
     };
 
-    mockPrisma = {
+    mockDataStore = {
       user: {
         findFirst: vi.fn().mockResolvedValue(null),
       },
@@ -61,7 +61,7 @@ describe("ClientRegistrationService", () => {
     } = await import("@/lib/services/client-registration-service");
     service = new Cls({
       register: (input: any) =>
-        mockPrisma.$transaction(async (tx: any) => {
+        mockDataStore.$transaction(async (tx: any) => {
           const user = await tx.user.create({
             data: {
               name: input.fullName,
@@ -85,7 +85,7 @@ describe("ClientRegistrationService", () => {
           return { userId: user.id, clientId: input.clientId };
         }),
       findClientByPhone: (phone: string) =>
-        mockPrisma.client.findUnique({ where: { phone } }),
+        mockDataStore.client.findUnique({ where: { phone } }),
       findGroupByName: vi.fn(),
     });
   });
@@ -308,7 +308,7 @@ describe("ClientRegistrationService", () => {
         phone: "+1234567890",
       });
 
-      expect(mockPrisma.$transaction).toHaveBeenCalled();
+      expect(mockDataStore.$transaction).toHaveBeenCalled();
     });
 
     it("should hash password with correct bcrypt rounds", async () => {
@@ -331,7 +331,7 @@ describe("ClientRegistrationService", () => {
 
   describe("isPhoneAvailable", () => {
     it("should return true when phone is not registered", async () => {
-      mockPrisma.client.findUnique.mockResolvedValue(null);
+      mockDataStore.client.findUnique.mockResolvedValue(null);
 
       const available = await service.isPhoneAvailable("+1234567890");
 
@@ -339,7 +339,7 @@ describe("ClientRegistrationService", () => {
     });
 
     it("should return false when phone is registered", async () => {
-      mockPrisma.client.findUnique.mockResolvedValue({
+      mockDataStore.client.findUnique.mockResolvedValue({
         id: "client-123",
         phone: "+1234567890",
       });
@@ -350,17 +350,17 @@ describe("ClientRegistrationService", () => {
     });
 
     it("should check phone uniqueness in database", async () => {
-      mockPrisma.client.findUnique.mockResolvedValue(null);
+      mockDataStore.client.findUnique.mockResolvedValue(null);
 
       await service.isPhoneAvailable("+1234567890");
 
-      expect(mockPrisma.client.findUnique).toHaveBeenCalledWith({
+      expect(mockDataStore.client.findUnique).toHaveBeenCalledWith({
         where: { phone: "+1234567890" },
       });
     });
 
     it("should work with different phone formats", async () => {
-      mockPrisma.client.findUnique.mockResolvedValue(null);
+      mockDataStore.client.findUnique.mockResolvedValue(null);
 
       const phones = ["+1234567890", "201012345678", "0101234567"];
       for (const phone of phones) {
@@ -370,7 +370,7 @@ describe("ClientRegistrationService", () => {
     });
 
     it("should return false if client exists", async () => {
-      mockPrisma.client.findUnique.mockResolvedValue({
+      mockDataStore.client.findUnique.mockResolvedValue({
         id: "existing-client",
         fullName: "Existing User",
         phone: "+1234567890",
@@ -382,18 +382,18 @@ describe("ClientRegistrationService", () => {
     });
 
     it("should query by phone field", async () => {
-      mockPrisma.client.findUnique.mockResolvedValue(null);
+      mockDataStore.client.findUnique.mockResolvedValue(null);
 
       await service.isPhoneAvailable("+1234567890");
 
-      const callArgs = mockPrisma.client.findUnique.mock.calls[0][0];
+      const callArgs = mockDataStore.client.findUnique.mock.calls[0][0];
       expect(callArgs.where).toHaveProperty("phone", "+1234567890");
     });
   });
 
   describe("integration scenarios", () => {
     it("should allow registration if phone is available", async () => {
-      mockPrisma.client.findUnique.mockResolvedValue(null);
+      mockDataStore.client.findUnique.mockResolvedValue(null);
       mockTx.user.create.mockResolvedValue({
         id: "user-123",
       });
@@ -415,7 +415,7 @@ describe("ClientRegistrationService", () => {
     });
 
     it("should prevent registration if phone is taken", async () => {
-      mockPrisma.client.findUnique.mockResolvedValue({
+      mockDataStore.client.findUnique.mockResolvedValue({
         id: "existing-client",
       });
 

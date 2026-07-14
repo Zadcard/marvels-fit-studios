@@ -33,7 +33,7 @@ This flow now lets admin:
 
 ### 2. Admin clients page is now database-backed
 
-Replaced the old mock repository with a Prisma-backed repository:
+Replaced the old mock repository with a legacy ORM-backed repository:
 
 - `lib/repositories/admin-client-repository.ts`
 

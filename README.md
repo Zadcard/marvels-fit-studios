@@ -8,8 +8,8 @@ Next.js 16 application for the Marvel Fit Studios admin, coach, and client porta
 - Version-controlled schema: `supabase/migrations/`.
 - Authentication: Auth.js credentials with JWT sessions; Supabase Auth is intentionally disabled for signups.
 - Security: application tables have RLS enabled and no browser-role policies. Runtime access is server-only.
-- Compatibility: Prisma still powers existing repositories/services while Neon data export and behavioral migration are pending. The unnecessary Auth.js Prisma adapter has been removed.
-- Source safety: Neon has not been deleted or modified.
+- Data access: all runtime repositories, services, and transactional functions use Supabase.
+- Fresh start: the hosted schema is intentionally empty and no legacy records were imported.
 
 See [`docs/phase-1/`](./docs/phase-1/) for the audit, migration guide, environment setup, deployment workflow, handoff, and verification report.
 
@@ -31,7 +31,7 @@ npm run supabase:reset
 npm run dev
 ```
 
-Fill `.env.local` with development values only. Never commit real secrets. Until data migration is complete, `DATABASE_URL` and `DIRECT_URL` are the temporary Prisma compatibility connections and should point to the development Supabase project—not production.
+Fill `.env.local` with development values only. Never commit real secrets. Runtime access requires the public project URL plus the server-only service-role key documented in `.env.example`.
 
 ## Validation
 
@@ -60,7 +60,7 @@ Review schema changes, open a pull request, and apply them to the development pr
 
 ## Important boundaries
 
-- Never put `SUPABASE_SERVICE_ROLE_KEY`, database URLs, passwords, or Auth.js secrets in client code.
+- Never put `SUPABASE_SERVICE_ROLE_KEY`, passwords, or Auth.js secrets in client code.
 - Do not add browser table policies while identity is managed by Auth.js unless a verified JWT/RLS design is approved.
-- Do not remove Neon until Supabase data counts, integrity checks, application queries, and role flows all pass and removal is explicitly approved.
-- Do not remove Prisma until repository scans reach zero and transaction/auth behavior has equivalent coverage.
+- Keep all application data access behind the server-only Supabase boundary.
+- Keep schema changes reproducible through version-controlled Supabase migrations.

@@ -84,19 +84,19 @@ See `lib/auth/authorization-policy.test.ts` for a complete working example.
 
 Located in `tests/test-utils.ts`. These make testing easier:
 
-### Mock Prisma Client
+### Mock legacy ORM Client
 ```typescript
-import { createMockPrisma, mockGetPrisma } from '@/tests/test-utils';
+import { createMocklegacy ORM, mockGetlegacy ORM } from '@/tests/test-utils';
 
-vi.mock('@/lib/prisma', () => ({
-  getPrisma: mockGetPrisma,
+vi.mock('@/lib/legacy ORM', () => ({
+  getlegacy ORM: mockGetlegacy ORM,
 }));
 
 it('should fetch user', async () => {
-  const mockPrisma = createMockPrisma();
+  const mocklegacy ORM = createMocklegacy ORM();
   const testUser = { id: '1', email: 'test@example.com' };
   
-  mockPrisma.user.findUnique.mockResolvedValue(testUser);
+  mocklegacy ORM.user.findUnique.mockResolvedValue(testUser);
   // Your test here
 });
 ```
@@ -270,8 +270,8 @@ tests/
 import { vi } from 'vitest';
 
 // Mock an entire module
-vi.mock('@/lib/prisma', () => ({
-  getPrisma: vi.fn(),
+vi.mock('@/lib/legacy ORM', () => ({
+  getlegacy ORM: vi.fn(),
 }));
 
 // Mock specific export

@@ -1,4 +1,4 @@
-import { UserRole } from "@prisma/client";
+import { UserRole } from "@/lib/supabase/domain";
 import { type DefaultSession } from "next-auth";
 
 export type ExtendedUser = DefaultSession["user"] & {

@@ -11,7 +11,7 @@ Most dashboard features follow this pattern:
 3. Data fetch: `lib/repositories/*-repository.ts`
 4. Mutations (writes): `app/actions/*.ts`
 5. Rules/business logic: `lib/services/*.ts` + `lib/validators/*.ts`
-6. Database schema: `prisma/schema.prisma` + `prisma/migrations/*`
+6. Database schema: `legacy ORM/schema.legacy ORM` + `legacy ORM/migrations/*`
 
 If you only remember one thing: start at `app/(dashboard)/**/page.tsx`, then follow imports.
 
@@ -79,8 +79,8 @@ Start at server actions + services:
 
 Start at:
 
-- `prisma/schema.prisma`
-- create migration under `prisma/migrations/`
+- `legacy ORM/schema.legacy ORM`
+- create migration under `legacy ORM/migrations/`
 - then update repository/action types and mapping
 
 ## Fast Search Commands

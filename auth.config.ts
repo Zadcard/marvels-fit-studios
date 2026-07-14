@@ -1,5 +1,5 @@
 import type { NextAuthConfig } from "next-auth";
-import { UserRole } from "@prisma/client";
+import { UserRole } from "@/lib/supabase/domain";
 
 const isProduction = process.env.NODE_ENV === "production";
 const authSecret =

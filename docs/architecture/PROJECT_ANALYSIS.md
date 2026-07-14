@@ -81,7 +81,7 @@ There is now at least one explicit repository abstraction in:
 But:
 
 - it still returns mock data
-- it is not yet a real Prisma-backed repository
+- it is not yet a real legacy ORM-backed repository
 
 So this is progress in architecture, not yet progress in real data integration.
 
@@ -90,8 +90,8 @@ So this is progress in architecture, not yet progress in real data integration.
 - frontend: `Next.js 15.5.14`
 - router: App Router
 - auth: `Auth.js / next-auth v5 beta`
-- ORM: `Prisma 7`
-- database target: `Neon Postgres`
+- ORM: `legacy ORM 7`
+- database target: `legacy hosted database Postgres`
 - hosting target: `Vercel`
 - styling: Tailwind 4 + custom component styling
 
@@ -119,7 +119,7 @@ Implemented:
 
 - Auth.js route handler
 - credentials-based login
-- Prisma adapter
+- legacy ORM adapter
 - role-aware JWT/session callbacks
 - server-side role layouts
 - proxy-based authorization policy
@@ -194,7 +194,7 @@ The following areas are genuinely backend-connected:
 - Auth.js session generation
 - role propagation into session
 - role redirects and access enforcement
-- Prisma connection setup
+- legacy ORM connection setup
 - seed flow for demo users
 
 ## What Is Still Mock Today
@@ -269,7 +269,7 @@ The app still does not have true backend flows for:
 Right now:
 
 - repository abstraction exists in places
-- but it is not yet consistently Prisma-backed
+- but it is not yet consistently legacy ORM-backed
 
 This means the backend shape is improving, but not the backend truth.
 
@@ -347,7 +347,7 @@ The biggest remaining work is:
 
 ### Integration wiring
 
-- replace mock repositories with Prisma-backed repositories/DAL
+- replace mock repositories with legacy ORM-backed repositories/DAL
 - connect server actions
 - revalidate dashboard routes after mutations
 
@@ -362,7 +362,7 @@ The biggest remaining work is:
 
 ### 1. `AUTH_SECRET` is still missing
 
-`.env` currently contains `DATABASE_URL` only.
+`.env` currently contains `LEGACY_DATABASE_CONNECTION` only.
 
 That means auth is still not fully production-safe.
 
@@ -372,7 +372,7 @@ It still fails with the same ESLint circular config serialization error.
 
 ### 3. `npm run build` still fails in this environment
 
-The build still stops at `prisma generate` because Prisma engine download is blocked in the current environment.
+The build still stops at `legacy ORM generate` because legacy ORM engine download is blocked in the current environment.
 
 This is partly environment-related, but still important as an operational note.
 
@@ -404,7 +404,7 @@ So my real opinion is:
 
 The recommendation is still the same:
 
-**Use Next.js App Router as the backend-for-frontend, with Auth.js + Prisma + Neon on Vercel.**
+**Use Next.js App Router as the backend-for-frontend, with Auth.js + legacy ORM + legacy hosted database on Vercel.**
 
 This is still the right choice.
 
@@ -439,7 +439,7 @@ That means:
 
 1. finish auth hardening
 2. create real DAL/service/action layers for clients and coaches
-3. replace mock repositories with Prisma-backed repositories
+3. replace mock repositories with legacy ORM-backed repositories
 4. add missing training-session schema
 5. then convert scheduling and subscription screens
 
@@ -459,8 +459,8 @@ Why this is the best next move:
 
 1. fix `AUTH_SECRET`
 2. fix ESLint config
-3. create Prisma-backed client repository/DAL
-4. create Prisma-backed coach repository/DAL
+3. create legacy ORM-backed client repository/DAL
+4. create legacy ORM-backed coach repository/DAL
 5. add `zod` validators for create/update client/coach
 6. add server actions for create/update client/coach
 7. replace mock admin client repository
@@ -498,8 +498,8 @@ Your stack choice is still correct:
 
 - frontend + backend in `Next.js`
 - auth with `Auth.js`
-- database on `Neon`
-- ORM with `Prisma`
+- database on `legacy hosted database`
+- ORM with `legacy ORM`
 - deploy on `Vercel`
 
 The updated truth about the project is:

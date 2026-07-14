@@ -11,11 +11,11 @@ Migrate from email-based to ID-based authentication with auto-generated credenti
 
 ## Phase 1: Database Schema Changes
 
-### 1.1 Prisma Schema Updates
+### 1.1 legacy ORM Schema Updates
 
-**File:** `prisma/schema.prisma`
+**File:** `legacy ORM/schema.legacy ORM`
 
-```prisma
+```legacy ORM
 model User {
   id                    String      @id @default(cuid())
   
@@ -152,12 +152,12 @@ export class ClientIdGenerator {
   /**
    * Get next available number for current month
    */
-  async getNextClientNumber(prisma: PrismaClient): Promise<number> {
+  async getNextClientNumber(legacy ORM: legacy data client): Promise<number> {
     const now = new Date();
     const year = now.getFullYear();
     const month = now.getMonth() + 1;
 
-    const latestClient = await prisma.user.findFirst({
+    const latestClient = await legacy ORM.user.findFirst({
       where: {
         clientId: {
           startsWith: `${year.toString().slice(-2)}${String(month).padStart(2, '0')}`,
@@ -230,7 +230,7 @@ export interface RegisterClientInput {
 }
 
 export class ClientRegistrationService {
-  private prisma = getPrisma();
+  private legacy ORM = getlegacy ORM();
   private passwordVerifier = new BcryptPasswordVerifier();
 
   async registerClient(input: RegisterClientInput): Promise<{
@@ -238,7 +238,7 @@ export class ClientRegistrationService {
     clientId: string;
     temporaryPassword: string;
   }> {
-    const nextNumber = await clientIdGenerator.getNextClientNumber(this.prisma);
+    const nextNumber = await clientIdGenerator.getNextClientNumber(this.legacy ORM);
     const clientId = clientIdGenerator.generateId({ clientNumber: nextNumber });
     const temporaryPassword = passwordGenerator.generatePassword(clientId);
 
@@ -246,7 +246,7 @@ export class ClientRegistrationService {
     const hashedPassword = await bcryptjs.hash(temporaryPassword, 10);
 
     // Create user with client in transaction
-    const result = await this.prisma.$transaction(async (tx) => {
+    const result = await this.legacy ORM.$transaction(async (tx) => {
       // Create User
       const user = await tx.user.create({
         data: {
@@ -283,7 +283,7 @@ export class ClientRegistrationService {
    * Validate phone number uniqueness
    */
   async isPhoneAvailable(phone: string): Promise<boolean> {
-    const existing = await this.prisma.client.findUnique({
+    const existing = await this.legacy ORM.client.findUnique({
       where: { phone },
     });
     return !existing;
@@ -308,7 +308,7 @@ export interface LoginInput {
 }
 
 export class IdPasswordAuthService {
-  private prisma = getPrisma();
+  private legacy ORM = getlegacy ORM();
   private passwordVerifier = new BcryptPasswordVerifier();
 
   /**
@@ -320,7 +320,7 @@ export class IdPasswordAuthService {
     role: UserRole;
   }> {
     // Find user by clientId
-    const user = await this.prisma.user.findUnique({
+    const user = await this.legacy ORM.user.findUnique({
       where: { clientId: input.clientId },
       select: {
         id: true,
@@ -345,7 +345,7 @@ export class IdPasswordAuthService {
     }
 
     // Update last login
-    await this.prisma.user.update({
+    await this.legacy ORM.user.update({
       where: { id: user.id },
       data: { lastLoginAt: new Date() },
     });
@@ -361,7 +361,7 @@ export class IdPasswordAuthService {
    * Request password reset
    */
   async requestPasswordReset(clientId: string): Promise<void> {
-    const user = await this.prisma.user.findUnique({
+    const user = await this.legacy ORM.user.findUnique({
       where: { clientId },
       select: { id: true },
     });
@@ -374,7 +374,7 @@ export class IdPasswordAuthService {
     const resetToken = crypto.randomBytes(32).toString('hex');
     const resetExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24h
 
-    await this.prisma.user.update({
+    await this.legacy ORM.user.update({
       where: { id: user.id },
       data: {
         passwordResetToken: resetToken,
@@ -389,7 +389,7 @@ export class IdPasswordAuthService {
    * Reset password with token
    */
   async resetPassword(token: string, newPassword: string): Promise<void> {
-    const user = await this.prisma.user.findFirst({
+    const user = await this.legacy ORM.user.findFirst({
       where: {
         passwordResetToken: token,
         passwordResetExpires: { gt: new Date() },
@@ -403,7 +403,7 @@ export class IdPasswordAuthService {
 
     const hashedPassword = await bcryptjs.hash(newPassword, 10);
 
-    await this.prisma.user.update({
+    await this.legacy ORM.user.update({
       where: { id: user.id },
       data: {
         password: hashedPassword,
@@ -421,7 +421,7 @@ export class IdPasswordAuthService {
     currentPassword: string,
     newPassword: string
   ): Promise<void> {
-    const user = await this.prisma.user.findUnique({
+    const user = await this.legacy ORM.user.findUnique({
       where: { id: userId },
       select: { password: true },
     });
@@ -441,7 +441,7 @@ export class IdPasswordAuthService {
 
     const hashedPassword = await bcryptjs.hash(newPassword, 10);
 
-    await this.prisma.user.update({
+    await this.legacy ORM.user.update({
       where: { id: userId },
       data: { password: hashedPassword },
     });
@@ -675,7 +675,7 @@ export async function importClients(clients: Array<{
 ## Implementation Checklist
 
 ### Database
-- [ ] Create Prisma migration (add clientId, make email optional)
+- [ ] Create legacy ORM migration (add clientId, make email optional)
 - [ ] Update User/Client schema
 - [ ] Test migration rollback
 
@@ -724,8 +724,8 @@ export async function importClients(clients: Array<{
 
 ```
 NEW/UPDATED FILES:
-├── prisma/
-│   └── schema.prisma (MODIFY)
+├── legacy ORM/
+│   └── schema.legacy ORM (MODIFY)
 ├── lib/
 │   ├── services/
 │   │   ├── client-id-generator.ts (NEW)
@@ -774,7 +774,7 @@ NEW/UPDATED FILES:
 ---
 
 **Ready to implement? Start with:**
-1. Prisma migration
+1. legacy ORM migration
 2. Services (ID/Password generators)
 3. Auth service refactor
 4. Tests

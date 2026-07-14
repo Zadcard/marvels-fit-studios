@@ -50,7 +50,7 @@ Only do the minimum backend work needed for this flow.
 ## Recommended Stack
 - `Next.js App Router`
 - `Server Actions`
-- `Prisma`
+- `legacy ORM`
 - `PostgreSQL`
 
 ## Short Implementation Summary

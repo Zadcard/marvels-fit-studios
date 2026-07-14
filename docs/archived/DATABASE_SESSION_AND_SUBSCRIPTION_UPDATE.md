@@ -8,9 +8,9 @@ This update adds the next database milestone so the app can move from UI placeho
 
 ## What changed
 
-### 1. Prisma schema expanded
+### 1. legacy ORM schema expanded
 
-Updated `prisma/schema.prisma` to add:
+Updated `legacy ORM/schema.legacy ORM` to add:
 
 - `TrainingSession`
 - `SessionBooking`
@@ -38,7 +38,7 @@ Extended existing models:
 
 Added manual migration:
 
-- `prisma/migrations/20260408103000_add_session_and_subscription_domain/migration.sql`
+- `legacy ORM/migrations/20260408103000_add_session_and_subscription_domain/migration.sql`
 
 This migration:
 
@@ -50,7 +50,7 @@ This migration:
 
 ### 3. Seed data expanded
 
-Updated `prisma/seed.ts` so the demo seed now creates:
+Updated `legacy ORM/seed.ts` so the demo seed now creates:
 
 - existing admin, coach, and client users
 - a starter monthly subscription plan
@@ -63,14 +63,14 @@ Updated `prisma/seed.ts` so the demo seed now creates:
 
 I verified the schema in two steps:
 
-1. `npx prisma validate`
-2. `npx prisma generate`
+1. `npx legacy ORM validate`
+2. `npx legacy ORM generate`
 
-Both passed after running outside the sandbox, because Prisma needed access to its schema engine binary.
+Both passed after running outside the sandbox, because legacy ORM needed access to its schema engine binary.
 
 ## What I intentionally did not do
 
-I did not run `npx prisma migrate deploy` against the configured Neon database.
+I did not run `npx legacy ORM migrate deploy` against the configured legacy hosted database database.
 
 Reason:
 
@@ -83,8 +83,8 @@ Reason:
 When you are ready to apply this to the database, run:
 
 ```bash
-npx prisma migrate deploy
-npx prisma db seed
+npx legacy ORM migrate deploy
+npx legacy ORM db seed
 ```
 
 Then verify:
@@ -98,7 +98,7 @@ Then verify:
 
 The next code tasks that can build on this schema are:
 
-1. Replace mock subscription data with Prisma-backed queries.
+1. Replace mock subscription data with legacy ORM-backed queries.
 2. Add DAL/repository functions for training sessions and bookings.
 3. Build admin and coach actions for creating and updating sessions.
 4. Replace transitional client fields like `membershipType`, `sessionsLeft`, and `isPaid` with subscription-derived values over time.

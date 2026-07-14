@@ -12,7 +12,7 @@ npm run build
 
 Note:
 
-- During `npm run check:backend` or `npm run build`, the database driver may print an SSL warning about `sslmode=prefer`, `sslmode=require`, or `sslmode=verify-ca` being treated as `verify-full`. This warning does not fail the backend checks or build. Before production, update the Neon `DATABASE_URL` SSL mode intentionally, preferably to `sslmode=verify-full` if we want to keep the current stricter behavior.
+- During `npm run check:backend` or `npm run build`, the database driver may print an SSL warning about `sslmode=prefer`, `sslmode=require`, or `sslmode=verify-ca` being treated as `verify-full`. This warning does not fail the backend checks or build. Before production, update the legacy hosted database `LEGACY_DATABASE_CONNECTION` SSL mode intentionally, preferably to `sslmode=verify-full` if we want to keep the current stricter behavior.
 
 - The implemented backend feature: Authentication and role protection
 
@@ -148,11 +148,11 @@ The project includes a backend smoke-check script that validates important datab
 . Confirm every line prints `ok`.
 . If a check fails, fix the named data or backend flow before continuing manual testing.
 
-- The implemented backend feature: Prisma runtime cleanup
+- The implemented backend feature: legacy ORM runtime cleanup
 
-Former Prisma raw-SQL workarounds were replaced with typed Prisma reads and writes. This keeps settings, preferences, coach specialization, client status, custom subscription price, and lead capture aligned with the generated Prisma client.
+Former legacy ORM raw-SQL workarounds were replaced with typed legacy ORM reads and writes. This keeps settings, preferences, coach specialization, client status, custom subscription price, and lead capture aligned with the generated legacy ORM client.
 
-. Run `npx tsc --noEmit` and confirm no Prisma type errors.
+. Run `npx tsc --noEmit` and confirm no legacy ORM type errors.
 . Save admin settings, client settings, coach settings, client edits, coach edits, and subscription edits.
 . Refresh each page and confirm all saved values persist.
 
