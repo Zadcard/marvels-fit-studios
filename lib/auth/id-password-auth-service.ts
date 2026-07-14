@@ -1,7 +1,7 @@
 import "server-only";
 
 import bcryptjs from "bcryptjs";
-import { getPrisma } from "@/lib/prisma";
+import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { BcryptPasswordVerifier } from "@/lib/auth/password-verifier";
 import type { UserRole } from "@/lib/supabase/domain";
 
@@ -49,6 +49,87 @@ const authUserSelect = {
   },
 } as const;
 
+type AuthUserRecord = {
+  id: string;
+  name: string | null;
+  clientId: string | null;
+  email: string | null;
+  password: string | null;
+  mustChangePassword: boolean;
+  role: UserRole;
+  clientProfile: { fullName: string } | null;
+};
+
+export interface IdPasswordAuthStore {
+  findByClientId(clientId: string): Promise<AuthUserRecord | null>;
+  findByPhones(phones: string[]): Promise<AuthUserRecord | null>;
+  findResetToken(token: string, now: Date): Promise<{ id: string } | null>;
+  findPassword(userId: string): Promise<{ password: string | null } | null>;
+  findIdByClientId(clientId: string): Promise<{ id: string } | null>;
+  updateUser(userId: string, data: {
+    lastLoginAt?: Date;
+    passwordResetToken?: string | null;
+    passwordResetExpires?: Date | null;
+    password?: string;
+    mustChangePassword?: boolean;
+  }): Promise<void>;
+}
+
+const supabaseAuthStore: IdPasswordAuthStore = {
+  async findByClientId(clientId) {
+    const { data, error } = await getSupabaseServerClient()
+      .from("User")
+      .select("id,name,clientId,email,password,mustChangePassword,role,clientProfile:Client(fullName)")
+      .eq("clientId", clientId)
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) return null;
+    return { ...data, clientProfile: data.clientProfile[0] ?? null };
+  },
+  async findByPhones(phones) {
+    const { data, error } = await getSupabaseServerClient()
+      .from("Client")
+      .select("user:User(id,name,clientId,email,password,mustChangePassword,role),fullName")
+      .in("phone", phones)
+      .limit(1)
+      .maybeSingle();
+    if (error) throw error;
+    return data ? { ...data.user, clientProfile: { fullName: data.fullName } } : null;
+  },
+  async findResetToken(token, now) {
+    const { data, error } = await getSupabaseServerClient()
+      .from("User").select("id").eq("passwordResetToken", token)
+      .gt("passwordResetExpires", now.toISOString()).maybeSingle();
+    if (error) throw error;
+    return data;
+  },
+  async findPassword(userId) {
+    const { data, error } = await getSupabaseServerClient()
+      .from("User").select("password").eq("id", userId).maybeSingle();
+    if (error) throw error;
+    return data;
+  },
+  async findIdByClientId(clientId) {
+    const { data, error } = await getSupabaseServerClient()
+      .from("User").select("id").eq("clientId", clientId).maybeSingle();
+    if (error) throw error;
+    return data;
+  },
+  async updateUser(userId, data) {
+    const update = {
+      ...data,
+      lastLoginAt: data.lastLoginAt?.toISOString(),
+      passwordResetExpires:
+        data.passwordResetExpires instanceof Date
+          ? data.passwordResetExpires.toISOString()
+          : data.passwordResetExpires,
+    };
+    const { error } = await getSupabaseServerClient()
+      .from("User").update(update).eq("id", userId);
+    if (error) throw error;
+  },
+};
+
 function getPhoneCandidates(identifier: string) {
   const trimmed = identifier.trim();
   const digits = trimmed.replace(/\D/g, "");
@@ -78,18 +159,13 @@ function getPhoneCandidates(identifier: string) {
 }
 
 export class IdPasswordAuthService {
-  private get prisma() {
-    return getPrisma();
-  }
+  constructor(private readonly store: IdPasswordAuthStore = supabaseAuthStore) {}
   private passwordVerifier = new BcryptPasswordVerifier();
 
   private async findUserByLoginIdentifier(identifier: string) {
     const clientId = identifier.trim();
 
-    const userByClientId = await this.prisma.user.findUnique({
-      where: { clientId },
-      select: authUserSelect,
-    });
+    const userByClientId = await this.store.findByClientId(clientId);
 
     if (userByClientId) {
       return userByClientId;
@@ -101,20 +177,7 @@ export class IdPasswordAuthService {
       return null;
     }
 
-    const clientByPhone = await this.prisma.client.findFirst({
-      where: {
-        phone: {
-          in: phoneCandidates,
-        },
-      },
-      select: {
-        user: {
-          select: authUserSelect,
-        },
-      },
-    });
-
-    return clientByPhone?.user ?? null;
+    return this.store.findByPhones(phoneCandidates);
   }
 
   async authenticate(input: LoginInput): Promise<AuthenticatedUser> {
@@ -133,10 +196,7 @@ export class IdPasswordAuthService {
       throw new Error("Invalid client ID, phone, or password");
     }
 
-    await this.prisma.user.update({
-      where: { id: user.id },
-      data: { lastLoginAt: new Date() },
-    });
+    await this.store.updateUser(user.id, { lastLoginAt: new Date() });
 
     return {
       userId: user.id,
@@ -149,10 +209,7 @@ export class IdPasswordAuthService {
   }
 
   async requestPasswordReset(clientId: string): Promise<void> {
-    const user = await this.prisma.user.findUnique({
-      where: { clientId },
-      select: { id: true },
-    });
+    const user = await this.store.findIdByClientId(clientId);
 
     if (!user) {
       return;
@@ -161,23 +218,14 @@ export class IdPasswordAuthService {
     const resetToken = this.generateResetToken();
     const resetExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
-    await this.prisma.user.update({
-      where: { id: user.id },
-      data: {
+    await this.store.updateUser(user.id, {
         passwordResetToken: resetToken,
         passwordResetExpires: resetExpires,
-      },
     });
   }
 
   async resetPassword(token: string, newPassword: string): Promise<void> {
-    const user = await this.prisma.user.findFirst({
-      where: {
-        passwordResetToken: token,
-        passwordResetExpires: { gt: new Date() },
-      },
-      select: { id: true },
-    });
+    const user = await this.store.findResetToken(token, new Date());
 
     if (!user) {
       throw new Error("Invalid or expired reset token");
@@ -185,13 +233,10 @@ export class IdPasswordAuthService {
 
     const hashedPassword = await bcryptjs.hash(newPassword, 10);
 
-    await this.prisma.user.update({
-      where: { id: user.id },
-      data: {
+    await this.store.updateUser(user.id, {
         password: hashedPassword,
         passwordResetToken: null,
         passwordResetExpires: null,
-      },
     });
   }
 
@@ -200,10 +245,7 @@ export class IdPasswordAuthService {
     currentPassword: string,
     newPassword: string
   ): Promise<void> {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      select: { password: true },
-    });
+    const user = await this.store.findPassword(userId);
 
     if (!user || !user.password) {
       throw new Error("User not found");
@@ -220,12 +262,9 @@ export class IdPasswordAuthService {
 
     const hashedPassword = await bcryptjs.hash(newPassword, 10);
 
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: {
+    await this.store.updateUser(userId, {
         password: hashedPassword,
         mustChangePassword: false,
-      },
     });
   }
 

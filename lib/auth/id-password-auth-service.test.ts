@@ -1,12 +1,15 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { IdPasswordAuthService } from "@/lib/auth/id-password-auth-service";
-import * as prismaModule from "@/lib/prisma";
 import * as bcryptjs from "bcryptjs";
 
-vi.mock("@/lib/prisma");
 vi.mock("bcryptjs");
 
 describe("IdPasswordAuthService", () => {
+  const userSelect = {
+    id: true, name: true, clientId: true, email: true, password: true,
+    mustChangePassword: true, role: true,
+    clientProfile: { select: { fullName: true } },
+  } as const;
   let service: IdPasswordAuthService;
   let mockPrisma: any;
 
@@ -22,10 +25,30 @@ describe("IdPasswordAuthService", () => {
       },
     };
 
-    vi.mocked(prismaModule.getPrisma).mockReturnValue(mockPrisma);
     vi.mocked(bcryptjs.hash).mockResolvedValue("hashed_password" as never);
 
-    service = new IdPasswordAuthService();
+    service = new IdPasswordAuthService({
+      findByClientId: (clientId) =>
+        mockPrisma.user.findUnique({ where: { clientId }, select: userSelect }),
+      findByPhones: async (phones) => {
+        const result = await mockPrisma.client.findFirst({
+          where: { phone: { in: phones } },
+          select: { user: { select: userSelect } },
+        });
+        return result?.user ?? null;
+      },
+      findResetToken: (token, now) =>
+        mockPrisma.user.findFirst({
+          where: { passwordResetToken: token, passwordResetExpires: { gt: now } },
+          select: { id: true },
+        }),
+      findPassword: (userId) =>
+        mockPrisma.user.findUnique({ where: { id: userId }, select: { password: true } }),
+      findIdByClientId: (clientId) =>
+        mockPrisma.user.findUnique({ where: { clientId }, select: { id: true } }),
+      updateUser: (userId, data) =>
+        mockPrisma.user.update({ where: { id: userId }, data }),
+    });
   });
 
   describe("authenticate", () => {
