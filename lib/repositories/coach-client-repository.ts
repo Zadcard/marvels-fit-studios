@@ -2,8 +2,13 @@ import "server-only";
 
 import { UserRole } from "@/lib/supabase/domain";
 
-import type { CoachClientPlan, CoachClientRecord, CoachClientStatus } from "@/lib/dashboard/coach-client-record";
-import { getPrisma, withPrismaFallback } from "@/lib/prisma";
+import type {
+  CoachClientPlan,
+  CoachClientRecord,
+  CoachClientStatus,
+} from "@/lib/dashboard/coach-client-record";
+import { withSupabaseFallback } from "@/lib/supabase/errors";
+import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 const dateTimeFormatter = new Intl.DateTimeFormat("en-US", {
   month: "short",
@@ -31,21 +36,29 @@ function formatDateLabel(value: Date) {
   return dateFormatter.format(value);
 }
 
-function determinePlanType(client: {
-  group: { coach: { userId: string } } | null;
-  subscriptions: Array<{ plan: { name: string; slug: string } }>;
-  bookings: Array<{ trainingSession: { type: "GROUP" | "PRIVATE" } }>;
-}, coachUserId: string): CoachClientPlan {
+function determinePlanType(
+  client: {
+    group: { coach: { userId: string } } | null;
+    subscriptions: Array<{ plan: { name: string; slug: string } }>;
+    bookings: Array<{ trainingSession: { type: "GROUP" | "PRIVATE" } }>;
+  },
+  coachUserId: string,
+): CoachClientPlan {
   const hasGroupAssignment = client.group?.coach.userId === coachUserId;
   const hasPrivateSession = client.bookings.some(
-    (booking) => booking.trainingSession.type === "PRIVATE"
+    (booking) => booking.trainingSession.type === "PRIVATE",
   );
 
   const planLabels = client.subscriptions
-    .map((subscription) => `${subscription.plan.name} ${subscription.plan.slug}`.toLowerCase())
+    .map((subscription) =>
+      `${subscription.plan.name} ${subscription.plan.slug}`.toLowerCase(),
+    )
     .join(" ");
 
-  if (planLabels.includes("hybrid") || (hasGroupAssignment && hasPrivateSession)) {
+  if (
+    planLabels.includes("hybrid") ||
+    (hasGroupAssignment && hasPrivateSession)
+  ) {
     return "Hybrid";
   }
 
@@ -62,7 +75,8 @@ function determineStatus(client: {
   bookings: Array<{ trainingSession: { startsAt: Date } }>;
 }): CoachClientStatus {
   const now = Date.now();
-  const createdWithinWeek = now - client.createdAt.getTime() <= 7 * 24 * 60 * 60 * 1000;
+  const createdWithinWeek =
+    now - client.createdAt.getTime() <= 7 * 24 * 60 * 60 * 1000;
 
   if (createdWithinWeek) {
     return "New this week";
@@ -74,7 +88,7 @@ function determineStatus(client: {
   }
 
   const nextUpcomingSession = client.bookings.find(
-    (booking) => booking.trainingSession.startsAt.getTime() >= now
+    (booking) => booking.trainingSession.startsAt.getTime() >= now,
   );
 
   if (!nextUpcomingSession) {
@@ -112,7 +126,9 @@ function describeCurrentFocus(client: {
 }
 
 function describeProgressNote(client: {
-  bookings: Array<{ trainingSession: { title: string; startsAt: Date; location: string | null } }>;
+  bookings: Array<{
+    trainingSession: { title: string; startsAt: Date; location: string | null };
+  }>;
 }) {
   const nextBooking = client.bookings[0];
 
@@ -125,152 +141,101 @@ function describeProgressNote(client: {
     : "";
 
   return `Next session is ${nextBooking.trainingSession.title}${locationLabel} on ${formatDateTimeLabel(
-    nextBooking.trainingSession.startsAt
+    nextBooking.trainingSession.startsAt,
   )}.`;
 }
 
-export class PrismaCoachClientRepository implements CoachClientRepository {
+export class SupabaseCoachClientRepository implements CoachClientRepository {
   async listForCoachUserId(userId: string): Promise<CoachClientRecord[]> {
-    return withPrismaFallback(async () => {
-      const prisma = getPrisma();
+    return withSupabaseFallback(async () => {
+      const supabase = getSupabaseServerClient();
+      const { data, error } = await supabase
+        .from("Client")
+        .select(
+          `
+          id, fullName, phone, createdAt,
+          group:Group(id, name, coach:Coach(userId)),
+          subscriptions:ClientSubscription(startsAt,
+            plan:SubscriptionPlan(name, slug)),
+          bookings:SessionBooking(status, updatedAt,
+            trainingSession:TrainingSession(title, type, status, startsAt, location,
+              coach:Coach(userId))),
+          workoutNotes:WorkoutNote(id, content, date, updatedAt, isPrivate,
+            author:User(name, email, role)),
+          files:File(id, name, note, expiresAt, createdAt, deletedAt)
+        `,
+        )
+        .order("fullName");
+      if (error) throw error;
 
-      const clients = await prisma.client.findMany({
-      where: {
-        OR: [
-          {
-            group: {
-              coach: {
-                userId,
+      const now = Date.now();
+      const clients = data
+        .map((client) => ({
+          ...client,
+          createdAt: new Date(client.createdAt),
+          subscriptions: client.subscriptions
+            .sort((left, right) => right.startsAt.localeCompare(left.startsAt))
+            .slice(0, 3),
+          bookings: client.bookings
+            .filter(
+              (booking) =>
+                ["BOOKED", "ATTENDED", "MISSED", "WAITLIST"].includes(
+                  booking.status,
+                ) &&
+                booking.trainingSession.status !== "CANCELED" &&
+                booking.trainingSession.coach.userId === userId,
+            )
+            .sort((left, right) =>
+              left.trainingSession.startsAt.localeCompare(
+                right.trainingSession.startsAt,
+              ),
+            )
+            .map((booking) => ({
+              updatedAt: new Date(booking.updatedAt),
+              trainingSession: {
+                ...booking.trainingSession,
+                startsAt: new Date(booking.trainingSession.startsAt),
               },
-            },
-          },
-          {
-            bookings: {
-              some: {
-                status: {
-                  in: ["BOOKED", "ATTENDED", "MISSED", "WAITLIST"],
-                },
-                trainingSession: {
-                  status: {
-                    not: "CANCELED",
-                  },
-                  coach: {
-                    userId,
-                  },
-                },
-              },
-            },
-          },
-        ],
-      },
-      select: {
-        id: true,
-        fullName: true,
-        phone: true,
-        createdAt: true,
-        group: {
-          select: {
-            id: true,
-            name: true,
-            coach: {
-              select: {
-                userId: true,
-              },
-            },
-          },
-        },
-        subscriptions: {
-          orderBy: [{ startsAt: "desc" }],
-          take: 3,
-          select: {
-            plan: {
-              select: {
-                name: true,
-                slug: true,
-              },
-            },
-          },
-        },
-        bookings: {
-          where: {
-            status: {
-              in: ["BOOKED", "ATTENDED", "MISSED", "WAITLIST"],
-            },
-            trainingSession: {
-              status: {
-                not: "CANCELED",
-              },
-              coach: {
-                userId,
-              },
-            },
-          },
-          orderBy: [{ trainingSession: { startsAt: "asc" } }],
-          select: {
-            updatedAt: true,
-            trainingSession: {
-              select: {
-                title: true,
-                type: true,
-                startsAt: true,
-                location: true,
-              },
-            },
-          },
-        },
-        workoutNotes: {
-          where: {
-            isPrivate: true,
-            OR: [
-              { authorId: null },
-              {
-                author: {
-                  role: {
-                    in: [UserRole.ADMIN, UserRole.COACH],
-                  },
-                },
-              },
-            ],
-          },
-          orderBy: [{ date: "desc" }],
-          take: 5,
-          select: {
-            id: true,
-            content: true,
-            date: true,
-            updatedAt: true,
-            author: {
-              select: {
-                name: true,
-                email: true,
-              },
-            },
-          },
-        },
-        files: {
-          where: {
-            deletedAt: null,
-            expiresAt: {
-              gt: new Date(),
-            },
-          },
-          orderBy: [{ createdAt: "desc" }],
-          take: 5,
-          select: {
-            id: true,
-            name: true,
-            note: true,
-            expiresAt: true,
-          },
-        },
-      },
-      orderBy: [{ fullName: "asc" }],
-    });
+            })),
+          workoutNotes: client.workoutNotes
+            .filter(
+              (note) =>
+                note.isPrivate &&
+                (!note.author ||
+                  note.author.role === UserRole.ADMIN ||
+                  note.author.role === UserRole.COACH),
+            )
+            .sort((left, right) => right.date.localeCompare(left.date))
+            .slice(0, 5)
+            .map((note) => ({
+              ...note,
+              date: new Date(note.date),
+              updatedAt: new Date(note.updatedAt),
+            })),
+          files: client.files
+            .filter(
+              (file) =>
+                !file.deletedAt && new Date(file.expiresAt).getTime() > now,
+            )
+            .sort((left, right) =>
+              right.createdAt.localeCompare(left.createdAt),
+            )
+            .slice(0, 5)
+            .map((file) => ({
+              ...file,
+              expiresAt: new Date(file.expiresAt),
+            })),
+        }))
+        .filter(
+          (client) =>
+            client.group?.coach.userId === userId || client.bookings.length > 0,
+        );
 
       return clients.map((client) => {
         const upcomingBooking =
           client.bookings.find(
-            (booking) => booking.trainingSession.startsAt.getTime() >= Date.now()
+            (booking) =>
+              booking.trainingSession.startsAt.getTime() >= Date.now(),
           ) ?? client.bookings[0];
 
         const nextSessionLabel = upcomingBooking
@@ -287,7 +252,9 @@ export class PrismaCoachClientRepository implements CoachClientRepository {
           lastTouchpoint: describeLastTouchpoint(client),
           currentFocus: describeCurrentFocus(client),
           progressNote: describeProgressNote(
-            upcomingBooking ? { bookings: [upcomingBooking] } : { bookings: [] }
+            upcomingBooking
+              ? { bookings: [upcomingBooking] }
+              : { bookings: [] },
           ),
           groupId: client.group?.id ?? null,
           groupName: client.group?.name ?? "No group",
@@ -310,4 +277,4 @@ export class PrismaCoachClientRepository implements CoachClientRepository {
 }
 
 export const coachClientRepository: CoachClientRepository =
-  new PrismaCoachClientRepository();
+  new SupabaseCoachClientRepository();
