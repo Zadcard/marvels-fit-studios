@@ -4,61 +4,44 @@ import { UserRole } from "@/lib/supabase/domain";
 import { revalidatePath } from "next/cache";
 
 import { requireRole } from "@/lib/auth/session";
-import { getPrisma } from "@/lib/prisma";
+import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
 async function assertCoachCanAccessClient(userId: string, clientId: string) {
-  const prisma = getPrisma();
-  const client = await prisma.client.findFirst({
-    where: {
-      id: clientId,
-      OR: [
-        {
-          group: {
-            coach: {
-              userId,
-            },
-          },
-        },
-        {
-          bookings: {
-            some: {
-              trainingSession: {
-                coach: {
-                  userId,
-                },
-              },
-            },
-          },
-        },
-      ],
-    },
-    select: {
-      id: true,
-    },
-  });
+  const supabase = getSupabaseServerClient();
+  const { data: client, error } = await supabase
+    .from("Client")
+    .select(
+      `
+      id, group:Group(coach:Coach(userId)),
+      bookings:SessionBooking(trainingSession:TrainingSession(coach:Coach(userId)))
+    `,
+    )
+    .eq("id", clientId)
+    .maybeSingle();
+  if (error) throw error;
 
-  if (!client) {
+  if (
+    !client ||
+    (client.group?.coach.userId !== userId &&
+      !client.bookings.some(
+        (booking) => booking.trainingSession.coach.userId === userId,
+      ))
+  ) {
     throw new Error("Client is not assigned to this coach.");
   }
 }
 
 async function assertCoachCanAccessGroup(userId: string, groupId: string) {
-  const prisma = getPrisma();
-  const group = await prisma.group.findFirst({
-    where: {
-      id: groupId,
-      coach: {
-        userId,
-      },
-    },
-    select: {
-      id: true,
-    },
-  });
+  const { data: group, error } = await getSupabaseServerClient()
+    .from("Group")
+    .select("id, coach:Coach(userId)")
+    .eq("id", groupId)
+    .maybeSingle();
+  if (error) throw error;
 
-  if (!group) {
+  if (!group || group.coach.userId !== userId) {
     throw new Error("Group is not assigned to this coach.");
   }
 }
@@ -74,7 +57,7 @@ export async function savePrivateClientNote(input: {
   content: string;
 }) {
   const coach = await requireRole(UserRole.COACH);
-  const prisma = getPrisma();
+  const supabase = getSupabaseServerClient();
   const clientId = input.clientId.trim();
   const content = input.content.trim();
 
@@ -85,14 +68,12 @@ export async function savePrivateClientNote(input: {
   await assertCoachCanAccessClient(coach.id, clientId);
 
   if (input.noteId) {
-    const note = await prisma.workoutNote.findUnique({
-      where: { id: input.noteId },
-      select: {
-        id: true,
-        authorId: true,
-        clientId: true,
-      },
-    });
+    const { data: note, error } = await supabase
+      .from("WorkoutNote")
+      .select("id, authorId, clientId")
+      .eq("id", input.noteId)
+      .maybeSingle();
+    if (error) throw error;
 
     if (!note || note.clientId !== clientId) {
       throw new Error("Note not found.");
@@ -102,24 +83,24 @@ export async function savePrivateClientNote(input: {
       throw new Error("Only the note author can edit this note.");
     }
 
-    await prisma.workoutNote.update({
-      where: { id: note.id },
-      data: {
+    const { error: updateError } = await supabase
+      .from("WorkoutNote")
+      .update({
         content,
         isPrivate: true,
         authorId: coach.id,
-        date: new Date(),
-      },
-    });
+        date: new Date().toISOString(),
+      })
+      .eq("id", note.id);
+    if (updateError) throw updateError;
   } else {
-    await prisma.workoutNote.create({
-      data: {
-        clientId,
-        content,
-        isPrivate: true,
-        authorId: coach.id,
-      },
+    const { error } = await supabase.from("WorkoutNote").insert({
+      clientId,
+      content,
+      isPrivate: true,
+      authorId: coach.id,
     });
+    if (error) throw error;
   }
 
   revalidateClientAssetViews();
@@ -127,7 +108,7 @@ export async function savePrivateClientNote(input: {
 
 export async function uploadCoachFile(formData: FormData) {
   const coach = await requireRole(UserRole.COACH);
-  const prisma = getPrisma();
+  const supabase = getSupabaseServerClient();
   const scope = String(formData.get("scope") ?? "");
   const targetId = String(formData.get("targetId") ?? "").trim();
   const note = String(formData.get("note") ?? "").trim();
@@ -160,31 +141,29 @@ export async function uploadCoachFile(formData: FormData) {
   const expiresAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
   const bytes = Buffer.from(await file.arrayBuffer());
 
-  await prisma.file.create({
-    data: {
-      name: file.name,
-      mimeType: file.type || "application/octet-stream",
-      size: file.size,
-      data: bytes,
-      note: note || null,
-      expiresAt,
-      uploadedById: coach.id,
-      ...(scope === "client" ? { clientId: targetId } : { groupId: targetId }),
-    },
+  const { error } = await supabase.from("File").insert({
+    name: file.name,
+    mimeType: file.type || "application/octet-stream",
+    size: file.size,
+    data: `\\x${bytes.toString("hex")}`,
+    note: note || null,
+    expiresAt: expiresAt.toISOString(),
+    uploadedById: coach.id,
+    clientId: scope === "client" ? targetId : null,
+    groupId: scope === "group" ? targetId : null,
   });
+  if (error) throw error;
 
   revalidateClientAssetViews();
 }
 
 export async function cleanupExpiredCoachFiles() {
   await requireRole(UserRole.ADMIN);
-  await getPrisma().file.deleteMany({
-    where: {
-      expiresAt: {
-        lte: new Date(),
-      },
-    },
-  });
+  const { error } = await getSupabaseServerClient()
+    .from("File")
+    .delete()
+    .lte("expiresAt", new Date().toISOString());
+  if (error) throw error;
 
   revalidateClientAssetViews();
 }
