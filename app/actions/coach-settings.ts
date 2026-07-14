@@ -4,7 +4,7 @@ import { CoachSpecialization, UserRole } from "@/lib/supabase/domain";
 import { revalidatePath } from "next/cache";
 
 import { requireRole } from "@/lib/auth/session";
-import { getPrisma } from "@/lib/prisma";
+import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 type SaveCoachSettingsInput = {
   fullName: string;
@@ -30,10 +30,9 @@ function toCoachSpecialization(
 
 export async function saveCoachSettings(input: SaveCoachSettingsInput) {
   const user = await requireRole(UserRole.COACH);
-  const prisma = getPrisma();
   const fullName = input.fullName.trim();
   const email = input.email.trim().toLowerCase();
-  const phone = input.phone.trim() || null;
+  const phone = input.phone.trim();
   const specialization = toCoachSpecialization(input.specialization);
 
   if (!fullName) {
@@ -44,42 +43,20 @@ export async function saveCoachSettings(input: SaveCoachSettingsInput) {
     throw new Error("Coach email is required.");
   }
 
-  const existingUser = await prisma.user.findUnique({
-    where: { email },
-    select: { id: true },
+  const { error } = await getSupabaseServerClient().rpc("save_coach_settings", {
+    p_email: email,
+    p_full_name: fullName,
+    p_phone: phone,
+    p_specialization: specialization,
+    p_user_id: user.id,
   });
-
-  if (existingUser && existingUser.id !== user.id) {
+  if (error?.code === "23505") {
     throw new Error("Another user already uses this email.");
   }
-
-  await prisma.$transaction(async (tx) => {
-    await tx.user.update({
-      where: { id: user.id },
-      data: {
-        name: fullName,
-        email,
-      },
-    });
-
-    const coachProfile = await tx.coach.findFirst({
-      where: { userId: user.id },
-      select: { id: true },
-    });
-
-    if (!coachProfile) {
-      throw new Error("Coach profile not found.");
-    }
-
-    await tx.coach.update({
-      where: { id: coachProfile.id },
-      data: {
-        fullName,
-        phone,
-        specialization,
-      },
-    });
-  });
+  if (error?.code === "P0002") {
+    throw new Error("Coach profile not found.");
+  }
+  if (error) throw error;
 
   revalidatePath("/coach");
   revalidatePath("/coach/settings");

@@ -927,6 +927,16 @@ export type Database = {
           userId: string
         }[]
       }
+      save_coach_settings: {
+        Args: {
+          p_email: string
+          p_full_name: string
+          p_phone: string
+          p_specialization: Database["public"]["Enums"]["CoachSpecialization"]
+          p_user_id: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       BillingCycle: "MONTHLY" | "WEEKLY" | "CUSTOM"

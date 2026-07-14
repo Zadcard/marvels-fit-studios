@@ -5,7 +5,7 @@ import { UserRole } from "@/lib/supabase/domain";
 
 import { requireRole } from "@/lib/auth/session";
 import { promoteLeadsToClients } from "@/lib/leads/promote-leads-to-clients";
-import { getPrisma } from "@/lib/prisma";
+import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 export async function approveLeadAsClient(leadId: string) {
   await requireRole(UserRole.ADMIN);
@@ -24,9 +24,11 @@ export async function approveLeadAsClient(leadId: string) {
 export async function deleteLead(leadId: string) {
   await requireRole(UserRole.ADMIN);
 
-  await getPrisma().lead.delete({
-    where: { id: leadId },
-  });
+  const { error } = await getSupabaseServerClient()
+    .from("Lead")
+    .delete()
+    .eq("id", leadId);
+  if (error) throw error;
 
   revalidatePath("/admin/leads");
   revalidatePath("/admin/join-requests");

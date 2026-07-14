@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 
 import { requireRole } from "@/lib/auth/session";
 import type { AdminStudioSettings } from "@/lib/mocks/admin-settings";
-import { getPrisma } from "@/lib/prisma";
+import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 const DEFAULT_SETTINGS_ID = "default";
 
@@ -26,7 +26,6 @@ function normalizeSettings(input: AdminStudioSettings): AdminStudioSettings {
 
 export async function saveAdminSettings(input: AdminStudioSettings) {
   await requireRole(UserRole.ADMIN);
-  const prisma = getPrisma();
   const settings = normalizeSettings(input);
 
   if (!settings.studioName) {
@@ -41,14 +40,10 @@ export async function saveAdminSettings(input: AdminStudioSettings) {
     throw new Error("Timezone is required.");
   }
 
-  await prisma.studioSettings.upsert({
-    where: { id: DEFAULT_SETTINGS_ID },
-    create: {
-      id: DEFAULT_SETTINGS_ID,
-      ...settings,
-    },
-    update: settings,
-  });
+  const { error } = await getSupabaseServerClient()
+    .from("StudioSettings")
+    .upsert({ id: DEFAULT_SETTINGS_ID, ...settings });
+  if (error) throw error;
 
   revalidatePath("/admin");
   revalidatePath("/admin/settings");

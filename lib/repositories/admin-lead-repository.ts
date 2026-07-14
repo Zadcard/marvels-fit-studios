@@ -4,7 +4,8 @@ import { LeadStatus } from "@/lib/supabase/domain";
 
 import { readLeadCredentialClientId } from "@/lib/leads/lead-credential-metadata";
 import type { AdminLeadRecord, AdminLeadStatus } from "@/lib/dashboard/admin-dashboard-data";
-import { getPrisma, withPrismaFallback } from "@/lib/prisma";
+import { withSupabaseFallback } from "@/lib/supabase/errors";
+import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
   month: "short",
@@ -58,64 +59,6 @@ function normalizeListInput(input?: {
   };
 }
 
-function buildLeadWhere(filters: {
-  search: string;
-  initial: string | null;
-}) {
-  return {
-    AND: [
-      {
-        status: {
-          not: LeadStatus.CONTACTED,
-        },
-      },
-      filters.initial
-        ? {
-            fullName: {
-              startsWith: filters.initial,
-              mode: "insensitive" as const,
-            },
-          }
-        : {},
-      filters.search
-        ? {
-            OR: [
-              {
-                fullName: {
-                  contains: filters.search,
-                  mode: "insensitive" as const,
-                },
-              },
-              {
-                email: {
-                  contains: filters.search,
-                  mode: "insensitive" as const,
-                },
-              },
-              {
-                phone: {
-                  contains: filters.search,
-                },
-              },
-              {
-                message: {
-                  contains: filters.search,
-                  mode: "insensitive" as const,
-                },
-              },
-              {
-                source: {
-                  contains: filters.search,
-                  mode: "insensitive" as const,
-                },
-              },
-            ],
-          }
-        : {},
-    ],
-  };
-}
-
 function buildInitialOptions(records: Array<{ fullName: string }>): AdminLeadInitialOption[] {
   const initialCounts = new Map<string, number>();
 
@@ -138,10 +81,6 @@ function buildInitialOptions(records: Array<{ fullName: string }>): AdminLeadIni
 }
 
 export class AdminLeadRepository {
-  private get prisma() {
-    return getPrisma();
-  }
-
   async list(input?: {
     search?: string;
     initial?: string | null;
@@ -153,54 +92,46 @@ export class AdminLeadRepository {
     initialOptions: AdminLeadInitialOption[];
   }> {
     const filters = normalizeListInput(input);
-    const where = buildLeadWhere(filters);
+    return withSupabaseFallback(async () => {
+      const { data, error } = await getSupabaseServerClient()
+        .from("Lead")
+        .select("id,fullName,email,phone,source,status,createdAt,message")
+        .neq("status", LeadStatus.CONTACTED);
+      if (error) throw error;
 
-    return withPrismaFallback(async () => {
-      const [totalCount, filteredCount, initialNameRecords, leads] =
-        await Promise.all([
-          this.prisma.lead.count({ where }),
-          this.prisma.lead.count({ where }),
-          this.prisma.lead.findMany({
-            where: {
-              status: {
-                not: LeadStatus.CONTACTED,
-              },
-            },
-            select: {
-              fullName: true,
-            },
-          }),
-          this.prisma.lead.findMany({
-            where,
-            orderBy: [{ fullName: filters.sort }, { createdAt: "desc" }],
-            take: 5,
-            select: {
-              id: true,
-              fullName: true,
-              email: true,
-              phone: true,
-              source: true,
-              status: true,
-              createdAt: true,
-              message: true,
-            },
-          }),
-        ]);
+      const search = filters.search.toLowerCase();
+      const filtered = data
+        .filter((lead) => {
+          const matchesInitial =
+            !filters.initial ||
+            lead.fullName.toUpperCase().startsWith(filters.initial);
+          const matchesSearch =
+            !search ||
+            [lead.fullName, lead.email, lead.phone, lead.message, lead.source].some(
+              (value) => value?.toLowerCase().includes(search)
+            );
+          return matchesInitial && matchesSearch;
+        })
+        .sort((a, b) => {
+          const byName = a.fullName.localeCompare(b.fullName);
+          if (byName !== 0) return filters.sort === "desc" ? -byName : byName;
+          return b.createdAt.localeCompare(a.createdAt);
+        });
 
       return {
-        records: leads.map((lead) => ({
+        records: filtered.slice(0, 5).map((lead) => ({
           id: lead.id,
           fullName: lead.fullName,
           email: lead.email ?? "No email",
           phone: lead.phone,
           source: lead.source,
           status: toLeadStatus(lead.status),
-          createdAt: formatDate(lead.createdAt),
+          createdAt: formatDate(new Date(lead.createdAt)),
           message: normalizeMessage(lead.message),
         })),
-        totalCount,
-        filteredCount,
-        initialOptions: buildInitialOptions(initialNameRecords),
+        totalCount: data.length,
+        filteredCount: filtered.length,
+        initialOptions: buildInitialOptions(data),
       };
     }, {
       records: [],
