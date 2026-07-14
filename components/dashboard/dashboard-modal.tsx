@@ -33,19 +33,57 @@ export function DashboardModal({
       return;
     }
 
-    const handleEscape = (event: KeyboardEvent) => {
+    const panel = panelRef.current;
+    // Remember what had focus so it can be restored when the modal closes.
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+
+    const getFocusable = () =>
+      Array.from(
+        panel?.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        ) ?? []
+      );
+
+    const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         onCloseRef.current();
+        return;
+      }
+
+      if (event.key !== "Tab") {
+        return;
+      }
+
+      // Trap focus inside the dialog (ARIA modal pattern).
+      const focusable = getFocusable();
+      if (focusable.length === 0) {
+        event.preventDefault();
+        panel?.focus();
+        return;
+      }
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const active = document.activeElement;
+
+      if (event.shiftKey && (active === first || active === panel)) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault();
+        first.focus();
       }
     };
 
     document.body.classList.add("modal-open");
-    document.addEventListener("keydown", handleEscape);
-    panelRef.current?.focus();
+    document.addEventListener("keydown", handleKeyDown);
+    panel?.focus();
 
     return () => {
       document.body.classList.remove("modal-open");
-      document.removeEventListener("keydown", handleEscape);
+      document.removeEventListener("keydown", handleKeyDown);
+      // Restore focus to the trigger so keyboard users keep their place.
+      previouslyFocused?.focus?.();
     };
   }, [open]);
 

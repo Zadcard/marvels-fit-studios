@@ -105,7 +105,11 @@ export function DashboardManagementToolbar({
             </button>
           </div>
           {visibleSuggestions.length > 0 ? (
-            <div className="dashboard-search-suggestions" role="listbox">
+            <div
+              className="dashboard-search-suggestions"
+              role="group"
+              aria-label="Search suggestions"
+            >
               {visibleSuggestions.map((suggestion) => {
                 const value = suggestion.value ?? suggestion.label;
 
