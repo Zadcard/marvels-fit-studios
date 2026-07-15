@@ -40,6 +40,24 @@ describe("REDLINE canonical admin workspaces", () => {
     expect(styles).toContain("@media (max-width: 700px)");
   });
 
+  it("owns the session ledger and every existing session mutation", () => {
+    const workspace = read("components/dashboard/admin-sessions-workspace.tsx");
+    const styles = read("components/dashboard/admin-sessions-workspace.module.css");
+
+    expect(workspace).toContain("Run every block");
+    expect(workspace).toContain("saveAdminSession");
+    expect(workspace).toContain("cancelAdminSession");
+    expect(workspace).toContain("deleteAdminSession");
+    expect(workspace).toContain("assignClientToSession");
+    expect(workspace).toContain("removeClientFromSession");
+    expect(workspace).toContain("markAttendance");
+    expect(workspace).toContain("<Dialog.Portal>");
+    expect(workspace).not.toContain("DashboardManagementToolbar");
+    expect(styles).toContain("var(--rl-red)");
+    expect(styles).not.toContain("var(--mv-");
+    expect(styles).toContain("@media(max-width:700px)");
+  });
+
   it("keeps temporary visual QA routes out of the product tree", () => {
     expect(() => read("app/redline-qa/clients/page.tsx")).toThrow();
     expect(() => read("app/redline-qa/schedule/page.tsx")).toThrow();
