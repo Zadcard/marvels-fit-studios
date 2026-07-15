@@ -150,6 +150,22 @@ describe("REDLINE canonical admin workspaces", () => {
     expect(styles).toContain("@media (max-width: 700px)");
   });
 
+  it("owns the persisted coach identity and secure access handoff", () => {
+    const workspace = read("components/dashboard/coach-settings-workspace.tsx");
+    const styles = read(
+      "components/dashboard/coach-settings-workspace.module.css",
+    );
+
+    expect(workspace).toContain("Shape your coaching identity");
+    expect(workspace).toContain("saveCoachSettings");
+    expect(workspace).toContain('href="/change-password"');
+    expect(workspace).not.toContain("DashboardFormSection");
+    expect(workspace).not.toContain("AccountSecurityPanel");
+    expect(styles).toContain("var(--rl-red)");
+    expect(styles).not.toContain("var(--mv-");
+    expect(styles).toContain("@media (max-width: 700px)");
+  });
+
   it("keeps temporary visual QA routes out of the product tree", () => {
     expect(() => read("app/redline-qa/clients/page.tsx")).toThrow();
     expect(() => read("app/redline-qa/schedule/page.tsx")).toThrow();
