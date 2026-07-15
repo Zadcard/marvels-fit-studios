@@ -1,235 +1,250 @@
 import Link from "next/link";
-import { ArrowRight, Clock3, NotebookPen } from "lucide-react";
+import {
+  Activity,
+  AlertTriangle,
+  ArrowRight,
+  ArrowUpRight,
+  CalendarDays,
+  CheckCircle2,
+  Clock3,
+  MapPin,
+  NotebookPen,
+  UsersRound,
+  Zap,
+} from "lucide-react";
 
-import { DashboardActivityFeed } from "@/components/dashboard/dashboard-activity-feed";
-import { DashboardMiniStat } from "@/components/dashboard/dashboard-mini-stat";
-import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
-import { DashboardStatCard } from "@/components/dashboard/dashboard-stat-card";
-import { DashboardSurfaceNote } from "@/components/dashboard/dashboard-surface-note";
 import type { CoachOverviewData } from "@/lib/dashboard/coach-overview-data";
-
-function getCoachSessionTone(
-  status: "Ready" | "Waitlist" | "Prep" | "Completed"
-) {
-  switch (status) {
-    case "Ready":
-      return "success";
-    case "Waitlist":
-      return "warning";
-    case "Completed":
-      return "neutral";
-    default:
-      return "accent";
-  }
-}
+import styles from "./coach-overview-workspace.module.css";
 
 type CoachOverviewWorkspaceProps = {
   data: CoachOverviewData;
 };
 
-const coachQuickActions = [
-  {
-    id: "coach-action-1",
-    label: "Open today's sessions",
-    description: "Jump straight into the next coaching sessions and prep notes.",
-    ctaLabel: "Review sessions",
-    href: "/coach/sessions",
-  },
-  {
-    id: "coach-action-2",
-    label: "Log progress note",
-    description: "Capture form cues and client momentum after classes.",
-    ctaLabel: "Open notes",
-    href: "/coach/clients",
-  },
-  {
-    id: "coach-action-3",
-    label: "Check schedule",
-    description: "Look ahead without leaving the coach dashboard.",
-    ctaLabel: "Preview",
-    href: "/coach/schedule",
-  },
-];
+function sessionTone(status: string) {
+  if (status === "Ready") return styles.ready;
+  if (status === "Waitlist") return styles.warning;
+  if (status === "Completed") return styles.complete;
+  return styles.prep;
+}
+
+function activityIcon(tone: string) {
+  if (tone === "warning") return <AlertTriangle size={16} />;
+  if (tone === "success") return <CheckCircle2 size={16} />;
+  return <Activity size={16} />;
+}
 
 export function CoachOverviewWorkspace({ data }: CoachOverviewWorkspaceProps) {
   const readySessions = data.upcomingSessions.filter(
-    (session) => session.status === "Ready"
+    (session) => session.status === "Ready",
   ).length;
   const attentionClients = data.clientSpotlights.filter(
-    (client) => client.momentum === "Needs check-in"
+    (client) => client.momentum === "Needs check-in",
   ).length;
+  const nextSession = data.upcomingSessions[0];
 
   return (
-    <div className="dashboard-stack">
-      <DashboardPageHeader
-        eyebrow="Coach focus"
-        actions={
-          <>
-            <Link href="/coach/clients" className="mv-btn mv-btn-secondary">
-              <NotebookPen size={16} />
-              Log Progress Note
-            </Link>
-            <Link href="/coach/schedule" className="mv-btn mv-btn-primary">
-              <Clock3 size={16} />
-              Review Today
-            </Link>
-          </>
-        }
-      />
+    <div className={styles.page}>
+      <header className={styles.hero}>
+        <div>
+          <span className={styles.kicker}>Coach command board</span>
+          <h1>Own the next rep.</h1>
+          <p>
+            A live read of the floor, your athletes and the decisions that keep
+            every session moving.
+          </p>
+        </div>
+        <div className={styles.heroActions}>
+          <Link href="/coach/clients" className="mv-btn mv-btn-secondary">
+            <NotebookPen size={17} /> Log progress
+          </Link>
+          <Link href="/coach/schedule" className="mv-btn mv-btn-primary">
+            <CalendarDays size={17} /> Open schedule
+          </Link>
+        </div>
+      </header>
 
-      <DashboardSurfaceNote
-        eyebrow="Overview"
-        title="Your next sessions, roster, and today&apos;s actions stay in one place."
-        description="Use this page as a quick read before you open deeper views."
-        items={[
-          `${readySessions} ready sessions.`,
-          `${attentionClients} client needs attention.`,
-        ]}
-      />
-
-      <section className="dashboard-mini-grid" aria-label="Coach overview highlights">
-        <DashboardMiniStat
-          label="Ready sessions"
-          value={readySessions}
-          description="Ready to run."
-        />
-        <DashboardMiniStat
-          label="Clients needing attention"
-          value={attentionClients}
-          description="Need follow-up."
-        />
-        <DashboardMiniStat
-          label="Today&apos;s plan"
-          value={`${data.todaysPlan.length} steps`}
-          description="Today&apos;s plan."
-        />
-      </section>
-
-      <section className="dashboard-kpi-grid" aria-label="Coach overview stats">
-        {data.stats.map((stat) => (
-          <DashboardStatCard key={stat.id} {...stat} />
+      <section className={styles.scoreboard} aria-label="Coach live metrics">
+        {data.stats.map((stat, index) => (
+          <article key={stat.id} data-dark={index === 3 || undefined}>
+            <span>{stat.label}</span>
+            <strong>{stat.value}</strong>
+            <small>{stat.change}</small>
+          </article>
         ))}
       </section>
 
-      <section className="dashboard-overview-grid">
-        <article className="dashboard-panel dashboard-panel--accent">
-          <div className="dashboard-panel__header">
+      <section className={styles.commandGrid}>
+        <article className={styles.nextBlock}>
+          <div className={styles.sectionHead}>
             <div>
-              <div className="mv-eyebrow">Up next</div>
-              <h2>Your upcoming sessions</h2>
-              <p>Your next sessions only.</p>
+              <span className={styles.kicker}>Next on the floor</span>
+              <h2>{nextSession ? "Session launch" : "Floor is clear"}</h2>
             </div>
+            <Link href="/coach/sessions" aria-label="Open all coach sessions">
+              <ArrowUpRight size={19} />
+            </Link>
           </div>
 
-          <div className="dashboard-session-list">
-            {data.upcomingSessions.map((session) => (
-              <article key={session.id} className="dashboard-session-card">
-                <div className="dashboard-session-card__meta">
-                  <span
-                    className={`dashboard-badge ${
-                      getCoachSessionTone(session.status) === "success"
-                        ? "dashboard-badge--success"
-                        : getCoachSessionTone(session.status) === "warning"
-                          ? "dashboard-badge--warning"
-                          : "dashboard-badge--accent"
-                    }`}
-                  >
-                    {session.status}
-                  </span>
-                  <span className="dashboard-session-card__time">
-                    {session.dayLabel} - {session.timeLabel}
-                  </span>
-                </div>
-                <h3 className="dashboard-session-card__name">{session.title}</h3>
-                <p className="dashboard-session-card__detail">
-                  {session.sessionType} - {session.location}
+          {nextSession ? (
+            <div className={styles.nextSession}>
+              <div className={styles.sessionTime}>
+                <Clock3 size={18} />
+                <strong>{nextSession.timeLabel}</strong>
+                <span>{nextSession.dayLabel}</span>
+              </div>
+              <div className={styles.sessionIdentity}>
+                <span
+                  className={`${styles.status} ${sessionTone(nextSession.status)}`}
+                >
+                  {nextSession.status}
+                </span>
+                <h3>{nextSession.title}</h3>
+                <p>
+                  {nextSession.sessionType} session ·{" "}
+                  {nextSession.occupancyLabel}
                 </p>
-                <div className="dashboard-session-card__footer">
-                  <span className="dashboard-badge">{session.occupancyLabel}</span>
+              </div>
+              <div className={styles.location}>
+                <MapPin size={17} />
+                <span>{nextSession.location}</span>
+              </div>
+              <Link href="/coach/sessions" className={styles.launchLink}>
+                Run session <ArrowRight size={16} />
+              </Link>
+            </div>
+          ) : (
+            <div className={styles.empty}>
+              <CheckCircle2 size={27} />
+              <strong>No upcoming session</strong>
+              <span>Your assigned sessions will appear here.</span>
+            </div>
+          )}
+
+          <div className={styles.queue}>
+            <div className={styles.queueLabel}>
+              <span>Coming up</span>
+              <strong>{data.upcomingSessions.length} blocks</strong>
+            </div>
+            {data.upcomingSessions.slice(1).map((session) => (
+              <Link href="/coach/sessions" key={session.id}>
+                <time>{session.timeLabel}</time>
+                <div>
+                  <strong>{session.title}</strong>
+                  <small>{session.location}</small>
                 </div>
-              </article>
+                <span
+                  className={`${styles.status} ${sessionTone(session.status)}`}
+                >
+                  {session.status}
+                </span>
+                <ArrowRight size={15} />
+              </Link>
             ))}
           </div>
         </article>
 
-        <article className="dashboard-panel">
-          <div className="dashboard-panel__header">
+        <aside className={styles.readiness}>
+          <div className={styles.sectionHead}>
             <div>
-              <div className="mv-eyebrow">Today&apos;s movement</div>
-              <h2>Recent activity</h2>
-              <p>Updates that affect the day.</p>
+              <span className={styles.kicker}>Readiness signal</span>
+              <h2>Today at a glance</h2>
             </div>
+            <Zap size={20} />
           </div>
-          <DashboardActivityFeed items={data.recentActivity} />
-        </article>
+          <div className={styles.signal}>
+            <strong>{readySessions}</strong>
+            <span>sessions ready to run</span>
+          </div>
+          <div className={styles.signalTrack}>
+            <i
+              style={{
+                width: `${Math.min(100, (readySessions / Math.max(1, data.upcomingSessions.length)) * 100)}%`,
+              }}
+            />
+          </div>
+          <dl>
+            <div>
+              <dt>Client alerts</dt>
+              <dd>{attentionClients}</dd>
+            </div>
+            <div>
+              <dt>Plan checkpoints</dt>
+              <dd>{data.todaysPlan.length}</dd>
+            </div>
+          </dl>
+          <Link href="/coach/schedule">
+            Review the full day <ArrowRight size={16} />
+          </Link>
+        </aside>
       </section>
 
-      <section className="dashboard-secondary-grid">
-        <article className="dashboard-panel">
-          <div className="dashboard-panel__header">
+      <section className={styles.lowerGrid}>
+        <article className={styles.roster}>
+          <div className={styles.sectionHead}>
             <div>
-              <div className="mv-eyebrow">Assigned clients</div>
-              <h2>Roster snapshot</h2>
-              <p>Clients most likely to need attention.</p>
+              <span className={styles.kicker}>Athlete pulse</span>
+              <h2>Who needs your eye</h2>
             </div>
+            <Link href="/coach/clients">
+              All clients <ArrowRight size={15} />
+            </Link>
           </div>
-
-          <div className="dashboard-snapshot-list">
-            {data.clientSpotlights.map((client) => (
-              <article key={client.id} className="dashboard-snapshot-item">
-                <span className="dashboard-badge">{client.momentum}</span>
-                <strong>{client.fullName}</strong>
-                <p>{client.focus}</p>
-                <p>{client.nextSession}</p>
-              </article>
-            ))}
-          </div>
-        </article>
-
-        <article className="dashboard-panel dashboard-panel--accent">
-          <div className="dashboard-panel__header">
-            <div>
-              <div className="mv-eyebrow">Coach shortcuts</div>
-              <h2>Quick actions and today&apos;s plan</h2>
-              <p>Quick actions and plan for today.</p>
-            </div>
-          </div>
-
-          <div className="dashboard-quick-grid">
-            {coachQuickActions.map((action) => {
-              return (
-                <div key={action.id} className="dashboard-quick-card">
-                  <span className="dashboard-quick-card__icon">
-                    <ArrowRight size={20} />
+          {data.clientSpotlights.length ? (
+            <div className={styles.clientList}>
+              {data.clientSpotlights.map((client) => (
+                <Link href="/coach/clients" key={client.id}>
+                  <span className={styles.avatar}>
+                    {client.fullName.slice(0, 2).toUpperCase()}
                   </span>
                   <div>
-                    <strong>{action.label}</strong>
-                    <p>{action.description}</p>
+                    <strong>{client.fullName}</strong>
+                    <small>{client.focus}</small>
                   </div>
-                  <Link href={action.href} className="mv-btn mv-btn-outline">
-                    {action.ctaLabel}
-                    <ArrowRight size={16} />
-                  </Link>
-                </div>
-              );
-            })}
-          </div>
+                  <div className={styles.clientNext}>
+                    <span>{client.momentum}</span>
+                    <small>{client.nextSession}</small>
+                  </div>
+                  <ArrowUpRight size={16} />
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className={styles.empty}>
+              <UsersRound size={27} />
+              <strong>No assigned clients yet</strong>
+              <span>New assignments will appear automatically.</span>
+            </div>
+          )}
+        </article>
 
-          <div className="dashboard-summary-list">
-            {data.todaysPlan.map((item) => (
-              <div key={item.id} className="dashboard-summary-row">
-                <strong>
-                  {item.timeLabel} - {item.title}
-                </strong>
-                <span>{item.note}</span>
-              </div>
-            ))}
+        <article className={styles.timeline}>
+          <div className={styles.sectionHead}>
+            <div>
+              <span className={styles.kicker}>Live timeline</span>
+              <h2>What changed</h2>
+            </div>
+            <Activity size={20} />
           </div>
-
-          <div className="dashboard-info-strip">
-            <strong>Daily workflow</strong>
-            <p>Assigned workload and notes appear here.</p>
-          </div>
+          {data.recentActivity.length ? (
+            <ol>
+              {data.recentActivity.map((item) => (
+                <li key={item.id} data-tone={item.tone}>
+                  <span>{activityIcon(item.tone)}</span>
+                  <div>
+                    <strong>{item.title}</strong>
+                    <p>{item.description}</p>
+                    <small>{item.timeLabel}</small>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <div className={styles.empty}>
+              <Activity size={27} />
+              <strong>No activity yet</strong>
+              <span>Live coaching updates will collect here.</span>
+            </div>
+          )}
         </article>
       </section>
     </div>

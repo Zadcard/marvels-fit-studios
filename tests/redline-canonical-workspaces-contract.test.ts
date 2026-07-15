@@ -116,6 +116,23 @@ describe("REDLINE canonical admin workspaces", () => {
     expect(styles).toContain("@media (max-width: 700px)");
   });
 
+  it("owns the coach command board without legacy dashboard primitives", () => {
+    const workspace = read("components/dashboard/coach-overview-workspace.tsx");
+    const styles = read(
+      "components/dashboard/coach-overview-workspace.module.css",
+    );
+
+    expect(workspace).toContain("Own the next rep");
+    expect(workspace).toContain("data.upcomingSessions");
+    expect(workspace).toContain("data.clientSpotlights");
+    expect(workspace).toContain("data.recentActivity");
+    expect(workspace).not.toContain("DashboardMiniStat");
+    expect(workspace).not.toContain("DashboardPageHeader");
+    expect(styles).toContain("var(--rl-red)");
+    expect(styles).not.toContain("var(--mv-");
+    expect(styles).toContain("@media (max-width: 700px)");
+  });
+
   it("keeps temporary visual QA routes out of the product tree", () => {
     expect(() => read("app/redline-qa/clients/page.tsx")).toThrow();
     expect(() => read("app/redline-qa/schedule/page.tsx")).toThrow();
