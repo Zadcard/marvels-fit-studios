@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{ background:#e3e0dd; -webkit-font-smoothing:antialiased; }
+  a{ color:#c21c21; text-decoration:none; }
+  a:hover{ color:#e62429; }
+</style>
+</helmet>
+<div style="min-height:100vh;background:#e3e0dd;font-family:'Manrope',ui-sans-serif,system-ui;color:#1c1916;padding:48px 24px 80px;">
+  <div style="max-width:1140px;margin:0 auto;">
+
+    <!-- masthead -->
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:10px;">
+      <img src="assets/ms-mark-red.png" alt="Marvel's Fit Studios" style="width:56px;height:56px;object-fit:contain;" />
+      <div>
+        <div style="font-size:.76rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#c21c21;">Marvel's Fit Studios</div>
+        <h1 style="margin:2px 0 0;font-family:'Space Grotesk';font-weight:700;font-size:2.5rem;letter-spacing:-.02em;">Design Language</h1>
+      </div>
+    </div>
+    <p style="max-width:660px;color:#4a443d;font-size:1.02rem;line-height:1.6;font-weight:500;margin:0 0 40px;">The single source of truth for every Marvel Fit screen — the healthcare-inspired light system in Marvel's red identity. Use these exact tokens, type, and components so every surface (admin, coach, client) stays consistent. Anything new should be assembled from the pieces below.</p>
+
+    <!-- ============ COLOR ============ -->
+    <section style="background:#f4f2ef;border:1px solid #e4e1dd;border-radius:26px;padding:30px;margin-bottom:24px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;"><span style="font-family:'Space Grotesk';font-weight:700;font-size:.8rem;color:#c21c21;">01</span><h2 style="margin:0;font-family:'Space Grotesk';font-weight:700;font-size:1.5rem;">Color</h2></div>
+      <p style="color:#8b857e;font-size:.92rem;margin:0 0 22px;font-weight:600;">Red is the brand + primary-action color. Emerald is a utility accent for icon chips and positive status. Neutrals are warm, not cold gray.</p>
+
+      <div style="font-size:.74rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#948d85;margin-bottom:12px;">Brand — red</div>
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:26px;">
+        <sc-for list="{{ reds }}" as="c" hint-placeholder-count="5">
+          <div style="border:1px solid #e9e6e2;border-radius:14px;overflow:hidden;background:#fff;">
+            <div style="height:64px;background:{{ c.hex }};"></div>
+            <div style="padding:10px 12px;"><div style="font-weight:800;font-size:.82rem;">{{ c.name }}</div><div style="font-family:'Space Grotesk';font-size:.76rem;color:#8b857e;margin-top:1px;">{{ c.hex }}</div><div style="font-size:.7rem;color:#a49d95;font-weight:600;margin-top:3px;">{{ c.use }}</div></div>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="font-size:.74rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#948d85;margin-bottom:12px;">Ink &amp; neutrals</div>
+      <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:26px;">
+        <sc-for list="{{ inks }}" as="c" hint-placeholder-count="6">
+          <div style="border:1px solid #e9e6e2;border-radius:14px;overflow:hidden;background:#fff;">
+            <div style="height:56px;background:{{ c.hex }};"></div>
+            <div style="padding:9px 11px;"><div style="font-weight:800;font-size:.78rem;">{{ c.name }}</div><div style="font-family:'Space Grotesk';font-size:.72rem;color:#8b857e;">{{ c.hex }}</div></div>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="font-size:.74rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#948d85;margin-bottom:12px;">Surfaces</div>
+      <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:26px;">
+        <sc-for list="{{ surfaces }}" as="c" hint-placeholder-count="6">
+          <div style="border:1px solid #e9e6e2;border-radius:14px;overflow:hidden;background:#fff;">
+            <div style="height:56px;background:{{ c.hex }};border-bottom:1px solid #eceae7;"></div>
+            <div style="padding:9px 11px;"><div style="font-weight:800;font-size:.78rem;">{{ c.name }}</div><div style="font-family:'Space Grotesk';font-size:.72rem;color:#8b857e;">{{ c.hex }}</div></div>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="font-size:.74rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#948d85;margin-bottom:12px;">Status &amp; accent</div>
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;">
+        <sc-for list="{{ status }}" as="c" hint-placeholder-count="5">
+          <div style="border:1px solid #e9e6e2;border-radius:14px;overflow:hidden;background:#fff;">
+            <div style="height:56px;background:{{ c.hex }};"></div>
+            <div style="padding:10px 12px;"><div style="font-weight:800;font-size:.8rem;">{{ c.name }}</div><div style="font-family:'Space Grotesk';font-size:.74rem;color:#8b857e;">{{ c.hex }}</div><div style="font-size:.7rem;color:#a49d95;font-weight:600;margin-top:3px;">{{ c.use }}</div></div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <!-- ============ TYPE ============ -->
+    <section style="background:#f4f2ef;border:1px solid #e4e1dd;border-radius:26px;padding:30px;margin-bottom:24px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;"><span style="font-family:'Space Grotesk';font-weight:700;font-size:.8rem;color:#c21c21;">02</span><h2 style="margin:0;font-family:'Space Grotesk';font-weight:700;font-size:1.5rem;">Typography</h2></div>
+      <p style="color:#8b857e;font-size:.92rem;margin:0 0 22px;font-weight:600;"><b style="color:#1c1916;">Space Grotesk</b> for display, headings, panel titles &amp; all numeric values. <b style="color:#1c1916;">Manrope</b> for body, labels &amp; UI text.</p>
+      <div style="display:flex;flex-direction:column;gap:2px;">
+        <sc-for list="{{ typeScale }}" as="t" hint-placeholder-count="6">
+          <div style="display:grid;grid-template-columns:220px 1fr;gap:24px;align-items:baseline;padding:14px 0;border-top:1px solid #e9e6e2;">
+            <div><div style="font-weight:800;font-size:.86rem;">{{ t.name }}</div><div style="font-size:.74rem;color:#8b857e;font-family:'Space Grotesk';margin-top:2px;">{{ t.spec }}</div></div>
+            <div style="{{ t.style }}">{{ t.sample }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <!-- ============ RADIUS / SHADOW / SPACING ============ -->
+    <section style="background:#f4f2ef;border:1px solid #e4e1dd;border-radius:26px;padding:30px;margin-bottom:24px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;"><span style="font-family:'Space Grotesk';font-weight:700;font-size:.8rem;color:#c21c21;">03</span><h2 style="margin:0;font-family:'Space Grotesk';font-weight:700;font-size:1.5rem;">Shape, elevation &amp; rhythm</h2></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px;">
+        <div>
+          <div style="font-size:.74rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#948d85;margin-bottom:14px;">Radius</div>
+          <div style="display:flex;flex-direction:column;gap:12px;">
+            <div style="display:flex;align-items:center;gap:12px;"><span style="width:52px;height:40px;background:#fff;border:1px solid #edecea;border-radius:34px;"></span><span style="font-size:.82rem;font-weight:600;color:#4a443d;">34 · app shell</span></div>
+            <div style="display:flex;align-items:center;gap:12px;"><span style="width:52px;height:40px;background:#fff;border:1px solid #edecea;border-radius:22px;"></span><span style="font-size:.82rem;font-weight:600;color:#4a443d;">22 · card / panel</span></div>
+            <div style="display:flex;align-items:center;gap:12px;"><span style="width:52px;height:40px;background:#fff;border:1px solid #edecea;border-radius:13px;"></span><span style="font-size:.82rem;font-weight:600;color:#4a443d;">13 · button</span></div>
+            <div style="display:flex;align-items:center;gap:12px;"><span style="width:52px;height:40px;background:#fff;border:1px solid #edecea;border-radius:999px;"></span><span style="font-size:.82rem;font-weight:600;color:#4a443d;">999 · pill / badge</span></div>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:.74rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#948d85;margin-bottom:14px;">Elevation</div>
+          <div style="display:flex;flex-direction:column;gap:16px;">
+            <div style="display:flex;align-items:center;gap:12px;"><span style="width:52px;height:40px;background:#fff;border:1px solid #edecea;border-radius:14px;"></span><span style="font-size:.82rem;font-weight:600;color:#4a443d;">Card — 1px border, no shadow</span></div>
+            <div style="display:flex;align-items:center;gap:12px;"><span style="width:52px;height:40px;background:#fff;border:1px solid #f0efec;border-radius:14px;box-shadow:0 16px 34px -14px rgba(40,30,25,.4);"></span><span style="font-size:.82rem;font-weight:600;color:#4a443d;">Floating — tooltip / menu</span></div>
+            <div style="display:flex;align-items:center;gap:12px;"><span style="width:52px;height:40px;background:linear-gradient(180deg,#e62429,#c21c21);border-radius:13px;box-shadow:0 8px 18px -8px rgba(230,36,41,.7);"></span><span style="font-size:.82rem;font-weight:600;color:#4a443d;">Primary button glow</span></div>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:.74rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#948d85;margin-bottom:14px;">Rhythm</div>
+          <ul style="margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px;font-size:.85rem;font-weight:600;color:#4a443d;">
+            <li>Grid / card gap — <b style="font-family:'Space Grotesk';">18px</b></li>
+            <li>Card padding — <b style="font-family:'Space Grotesk';">20–22px</b></li>
+            <li>Section stack — <b style="font-family:'Space Grotesk';">18px</b></li>
+            <li>Icon chip — <b style="font-family:'Space Grotesk';">34px, r11</b></li>
+            <li>Control height — <b style="font-family:'Space Grotesk';">38–44px</b></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ COMPONENTS ============ -->
+    <section style="background:#f4f2ef;border:1px solid #e4e1dd;border-radius:26px;padding:30px;margin-bottom:24px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;"><span style="font-family:'Space Grotesk';font-weight:700;font-size:.8rem;color:#c21c21;">04</span><h2 style="margin:0;font-family:'Space Grotesk';font-weight:700;font-size:1.5rem;">Components</h2></div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
+
+        <!-- buttons -->
+        <div style="background:#fff;border:1px solid #edecea;border-radius:18px;padding:20px;">
+          <div style="font-weight:800;font-size:.82rem;color:#948d85;text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px;">Buttons</div>
+          <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
+            <button type="button" style="display:inline-flex;align-items:center;gap:8px;padding:11px 17px;border-radius:13px;border:1px solid #c21c21;background:linear-gradient(180deg,#e62429,#c21c21);color:#fff;font-weight:700;font-size:.85rem;cursor:pointer;font-family:inherit;box-shadow:0 8px 18px -8px rgba(230,36,41,.7);">Primary<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></button>
+            <button type="button" style="display:inline-flex;align-items:center;gap:8px;padding:11px 15px;border-radius:13px;border:1px solid #e7e4df;background:#fff;color:#37322c;font-weight:700;font-size:.85rem;cursor:pointer;font-family:inherit;">Secondary</button>
+            <button type="button" style="width:38px;height:38px;border-radius:50%;border:1px solid #ebe8e4;background:#fff;color:#3a352f;display:flex;align-items:center;justify-content:center;cursor:pointer;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></button>
+            <a href="#" style="display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:.85rem;color:#c21c21;">Text link<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+          </div>
+        </div>
+
+        <!-- nav pills -->
+        <div style="background:#fff;border:1px solid #edecea;border-radius:18px;padding:20px;">
+          <div style="font-weight:800;font-size:.82rem;color:#948d85;text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px;">Nav / segmented</div>
+          <div style="display:flex;gap:6px;align-items:center;margin-bottom:14px;">
+            <span style="display:inline-flex;align-items:center;gap:8px;padding:9px 18px;border-radius:999px;background:#fbe0dd;color:#c21c21;font-weight:700;font-size:.8rem;text-transform:uppercase;letter-spacing:.02em;"><span style="width:8px;height:8px;border-radius:50%;background:#e62429;"></span>Active</span>
+            <span style="padding:9px 18px;border-radius:999px;color:#8b857e;font-weight:700;font-size:.8rem;text-transform:uppercase;letter-spacing:.02em;">Inactive</span>
+          </div>
+          <div style="display:flex;gap:6px;padding:4px;background:#f5f3f0;border-radius:13px;">
+            <span style="flex:1;text-align:center;padding:10px;border-radius:10px;background:#fff;color:#1c1916;box-shadow:0 2px 6px -3px rgba(0,0,0,.2);font-weight:700;font-size:.85rem;">Selected</span>
+            <span style="flex:1;text-align:center;padding:10px;border-radius:10px;color:#8b857e;font-weight:700;font-size:.85rem;">Tab two</span>
+          </div>
+        </div>
+
+        <!-- stat card -->
+        <div style="background:#fff;border:1px solid #edecea;border-radius:18px;padding:20px;">
+          <div style="font-weight:800;font-size:.82rem;color:#948d85;text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px;">KPI / stat</div>
+          <div style="border:1px solid #edecea;border-radius:16px;padding:18px;">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;"><div style="font-family:'Space Grotesk';font-weight:600;font-size:1rem;">Active Members</div><span style="color:#b6afa7;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M8 7h9v9"/></svg></span></div>
+            <div style="display:flex;align-items:baseline;gap:10px;margin-top:12px;"><div style="font-family:'Space Grotesk';font-weight:700;font-size:2.3rem;line-height:1;">248</div><div style="display:flex;align-items:center;gap:4px;color:#c21c21;font-weight:800;font-size:.85rem;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M8 7h9v9"/></svg>+12</div><div style="margin-left:auto;color:#b6afa7;font-weight:700;font-family:'Space Grotesk';">/300</div></div>
+          </div>
+        </div>
+
+        <!-- badges -->
+        <div style="background:#fff;border:1px solid #edecea;border-radius:18px;padding:20px;">
+          <div style="font-weight:800;font-size:.82rem;color:#948d85;text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px;">Status badges</div>
+          <div style="display:flex;flex-wrap:wrap;gap:9px;">
+            <sc-for list="{{ badges }}" as="b" hint-placeholder-count="4">
+              <span style="display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px;background:{{ b.bg }};color:{{ b.color }};font-weight:700;font-size:.76rem;"><span style="width:6px;height:6px;border-radius:50%;background:{{ b.color }};"></span>{{ b.label }}</span>
+            </sc-for>
+          </div>
+          <div style="font-weight:800;font-size:.82rem;color:#948d85;text-transform:uppercase;letter-spacing:.08em;margin:18px 0 12px;">Icon chip &amp; avatar</div>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <span style="width:34px;height:34px;border-radius:11px;background:#e8f4ee;color:#1f8a5b;display:flex;align-items:center;justify-content:center;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>
+            <span style="width:34px;height:34px;border-radius:11px;background:#fbe0dd;color:#c21c21;display:flex;align-items:center;justify-content:center;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></span>
+            <span style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#e62429,#a3161a);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-family:'Space Grotesk';">MA</span>
+          </div>
+        </div>
+
+        <!-- list row -->
+        <div style="background:#fff;border:1px solid #edecea;border-radius:18px;padding:20px;grid-column:span 2;">
+          <div style="font-weight:800;font-size:.82rem;color:#948d85;text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px;">List row &amp; progress</div>
+          <div style="display:flex;align-items:center;gap:12px;border:1px solid #edecea;border-radius:15px;padding:12px 14px;">
+            <span style="width:40px;height:40px;border-radius:12px;background:#fbe0dd;color:#c21c21;display:flex;align-items:center;justify-content:center;flex:0 0 auto;"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5 17.5 17.5M4 8V4h4M20 16v4h-4"/></svg></span>
+            <div style="flex:1;min-width:0;"><div style="font-weight:800;font-size:.92rem;">Strength Foundations</div><div style="font-size:.78rem;color:#948d85;font-weight:600;">Ahmed Waheed · Group</div></div>
+            <div style="flex:0 0 200px;"><div style="display:flex;justify-content:space-between;font-size:.74rem;font-weight:700;color:#8b857e;margin-bottom:5px;"><span>78% booked</span><span style="font-family:'Space Grotesk';color:#4a443d;">14/18</span></div><div style="height:8px;border-radius:6px;background:#f0efec;overflow:hidden;"><span style="display:block;height:100%;width:78%;border-radius:6px;background:linear-gradient(90deg,#e62429,#ff6b6f);"></span></div></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ============ USAGE ============ -->
+    <section style="background:#1c1916;border-radius:26px;padding:34px;color:#f1efec;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;"><span style="font-family:'Space Grotesk';font-weight:700;font-size:.8rem;color:#ff8f92;">05</span><h2 style="margin:0;font-family:'Space Grotesk';font-weight:700;font-size:1.5rem;color:#fff;">Building any screen</h2></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:30px;">
+        <div>
+          <div style="font-size:.74rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#ff8f92;margin-bottom:14px;">Layout rules</div>
+          <ul style="margin:0;padding-left:0;list-style:none;display:flex;flex-direction:column;gap:12px;font-size:.9rem;line-height:1.5;color:#d6d1cb;font-weight:500;">
+            <li><b style="color:#fff;">Shell:</b> centered app card on <span style="font-family:'Space Grotesk';">#e3e0dd</span> backdrop, <span style="font-family:'Space Grotesk';">#f1efec</span> inner, r34. Fixed 1400px design, auto-scaled to fit viewport width.</li>
+            <li><b style="color:#fff;">Top bar:</b> logo · centered nav pills · action cluster (AI, alerts, chat, divider, avatar).</li>
+            <li><b style="color:#fff;">Body:</b> optional left icon rail + content. Content leads with breadcrumb → H1 + Live pill → right-aligned actions.</li>
+            <li><b style="color:#fff;">Cards on white,</b> 18px gaps, 20–22px padding, 1px <span style="font-family:'Space Grotesk';">#edecea</span> borders — no drop shadows on cards.</li>
+          </ul>
+        </div>
+        <div>
+          <div style="font-size:.74rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#ff8f92;margin-bottom:14px;">Do &amp; don't</div>
+          <ul style="margin:0;padding-left:0;list-style:none;display:flex;flex-direction:column;gap:12px;font-size:.9rem;line-height:1.5;color:#d6d1cb;font-weight:500;">
+            <li><b style="color:#8be0b4;">Do</b> use Space Grotesk for every number &amp; heading; red for the single primary action per view.</li>
+            <li><b style="color:#8be0b4;">Do</b> use emerald icon chips + green/amber/orange/red for status only.</li>
+            <li><b style="color:#ff8f92;">Don't</b> introduce new hues, cold grays, heavy shadows, or a second red-weight primary button per view.</li>
+            <li><b style="color:#ff8f92;">Don't</b> reference "floors/rooms" — this is a studio of group &amp; private sessions, coaches, clients.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1188,&quot;height&quot;:900}}">
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      reds: [
+        {name:'Red 600 · primary', hex:'#e62429', use:'Primary action, brand'},
+        {name:'Red 700 · deep', hex:'#c21c21', use:'Text on light, gradient end'},
+        {name:'Red 800', hex:'#a3161a', use:'Avatar gradient'},
+        {name:'Red 100 · soft', hex:'#fbe0dd', use:'Active pill / chip bg'},
+        {name:'Red 50 · tint', hex:'#fdece9', use:'Faint hover / fill'},
+      ],
+      inks: [
+        {name:'Ink', hex:'#1c1916'},
+        {name:'Ink 2', hex:'#37322c'},
+        {name:'Body', hex:'#4a443d'},
+        {name:'Muted', hex:'#8b857e'},
+        {name:'Muted 2', hex:'#948d85'},
+        {name:'Faint', hex:'#b6afa7'},
+      ],
+      surfaces: [
+        {name:'Backdrop', hex:'#e3e0dd'},
+        {name:'App bg', hex:'#f1efec'},
+        {name:'Card', hex:'#ffffff'},
+        {name:'Border', hex:'#edecea'},
+        {name:'Hover', hex:'#faf8f5'},
+        {name:'Tab track', hex:'#f5f3f0'},
+      ],
+      status: [
+        {name:'Success', hex:'#1f9d63', use:'On track · chip #e8f4ee'},
+        {name:'Warning', hex:'#ef7c37', use:'Capacity · chip #fdefe6'},
+        {name:'Amber', hex:'#e6c33f', use:'Medium tier'},
+        {name:'Critical', hex:'#e5484d', use:'Alerts / inactive'},
+        {name:'Accent', hex:'#e8f4ee', use:'Emerald icon chip bg'},
+      ],
+      typeScale: [
+        {name:'Page title', spec:'Space Grotesk 700 · 40px', sample:'Dashboard Summary', style:"font-family:'Space Grotesk';font-weight:700;font-size:2.55rem;letter-spacing:-.02em;line-height:1;"},
+        {name:'Metric XL', spec:'Space Grotesk 700 · 46px', sample:'248', style:"font-family:'Space Grotesk';font-weight:700;font-size:2.9rem;line-height:1;"},
+        {name:'Panel title', spec:'Space Grotesk 600 · 18px', sample:'Today\u2019s Sessions', style:"font-family:'Space Grotesk';font-weight:600;font-size:1.12rem;"},
+        {name:'Body', spec:'Manrope 600 · 15px', sample:'68% of members lean toward group training.', style:"font-weight:600;font-size:.94rem;color:#4a443d;"},
+        {name:'Small / meta', spec:'Manrope 600 · 13.5px', sample:'Ahmed Waheed · Group · 6:30 PM', style:"font-weight:600;font-size:.84rem;color:#8b857e;"},
+        {name:'Eyebrow', spec:'Manrope 800 · 12px · .08em caps', sample:'KEY INSIGHT', style:"font-weight:800;font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;color:#948d85;"},
+      ],
+      badges: [
+        {label:'On track', bg:'#e8f4ee', color:'#1f8a5b'},
+        {label:'Waitlist', bg:'#fdefe6', color:'#c9631b'},
+        {label:'Pending', bg:'#f4f2ef', color:'#8b857e'},
+        {label:'Overdue', bg:'#fdeceb', color:'#d43b40'},
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>
