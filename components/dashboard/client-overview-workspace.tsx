@@ -1,408 +1,382 @@
 "use client";
 
-import { useState, useTransition } from "react";
 import Link from "next/link";
+import { useState, useTransition } from "react";
 import {
+  Activity,
   ArrowRight,
+  ArrowUpRight,
   CalendarCheck2,
+  CheckCircle2,
+  Clock3,
   CreditCard,
   Download,
   Edit3,
-  Files,
+  FileText,
+  MapPin,
   Save,
   ShieldUser,
   Sparkles,
+  UsersRound,
   X,
 } from "lucide-react";
+import { Dialog } from "radix-ui";
 
 import { saveClientPrivateNote } from "@/app/actions/client-private-notes";
-import { DashboardActivityFeed } from "@/components/dashboard/dashboard-activity-feed";
-import { DashboardEmptyState } from "@/components/dashboard/dashboard-empty-state";
-import { DashboardMiniStat } from "@/components/dashboard/dashboard-mini-stat";
-import { DashboardModal } from "@/components/dashboard/dashboard-modal";
-import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
-import { DashboardPaginationControls } from "@/components/dashboard/dashboard-pagination-controls";
-import { DashboardStatCard } from "@/components/dashboard/dashboard-stat-card";
-import { DashboardSurfaceNote } from "@/components/dashboard/dashboard-surface-note";
-import type {
-  ClientOverviewData,
-  ClientQuickActionIconKey,
-} from "@/lib/dashboard/client-dashboard-data";
-import { paginateDashboardItems } from "@/lib/dashboard/pagination";
-
-const clientQuickActionIcons: Record<ClientQuickActionIconKey, typeof CalendarCheck2> = {
-  "calendar-check-2": CalendarCheck2,
-  "credit-card": CreditCard,
-  "shield-user": ShieldUser,
-};
-
-function getSessionBadgeClass(status: "Booked" | "Check-in ready" | "Waitlist") {
-  if (status === "Check-in ready") {
-    return "dashboard-badge dashboard-badge--success";
-  }
-
-  if (status === "Waitlist") {
-    return "dashboard-badge dashboard-badge--warning";
-  }
-
-  return "dashboard-badge dashboard-badge--accent";
-}
+import type { ClientOverviewData } from "@/lib/dashboard/client-dashboard-data";
+import styles from "./client-overview-workspace.module.css";
 
 type ClientOverviewWorkspaceProps = {
   data: ClientOverviewData;
 };
 
-export function ClientOverviewWorkspace({ data }: ClientOverviewWorkspaceProps) {
-  const [isSavingNote, startNoteTransition] = useTransition();
-  const [isFilesOpen, setIsFilesOpen] = useState(false);
+function sessionTone(status: string) {
+  if (status === "Check-in ready") return styles.ready;
+  if (status === "Waitlist") return styles.waitlist;
+  return styles.booked;
+}
+
+export function ClientOverviewWorkspace({
+  data,
+}: ClientOverviewWorkspaceProps) {
+  const [filesOpen, setFilesOpen] = useState(false);
   const [noteDraft, setNoteDraft] = useState("");
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [noteMessage, setNoteMessage] = useState("");
-  const [notePage, setNotePage] = useState(1);
-  const [filePage, setFilePage] = useState(1);
-  const bookedThisWeek = data.upcomingSessions.length;
+  const [savingNote, startSavingNote] = useTransition();
+  const nextSession = data.upcomingSessions[0];
   const readyNow = data.upcomingSessions.filter(
-    (session) => session.status === "Check-in ready"
+    (session) => session.status === "Check-in ready",
   ).length;
-  const paginatedPrivateNotes = paginateDashboardItems(data.privateNotes, notePage);
-  const paginatedActiveFiles = paginateDashboardItems(data.activeFiles, filePage);
 
-  const resetNoteDraft = () => {
+  function resetNote() {
     setEditingNoteId(null);
     setNoteDraft("");
-  };
+  }
 
-  const savePrivateNote = () => {
+  function saveNote() {
     setNoteMessage("");
-    startNoteTransition(async () => {
+    startSavingNote(async () => {
       try {
         await saveClientPrivateNote({
           noteId: editingNoteId,
           content: noteDraft,
         });
-        setNoteMessage(editingNoteId ? "Private note updated." : "Private note added.");
-        resetNoteDraft();
-      } catch (error) {
         setNoteMessage(
-          error instanceof Error ? error.message : "Could not save private note."
+          editingNoteId ? "Private note updated." : "Private note added.",
+        );
+        resetNote();
+      } catch (caught) {
+        setNoteMessage(
+          caught instanceof Error
+            ? caught.message
+            : "Could not save private note.",
         );
       }
     });
-  };
+  }
 
   return (
-    <div className="dashboard-stack">
-      <DashboardPageHeader
-        eyebrow="Member overview"
-        actions={
-          <>
-            <button
-              type="button"
-              className={data.activeFiles.length > 0 ? "mv-btn mv-btn-secondary" : "mv-btn mv-btn-outline"}
-              onClick={() => setIsFilesOpen(true)}
-            >
-              <Files size={16} />
-              Files {data.activeFiles.length > 0 ? `(${data.activeFiles.length})` : ""}
-            </button>
-            <Link href="/client/sessions" className="mv-btn mv-btn-primary">
-              <Sparkles size={16} />
-              Review My Week
+    <div className={styles.page}>
+      <header className={styles.hero}>
+        <div>
+          <span className={styles.kicker}>Member home</span>
+          <h1>Train with a clear next step.</h1>
+          <p>
+            Your next session, coach support and membership status in one calm,
+            focused view.
+          </p>
+        </div>
+        <div className={styles.heroActions}>
+          <button
+            type="button"
+            className="mv-btn mv-btn-secondary"
+            onClick={() => setFilesOpen(true)}
+          >
+            <FileText size={17} /> Files{" "}
+            {data.activeFiles.length ? `· ${data.activeFiles.length}` : ""}
+          </button>
+          <Link href="/client/sessions" className="mv-btn mv-btn-primary">
+            <Sparkles size={17} /> My sessions
+          </Link>
+        </div>
+      </header>
+
+      <section className={styles.pulse}>
+        <article className={styles.nextSession}>
+          <div className={styles.sectionHead}>
+            <div>
+              <span className={styles.kicker}>Your next session</span>
+              <h2>{nextSession ? nextSession.title : "Nothing booked yet"}</h2>
+            </div>
+            <Link href="/client/sessions" aria-label="Open member sessions">
+              <ArrowUpRight size={19} />
             </Link>
-          </>
-        }
-      />
-
-      <DashboardSurfaceNote
-        eyebrow="Overview"
-        title="Your next sessions, coach details, and plan status stay in one place."
-        description="Use this page as a quick read before you open details."
-        items={[
-          `${bookedThisWeek} upcoming sessions in view.`,
-          `${readyNow} ready for check-in.`,
-        ]}
-      />
-
-      <section className="dashboard-mini-grid" aria-label="Client overview highlights">
-        <DashboardMiniStat
-          label="Next touchpoint"
-          value={data.coachSnapshot.nextTouchpoint}
-          description="Next coach touchpoint."
-        />
-        <DashboardMiniStat
-          label="Membership state"
-          value={data.subscriptionSnapshot.paymentStatus}
-          description={data.subscriptionSnapshot.renewalLabel}
-        />
-        <DashboardMiniStat
-          label="Weekly view"
-          value={`${bookedThisWeek} sessions`}
-          description="Booked this week."
-        />
-      </section>
-
-      <section className="dashboard-kpi-grid" aria-label="Client overview stats">
-        {data.stats.map((stat) => (
-          <DashboardStatCard key={stat.id} {...stat} />
-        ))}
-      </section>
-
-      <section className="dashboard-overview-grid">
-        <article className="dashboard-panel dashboard-panel--accent">
-          <div className="dashboard-panel__header">
-            <div>
-              <div className="mv-eyebrow">Coming up</div>
-              <h2>Upcoming sessions</h2>
-              <p>Your next training moments, kept easy to scan on mobile and desktop.</p>
-            </div>
           </div>
-
-          <div className="dashboard-session-list">
-            {data.upcomingSessions.map((session) => (
-              <article key={session.id} className="dashboard-session-card">
-                <div className="dashboard-session-card__meta">
-                  <span className={getSessionBadgeClass(session.status)}>
-                    {session.status}
-                  </span>
-                  <span className="dashboard-session-card__time">
-                    {session.dayLabel} - {session.timeLabel}
-                  </span>
-                </div>
-                <h3 className="dashboard-session-card__name">{session.title}</h3>
-                <p className="dashboard-session-card__detail">
-                  {session.sessionType} - {session.location}
-                </p>
-                <div className="dashboard-session-card__footer">
-                  <span className="dashboard-badge">{session.coachName}</span>
-                </div>
-              </article>
-            ))}
-          </div>
-        </article>
-
-        <article className="dashboard-panel">
-          <div className="dashboard-panel__header">
-            <div>
-              <div className="mv-eyebrow">Progress pulse</div>
-              <h2>Recent updates</h2>
-              <p>Relevant changes only.</p>
-            </div>
-          </div>
-
-          <DashboardActivityFeed items={data.recentActivity} />
-        </article>
-      </section>
-
-      <section className="dashboard-secondary-grid">
-        <article className="dashboard-panel">
-          <div className="dashboard-panel__header">
-            <div>
-              <div className="mv-eyebrow">Your coach</div>
-              <h2>Coach snapshot</h2>
-              <p>Your current coach and focus.</p>
-            </div>
-            <ShieldUser size={20} color="#ff8b8f" />
-          </div>
-
-          <div className="dashboard-summary-list">
-            <div className="dashboard-summary-row">
-              <strong>{data.coachSnapshot.fullName}</strong>
-              <span>{data.coachSnapshot.roleLabel}</span>
-            </div>
-            <div className="dashboard-summary-row">
-              <strong>Specialization</strong>
-              <span>{data.coachSnapshot.specialization}</span>
-            </div>
-            <div className="dashboard-summary-row">
-              <strong>Next touchpoint</strong>
-              <span>{data.coachSnapshot.nextTouchpoint}</span>
-            </div>
-            <div className="dashboard-summary-row">
-              <strong>Support summary</strong>
-              <span>{data.coachSnapshot.note}</span>
-            </div>
-          </div>
-        </article>
-
-        <article className="dashboard-panel">
-          <div className="dashboard-panel__header">
-            <div>
-              <div className="mv-eyebrow">Private notes</div>
-              <h2>Your notes</h2>
-              <p>Personal reminders only visible from your client dashboard.</p>
-            </div>
-          </div>
-
-          {noteMessage ? (
-            <div className="dashboard-info-strip" role="status">
-              <strong>Note update</strong>
-              <p>{noteMessage}</p>
-            </div>
-          ) : null}
-
-          <div className="dashboard-form-section">
-            <label className="dashboard-form-field dashboard-form-field--wide">
-              <span>{editingNoteId ? "Edit note" : "New note"}</span>
-              <textarea
-                className="dashboard-textarea"
-                value={noteDraft}
-                rows={4}
-                onChange={(event) => setNoteDraft(event.target.value)}
-              />
-            </label>
-            <div className="dashboard-row-actions">
-              <button
-                type="button"
-                className="mv-btn mv-btn-primary"
-                onClick={savePrivateNote}
-                disabled={isSavingNote || noteDraft.trim().length === 0}
-              >
-                <Save size={16} />
-                {isSavingNote ? "Saving..." : editingNoteId ? "Save note" : "Add note"}
-              </button>
-              {editingNoteId ? (
-                <button
-                  type="button"
-                  className="mv-btn mv-btn-outline"
-                  onClick={resetNoteDraft}
-                  disabled={isSavingNote}
-                >
-                  <X size={16} />
-                  Cancel
-                </button>
-              ) : null}
-            </div>
-          </div>
-
-          {data.privateNotes.length > 0 ? (
-            <>
-              <div className="dashboard-summary-list">
-                {paginatedPrivateNotes.items.map((note) => (
-                  <div key={note.id} className="dashboard-summary-row">
-                    <strong>{note.updatedAtLabel}</strong>
-                    <span>{note.content}</span>
-                    <div className="dashboard-row-actions">
-                      <button
-                        type="button"
-                        className="dashboard-inline-button"
-                        onClick={() => {
-                          setEditingNoteId(note.id);
-                          setNoteDraft(note.content);
-                          setNoteMessage("");
-                        }}
-                      >
-                        <Edit3 size={14} />
-                        Edit
-                      </button>
-                    </div>
-                  </div>
-                ))}
+          {nextSession ? (
+            <div className={styles.nextBody}>
+              <div className={styles.timeBlock}>
+                <strong>{nextSession.timeLabel}</strong>
+                <span>{nextSession.dayLabel}</span>
               </div>
-              <DashboardPaginationControls
-                page={paginatedPrivateNotes.page}
-                pageCount={paginatedPrivateNotes.pageCount}
-                startItem={paginatedPrivateNotes.startItem}
-                endItem={paginatedPrivateNotes.endItem}
-                totalItems={paginatedPrivateNotes.totalItems}
-                onPageChange={setNotePage}
-              />
-            </>
+              <div className={styles.sessionMeta}>
+                <span
+                  className={`${styles.status} ${sessionTone(nextSession.status)}`}
+                >
+                  {nextSession.status}
+                </span>
+                <p>
+                  {nextSession.sessionType} training with{" "}
+                  {nextSession.coachName}
+                </p>
+                <small>
+                  <MapPin size={14} /> {nextSession.location}
+                </small>
+              </div>
+              <Link href="/client/sessions">
+                View details <ArrowRight size={16} />
+              </Link>
+            </div>
           ) : (
-            <DashboardEmptyState
-              title="No private notes yet"
-              description="Add a private note when you want to remember a training cue or question."
-            />
+            <div className={styles.empty}>
+              <CalendarCheck2 size={25} />
+              <strong>Your schedule is open</strong>
+              <span>New bookings will appear here automatically.</span>
+            </div>
           )}
         </article>
 
-        <article className="dashboard-panel dashboard-panel--accent">
-          <div className="dashboard-panel__header">
-            <div>
-              <div className="mv-eyebrow">Membership</div>
-              <h2>Subscription snapshot</h2>
-              <p>Your current plan and renewal state.</p>
-            </div>
-            <CreditCard size={20} color="#ff8b8f" />
-          </div>
+        <aside className={styles.coachCard}>
+          <ShieldUser size={24} />
+          <span className={styles.kicker}>Your coach</span>
+          <h2>{data.coachSnapshot.fullName}</h2>
+          <p>{data.coachSnapshot.specialization}</p>
+          <dl>
+            <dt>Next touchpoint</dt>
+            <dd>{data.coachSnapshot.nextTouchpoint}</dd>
+          </dl>
+          <Link href="/client/coach">
+            Open coach profile <ArrowRight size={16} />
+          </Link>
+        </aside>
+      </section>
 
-          <div className="dashboard-summary-list">
-            <div className="dashboard-summary-row">
-              <strong>{data.subscriptionSnapshot.planName}</strong>
-              <span>{data.subscriptionSnapshot.benefitLine}</span>
-            </div>
-            <div className="dashboard-summary-row">
-              <strong>Renewal</strong>
-              <span>{data.subscriptionSnapshot.renewalLabel}</span>
-            </div>
-            <div className="dashboard-summary-row">
-              <strong>Payment status</strong>
-              <span>{data.subscriptionSnapshot.paymentStatus}</span>
-            </div>
-          </div>
-
-          <div className="dashboard-quick-grid">
-            {data.quickActions.map((action) => {
-              const Icon = clientQuickActionIcons[action.icon];
-
-              return (
-                <div key={action.id} className="dashboard-quick-card">
-                  <span className="dashboard-quick-card__icon">
-                    <Icon size={20} />
-                  </span>
-                  <div>
-                    <strong>{action.label}</strong>
-                    <p>{action.description}</p>
-                  </div>
-                  <Link href={action.href} className="mv-btn mv-btn-outline">
-                    {action.ctaLabel}
-                    <ArrowRight size={16} />
-                  </Link>
-                </div>
-              );
-            })}
-          </div>
+      <section
+        className={styles.scoreboard}
+        aria-label="Member overview metrics"
+      >
+        {data.stats.slice(0, 3).map((stat, index) => (
+          <article key={stat.id} data-dark={index === 2 || undefined}>
+            <span>{stat.label}</span>
+            <strong>{stat.value}</strong>
+            <small>{stat.change}</small>
+          </article>
+        ))}
+        <article className={styles.membershipMetric}>
+          <span>Membership</span>
+          <strong>{data.subscriptionSnapshot.paymentStatus}</strong>
+          <small>{data.subscriptionSnapshot.renewalLabel}</small>
         </article>
       </section>
 
-      <DashboardModal
-        open={isFilesOpen}
-        onClose={() => setIsFilesOpen(false)}
-        title="Coach files"
-        description="Files your coach shared for download. Files expire after 3 days."
-        size="wide"
-      >
-        {data.activeFiles.length > 0 ? (
-          <div className="dashboard-summary-list">
-            {paginatedActiveFiles.items.map((file) => (
-              <div key={file.id} className="dashboard-summary-row">
+      <section className={styles.upcoming}>
+        <div className={styles.sectionHead}>
+          <div>
+            <span className={styles.kicker}>This week</span>
+            <h2>Your training line-up</h2>
+          </div>
+          <div className={styles.readySignal}>
+            <CheckCircle2 size={16} /> {readyNow} ready for check-in
+          </div>
+        </div>
+        {data.upcomingSessions.length ? (
+          <div className={styles.sessionRail}>
+            {data.upcomingSessions.map((session, index) => (
+              <Link href="/client/sessions" key={session.id}>
+                <span className={styles.sequence}>
+                  {String(index + 1).padStart(2, "0")}
+                </span>
                 <div>
-                  <strong>{file.name}</strong>
-                  <span>{file.note}</span>
-                  <small>
-                    Uploaded {file.uploadedAtLabel} - expires {file.expiresAtLabel}
-                  </small>
+                  <span
+                    className={`${styles.status} ${sessionTone(session.status)}`}
+                  >
+                    {session.status}
+                  </span>
+                  <h3>{session.title}</h3>
+                  <p>
+                    {session.coachName} · {session.location}
+                  </p>
                 </div>
-                <a className="mv-btn mv-btn-outline" href={file.downloadHref}>
-                  <Download size={16} />
-                  Download
-                </a>
-              </div>
+                <time>
+                  <Clock3 size={14} /> {session.dayLabel}, {session.timeLabel}
+                </time>
+                <ArrowRight size={16} />
+              </Link>
             ))}
-            <DashboardPaginationControls
-              page={paginatedActiveFiles.page}
-              pageCount={paginatedActiveFiles.pageCount}
-              startItem={paginatedActiveFiles.startItem}
-              endItem={paginatedActiveFiles.endItem}
-              totalItems={paginatedActiveFiles.totalItems}
-              onPageChange={setFilePage}
-            />
           </div>
         ) : (
-          <DashboardEmptyState
-            title="No active files"
-            description="New coach uploads will appear here."
-          />
+          <div className={styles.empty}>
+            <CalendarCheck2 size={25} />
+            <strong>No upcoming sessions</strong>
+            <span>Your next booking will appear here.</span>
+          </div>
         )}
-      </DashboardModal>
+      </section>
+
+      <section className={styles.lowerGrid}>
+        <article className={styles.notes}>
+          <div className={styles.sectionHead}>
+            <div>
+              <span className={styles.kicker}>Private space</span>
+              <h2>Keep a training note</h2>
+              <p>
+                Only you can see these reminders from your member dashboard.
+              </p>
+            </div>
+            <Edit3 size={20} />
+          </div>
+          <div className={styles.noteComposer}>
+            <textarea
+              value={noteDraft}
+              onChange={(event) => setNoteDraft(event.target.value)}
+              placeholder="What do you want to remember for your next session?"
+              rows={3}
+            />
+            <div>
+              {editingNoteId ? (
+                <button
+                  type="button"
+                  className="mv-btn mv-btn-secondary"
+                  onClick={resetNote}
+                >
+                  <X size={15} /> Cancel
+                </button>
+              ) : (
+                <span />
+              )}
+              <button
+                type="button"
+                className="mv-btn mv-btn-primary"
+                disabled={savingNote || !noteDraft.trim()}
+                onClick={saveNote}
+              >
+                <Save size={15} />{" "}
+                {savingNote
+                  ? "Saving…"
+                  : editingNoteId
+                    ? "Update note"
+                    : "Add note"}
+              </button>
+            </div>
+            {noteMessage ? <p role="status">{noteMessage}</p> : null}
+          </div>
+          {data.privateNotes.length ? (
+            <ul className={styles.noteList}>
+              {data.privateNotes.map((note) => (
+                <li key={note.id}>
+                  <div>
+                    <strong>{note.updatedAtLabel}</strong>
+                    <p>{note.content}</p>
+                  </div>
+                  <button
+                    type="button"
+                    aria-label={`Edit note from ${note.updatedAtLabel}`}
+                    onClick={() => {
+                      setEditingNoteId(note.id);
+                      setNoteDraft(note.content);
+                      setNoteMessage("");
+                    }}
+                  >
+                    <Edit3 size={15} />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </article>
+
+        <aside className={styles.sideStack}>
+          <article className={styles.membershipCard}>
+            <CreditCard size={23} />
+            <span className={styles.kicker}>Your plan</span>
+            <h2>{data.subscriptionSnapshot.planName}</h2>
+            <p>{data.subscriptionSnapshot.benefitLine}</p>
+            <strong>{data.subscriptionSnapshot.renewalLabel}</strong>
+            <Link href="/client/subscription">
+              Plan details <ArrowRight size={16} />
+            </Link>
+          </article>
+          <article className={styles.activityCard}>
+            <div className={styles.sectionHead}>
+              <div>
+                <span className={styles.kicker}>Recent updates</span>
+                <h2>What changed</h2>
+              </div>
+              <Activity size={19} />
+            </div>
+            {data.recentActivity.length ? (
+              <ol>
+                {data.recentActivity.map((item) => (
+                  <li key={item.id}>
+                    <span />
+                    <div>
+                      <strong>{item.title}</strong>
+                      <p>{item.description}</p>
+                      <small>{item.timeLabel}</small>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <div className={styles.empty}>
+                <Activity size={24} />
+                <strong>No updates yet</strong>
+              </div>
+            )}
+          </article>
+        </aside>
+      </section>
+
+      <Dialog.Root open={filesOpen} onOpenChange={setFilesOpen}>
+        <Dialog.Portal>
+          <Dialog.Overlay className={styles.overlay} />
+          <Dialog.Content className={styles.filesDialog}>
+            <Dialog.Title>Coach files</Dialog.Title>
+            <Dialog.Description>
+              Files shared by your coach expire after three days.
+            </Dialog.Description>
+            <Dialog.Close className={styles.close} aria-label="Close files">
+              <X size={18} />
+            </Dialog.Close>
+            {data.activeFiles.length ? (
+              <div className={styles.fileList}>
+                {data.activeFiles.map((file) => (
+                  <article key={file.id}>
+                    <FileText size={20} />
+                    <div>
+                      <strong>{file.name}</strong>
+                      <p>{file.note}</p>
+                      <small>Expires {file.expiresAtLabel}</small>
+                    </div>
+                    <a
+                      href={file.downloadHref}
+                      aria-label={`Download ${file.name}`}
+                    >
+                      <Download size={17} />
+                    </a>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <div className={styles.empty}>
+                <FileText size={25} />
+                <strong>No active files</strong>
+                <span>New coach uploads will appear here.</span>
+              </div>
+            )}
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
     </div>
   );
 }

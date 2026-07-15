@@ -166,6 +166,23 @@ describe("REDLINE canonical admin workspaces", () => {
     expect(styles).toContain("@media (max-width: 700px)");
   });
 
+  it("owns the member home and preserves private notes and coach files", () => {
+    const workspace = read("components/dashboard/client-overview-workspace.tsx");
+    const styles = read(
+      "components/dashboard/client-overview-workspace.module.css",
+    );
+
+    expect(workspace).toContain("Train with a clear next step");
+    expect(workspace).toContain("saveClientPrivateNote");
+    expect(workspace).toContain("data.activeFiles");
+    expect(workspace).toContain("<Dialog.Portal>");
+    expect(workspace).not.toContain("DashboardModal");
+    expect(workspace).not.toContain("DashboardMiniStat");
+    expect(styles).toContain("var(--rl-red)");
+    expect(styles).not.toContain("var(--mv-");
+    expect(styles).toContain("@media (max-width: 700px)");
+  });
+
   it("keeps temporary visual QA routes out of the product tree", () => {
     expect(() => read("app/redline-qa/clients/page.tsx")).toThrow();
     expect(() => read("app/redline-qa/schedule/page.tsx")).toThrow();
