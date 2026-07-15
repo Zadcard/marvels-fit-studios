@@ -58,6 +58,20 @@ describe("REDLINE canonical admin workspaces", () => {
     expect(styles).toContain("@media(max-width:700px)");
   });
 
+  it("owns the intake decision queue and secure approval handoff", () => {
+    const workspace = read("components/dashboard/admin-leads-workspace.tsx");
+    const styles = read("components/dashboard/admin-leads-workspace.module.css");
+    expect(workspace).toContain("Choose who joins");
+    expect(workspace).toContain("approveLeadAsClient");
+    expect(workspace).toContain("deleteLead");
+    expect(workspace).toContain("temporaryPassword");
+    expect(workspace).toContain("useSearchParams");
+    expect(workspace).toContain("<Dialog.Portal>");
+    expect(workspace).not.toContain("DashboardModal");
+    expect(styles).toContain("var(--rl-red)");
+    expect(styles).not.toContain("var(--mv-");
+  });
+
   it("keeps temporary visual QA routes out of the product tree", () => {
     expect(() => read("app/redline-qa/clients/page.tsx")).toThrow();
     expect(() => read("app/redline-qa/schedule/page.tsx")).toThrow();
