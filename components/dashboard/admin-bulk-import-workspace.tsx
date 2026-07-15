@@ -1,450 +1,387 @@
 "use client";
-
-import { useDeferredValue, useMemo, useRef, useState, useTransition } from "react";
-import { Download, FileUp, UploadCloud } from "lucide-react";
-
+import {
+  useDeferredValue,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
+import {
+  Check,
+  Download,
+  FileSpreadsheet,
+  Search,
+  UploadCloud,
+  XCircle,
+} from "lucide-react";
 import {
   importClientCSV,
   previewClientImportCSV,
 } from "@/app/actions/admin-bulk-import";
-import { DashboardEmptyState } from "@/components/dashboard/dashboard-empty-state";
-import { DashboardMiniStat } from "@/components/dashboard/dashboard-mini-stat";
-import { DashboardManagementToolbar } from "@/components/dashboard/dashboard-management-toolbar";
-import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
-import { DashboardPaginationControls } from "@/components/dashboard/dashboard-pagination-controls";
-import { paginateDashboardItems } from "@/lib/dashboard/pagination";
 import type {
   BulkClientImportReport,
   BulkClientPreviewRow,
 } from "@/lib/services/bulk-client-import";
+import styles from "./admin-bulk-import-workspace.module.css";
 
-type DropState = "idle" | "over";
-type BulkImportSort = "row-asc" | "row-desc" | "status";
-
-const bulkImportSortOptions: Array<{ label: string; value: BulkImportSort }> = [
-  { label: "Row 1-9", value: "row-asc" },
-  { label: "Row 9-1", value: "row-desc" },
-  { label: "Status", value: "status" },
-];
+function downloadText(name: string, content: string) {
+  const blob = new Blob([content], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = name;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
 
 export function AdminBulkImportWorkspace() {
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [csvContent, setCsvContent] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [csv, setCsv] = useState("");
   const [fileName, setFileName] = useState("");
-  const [dropState, setDropState] = useState<DropState>("idle");
-  const [previewRows, setPreviewRows] = useState<BulkClientPreviewRow[]>([]);
+  const [rows, setRows] = useState<BulkClientPreviewRow[]>([]);
   const [report, setReport] = useState<BulkClientImportReport | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const deferredSearchTerm = useDeferredValue(searchTerm);
-  const [sortOrder, setSortOrder] = useState<BulkImportSort>("row-asc");
-  const [previewPage, setPreviewPage] = useState(1);
-  const [successPage, setSuccessPage] = useState(1);
-  const [failedPage, setFailedPage] = useState(1);
-  const [message, setMessage] = useState(
-    "Upload a CSV with fullName, groupName, and phone columns."
-  );
-  const [isPreviewing, startPreviewTransition] = useTransition();
-  const [isImporting, startImportTransition] = useTransition();
-
-  const validRows = useMemo(
-    () => previewRows.filter((row) => row.valid),
-    [previewRows]
-  );
-  const invalidRows = previewRows.length - validRows.length;
-  const isBusy = isPreviewing || isImporting;
-  const filteredPreviewRows = useMemo(() => {
-    const query = deferredSearchTerm.trim().toLowerCase();
-    const rows = query.length
-      ? previewRows.filter((row) =>
+  const [query, setQuery] = useState("");
+  const deferred = useDeferredValue(query);
+  const [status, setStatus] = useState<"all" | "valid" | "invalid">("all");
+  const [message, setMessage] = useState("Upload a CSV to begin validation.");
+  const [dragging, setDragging] = useState(false);
+  const [previewing, startPreview] = useTransition();
+  const [importing, startImport] = useTransition();
+  const busy = previewing || importing;
+  const valid = rows.filter((row) => row.valid);
+  const invalid = rows.length - valid.length;
+  const visible = useMemo(() => {
+    const q = deferred.trim().toLowerCase();
+    return rows.filter(
+      (row) =>
+        (status === "all" || (status === "valid" ? row.valid : !row.valid)) &&
+        (!q ||
           [row.fullName, row.groupName, row.phone, row.reason ?? ""]
             .join(" ")
             .toLowerCase()
-            .includes(query)
-        )
-      : previewRows;
-
-    return [...rows].sort((left, right) => {
-      if (sortOrder === "row-desc") return right.rowNumber - left.rowNumber;
-      if (sortOrder === "status") return Number(right.valid) - Number(left.valid);
-      return left.rowNumber - right.rowNumber;
-    });
-  }, [deferredSearchTerm, previewRows, sortOrder]);
-  const paginatedPreviewRows = paginateDashboardItems(
-    filteredPreviewRows,
-    previewPage
-  );
-  const paginatedSuccessfulImports = paginateDashboardItems(
-    report?.successfulImports ?? [],
-    successPage
-  );
-  const paginatedFailedImports = paginateDashboardItems(
-    report?.failedImports ?? [],
-    failedPage
-  );
-
-  const readFile = (file: File) => {
+            .includes(q)),
+    );
+  }, [deferred, rows, status]);
+  function read(file: File) {
     setReport(null);
-    setMessage("Reading CSV...");
     setFileName(file.name);
-
+    setMessage("Reading and validating CSV…");
     file
       .text()
       .then((content) => {
-        setCsvContent(content);
-        startPreviewTransition(async () => {
+        setCsv(content);
+        startPreview(async () => {
           try {
-            const rows = await previewClientImportCSV(content);
-            setPreviewRows(rows);
+            const preview = await previewClientImportCSV(content);
+            setRows(preview);
             setMessage(
-              rows.length > 0
-                ? `${rows.length} records parsed from ${file.name}.`
-                : "No client records found in this CSV."
+              preview.length
+                ? `${preview.length} rows parsed from ${file.name}.`
+                : "No client rows found.",
             );
-          } catch (error) {
-            setPreviewRows([]);
+          } catch (caught) {
+            setRows([]);
             setMessage(
-              error instanceof Error ? error.message : "Could not preview CSV."
+              caught instanceof Error
+                ? caught.message
+                : "Could not preview CSV.",
             );
           }
         });
       })
       .catch(() => {
-        setCsvContent("");
-        setPreviewRows([]);
+        setCsv("");
+        setRows([]);
         setMessage("Could not read this file.");
       });
-  };
-
-  const handleImport = () => {
-    if (!csvContent || validRows.length === 0) {
-      setMessage("Upload a CSV with at least one valid client before importing.");
-      return;
-    }
-
-    setReport(null);
-    setMessage("Importing clients and generating credentials...");
-    startImportTransition(async () => {
+  }
+  function runImport() {
+    if (!csv || !valid.length) return;
+    setMessage("Creating clients and credentials…");
+    startImport(async () => {
       try {
-        const nextReport = await importClientCSV(csvContent);
-        setReport(nextReport);
-        setMessage(nextReport.summary);
-      } catch (error) {
-        setMessage(error instanceof Error ? error.message : "Import failed.");
+        const next = await importClientCSV(csv);
+        setReport(next);
+        setMessage(next.summary);
+      } catch (caught) {
+        setMessage(caught instanceof Error ? caught.message : "Import failed.");
       }
     });
-  };
-
-  const downloadCredentials = () => {
-    if (!report?.credentialsCsv) {
-      return;
-    }
-
-    const blob = new Blob([report.credentialsCsv], {
-      type: "text/csv;charset=utf-8",
-    });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `marvel-client-credentials-${new Date()
-      .toISOString()
-      .slice(0, 10)}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
-  };
-
+  }
   return (
-    <div className="dashboard-stack dashboard-stack--dense">
-      <DashboardPageHeader
-        eyebrow="Bulk import"
-        actions={
+    <div className={styles.page} aria-busy={busy}>
+      <header className={styles.hero}>
+        <div>
+          <span className={styles.kicker}>Roster migration</span>
+          <h1>Move the roster in.</h1>
+          <p>
+            Upload, validate and create member accounts without losing
+            visibility into a single row.
+          </p>
+        </div>
+        <button
+          className="mv-btn mv-btn-primary"
+          type="button"
+          onClick={runImport}
+          disabled={busy || !valid.length}
+        >
+          <UploadCloud size={17} />
+          {importing ? "Importing…" : `Import All · ${valid.length} ready`}
+        </button>
+      </header>
+      <section className={styles.steps} aria-label="Import workflow">
+        <article data-active={!rows.length || undefined}>
+          <span>01</span>
+          <div>
+            <strong>Upload</strong>
+            <small>Select a structured CSV.</small>
+          </div>
+        </article>
+        <article data-active={(rows.length > 0 && !report) || undefined}>
+          <span>02</span>
+          <div>
+            <strong>Validate</strong>
+            <small>Review every parsed row.</small>
+          </div>
+        </article>
+        <article data-active={!!report || undefined}>
+          <span>03</span>
+          <div>
+            <strong>Import</strong>
+            <small>Generate client access.</small>
+          </div>
+        </article>
+      </section>
+      <section className={styles.scoreboard}>
+        <article>
+          <span>Parsed rows</span>
+          <strong>{rows.length}</strong>
+          <small>{fileName || "No file selected"}</small>
+        </article>
+        <article>
+          <span>Ready</span>
+          <strong>{valid.length}</strong>
+          <small>Valid member records</small>
+        </article>
+        <article data-alert={invalid > 0 || undefined}>
+          <span>Needs review</span>
+          <strong>{invalid}</strong>
+          <small>Rows blocked from import</small>
+        </article>
+        <article className={styles.blackCard}>
+          <span>Success rate</span>
+          <strong>{report ? `${report.successRate}%` : "—"}</strong>
+          <small>{report ? report.summary : "Calculated after import"}</small>
+        </article>
+      </section>
+      <section className={styles.upload}>
+        <div>
+          <span className={styles.kicker}>CSV source</span>
+          <h2>Bring a clean roster file</h2>
+          <p>{message}</p>
+        </div>
+        <input
+          ref={inputRef}
+          hidden
+          type="file"
+          accept=".csv,text/csv"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) read(file);
+            e.currentTarget.value = "";
+          }}
+        />
+        <button
+          type="button"
+          data-dragging={dragging || undefined}
+          disabled={busy}
+          onClick={() => inputRef.current?.click()}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDragging(true);
+          }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setDragging(false);
+            const file = e.dataTransfer.files?.[0];
+            if (file) read(file);
+          }}
+        >
+          <UploadCloud size={28} />
+          <strong>{fileName || "Drop CSV here or click to upload"}</strong>
+          <span>Expected columns: fullName,groupName,phone</span>
+        </button>
+        <div className={styles.uploadActions}>
+          <button
+            type="button"
+            className="mv-btn mv-btn-secondary"
+            onClick={() =>
+              downloadText(
+                "marvel-client-import-template.csv",
+                "fullName,groupName,phone\nSample Member,Strength Lab,+201000000000\n",
+              )
+            }
+          >
+            <Download size={16} />
+            Download template
+          </button>
           <button
             type="button"
             className="mv-btn mv-btn-primary"
-            onClick={handleImport}
-            disabled={isBusy || validRows.length === 0}
+            disabled={busy}
+            onClick={() => inputRef.current?.click()}
           >
-            <UploadCloud size={16} />
-            {isImporting ? "Importing..." : "Import All"}
-          </button>
-        }
-      />
-
-      <section className="dashboard-mini-grid dashboard-admin-priority-grid">
-        <DashboardMiniStat
-          tone={previewRows.length > 0 ? "accent" : "neutral"}
-          label="Total records"
-          value={previewRows.length}
-          description={fileName || "No CSV selected."}
-        />
-        <DashboardMiniStat
-          tone={validRows.length > 0 ? "success" : "neutral"}
-          label="Ready"
-          value={validRows.length}
-          description="Valid rows for import."
-        />
-        <DashboardMiniStat
-          tone={invalidRows > 0 ? "warning" : "success"}
-          label="Needs review"
-          value={invalidRows}
-          description="Rows that will not import."
-        />
-        <DashboardMiniStat
-          tone={report ? "success" : "neutral"}
-          label="Success rate"
-          value={report ? `${report.successRate}%` : "Pending"}
-          description="Calculated after import."
-        />
-      </section>
-
-      <section className="dashboard-panel dashboard-panel--accent dashboard-panel--dense">
-        <div className="dashboard-panel__header dashboard-panel__header--tight">
-          <div>
-            <div className="mv-eyebrow">CSV Upload</div>
-            <h2>Import clients by full name, group, and phone</h2>
-            <p>{message}</p>
-          </div>
-          <button
-            type="button"
-            className="mv-btn mv-btn-outline"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={isBusy}
-          >
-            <FileUp size={16} />
+            <FileSpreadsheet size={16} />
             Choose CSV
           </button>
         </div>
-
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".csv,text/csv"
-          hidden
-          onChange={(event) => {
-            const file = event.target.files?.[0];
-            if (file) {
-              readFile(file);
-            }
-            event.currentTarget.value = "";
-          }}
-        />
-
-        <button
-          type="button"
-          className={`dashboard-import-dropzone ${
-            dropState === "over" ? "dashboard-import-dropzone--over" : ""
-          }`}
-          onClick={() => fileInputRef.current?.click()}
-          onDragOver={(event) => {
-            event.preventDefault();
-            setDropState("over");
-          }}
-          onDragLeave={() => setDropState("idle")}
-          onDrop={(event) => {
-            event.preventDefault();
-            setDropState("idle");
-            const file = event.dataTransfer.files?.[0];
-            if (file) {
-              readFile(file);
-            }
-          }}
-          disabled={isBusy}
-        >
-          <UploadCloud size={28} />
-          <strong>Drop CSV here or click to upload</strong>
-          <span>Expected columns: fullName,groupName,phone</span>
-        </button>
-
-        {isBusy ? (
-          <div className="dashboard-info-strip" role="status">
-            <strong>{isImporting ? "Import in progress" : "Parsing CSV"}</strong>
-            <p>Keep this page open until the current operation finishes.</p>
-          </div>
-        ) : null}
       </section>
-
-      <section className="dashboard-panel dashboard-panel--dense">
-        <div className="dashboard-panel__header dashboard-panel__header--tight">
+      <section className={styles.preview}>
+        <div className={styles.previewHead}>
           <div>
-            <div className="mv-eyebrow">Preview</div>
-            <h2>Parsed rows before import</h2>
-            <p>Only valid rows are sent to account creation.</p>
+            <span className={styles.kicker}>Validation table</span>
+            <h2>
+              {rows.length
+                ? `${visible.length} rows in view`
+                : "Waiting for a file"}
+            </h2>
           </div>
-        </div>
-
-        {previewRows.length > 0 ? (
-          <>
-            <DashboardManagementToolbar
-              searchValue={searchTerm}
-              onSearchChange={(value) => {
-                setSearchTerm(value);
-                setPreviewPage(1);
-              }}
-                searchPlaceholder="Search preview rows"
-                searchSuggestions={previewRows.map((row) => ({
-                  label: row.fullName,
-                  value: row.fullName,
-                  detail: `Row ${row.rowNumber} - ${row.phone}`,
-                }))}
-              summary={`${filteredPreviewRows.length} preview rows`}
-              sortValue={sortOrder}
-              sortOptions={bulkImportSortOptions}
-              onSortChange={(value) => {
-                setSortOrder(value as BulkImportSort);
-                setPreviewPage(1);
-              }}
-              isFiltered={searchTerm.trim().length > 0}
-              onReset={() => {
-                setSearchTerm("");
-                setSortOrder("row-asc");
-                setPreviewPage(1);
-              }}
-            />
-            <div className="dashboard-table-wrap">
-              <table className="dashboard-table">
-                <thead>
-                  <tr>
-                    <th>Row</th>
-                    <th>Client</th>
-                    <th>Group</th>
-                    <th>Phone</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {paginatedPreviewRows.items.map((row) => (
-                    <tr key={`${row.rowNumber}-${row.phone}`}>
-                      <td>{row.rowNumber}</td>
-                      <td>
-                        <div className="dashboard-table__identity">
-                          <strong>{row.fullName || "Missing name"}</strong>
-                        </div>
-                      </td>
-                      <td>{row.groupName || "No group"}</td>
-                      <td>{row.phone || "Missing phone"}</td>
-                      <td>{row.valid ? "Ready" : row.reason}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          {rows.length ? (
+            <div className={styles.filters}>
+              <label>
+                <Search size={16} />
+                <span className="sr-only">Search preview</span>
+                <input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search rows"
+                />
+              </label>
+              <div>
+                {(["all", "valid", "invalid"] as const).map((item) => (
+                  <button
+                    type="button"
+                    key={item}
+                    data-active={status === item || undefined}
+                    onClick={() => setStatus(item)}
+                  >
+                    {item}
+                  </button>
+                ))}
+              </div>
             </div>
-            <DashboardPaginationControls
-              page={paginatedPreviewRows.page}
-              pageCount={paginatedPreviewRows.pageCount}
-              startItem={paginatedPreviewRows.startItem}
-              endItem={paginatedPreviewRows.endItem}
-              totalItems={paginatedPreviewRows.totalItems}
-              onPageChange={setPreviewPage}
-            />
-          </>
+          ) : null}
+        </div>
+        {rows.length ? (
+          <div className={styles.tableWrap}>
+            <table>
+              <thead>
+                <tr>
+                  <th>Row</th>
+                  <th>Member</th>
+                  <th>Group</th>
+                  <th>Phone</th>
+                  <th>Validation</th>
+                </tr>
+              </thead>
+              <tbody>
+                {visible.map((row) => (
+                  <tr
+                    key={`${row.rowNumber}-${row.phone}`}
+                    data-invalid={!row.valid || undefined}
+                  >
+                    <td>{row.rowNumber}</td>
+                    <td>
+                      <strong>{row.fullName || "Missing name"}</strong>
+                    </td>
+                    <td>{row.groupName || "No group"}</td>
+                    <td>{row.phone || "Missing phone"}</td>
+                    <td>
+                      <span
+                        className={row.valid ? styles.ready : styles.blocked}
+                      >
+                        {row.valid ? (
+                          <>
+                            <Check size={14} />
+                            Ready
+                          </>
+                        ) : (
+                          <>
+                            <XCircle size={14} />
+                            {row.reason}
+                          </>
+                        )}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         ) : (
-          <DashboardEmptyState
-            title="No CSV preview yet"
-            description="Upload a CSV to review rows before importing clients."
-          />
+          <div className={styles.empty}>
+            <FileSpreadsheet size={28} />
+            <strong>No preview yet</strong>
+            <span>Upload the template or your own CSV to validate rows.</span>
+          </div>
         )}
       </section>
-
       {report ? (
-        <section className="dashboard-panel dashboard-panel--dense">
-          <div className="dashboard-panel__header dashboard-panel__header--tight">
+        <section className={styles.report}>
+          <div className={styles.reportHead}>
             <div>
-              <div className="mv-eyebrow">Import report</div>
-              <h2>Generated credentials</h2>
+              <span className={styles.kicker}>Import report</span>
+              <h2>Credentials generated</h2>
               <p>{report.summary}</p>
             </div>
             <button
+              className="mv-btn mv-btn-primary"
               type="button"
-              className="mv-btn mv-btn-secondary"
-              onClick={downloadCredentials}
-              disabled={report.successfulImports.length === 0}
+              disabled={!report.successfulImports.length}
+              onClick={() =>
+                downloadText(
+                  `marvel-client-credentials-${new Date().toISOString().slice(0, 10)}.csv`,
+                  report.credentialsCsv,
+                )
+              }
             >
               <Download size={16} />
-              Download credentials CSV
+              Download credentials
             </button>
           </div>
-
-          <div className="dashboard-panel__meta-strip">
-            <span>Total: {report.totalRecords}</span>
-            <span>Imported: {report.successfulImports.length}</span>
-            <span>Failed: {report.failedImports.length}</span>
-            <span>Success rate: {report.successRate}%</span>
+          <div className={styles.reportGrid}>
+            <article>
+              <span>Imported</span>
+              <strong>{report.successfulImports.length}</strong>
+            </article>
+            <article>
+              <span>Failed</span>
+              <strong>{report.failedImports.length}</strong>
+            </article>
+            <article>
+              <span>Duplicates</span>
+              <strong>{report.duplicatePhones}</strong>
+            </article>
           </div>
-
-          {report.successfulImports.length > 0 ? (
-            <>
-              <div className="dashboard-table-wrap">
-                <table className="dashboard-table">
-                  <thead>
-                    <tr>
-                      <th>Client</th>
-                      <th>Group</th>
-                      <th>Client ID</th>
-                      <th>Phone</th>
-                      <th>Password</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {paginatedSuccessfulImports.items.map((client) => (
-                      <tr key={client.clientId}>
-                        <td>{client.fullName}</td>
-                        <td>{client.groupName || "No group"}</td>
-                        <td>{client.clientId}</td>
-                        <td>{client.phone}</td>
-                        <td>{client.password}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <DashboardPaginationControls
-                page={paginatedSuccessfulImports.page}
-                pageCount={paginatedSuccessfulImports.pageCount}
-                startItem={paginatedSuccessfulImports.startItem}
-                endItem={paginatedSuccessfulImports.endItem}
-                totalItems={paginatedSuccessfulImports.totalItems}
-                onPageChange={setSuccessPage}
-              />
-            </>
-          ) : null}
-
-          {report.failedImports.length > 0 ? (
-            <>
-              <div className="dashboard-table-wrap">
-                <table className="dashboard-table">
-                  <thead>
-                    <tr>
-                      <th>Row</th>
-                      <th>Client</th>
-                      <th>Group</th>
-                      <th>Phone</th>
-                      <th>Reason</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {paginatedFailedImports.items.map((client) => (
-                      <tr key={`${client.rowNumber}-${client.phone}`}>
-                        <td>{client.rowNumber}</td>
-                        <td>{client.fullName}</td>
-                        <td>{client.groupName || "No group"}</td>
-                        <td>{client.phone}</td>
-                        <td>{client.reason}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <DashboardPaginationControls
-                page={paginatedFailedImports.page}
-                pageCount={paginatedFailedImports.pageCount}
-                startItem={paginatedFailedImports.startItem}
-                endItem={paginatedFailedImports.endItem}
-                totalItems={paginatedFailedImports.totalItems}
-                onPageChange={setFailedPage}
-              />
-            </>
-          ) : null}
+          {report.failedImports.length ? (
+            <ul>
+              {report.failedImports.map((item) => (
+                <li key={`${item.rowNumber}-${item.phone}`}>
+                  <b>Row {item.rowNumber}</b>
+                  <span>{item.fullName || item.phone}</span>
+                  <em>{item.reason}</em>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className={styles.allGood}>
+              <Check size={17} />
+              Every imported row completed successfully.
+            </p>
+          )}
         </section>
       ) : null}
     </div>
