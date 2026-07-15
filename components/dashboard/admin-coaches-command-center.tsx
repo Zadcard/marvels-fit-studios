@@ -1,365 +1,121 @@
 "use client";
 
-import { useDeferredValue, useEffect, useMemo, useState, useTransition } from "react";
-import {
-  AlertTriangle,
-  ArrowLeft,
-  ArrowRight,
-  CalendarClock,
-  Dumbbell,
-  Mail,
-  Pencil,
-  Phone,
-  Plus,
-  Search,
-  ShieldCheck,
-  Trash2,
-  Users,
-  X,
-} from "lucide-react";
+import { useDeferredValue, useMemo, useState, useTransition, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Dialog } from "radix-ui";
+import { AlertTriangle, CalendarDays, ChevronRight, Mail, Pencil, Phone, Plus, Search, ShieldCheck, Trash2, Users, X } from "lucide-react";
 
 import { deleteCoach, saveCoach } from "@/app/actions/admin-coaches";
-import { IconChip } from "@/components/ui/icon-chip";
-import { StatusBadge } from "@/components/ui/status-badge";
-import { paginateDashboardItems } from "@/lib/dashboard/pagination";
-import type {
-  AdminCoachRecord,
-  AdminCoachSpecialization,
-} from "@/lib/mocks/admin-coaches";
+import type { AdminCoachRecord, AdminCoachSpecialization } from "@/lib/mocks/admin-coaches";
 import { getInitials } from "@/lib/utils";
-
 import styles from "./admin-coaches-command-center.module.css";
 
-type CoachFormState = {
-  fullName: string;
-  email: string;
-  phone: string;
-  specialization: AdminCoachSpecialization;
-};
+type CoachForm = { fullName: string; email: string; phone: string; specialization: AdminCoachSpecialization };
+type Sort = "name" | "load" | "open";
 
-type CoachSort = "name-asc" | "load-desc" | "availability-desc";
+const emptyForm: CoachForm = { fullName: "", email: "", phone: "", specialization: "Strength" };
+const specialties: Array<"All" | AdminCoachSpecialization> = ["All", "Strength", "Conditioning", "Mobility", "Private Coaching"];
 
-const specializations: Array<"All" | AdminCoachSpecialization> = [
-  "All",
-  "Strength",
-  "Conditioning",
-  "Mobility",
-  "Private Coaching",
-];
-
-const emptyForm: CoachFormState = {
-  fullName: "",
-  email: "",
-  phone: "",
-  specialization: "Strength",
-};
-
-function getLoadState(coach: AdminCoachRecord) {
-  if (coach.sessionsThisWeek === 0) {
-    return { label: "Needs schedule", tone: "warning" as const };
-  }
-  if (coach.activeClients >= 20 || coach.sessionsThisWeek >= 10) {
-    return { label: "High load", tone: "critical" as const };
-  }
-  return { label: "On track", tone: "success" as const };
-}
-
-function CoachLoadBars({ coach }: { coach: AdminCoachRecord }) {
-  const max = Math.max(1, ...coach.weeklyLoad.map((day) => day.sessions));
-
-  return (
-    <div className={styles.loadChart} aria-label={`${coach.fullName} weekly sessions`}>
-      {coach.weeklyLoad.map((day) => (
-        <div key={day.day} className={styles.loadDay}>
-          <span
-            style={{ height: `${Math.max(10, (day.sessions / max) * 100)}%` }}
-            aria-hidden="true"
-          />
-          <small>{day.day.slice(0, 1)}</small>
-          <em className="sr-only">{day.sessions} sessions</em>
-        </div>
-      ))}
-    </div>
-  );
+function coachState(coach: AdminCoachRecord) {
+  if (coach.conflicts) return { label: "Conflict", className: styles.danger };
+  if (!coach.sessionsThisWeek) return { label: "Unscheduled", className: styles.warning };
+  if (coach.openSlots <= 1) return { label: "At capacity", className: styles.dark };
+  return { label: "Available", className: styles.success };
 }
 
 export function AdminCoachesCommandCenter({ records }: { records: AdminCoachRecord[] }) {
   const router = useRouter();
-  const [isSaving, startSave] = useTransition();
-  const [isDeleting, startDelete] = useTransition();
+  const [pending, startTransition] = useTransition();
   const [search, setSearch] = useState("");
   const deferredSearch = useDeferredValue(search);
-  const [specialization, setSpecialization] = useState<"All" | AdminCoachSpecialization>("All");
-  const [sort, setSort] = useState<CoachSort>("name-asc");
-  const [page, setPage] = useState(1);
+  const [specialty, setSpecialty] = useState<(typeof specialties)[number]>("All");
+  const [sort, setSort] = useState<Sort>("name");
   const [selectedId, setSelectedId] = useState(records[0]?.id ?? "");
-  const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [editorOpen, setEditorOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState<CoachFormState>(emptyForm);
-  const [error, setError] = useState("");
   const [deleteMode, setDeleteMode] = useState(false);
   const [confirmation, setConfirmation] = useState("");
+  const [form, setForm] = useState<CoachForm>(emptyForm);
+  const [error, setError] = useState("");
 
-  const visibleRecords = useMemo(() => {
+  const visible = useMemo(() => {
     const query = deferredSearch.trim().toLowerCase();
-    const filtered = records.filter((coach) => {
-      const matchesQuery = !query || [coach.fullName, coach.email, coach.specialization, coach.summary]
-        .join(" ").toLowerCase().includes(query);
-      return matchesQuery && (specialization === "All" || coach.specialization === specialization);
+    return records.filter((coach) => (!query || [coach.fullName, coach.email, coach.specialization, coach.summary].join(" ").toLowerCase().includes(query)) && (specialty === "All" || coach.specialization === specialty)).sort((a, b) => {
+      if (sort === "load") return b.sessionsThisWeek - a.sessionsThisWeek;
+      if (sort === "open") return b.openSlots - a.openSlots;
+      return a.fullName.localeCompare(b.fullName);
     });
+  }, [deferredSearch, records, sort, specialty]);
 
-    return filtered.sort((left, right) => {
-      if (sort === "load-desc") {
-        return right.sessionsThisWeek + right.activeClients - left.sessionsThisWeek - left.activeClients;
-      }
-      if (sort === "availability-desc") {
-        return right.openSlots - left.openSlots;
-      }
-      return left.fullName.localeCompare(right.fullName);
-    });
-  }, [deferredSearch, records, sort, specialization]);
-
-  useEffect(() => setPage(1), [deferredSearch, specialization, sort]);
-
-  const paginated = paginateDashboardItems(visibleRecords, page);
-  const selected = visibleRecords.find((coach) => coach.id === selectedId) ?? visibleRecords[0];
-  const sessionsThisWeek = visibleRecords.reduce((sum, coach) => sum + coach.sessionsThisWeek, 0);
-  const activeClients = visibleRecords.reduce((sum, coach) => sum + coach.activeClients, 0);
-  const coverageGaps = visibleRecords.filter((coach) => coach.sessionsThisWeek === 0 || coach.conflicts > 0).length;
+  const selected = visible.find((coach) => coach.id === selectedId) ?? visible[0] ?? null;
+  const sessions = visible.reduce((sum, coach) => sum + coach.sessionsThisWeek, 0);
+  const clients = visible.reduce((sum, coach) => sum + coach.activeClients, 0);
+  const alerts = visible.filter((coach) => coach.conflicts || !coach.sessionsThisWeek).length;
 
   function openCreate() {
-    setEditingId(null);
-    setForm(emptyForm);
-    setError("");
-    setDeleteMode(false);
-    setConfirmation("");
-    setIsEditorOpen(true);
+    setEditingId(null); setForm(emptyForm); setDeleteMode(false); setConfirmation(""); setError(""); setEditorOpen(true);
   }
-
   function openEdit(coach: AdminCoachRecord) {
-    setEditingId(coach.id);
-    setForm({
-      fullName: coach.fullName,
-      email: coach.email,
-      phone: coach.phone,
-      specialization: coach.specialization,
-    });
-    setError("");
-    setDeleteMode(false);
-    setConfirmation("");
-    setIsEditorOpen(true);
+    setEditingId(coach.id); setForm({ fullName: coach.fullName, email: coach.email, phone: coach.phone, specialization: coach.specialization }); setDeleteMode(false); setConfirmation(""); setError(""); setEditorOpen(true);
   }
-
-  function handleSave() {
-    setError("");
-    startSave(async () => {
-      try {
-        await saveCoach({ coachId: editingId, ...form });
-        setIsEditorOpen(false);
-        router.refresh();
-      } catch (caught) {
-        setError(caught instanceof Error ? caught.message : "Could not save coach.");
-      }
+  function submit(event: FormEvent) {
+    event.preventDefault(); setError("");
+    startTransition(async () => {
+      try { await saveCoach({ coachId: editingId, ...form }); setEditorOpen(false); router.refresh(); }
+      catch (caught) { setError(caught instanceof Error ? caught.message : "Could not save coach."); }
     });
   }
-
-  function handleDelete() {
+  function removeCoach() {
     if (!editingId) return;
-    setError("");
-    startDelete(async () => {
-      try {
-        await deleteCoach({ coachId: editingId, confirmationText: confirmation });
-        setIsEditorOpen(false);
-        router.refresh();
-      } catch (caught) {
-        setError(caught instanceof Error ? caught.message : "Could not delete coach.");
-      }
+    setError(""); startTransition(async () => {
+      try { await deleteCoach({ coachId: editingId, confirmationText: confirmation }); setEditorOpen(false); router.refresh(); }
+      catch (caught) { setError(caught instanceof Error ? caught.message : "Could not delete coach."); }
     });
   }
 
   return (
-    <div className={styles.page}>
-      <header className={styles.header}>
-        <div>
-          <span className={styles.eyebrow}><ShieldCheck size={15} /> Coaching operations</span>
-          <h1>Coach Command Center</h1>
-          <p>Balance expertise, client load, and weekly coverage from one focused workspace.</p>
-        </div>
-        <button type="button" className="mv-btn mv-btn-primary" onClick={openCreate}>
-          <Plus size={16} /> Add coach
-        </button>
+    <div className={styles.page} aria-busy={pending}>
+      <header className={styles.hero}>
+        <div><span className={styles.kicker}><ShieldCheck size={15} /> Coaching operations</span><h1>Deploy the team.</h1><p>Balance weekly delivery, client responsibility and open capacity before the floor gets busy.</p></div>
+        <button type="button" className="mv-btn mv-btn-primary" onClick={openCreate}><Plus size={17} /> New coach</button>
       </header>
 
-      <section className={styles.insights} aria-label="Coach coverage summary">
-        <article className={styles.insightPrimary}>
-          <IconChip icon={Users} tone="brand" />
-          <div><span>Active coaches</span><strong>{visibleRecords.length}</strong></div>
-          <p>{activeClients} clients currently covered</p>
-        </article>
-        <article>
-          <IconChip icon={Dumbbell} tone="success" />
-          <div><span>Weekly delivery</span><strong>{sessionsThisWeek}</strong></div>
-          <p>Sessions assigned across the team</p>
-        </article>
-        <article>
-          <IconChip icon={AlertTriangle} tone={coverageGaps ? "warning" : "success"} />
-          <div><span>Coverage gaps</span><strong>{coverageGaps}</strong></div>
-          <p>{coverageGaps ? "Needs scheduling attention" : "The roster is balanced"}</p>
-        </article>
+      <section className={styles.scoreboard} aria-label="Coach operations summary">
+        <article><span>Coaches online</span><strong>{visible.length}</strong><small>{clients} active client relationships</small></article>
+        <article><span>Weekly blocks</span><strong>{sessions}</strong><small>Assigned sessions in the next 7 days</small></article>
+        <article data-alert={alerts > 0 || undefined}><span>Coverage alerts</span><strong>{alerts}</strong><small>{alerts ? "Conflicts or empty calendars" : "No deployment gaps"}</small></article>
+        <article className={styles.blackCard}><span>Open capacity</span><strong>{visible.reduce((sum, coach) => sum + coach.openSlots, 0)}</strong><small>Available weekly session slots</small></article>
       </section>
 
-      <section className={styles.controls} aria-label="Filter coaches">
-        <label className={styles.searchField}>
-          <span className="sr-only">Search coaches</span>
-          <Search size={17} aria-hidden="true" />
-          <input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search coach, expertise, or note"
-          />
-        </label>
-        <div className={styles.specializations} aria-label="Specialization">
-          {specializations.map((option) => (
-            <button
-              type="button"
-              key={option}
-              className={option === specialization ? styles.filterActive : undefined}
-              onClick={() => setSpecialization(option)}
-            >
-              {option}
-            </button>
-          ))}
+      <section className={styles.board}>
+        <div className={styles.controls}>
+          <label className={styles.search}><Search size={17} /><span className="sr-only">Search coaches</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Coach, specialty or note" /></label>
+          <div className={styles.specialties}>{specialties.map((item) => <button type="button" key={item} data-active={specialty === item || undefined} onClick={() => setSpecialty(item)}>{item}</button>)}</div>
+          <label className={styles.sort}>Sort<select value={sort} onChange={(event) => setSort(event.target.value as Sort)}><option value="name">Name A-Z</option><option value="load">Highest load</option><option value="open">Most capacity</option></select></label>
         </div>
-        <label className={styles.sortField}>
-          <span>Sort</span>
-          <select value={sort} onChange={(event) => setSort(event.target.value as CoachSort)}>
-            <option value="name-asc">Name A–Z</option>
-            <option value="load-desc">Highest load</option>
-            <option value="availability-desc">Most availability</option>
-          </select>
-        </label>
-      </section>
 
-      {visibleRecords.length ? (
-        <div className={styles.workspace}>
+        <div className={styles.boardGrid}>
           <section className={styles.roster} aria-label="Coach roster">
-            <div className={styles.sectionHeading}>
-              <div><span>Team roster</span><h2>{visibleRecords.length} coaches in view</h2></div>
-              <small>Choose a coach to focus</small>
-            </div>
-            <div className={styles.cardGrid}>
-              {paginated.items.map((coach) => {
-                const state = getLoadState(coach);
-                const isSelected = coach.id === selected?.id;
-                return (
-                  <article
-                    key={coach.id}
-                    className={`${styles.coachCard} ${isSelected ? styles.coachCardSelected : ""}`}
-                  >
-                    <button type="button" className={styles.cardSelect} onClick={() => setSelectedId(coach.id)}>
-                      <span className={styles.avatar}>{getInitials(coach.fullName)}</span>
-                      <span className={styles.coachIdentity}>
-                        <small>{coach.specialization}</small>
-                        <strong>{coach.fullName}</strong>
-                        <em>{coach.summary}</em>
-                      </span>
-                      <StatusBadge tone={state.tone}>{state.label}</StatusBadge>
-                    </button>
-                    <div className={styles.cardMetrics}>
-                      <span><strong>{coach.activeClients}</strong> clients</span>
-                      <span><strong>{coach.sessionsThisWeek}</strong> sessions</span>
-                      <span><strong>{coach.openSlots}</strong> open</span>
-                    </div>
-                    <CoachLoadBars coach={coach} />
-                    <div className={styles.cardFooter}>
-                      <button type="button" onClick={() => setSelectedId(coach.id)}>Focus coach</button>
-                      <button type="button" onClick={() => openEdit(coach)}><Pencil size={14} /> Edit</button>
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
-            <div className={styles.pagination}>
-              <span>{paginated.startItem}–{paginated.endItem} of {paginated.totalItems}</span>
-              <div>
-                <button type="button" onClick={() => setPage(page - 1)} disabled={page <= 1} aria-label="Previous page"><ArrowLeft size={16} /></button>
-                <span>{paginated.page} / {paginated.pageCount}</span>
-                <button type="button" onClick={() => setPage(page + 1)} disabled={page >= paginated.pageCount} aria-label="Next page"><ArrowRight size={16} /></button>
-              </div>
-            </div>
+            <div className={styles.sectionTitle}><div><span>Team roster</span><h2>{visible.length} coaches</h2></div><small>Select to inspect</small></div>
+            {visible.length ? <div className={styles.rosterList}>{visible.map((coach) => { const state = coachState(coach); return <button type="button" key={coach.id} data-selected={selected?.id === coach.id || undefined} onClick={() => setSelectedId(coach.id)}><span className={styles.avatar}>{getInitials(coach.fullName)}</span><span className={styles.identity}><strong>{coach.fullName}</strong><small>{coach.specialization}</small></span><span className={`${styles.state} ${state.className}`}>{state.label}</span><span className={styles.metrics}><b>{coach.sessionsThisWeek}</b> sessions <b>{coach.openSlots}</b> open</span><ChevronRight size={17} /></button>; })}</div> : <div className={styles.empty}><Search size={24} /><strong>No coaches match</strong><span>Change the search or specialty filter.</span></div>}
           </section>
 
-          <aside className={styles.focusPanel} aria-label="Focused coach">
-            {selected ? (
-              <>
-                <div className={styles.focusHero}>
-                  <span className={styles.focusAvatar}>{getInitials(selected.fullName)}</span>
-                  <div><small>{selected.specialization}</small><h2>{selected.fullName}</h2><p>{selected.summary}</p></div>
-                  <button type="button" onClick={() => openEdit(selected)} aria-label={`Edit ${selected.fullName}`}><Pencil size={16} /></button>
-                </div>
-                <div className={styles.contactList}>
-                  <span><Mail size={15} /> {selected.email}</span>
-                  <span><Phone size={15} /> {selected.phone}</span>
-                </div>
-                <div className={styles.focusStats}>
-                  <article><span>Clients</span><strong>{selected.activeClients}</strong></article>
-                  <article><span>Sessions</span><strong>{selected.sessionsThisWeek}</strong></article>
-                  <article><span>Open slots</span><strong>{selected.openSlots}</strong></article>
-                  <article><span>Conflicts</span><strong>{selected.conflicts}</strong></article>
-                </div>
-                <section className={styles.weekPlan}>
-                  <div><IconChip icon={CalendarClock} tone="success" /><span><strong>Weekly rhythm</strong><small>Assigned sessions by day</small></span></div>
-                  <CoachLoadBars coach={selected} />
-                  <ol>
-                    {selected.weeklyLoad.map((day) => <li key={day.day}><span>{day.day}</span><strong>{day.sessions}</strong></li>)}
-                  </ol>
-                </section>
-                <div className={styles.focusStatus}>
-                  <StatusBadge tone={getLoadState(selected).tone}>{getLoadState(selected).label}</StatusBadge>
-                  <p>{selected.conflicts ? `${selected.conflicts} schedule conflicts require review.` : "No schedule conflicts recorded."}</p>
-                </div>
-              </>
-            ) : null}
+          <aside className={styles.focus}>
+            {selected ? <>
+              <div className={styles.focusTop}><span className={styles.focusAvatar}>{getInitials(selected.fullName)}</span><div><small>{selected.specialization}</small><h2>{selected.fullName}</h2><p>{selected.summary}</p></div><button type="button" aria-label={`Edit ${selected.fullName}`} onClick={() => openEdit(selected)}><Pencil size={17} /></button></div>
+              <div className={styles.contact}><a href={`mailto:${selected.email}`}><Mail size={15} /> {selected.email}</a><a href={`tel:${selected.phone}`}><Phone size={15} /> {selected.phone}</a></div>
+              <div className={styles.focusNumbers}><article><span>Clients</span><strong>{selected.activeClients}</strong></article><article><span>Sessions</span><strong>{selected.sessionsThisWeek}</strong></article><article><span>Open</span><strong>{selected.openSlots}</strong></article><article><span>Conflicts</span><strong>{selected.conflicts}</strong></article></div>
+              <section className={styles.load}><div><CalendarDays size={17} /><span><strong>7-day deployment</strong><small>Scheduled blocks by day</small></span></div><div className={styles.loadBars}>{selected.weeklyLoad.map((day) => <span key={day.day}><i style={{ height: `${Math.max(8, Math.min(100, day.sessions * 28))}%` }} /><b>{day.sessions}</b><small>{day.day.slice(0, 1)}</small></span>)}</div></section>
+              {selected.conflicts ? <div className={styles.alert}><AlertTriangle size={17} /><span><strong>Schedule conflict detected</strong><small>Resolve overlapping blocks before publishing.</small></span></div> : null}
+              <div className={styles.focusActions}><a className="mv-btn mv-btn-secondary" href="/admin/schedule">View schedule</a><button className="mv-btn mv-btn-primary" type="button" onClick={() => openEdit(selected)}>Manage coach</button></div>
+            </> : <div className={styles.empty}><Users size={26} /><strong>No coach selected</strong></div>}
           </aside>
         </div>
-      ) : (
-        <section className={styles.empty}>
-          <Search size={22} />
-          <h2>No coaches match this view</h2>
-          <p>Clear the search or choose another specialization.</p>
-          <button type="button" className="mv-btn mv-btn-secondary" onClick={() => { setSearch(""); setSpecialization("All"); }}>Reset filters</button>
-        </section>
-      )}
+      </section>
 
-      <Dialog.Root open={isEditorOpen} onOpenChange={setIsEditorOpen}>
-        <Dialog.Portal>
-          <Dialog.Overlay className={styles.dialogOverlay} />
-          <Dialog.Content className={styles.editor}>
-            <header className={styles.editorHeader}>
-              <div><Dialog.Title>{editingId ? "Edit coach" : "Add a coach"}</Dialog.Title><Dialog.Description>Identity, contact, and coaching expertise.</Dialog.Description></div>
-              <Dialog.Close asChild><button type="button" aria-label="Close coach editor"><X size={19} /></button></Dialog.Close>
-            </header>
-            <div className={styles.editorBody}>
-              {error ? <div className={styles.error} role="alert"><AlertTriangle size={17} /><span>{error}</span></div> : null}
-              <label><span>Full name</span><input value={form.fullName} onChange={(event) => setForm((current) => ({ ...current, fullName: event.target.value }))} /></label>
-              <label><span>Email</span><input type="email" value={form.email} onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))} /></label>
-              <label><span>Phone</span><input value={form.phone} onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))} /></label>
-              <label><span>Specialization</span><select value={form.specialization} onChange={(event) => setForm((current) => ({ ...current, specialization: event.target.value as AdminCoachSpecialization }))}>{specializations.filter((item) => item !== "All").map((item) => <option key={item}>{item}</option>)}</select></label>
-              {editingId ? (
-                <section className={styles.dangerZone}>
-                  {!deleteMode ? <button type="button" onClick={() => setDeleteMode(true)}><Trash2 size={16} /> Delete coach</button> : <><div><strong>Confirm deletion</strong><p>Type Delete to permanently remove this coach.</p></div><input value={confirmation} onChange={(event) => setConfirmation(event.target.value)} placeholder="Type Delete" /><button type="button" disabled={confirmation.trim() !== "Delete" || isDeleting} onClick={handleDelete}>{isDeleting ? "Deleting…" : "Delete permanently"}</button></>}
-                </section>
-              ) : null}
-            </div>
-            <footer className={styles.editorFooter}>
-              <Dialog.Close asChild><button type="button" className="mv-btn mv-btn-secondary">Cancel</button></Dialog.Close>
-              <button type="button" className="mv-btn mv-btn-primary" onClick={handleSave} disabled={isSaving || isDeleting}>{isSaving ? "Saving…" : editingId ? "Save changes" : "Create coach"}</button>
-            </footer>
-          </Dialog.Content>
-        </Dialog.Portal>
-      </Dialog.Root>
+      <Dialog.Root open={editorOpen} onOpenChange={setEditorOpen}><Dialog.Portal><Dialog.Overlay className={styles.overlay} /><Dialog.Content className={styles.editor}><Dialog.Title>{editingId ? "Manage coach" : "Add a coach"}</Dialog.Title><Dialog.Description>Maintain the coach account and core training specialty.</Dialog.Description><Dialog.Close className={styles.close} aria-label="Close coach editor"><X size={18} /></Dialog.Close>
+        {!deleteMode ? <form onSubmit={submit} className={styles.form}><label className={styles.full}>Full name<input required value={form.fullName} onChange={(event) => setForm((value) => ({ ...value, fullName: event.target.value }))} /></label><label>Email<input required type="email" value={form.email} onChange={(event) => setForm((value) => ({ ...value, email: event.target.value }))} /></label><label>Phone<input type="tel" value={form.phone} onChange={(event) => setForm((value) => ({ ...value, phone: event.target.value }))} /></label><label className={styles.full}>Specialty<select value={form.specialization} onChange={(event) => setForm((value) => ({ ...value, specialization: event.target.value as AdminCoachSpecialization }))}>{specialties.filter((item) => item !== "All").map((item) => <option key={item}>{item}</option>)}</select></label>{error ? <p className={`${styles.error} ${styles.full}`} role="alert">{error}</p> : null}<div className={`${styles.formActions} ${styles.full}`}>{editingId ? <button type="button" className={styles.deleteButton} onClick={() => setDeleteMode(true)}><Trash2 size={16} /> Delete</button> : <span />}<button type="button" className="mv-btn mv-btn-secondary" onClick={() => setEditorOpen(false)}>Cancel</button><button type="submit" className="mv-btn mv-btn-primary" disabled={pending}>{pending ? "Saving…" : "Save coach"}</button></div></form> : <div className={styles.deletePanel}><Trash2 size={25} /><h3>Delete this coach?</h3><p>Assigned groups or sessions must be moved first. Type Delete to confirm.</p><label>Confirmation<input value={confirmation} onChange={(event) => setConfirmation(event.target.value)} placeholder="Delete" /></label>{error ? <p className={styles.error} role="alert">{error}</p> : null}<div><button className="mv-btn mv-btn-secondary" onClick={() => setDeleteMode(false)}>Back</button><button className={styles.deleteButton} onClick={removeCoach} disabled={confirmation !== "Delete" || pending}>Delete permanently</button></div></div>}
+      </Dialog.Content></Dialog.Portal></Dialog.Root>
     </div>
   );
 }

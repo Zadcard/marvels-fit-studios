@@ -17,9 +17,9 @@ describe("admin coach command center redesign", () => {
   it("keeps real mutations while introducing new screen composition", () => {
     expect(screen).toContain("saveCoach");
     expect(screen).toContain("deleteCoach");
-    expect(screen).toContain("Coach Command Center");
-    expect(screen).toContain("CoachLoadBars");
-    expect(screen).toContain("focusPanel");
+    expect(screen).toContain("Deploy the team");
+    expect(screen).toContain("7-day deployment");
+    expect(screen).toContain("focusNumbers");
     expect(screen).toContain("<Dialog.Content");
     expect(screen).not.toContain("DashboardManagementToolbar");
     expect(screen).not.toContain("dashboard-table");
@@ -27,11 +27,12 @@ describe("admin coach command center redesign", () => {
   });
 
   it("uses a dedicated responsive screen design without viewport scaling", () => {
-    expect(styles).toContain(".cardGrid");
-    expect(styles).toContain(".loadChart");
-    expect(styles).toContain("@media (max-width:680px)");
-    expect(styles).toContain("@media (prefers-reduced-motion:reduce)");
+    expect(styles).toContain(".rosterList");
+    expect(styles).toContain(".loadBars");
+    expect(styles).toContain("@media(max-width:700px)");
+    expect(styles).toContain("@media(prefers-reduced-motion:reduce)");
+    expect(styles).toContain("var(--rl-red)");
+    expect(styles).not.toContain("var(--mv-");
     expect(styles).not.toContain("scale(");
-    expect(styles).not.toContain("backdrop-filter");
   });
 });
