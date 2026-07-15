@@ -28,7 +28,7 @@
     "test:analytics": "node tests/analytics-event-catalog.test.mjs",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "test:design-system": "node tests/dashboard-mini-stat-adoption.test.mjs",
+    "test:design-system": "vitest run tests/redline-foundation-contract.test.ts tests/redline-canonical-workspaces-contract.test.ts",
     "promote:leads": "node scripts/promote-leads-to-clients.cjs"
   },
   "dependencies": {

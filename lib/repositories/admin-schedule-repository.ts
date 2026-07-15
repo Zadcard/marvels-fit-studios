@@ -60,7 +60,7 @@ export type AdminScheduleGroupOption = {
 };
 
 export class AdminScheduleRepository {
-  async getSchedule(): Promise<{
+  async getSchedule(input?: { weekStart?: Date }): Promise<{
     stats: AdminScheduleStat[];
     records: AdminScheduleSessionRecord[];
     coachOptions: AdminSessionCoachOption[];
@@ -70,12 +70,11 @@ export class AdminScheduleRepository {
       async () => {
         const supabase = getSupabaseServerClient();
         const now = new Date();
-        const scheduleWindowStart = new Date(now);
+        const scheduleWindowStart = new Date(input?.weekStart ?? now);
         scheduleWindowStart.setHours(0, 0, 0, 0);
         const scheduleWindowEnd = new Date(scheduleWindowStart);
         scheduleWindowEnd.setDate(scheduleWindowEnd.getDate() + 6);
         scheduleWindowEnd.setHours(23, 59, 59, 999);
-        const weekEnd = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
         const sessionsPromise = supabase
           .from("TrainingSession")
           .select(
@@ -170,11 +169,7 @@ export class AdminScheduleRepository {
           } satisfies AdminScheduleSessionRecord;
         });
 
-        const recordsThisWeek = records.filter(
-          (record) =>
-            new Date(record.startsAt) >= now &&
-            new Date(record.startsAt) <= weekEnd,
-        );
+        const recordsThisWeek = records;
         const waitlistCount = recordsThisWeek.filter(
           (record) => record.status === "Waitlist",
         ).length;
