@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 type DashboardSidebarProps = {
   role: DashboardRole;
   account?: DashboardAccountSummary;
+  activePath?: string;
   isOpen: boolean;
   onClose: () => void;
 };
@@ -34,10 +35,12 @@ const sectionLabels: Record<"primary" | "secondary", string> = {
 export function DashboardSidebar({
   role,
   account,
+  activePath,
   isOpen,
   onClose,
 }: DashboardSidebarProps) {
   const pathname = usePathname();
+  const currentPath = activePath ?? pathname;
   const { data: session } = useSession();
   const navItems = getDashboardSidebarNav(role);
   const profileMeta = getDashboardProfileMeta(role);
@@ -73,6 +76,7 @@ export function DashboardSidebar({
 
   return (
     <aside
+      id="dashboard-navigation"
       className="dashboard-sidebar"
       data-open={isOpen}
       aria-label={`${role} portal navigation`}
@@ -82,6 +86,7 @@ export function DashboardSidebar({
           className="min-w-0 flex-1"
           eyebrow="Premium performance training"
           contextLabel={`${roleLabel} workspace`}
+          contextTone="neutral"
           priority
           imageAlt="Marvel's Fit Studios logo"
         />
@@ -125,7 +130,7 @@ export function DashboardSidebar({
                 );
               }
 
-              const isActive = isDashboardNavItemActive(item, pathname);
+              const isActive = isDashboardNavItemActive(item, currentPath);
 
               return (
                 <Link
@@ -157,7 +162,7 @@ export function DashboardSidebar({
 
       <div className="dashboard-sidebar__account">
         <div className="dashboard-sidebar__account-copy">
-          <StatusPill tone="accent">{roleLabel}</StatusPill>
+          <StatusPill tone="neutral">{roleLabel}</StatusPill>
           <strong>{displayName}</strong>
           <p>{displaySubtitle}</p>
         </div>

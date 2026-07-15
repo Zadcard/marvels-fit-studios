@@ -11,12 +11,13 @@ import {
 } from "lucide-react";
 
 import type {
+  AdminOverviewData,
   AdminOverviewStat,
   AdminQuickAction,
   AdminRecentActivityItem,
   AdminStudioSnapshot,
   AdminUpcomingSession,
-} from "@/lib/mocks/admin-overview";
+} from "@/lib/dashboard/admin-overview-data";
 import { withSupabaseFallback } from "@/lib/supabase/errors";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -34,14 +35,6 @@ const timeFormatter = new Intl.DateTimeFormat("en-US", {
   hour: "numeric",
   minute: "2-digit",
 });
-
-type AdminOverviewData = {
-  stats: AdminOverviewStat[];
-  upcomingSessions: AdminUpcomingSession[];
-  recentActivity: AdminRecentActivityItem[];
-  quickActions: AdminQuickAction[];
-  studioSnapshot: AdminStudioSnapshot[];
-};
 
 type TimedAdminRecentActivityItem = AdminRecentActivityItem & {
   occurredAt: number;

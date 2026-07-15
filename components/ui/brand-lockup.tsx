@@ -33,7 +33,7 @@ export function BrandLockup({
       <span
         className={cn(
           "inline-flex shrink-0 items-center justify-center",
-          compact ? "size-10" : "size-12 sm:size-14"
+          compact ? "size-[38px]" : "size-[42px]"
         )}
       >
         <Image
@@ -43,8 +43,7 @@ export function BrandLockup({
           height={80}
           priority={priority}
           className={cn(
-            "w-auto object-contain brightness-0 invert",
-            compact ? "h-7" : "h-8 sm:h-9",
+            "h-[38px] w-auto object-contain",
             imageClassName
           )}
         />
@@ -58,7 +57,7 @@ export function BrandLockup({
         ) : null}
 
         <span className="flex min-w-0 flex-wrap items-center gap-2">
-          <span className="truncate font-[var(--font-display)] text-[0.96rem] font-semibold leading-none text-white sm:text-[1.02rem]">
+          <span className="truncate font-[var(--font-display)] text-base font-bold leading-none text-white">
             {title}
           </span>
           {contextLabel ? (

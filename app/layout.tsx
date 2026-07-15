@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 
 import { AuthProvider } from "@/components/providers/session-provider";
-import { manrope, spaceGrotesk } from "./fonts";
+import { hankenGrotesk } from "./fonts";
 
 import "./globals.css";
 
@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#111214",
+  themeColor: "#0A0A0B",
 };
 
 export default function RootLayout({
@@ -29,7 +29,7 @@ export default function RootLayout({
     <html
       lang="en"
       data-scroll-behavior="smooth"
-      className={`${manrope.variable} ${spaceGrotesk.variable}`}
+      className={hankenGrotesk.variable}
     >
       <body>
         <AuthProvider>{children}</AuthProvider>

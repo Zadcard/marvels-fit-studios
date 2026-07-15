@@ -99,7 +99,7 @@ export function DashboardManagementToolbar({
               placeholder={searchPlaceholder}
               className="dashboard-input"
             />
-            <button type="submit" className="mv-btn mv-btn-primary">
+            <button type="submit" className="mv-btn mv-btn-secondary">
               <Search size={16} />
               Search
             </button>

@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<title>Marvel Fit — Scheduling</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; padding: 0; background: #0A0A0B; }
+  body { font-family: 'Hanken Grotesk', sans-serif; -webkit-font-smoothing: antialiased; }
+  a { color: #FFD9D8; text-decoration: none; }
+  a:hover { color: #E62429; }
+</style>
+</helmet>
+
+<div data-screen-label="Scheduling Dashboard" style="background: #0A0A0B; color: #FFFFFF; font-family: 'Hanken Grotesk', sans-serif; padding: 14px; min-height: 100vh; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px;">
+
+  <!-- ============ TOP NAV ============ -->
+  <header style="background: #0C0C0D; border-radius: 22px; padding: 14px 22px; display: flex; align-items: center; gap: 22px;">
+    <div style="display: flex; align-items: center; gap: 11px; flex-shrink: 0;">
+      <div style="width: 38px; height: 38px; display: flex; align-items: center; justify-content: center;"><img src="assets/Logo-1.png" alt="Marvel Fit logo" style="width: 38px; height: 38px; object-fit: contain;"></div>
+      <span style="font-weight: 800; font-size: 15px; letter-spacing: -0.02em;">Marvel Fit</span>
+    </div>
+    <nav style="display: flex; gap: 4px;">
+      <span style="padding: 9px 16px; border-radius: 12px; background: linear-gradient(135deg, #E62429, #C11F24); color: #fff; font-weight: 700; font-size: 13.5px; cursor: pointer;">Home</span>
+      <span style="padding: 9px 16px; border-radius: 12px; color: #A8A2A2; font-weight: 600; font-size: 13.5px; cursor: pointer;" style-hover="color: #fff; background: rgba(255,255,255,0.05);">Members</span>
+      <span style="padding: 9px 16px; border-radius: 12px; color: #A8A2A2; font-weight: 600; font-size: 13.5px; cursor: pointer;" style-hover="color: #fff; background: rgba(255,255,255,0.05);">Class Scheduling</span>
+      <span style="padding: 9px 16px; border-radius: 12px; color: #A8A2A2; font-weight: 600; font-size: 13.5px; cursor: pointer;" style-hover="color: #fff; background: rgba(255,255,255,0.05);">Payments</span>
+      <span style="padding: 9px 16px; border-radius: 12px; color: #A8A2A2; font-weight: 600; font-size: 13.5px; cursor: pointer;" style-hover="color: #fff; background: rgba(255,255,255,0.05);">Analytics</span>
+    </nav>
+    <div style="flex: 1; display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 11px 16px; max-width: 420px; margin-left: auto;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6E6868" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4-4"></path></svg>
+      <span style="font-size: 13.5px; color: #6E6868;">Search members, classes…</span>
+    </div>
+    <button style="width: 42px; height: 42px; border-radius: 14px; border: none; background: rgba(255,255,255,0.05); color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; position: relative; flex-shrink: 0;" style-hover="background: rgba(255,255,255,0.10);">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 9a6 6 0 10-12 0c0 6-2.5 7-2.5 7h17S18 15 18 9"></path><path d="M10 20a2.2 2.2 0 004 0"></path></svg>
+      <span style="position: absolute; top: 9px; right: 10px; width: 7px; height: 7px; border-radius: 50%; background: #E62429; border: 2px solid #0C0C0D;"></span>
+    </button>
+    <div style="width: 42px; height: 42px; border-radius: 50%; background: linear-gradient(135deg, #FFD9D8, #E62429); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; color: #1B0708; flex-shrink: 0;">OS</div>
+  </header>
+
+  <!-- ============ BODY: two columns ============ -->
+  <div style="display: grid; grid-template-columns: 1fr 400px; gap: 14px; align-items: start;">
+
+    <!-- ---- LEFT MAIN ---- -->
+    <main style="display: flex; flex-direction: column; gap: 14px; min-width: 0;">
+      <!-- Page header -->
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 4px;">
+        <div style="display: flex; flex-direction: column; gap: 3px;">
+          <span style="font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.14em; color: #E62429;">Studio operations</span>
+          <h1 style="margin: 0; font-size: 27px; font-weight: 800; letter-spacing: -0.02em;">Dashboard</h1>
+          <span style="font-size: 13.5px; color: #928C8C;">All the numbers that matter, on one screen.</span>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button style="display: inline-flex; align-items: center; gap: 8px; padding: 12px 18px; border: 1px solid rgba(255,255,255,0.10); border-radius: 14px; background: #0C0C0D; color: #fff; font-family: inherit; font-weight: 700; font-size: 12.5px; cursor: pointer;" style-hover="border-color: rgba(255,255,255,0.22);">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="16" rx="3"></rect><path d="M3.5 10h17M8.5 3v4M15.5 3v4"></path></svg>
+            Select dates
+          </button>
+          <button style="display: inline-flex; align-items: center; gap: 8px; padding: 12px 18px; border: 1px solid rgba(255,255,255,0.10); border-radius: 14px; background: #0C0C0D; color: #fff; font-family: inherit; font-weight: 700; font-size: 12.5px; cursor: pointer;" style-hover="border-color: rgba(255,255,255,0.22);">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18M6 12h12M10 19h4"></path></svg>
+            Filters
+          </button>
+        </div>
+      </div>
+
+      <!-- Two balance cards -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+        <!-- Featured pastel balance -->
+        <div style="border-radius: 22px; background: linear-gradient(150deg, {{ accentPastel }} 0%, #F3C9C8 100%); color: #1D0809; padding: 24px; display: flex; flex-direction: column; gap: 14px; position: relative; overflow: hidden;">
+          <svg width="100%" height="100%" viewBox="0 0 380 200" preserveAspectRatio="none" style="position: absolute; inset: 0; opacity: 0.30;"><path d="M-10 40l50-50M20 90l90-90M-10 150l140-140M60 200l150-150M170 200l140-140M270 200l110-110M340 180l50-50" stroke="#D89896" stroke-width="24" fill="none"></path></svg>
+          <div style="position: relative; display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-size: 14px; font-weight: 700; color: #5A3131;">Monthly revenue</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="#8A5453"><circle cx="5" cy="12" r="1.8"></circle><circle cx="12" cy="12" r="1.8"></circle><circle cx="19" cy="12" r="1.8"></circle></svg>
+          </div>
+          <div style="position: relative; display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <span style="font-size: 34px; font-weight: 800; letter-spacing: -0.03em; line-height: 1;">EGP 274,420</span>
+              <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: #B91C21;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#B91C21" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"></path></svg>
+                40% <span style="color: #7A4A49; font-weight: 600;">vs last month</span>
+              </span>
+            </div>
+            <svg width="86" height="86" viewBox="0 0 86 86">
+              <circle cx="43" cy="43" r="35" fill="none" stroke="rgba(255,255,255,0.55)" stroke-width="10"></circle>
+              <circle cx="43" cy="43" r="35" fill="none" stroke="#B91C21" stroke-width="10" stroke-linecap="round" stroke-dasharray="219.9" stroke-dashoffset="55" transform="rotate(-90 43 43)"></circle>
+              <text x="43" y="48" text-anchor="middle" font-size="18" font-weight="800" fill="#1D0809" font-family="Hanken Grotesk">75%</text>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Earnings dark -->
+        <div style="border-radius: 22px; background: #0C0C0D; padding: 24px; display: flex; flex-direction: column; gap: 14px;">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-size: 14px; font-weight: 700; color: #C9C4C4;">This month's payouts</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="#6E6868"><circle cx="5" cy="12" r="1.8"></circle><circle cx="12" cy="12" r="1.8"></circle><circle cx="19" cy="12" r="1.8"></circle></svg>
+          </div>
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <span style="font-size: 34px; font-weight: 800; letter-spacing: -0.03em; line-height: 1;">EGP 52,210</span>
+              <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: #FF6B6E;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#FF6B6E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"></path></svg>
+                10% <span style="color: #6E6868; font-weight: 600;">vs last month</span>
+              </span>
+            </div>
+            <svg width="86" height="86" viewBox="0 0 86 86">
+              <circle cx="43" cy="43" r="35" fill="none" stroke="rgba(255,255,255,0.10)" stroke-width="10"></circle>
+              <circle cx="43" cy="43" r="35" fill="none" stroke="#FFD9D8" stroke-width="10" stroke-linecap="round" stroke-dasharray="219.9" stroke-dashoffset="40" transform="rotate(-90 43 43)"></circle>
+              <text x="43" y="48" text-anchor="middle" font-size="18" font-weight="800" fill="#fff" font-family="Hanken Grotesk">82%</text>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Earnings graph -->
+      <div style="background: #0C0C0D; border-radius: 22px; padding: 24px; display: flex; flex-direction: column; gap: 18px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="width: 34px; height: 34px; border-radius: 11px; background: rgba(230,36,41,0.14); display: flex; align-items: center; justify-content: center;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF5A5E" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 7-8"></path></svg>
+          </div>
+          <span style="font-size: 17px; font-weight: 800; letter-spacing: -0.01em;">Earnings graph</span>
+        </div>
+        <div style="display: flex; gap: 14px;">
+          <div style="display: flex; flex-direction: column; justify-content: space-between; padding: 4px 0 22px; align-items: flex-end;">
+            <span style="font-size: 11px; color: #6E6868; font-weight: 600;">10k</span>
+            <span style="font-size: 11px; color: #6E6868; font-weight: 600;">7k</span>
+            <span style="font-size: 11px; color: #6E6868; font-weight: 600;">4k</span>
+            <span style="font-size: 11px; color: #6E6868; font-weight: 600;">1k</span>
+            <span style="font-size: 11px; color: #6E6868; font-weight: 600;">0</span>
+          </div>
+          <div style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
+            <div style="position: relative;">
+              <svg viewBox="0 0 640 200" preserveAspectRatio="none" style="width: 100%; height: 180px;">
+                <defs>
+                  <linearGradient id="earnFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="rgba(230,36,41,0.26)"></stop>
+                    <stop offset="100%" stop-color="rgba(230,36,41,0)"></stop>
+                  </linearGradient>
+                </defs>
+                <line x1="0" y1="50" x2="640" y2="50" stroke="rgba(255,255,255,0.05)" stroke-width="1"></line>
+                <line x1="0" y1="100" x2="640" y2="100" stroke="rgba(255,255,255,0.05)" stroke-width="1"></line>
+                <line x1="0" y1="150" x2="640" y2="150" stroke="rgba(255,255,255,0.05)" stroke-width="1"></line>
+                <path d="M0 150 C40 150, 60 175, 90 178 S130 120, 165 130 C200 140, 210 90, 245 95 S300 165, 340 150 C380 138, 400 60, 440 72 S500 140, 540 120 C580 104, 600 70, 640 58 L640 200 L0 200 Z" fill="url(#earnFill)"></path>
+                <path d="M0 150 C40 150, 60 175, 90 178 S130 120, 165 130 C200 140, 210 90, 245 95 S300 165, 340 150 C380 138, 400 60, 440 72 S500 140, 540 120 C580 104, 600 70, 640 58" fill="none" stroke="#FF5A5E" stroke-width="2.6"></path>
+                <circle cx="165" cy="130" r="5" fill="#0C0C0D" stroke="#FF5A5E" stroke-width="2.6"></circle>
+              </svg>
+              <div style="position: absolute; left: 16%; top: 30px; transform: translateX(-50%); background: #E62429; color: #fff; font-size: 12px; font-weight: 800; padding: 5px 11px; border-radius: 999px;">EGP 2,678</div>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span style="font-size: 11px; color: #6E6868; font-weight: 600;">JAN</span>
+              <span style="font-size: 11px; color: #6E6868; font-weight: 600;">FEB</span>
+              <span style="font-size: 11px; color: #6E6868; font-weight: 600;">MAR</span>
+              <span style="font-size: 11px; color: #6E6868; font-weight: 600;">APR</span>
+              <span style="font-size: 11px; color: #6E6868; font-weight: 600;">MAY</span>
+              <span style="font-size: 11px; color: #6E6868; font-weight: 600;">JUN</span>
+              <span style="font-size: 11px; color: #6E6868; font-weight: 600;">JUL</span>
+              <span style="font-size: 11px; color: #6E6868; font-weight: 600;">AUG</span>
+              <span style="font-size: 11px; color: #6E6868; font-weight: 600;">SEP</span>
+              <span style="font-size: 11px; color: #6E6868; font-weight: 600;">OCT</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Special occasions -->
+      <div style="background: #0C0C0D; border-radius: 22px; padding: 24px; display: flex; flex-direction: column; gap: 16px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="width: 34px; height: 34px; border-radius: 11px; background: rgba(255,217,216,0.10); display: flex; align-items: center; justify-content: center;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFD9D8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="16" rx="3"></rect><path d="M3.5 10h17M8.5 3v4M15.5 3v4"></path></svg>
+          </div>
+          <span style="font-size: 17px; font-weight: 800; letter-spacing: -0.01em;">Upcoming classes</span>
+        </div>
+
+        <!-- highlighted row -->
+        <div style="display: flex; align-items: center; gap: 16px; border-radius: 16px; background: linear-gradient(135deg, rgba(230,36,41,0.16), rgba(230,36,41,0.06)); border: 1px solid rgba(230,36,41,0.22); padding: 16px 18px;">
+          <div style="display: flex; flex-direction: column; align-items: center; width: 44px; flex-shrink: 0;">
+            <span style="font-size: 11px; font-weight: 700; color: #FF8A8D; text-transform: uppercase;">Fri</span>
+            <span style="font-size: 24px; font-weight: 800; letter-spacing: -0.02em;">27</span>
+          </div>
+          <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
+            <span style="font-weight: 700; font-size: 15px;">Stretching &amp; mobility</span>
+            <span style="font-size: 12.5px; color: #FF8A8D;">Dec 27, 2023 · 17:00 (5 PM)</span>
+          </div>
+          <div style="display: flex; align-items: center;">
+            <div style="width: 30px; height: 30px; border-radius: 50%; background: #E8A5A3; border: 2px solid #0C0C0D;"></div>
+            <div style="width: 30px; height: 30px; border-radius: 50%; background: #C9B6E8; border: 2px solid #0C0C0D; margin-left: -10px;"></div>
+            <div style="width: 30px; height: 30px; border-radius: 50%; background: #A5D8C0; border: 2px solid #0C0C0D; margin-left: -10px;"></div>
+            <div style="width: 30px; height: 30px; border-radius: 50%; background: rgba(255,255,255,0.10); border: 2px solid #0C0C0D; margin-left: -10px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; color: #FFD9D8;">+5</div>
+          </div>
+        </div>
+
+        <sc-for list="{{ occasions }}" as="o" hint-placeholder-count="3">
+          <div style="display: flex; align-items: center; gap: 16px; border-radius: 16px; background: #161618; padding: 14px 18px;">
+            <div style="display: flex; flex-direction: column; align-items: center; width: 44px; flex-shrink: 0;">
+              <span style="font-size: 11px; font-weight: 700; color: #6E6868; text-transform: uppercase;">{{ o.dow }}</span>
+              <span style="font-size: 22px; font-weight: 800; letter-spacing: -0.02em;">{{ o.day }}</span>
+            </div>
+            <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
+              <span style="font-weight: 700; font-size: 14.5px;">{{ o.title }}</span>
+              <span style="font-size: 12.5px; color: #928C8C;">{{ o.when }}</span>
+            </div>
+            <div style="display: flex; align-items: center;">
+              <div style="width: 28px; height: 28px; border-radius: 50%; background: #E8A5A3; border: 2px solid #161618;"></div>
+              <div style="width: 28px; height: 28px; border-radius: 50%; background: #A5D8C0; border: 2px solid #161618; margin-left: -9px;"></div>
+              <div style="width: 28px; height: 28px; border-radius: 50%; background: rgba(255,255,255,0.10); border: 2px solid #161618; margin-left: -9px; display: flex; align-items: center; justify-content: center; font-size: 10.5px; font-weight: 800; color: #FFD9D8;">{{ o.more }}</div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </main>
+
+    <!-- ---- RIGHT COLUMN ---- -->
+    <aside style="display: flex; flex-direction: column; gap: 14px;">
+      <!-- Calendar week -->
+      <div style="background: #0C0C0D; border-radius: 22px; padding: 22px; display: flex; flex-direction: column; gap: 16px;">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <button style="width: 30px; height: 30px; border-radius: 10px; border: none; background: rgba(255,255,255,0.05); color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center;" style-hover="background: rgba(255,255,255,0.10);"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M15 18l-6-6 6-6"></path></svg></button>
+          <span style="display: inline-flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 800; letter-spacing: -0.01em;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#E62429" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="16" rx="3"></rect><path d="M3.5 10h17M8.5 3v4M15.5 3v4"></path></svg>
+            December 2023
+          </span>
+          <button style="width: 30px; height: 30px; border-radius: 10px; border: none; background: rgba(255,255,255,0.05); color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center;" style-hover="background: rgba(255,255,255,0.10);"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M9 6l6 6-6 6"></path></svg></button>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center;">
+          <span style="font-size: 10.5px; font-weight: 700; color: #6E6868;">MON</span>
+          <span style="font-size: 10.5px; font-weight: 700; color: #6E6868;">TUE</span>
+          <span style="font-size: 10.5px; font-weight: 700; color: #FF6B6E;">WED</span>
+          <span style="font-size: 10.5px; font-weight: 700; color: #6E6868;">THU</span>
+          <span style="font-size: 10.5px; font-weight: 700; color: #6E6868;">FRI</span>
+          <span style="font-size: 10.5px; font-weight: 700; color: #6E6868;">SAT</span>
+          <span style="font-size: 10.5px; font-weight: 700; color: #6E6868;">SUN</span>
+          <span style="font-size: 15px; font-weight: 700; color: #C9C4C4; padding: 8px 0;">23</span>
+          <span style="font-size: 15px; font-weight: 700; color: #C9C4C4; padding: 8px 0;">24</span>
+          <span style="font-size: 15px; font-weight: 800; color: #fff; padding: 8px 0; background: linear-gradient(135deg, #E62429, #C11F24); border-radius: 12px;">25</span>
+          <span style="font-size: 15px; font-weight: 700; color: #C9C4C4; padding: 8px 0;">26</span>
+          <span style="font-size: 15px; font-weight: 700; color: #C9C4C4; padding: 8px 0;">27</span>
+          <span style="font-size: 15px; font-weight: 700; color: #C9C4C4; padding: 8px 0;">28</span>
+          <span style="font-size: 15px; font-weight: 700; color: #C9C4C4; padding: 8px 0;">29</span>
+        </div>
+      </div>
+
+      <!-- Day schedule -->
+      <div style="background: #0C0C0D; border-radius: 22px; padding: 22px; display: flex; flex-direction: column; gap: 4px;">
+        <span style="font-size: 15px; font-weight: 800; letter-spacing: -0.01em; padding-bottom: 10px;">Thursday schedule</span>
+        <sc-for list="{{ slots }}" as="s" hint-placeholder-count="6">
+          <div style="display: flex; gap: 12px; align-items: stretch; padding: 5px 0;">
+            <span style="font-size: 11.5px; font-weight: 600; color: #6E6868; width: 42px; flex-shrink: 0; padding-top: 4px;">{{ s.time }}</span>
+            <sc-if value="{{ s.hasClass }}" hint-placeholder-val="{{ true }}">
+              <div style="flex: 1; border-radius: 12px; background: {{ s.bg }}; border-left: 3px solid {{ s.accent }}; padding: 9px 13px; display: flex; align-items: center; justify-content: space-between;">
+                <div style="display: flex; flex-direction: column; gap: 1px;">
+                  <span style="font-size: 13px; font-weight: 700; color: {{ s.fg }};">{{ s.title }}</span>
+                  <span style="font-size: 11.5px; color: {{ s.sub }};">{{ s.coach }}</span>
+                </div>
+                <span style="font-size: 11px; font-weight: 600; color: {{ s.sub }};">{{ s.range }}</span>
+              </div>
+            </sc-if>
+            <sc-if value="{{ s.empty }}" hint-placeholder-val="{{ false }}">
+              <div style="flex: 1; border-radius: 12px; border: 1px dashed rgba(255,255,255,0.07); min-height: 20px;"></div>
+            </sc-if>
+          </div>
+        </sc-for>
+      </div>
+
+      <!-- Booking / class detail panel -->
+      <div style="background: #161618; border-radius: 22px; padding: 22px; display: flex; flex-direction: column; gap: 16px; border: 1px solid rgba(255,255,255,0.06);">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <span style="font-size: 18px; font-weight: 800; letter-spacing: -0.01em;">Fitness 🔥</span>
+          <div style="display: flex; gap: 6px;">
+            <button style="width: 30px; height: 30px; border-radius: 10px; border: none; background: rgba(255,255,255,0.05); color: #928C8C; cursor: pointer; display: flex; align-items: center; justify-content: center;" style-hover="background: rgba(230,36,41,0.16); color: #FF6B6E;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"></path></svg></button>
+            <button style="width: 30px; height: 30px; border-radius: 10px; border: none; background: rgba(255,255,255,0.05); color: #928C8C; cursor: pointer; display: flex; align-items: center; justify-content: center;" style-hover="background: rgba(255,255,255,0.10); color: #fff;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"></path></svg></button>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 10px; background: #0C0C0D; border-radius: 14px; padding: 12px 15px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#E62429" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="16" rx="3"></rect><path d="M3.5 10h17M8.5 3v4M15.5 3v4"></path></svg>
+          <span style="font-size: 13.5px; font-weight: 600;">Thursday, Dec 25</span>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="flex: 1; display: flex; align-items: center; gap: 9px; background: #0C0C0D; border-radius: 14px; padding: 12px 15px;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#928C8C" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>
+            <span style="font-size: 13.5px; font-weight: 700;">9 PM</span>
+          </div>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6E6868" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+          <div style="flex: 1; display: flex; align-items: center; gap: 9px; background: #0C0C0D; border-radius: 14px; padding: 12px 15px;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#928C8C" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>
+            <span style="font-size: 13.5px; font-weight: 700;">10 PM</span>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <span style="font-size: 13px; font-weight: 700; color: #C9C4C4;">Trainer</span>
+          <div style="display: flex; align-items: center; gap: 11px; background: #0C0C0D; border-radius: 14px; padding: 11px 15px;">
+            <div style="width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, #FFD9D8, #E62429); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 11px; color: #1B0708;">NA</div>
+            <span style="font-size: 13.5px; font-weight: 700; flex: 1;">Nour Adel</span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6E6868" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <span style="font-size: 13px; font-weight: 700; color: #C9C4C4;">Guests</span>
+          <div style="display: flex; align-items: center; justify-content: space-between; background: #0C0C0D; border-radius: 14px; padding: 11px 15px;">
+            <span style="font-size: 13.5px; font-weight: 700;">10 members</span>
+            <div style="display: flex; align-items: center;">
+              <div style="width: 26px; height: 26px; border-radius: 50%; background: #E8A5A3; border: 2px solid #0C0C0D;"></div>
+              <div style="width: 26px; height: 26px; border-radius: 50%; background: #C9B6E8; border: 2px solid #0C0C0D; margin-left: -8px;"></div>
+              <div style="width: 26px; height: 26px; border-radius: 50%; background: #A5D8C0; border: 2px solid #0C0C0D; margin-left: -8px;"></div>
+              <div style="width: 26px; height: 26px; border-radius: 50%; background: rgba(255,255,255,0.10); border: 2px solid #0C0C0D; margin-left: -8px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; color: #FFD9D8;">+6</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <span style="font-size: 13px; font-weight: 700; color: #C9C4C4;">Capacity <span style="color: #6E6868; font-weight: 500;">(max)</span></span>
+          <div style="background: #0C0C0D; border-radius: 14px; padding: 12px 15px; font-size: 13.5px; font-weight: 700;">20</div>
+        </div>
+
+        <button style="width: 100%; padding: 15px 0; border: none; border-radius: 14px; background: linear-gradient(135deg, #E62429, #C11F24); color: #fff; font-family: inherit; font-weight: 800; font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.075em; cursor: pointer;" style-hover="transform: translateY(-1px);">Save class</button>
+      </div>
+    </aside>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;accentPastel&quot;: {&quot;editor&quot;: &quot;color&quot;, &quot;default&quot;: &quot;#FFD9D8&quot;, &quot;tsType&quot;: &quot;string&quot;, &quot;options&quot;: [&quot;#FFD9D8&quot;, &quot;#DCEFE2&quot;, &quot;#E7E2F7&quot;, &quot;#FBE8CE&quot;], &quot;section&quot;: &quot;Theme&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const pastel = this.props.accentPastel ?? "#FFD9D8";
+    const occasions = [
+      { dow: "Sat", day: "28", title: "Fitness bootcamp", when: "Dec 28, 2023 · 13:00 (1 PM)", more: "+8" },
+      { dow: "Sun", day: "29", title: "Yoga (event)", when: "Dec 29, 2023 · 11:30 (11:30 AM)", more: "+1" },
+      { dow: "Mon", day: "30", title: "Arm raises", when: "Dec 30, 2023 · 15:20 (3:20 PM)", more: "+4" },
+    ];
+    const cls = (title, coach, range, kind) => {
+      const map = {
+        live: { bg: "linear-gradient(135deg, rgba(230,36,41,0.16), rgba(230,36,41,0.05))", accent: "#E62429", fg: "#fff", sub: "#FF8A8D" },
+        mint: { bg: "rgba(126,217,162,0.10)", accent: "#7ED9A2", fg: "#fff", sub: "#8FBFA4" },
+        rose: { bg: "rgba(255,217,216,0.09)", accent: pastel, fg: "#fff", sub: "#B79A99" },
+      }[kind];
+      return { hasClass: true, empty: false, title, coach, range, ...map };
+    };
+    const gap = (time) => ({ time, hasClass: false, empty: true });
+    const slots = [
+      { time: "8 AM", ...cls("Fitness 🔥", "Abner Cruz", "8:00–9:00", "live") },
+      gap("9 AM"),
+      { time: "10 AM", ...cls("Jumping jacks", "Bennett Dalton", "10:00–11:00", "mint") },
+      { time: "11 AM", ...cls("Arm raises", "Kaitlyn Jacobs", "11:00–12:00", "rose") },
+      gap("12 PM"),
+      { time: "1 PM", ...cls("Yoga flow", "Alaya Snow", "13:00–14:00", "mint") },
+      gap("2 PM"),
+    ];
+    return { occasions, slots, accentPastel: pastel };
+  }
+}
+</script>
+</body>
+</html>

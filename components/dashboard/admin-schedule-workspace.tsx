@@ -2,7 +2,7 @@
 
 import { useDeferredValue, useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
-import { CalendarPlus2, XCircle, RefreshCw, ChevronDown, ChevronUp, Repeat2 } from "lucide-react";
+import { CalendarPlus2, XCircle, RefreshCw, Repeat2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import {
@@ -13,10 +13,8 @@ import {
 import { DashboardEmptyState } from "@/components/dashboard/dashboard-empty-state";
 import { DashboardManagementToolbar } from "@/components/dashboard/dashboard-management-toolbar";
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
-import { DashboardPaginationControls } from "@/components/dashboard/dashboard-pagination-controls";
 import { DashboardStatCard } from "@/components/dashboard/dashboard-stat-card";
 import { DashboardStatusBadge } from "@/components/dashboard/dashboard-status-badge";
-import { paginateDashboardItems } from "@/lib/dashboard/pagination";
 import type {
   AdminScheduleSessionRecord,
   AdminScheduleStat,
@@ -120,8 +118,6 @@ export function AdminScheduleWorkspace({
   const [isMutating, startMutatingTransition] = useTransition();
   const [occurrenceCoachId, setOccurrenceCoachId] = useState(coachOptions[0]?.id ?? "");
   const [selectedDayKey, setSelectedDayKey] = useState("");
-  const [collapsedDays, setCollapsedDays] = useState<string[]>([]);
-  const [page, setPage] = useState(1);
 
   const handleCancelOccurrence = (sessionId: string) => {
     setErrorMessage("");
@@ -213,12 +209,10 @@ export function AdminScheduleWorkspace({
     statusFilter,
     typeFilter,
   ]);
-  const paginatedRecords = paginateDashboardItems(filteredRecords, page);
-
   const dayBuckets = useMemo(() => {
     const grouped = new Map<string, AdminScheduleSessionRecord[]>();
 
-    for (const record of paginatedRecords.items) {
+    for (const record of filteredRecords) {
       const dayKey = getCairoDayKey(record.startsAt);
       const existing = grouped.get(dayKey);
       if (existing) {
@@ -248,7 +242,7 @@ export function AdminScheduleWorkspace({
         };
       })
       .sort((left, right) => left.key.localeCompare(right.key));
-  }, [paginatedRecords.items]);
+  }, [filteredRecords]);
 
   const selectedSession =
     filteredRecords.find((record) => record.id === selectedSessionId) ?? filteredRecords[0];
@@ -258,14 +252,6 @@ export function AdminScheduleWorkspace({
     () => selectedDayBucket?.records ?? [],
     [selectedDayBucket]
   );
-  const recordsByDay = new Map<string, AdminScheduleSessionRecord[]>();
-  const weekDays: string[] = [];
-  const isAllCollapsed = false;
-
-  useEffect(() => {
-    setPage(1);
-  }, [searchTerm, statusFilter, typeFilter, coachFilter, groupFilter]);
-
   useEffect(() => {
     if (selectedSession?.coachId) {
       setOccurrenceCoachId(selectedSession.coachId);
@@ -301,14 +287,6 @@ export function AdminScheduleWorkspace({
     );
   };
 
-  const handleToggleDay = (day: string) => {
-    setCollapsedDays((current) =>
-      current.includes(day)
-        ? current.filter((value) => value !== day)
-        : [...current, day]
-    );
-  };
-
   const handleApplyBulkAction = () => {
     if (selectedSessionIds.length === 0) {
       return;
@@ -339,9 +317,11 @@ export function AdminScheduleWorkspace({
   };
 
   return (
-    <div className="dashboard-stack dashboard-stack--dense">
+    <div className="dashboard-stack dashboard-stack--dense admin-schedule-screen">
       <DashboardPageHeader
-        eyebrow="Admin schedule"
+        eyebrow="Studio operations"
+        title="Schedule control"
+        description="Plan the week, review capacity, and resolve occurrence-level changes."
         actions={
           <>
             <Link href="/admin/schedule/templates" className="mv-btn mv-btn-outline">
@@ -486,15 +466,13 @@ export function AdminScheduleWorkspace({
               {selectedDayRecords.length > 0 ? (
                 <div className="dashboard-schedule-dayline__lane">
                   {selectedDayRecords.map((record) => (
-                    <button
+                    <article
                       key={record.id}
-                      type="button"
                       className={
                         selectedSession?.id === record.id
                           ? "dashboard-schedule-dayline__event dashboard-schedule-dayline__event--active"
                           : "dashboard-schedule-dayline__event"
                       }
-                      onClick={() => setSelectedSessionId(record.id)}
                     >
                       <div className="dashboard-schedule-dayline__event-head">
                         <label
@@ -503,6 +481,7 @@ export function AdminScheduleWorkspace({
                         >
                           <input
                             type="checkbox"
+                            aria-label={`Select ${record.title} for bulk editing`}
                             checked={selectedSessionIds.includes(record.id)}
                             onChange={() => handleToggleSelection(record.id)}
                           />
@@ -519,16 +498,23 @@ export function AdminScheduleWorkspace({
                         </div>
                       </div>
 
-                      <strong>{record.title}</strong>
+                      <button
+                        type="button"
+                        className="dashboard-schedule-dayline__event-select"
+                        onClick={() => setSelectedSessionId(record.id)}
+                        aria-pressed={selectedSession?.id === record.id}
+                      >
+                        <strong>{record.title}</strong>
 
-                      <div className="dashboard-schedule-dayline__event-meta">
-                        <span>{record.timeRange}</span>
-                        <span>{record.coachName}</span>
-                        <span>{record.location}</span>
-                      </div>
+                        <span className="dashboard-schedule-dayline__event-meta">
+                          <span>{record.timeRange}</span>
+                          <span>{record.coachName}</span>
+                          <span>{record.location}</span>
+                        </span>
 
-                      <small>{record.occupancyLabel}</small>
-                    </button>
+                        <small>{record.occupancyLabel}</small>
+                      </button>
+                    </article>
                   ))}
                 </div>
               ) : (
@@ -546,115 +532,6 @@ export function AdminScheduleWorkspace({
           />
         )}
 
-        {false ? (
-          <>
-            <div className="dashboard-schedule-planner__actions">
-              <p>
-                {weekDays.length} days · {filteredRecords.length} occurrences
-              </p>
-              <button
-                type="button"
-                className="mv-btn mv-btn-outline"
-                onClick={() => setCollapsedDays(isAllCollapsed ? [] : [...weekDays])}
-              >
-                {isAllCollapsed ? "Expand all days" : "Collapse all days"}
-              </button>
-            </div>
-
-            <div className="dashboard-schedule-planner">
-              {weekDays.map((day) => {
-                const dayRecords = recordsByDay.get(day) ?? [];
-                const isCollapsed = collapsedDays.includes(day);
-                const firstRecord = dayRecords[0];
-
-                return (
-                  <section key={day} className="dashboard-schedule-planner__day">
-                    <header className="dashboard-schedule-planner__day-header">
-                      <div>
-                        <strong>{day}</strong>
-                        <span>{dayRecords.length} occurrences</span>
-                      </div>
-                      <button
-                        type="button"
-                        className="dashboard-schedule-planner__day-toggle"
-                        onClick={() => handleToggleDay(day)}
-                        aria-expanded={!isCollapsed}
-                        aria-label={isCollapsed ? `Expand ${day}` : `Collapse ${day}`}
-                      >
-                        {isCollapsed ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
-                        {isCollapsed ? "Expand" : "Collapse"}
-                      </button>
-                    </header>
-
-                    {isCollapsed ? (
-                      <p className="dashboard-schedule-planner__collapsed-copy">
-                        {firstRecord
-                          ? `${firstRecord.timeRange} · ${firstRecord.title}`
-                          : "No sessions"}
-                      </p>
-                    ) : (
-                      <div className="dashboard-schedule-planner__day-body">
-                        {dayRecords.map((record) => (
-                          <button
-                            key={record.id}
-                            type="button"
-                            className={
-                              selectedSession?.id === record.id
-                                ? "dashboard-schedule-planner__event dashboard-schedule-planner__event--active"
-                                : "dashboard-schedule-planner__event"
-                            }
-                            onClick={() => setSelectedSessionId(record.id)}
-                          >
-                            <div className="dashboard-schedule-planner__event-head">
-                              <label
-                                className="dashboard-schedule-planner__check"
-                                onClick={(event) => event.stopPropagation()}
-                              >
-                                <input
-                                  type="checkbox"
-                                  checked={selectedSessionIds.includes(record.id)}
-                                  onChange={() => handleToggleSelection(record.id)}
-                                />
-                              </label>
-                              <div className="dashboard-schedule-planner__event-badges">
-                                <DashboardStatusBadge
-                                  label={record.sessionType}
-                                  tone={getSessionTypeTone(record.sessionType)}
-                                />
-                                <DashboardStatusBadge
-                                  label={record.status}
-                                  tone={getScheduleTone(record.status)}
-                                />
-                              </div>
-                            </div>
-
-                            <strong>{record.title}</strong>
-
-                            <div className="dashboard-schedule-planner__event-meta">
-                              <span>{record.timeRange}</span>
-                              <span>{record.coachName}</span>
-                              <span>{record.location}</span>
-                            </div>
-
-                            <small>{record.occupancyLabel}</small>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </section>
-                );
-              })}
-            </div>
-          </>
-        ) : null}
-        <DashboardPaginationControls
-          page={paginatedRecords.page}
-          pageCount={paginatedRecords.pageCount}
-          startItem={paginatedRecords.startItem}
-          endItem={paginatedRecords.endItem}
-          totalItems={paginatedRecords.totalItems}
-          onPageChange={setPage}
-        />
       </section>
 
       <section className="dashboard-detail-layout">
@@ -757,7 +634,7 @@ export function AdminScheduleWorkspace({
                   {selectedSession.status !== "Completed" ? (
                     <button
                       type="button"
-                      className="mv-btn mv-btn-danger"
+                    className="mv-btn mv-btn-outline dashboard-destructive-action"
                       onClick={() => handleCancelOccurrence(selectedSession.id)}
                       disabled={isMutating}
                     >
@@ -858,7 +735,7 @@ export function AdminScheduleWorkspace({
           <div className="dashboard-row-actions">
             <button
               type="button"
-              className="mv-btn mv-btn-primary"
+              className="mv-btn mv-btn-secondary"
               onClick={handleApplyBulkAction}
               disabled={isSaving || selectedSessionIds.length === 0}
             >

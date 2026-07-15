@@ -27,6 +27,7 @@ globalIgnores([
     "test-results/**",
     ".claude/**",
     "coverage/**",
+    "design_handoff_marvel_fit/**",
   ]),
 ]);
 

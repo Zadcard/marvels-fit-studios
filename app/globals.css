@@ -12,114 +12,60 @@
 /* ─── Tailwind Theme Overrides ─── */
 @theme inline {
   /* Typography */
-  --font-sans: var(--font-body), "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-body), "Hanken Grotesk", sans-serif;
   --font-mono: ui-monospace, monospace;
-  --font-heading: var(--font-display), "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-body), "Hanken Grotesk", sans-serif;
 
   /* Functional Color Tokens (Tailwind) — mapped to Marvel palette */
-  --color-background: var(--mv-bg);
+  --color-canvas: var(--mv-canvas);
+  --color-canvas-alt: var(--mv-canvas-alt);
+  --color-panel: var(--mv-panel);
+  --color-surface: var(--mv-surface);
+  --color-surface-2: var(--mv-surface-2);
+  --color-rose: var(--mv-rose);
+  --color-mint: var(--mv-mint);
+  --color-lavender: var(--mv-lavender);
+  --color-peach: var(--mv-peach);
+  --color-background: var(--mv-canvas);
   --color-foreground: var(--mv-text);
-  --color-card: var(--mv-surface);
+  --color-card: var(--mv-panel);
   --color-card-foreground: var(--mv-text);
-  --color-popover: var(--mv-surface-strong);
+  --color-popover: var(--mv-surface);
   --color-popover-foreground: var(--mv-text);
   --color-primary: var(--mv-primary);
   --color-primary-foreground: #ffffff;
-  --color-secondary: var(--mv-surface-strong);
+  --color-secondary: var(--mv-surface-2);
   --color-secondary-foreground: var(--mv-text);
   --color-muted: var(--mv-surface);
   --color-muted-foreground: var(--mv-muted);
-  --color-accent: var(--mv-primary-soft);
-  --color-accent-foreground: var(--mv-text);
+  --color-accent: var(--mv-rose);
+  --color-accent-foreground: var(--mv-pastel-text);
   --color-destructive: var(--mv-danger);
   --color-border: var(--mv-line);
-  --color-input: var(--mv-line);
+  --color-input: var(--mv-line-strong);
   --color-ring: var(--mv-primary);
 
   /* Radii */
-  --radius-sm: 14px;
-  --radius-md: 22px;
-  --radius-lg: 30px;
-  --radius-xl: 999px;
+  --radius-icon: var(--r-icon);
+  --radius-chip: var(--r-chip);
+  --radius-control: var(--r-control);
+  --radius-surface: var(--r-surface);
+  --radius-panel: var(--r-panel);
+  --radius-panel-lg: var(--r-panel-lg);
+  --radius-pill: var(--r-pill);
 }
 
 /* ─── Marvel Design Tokens (CSS Custom Properties) ─── */
 :root {
-  /* Backgrounds */
-  --mv-bg: #030303;
-  --mv-bg-soft: #080606;
-
-  /* Surfaces */
-  --mv-surface: #111010;
-  --mv-surface-strong: #191313;
-  --mv-surface-dark: #000000;
-
-  /* Text */
-  --mv-text: #ffffff;
-  --mv-muted: #9b9292;
-  --mv-muted-strong: #d4cccc;
-
-  /* Lines / Borders */
-  --mv-line: rgba(255, 255, 255, 0.1);
-  --mv-line-strong: rgba(255, 255, 255, 0.16);
-
-  /* Brand Colors */
-  --mv-primary: #e62429;
-  --mv-primary-deep: #b91c21;
-  --mv-primary-soft: #2d1011;
-  --mv-accent: #ff0000;
-  --mv-accent-soft: #1d0b0c;
-
-  /* Semantic Colors — distinct hues so status states stay scannable
-     against the red brand (danger/attention stays red). */
-  --mv-success: #34d399;
-  --mv-warning: #f59e0b;
-  --mv-danger: #ef4444;
-
-  /* Shadows */
-  --mv-shadow-sm: 0 14px 28px rgba(12, 16, 24, 0.08);
-  --mv-shadow-md: 0 28px 54px rgba(12, 16, 24, 0.12);
-  --mv-shadow-glow: 0 16px 30px rgba(230, 36, 41, 0.22);
-
-  /* Shared Marvel app surfaces */
-  --mv-page-bg:
-    radial-gradient(circle at 0% 0%, rgba(230, 36, 41, 0.16), transparent 28%),
-    radial-gradient(circle at 100% 0%, rgba(230, 36, 41, 0.08), transparent 26%),
-    linear-gradient(180deg, #050303 0%, #090606 48%, #030303 100%);
-  --mv-panel-bg:
-    radial-gradient(circle at top right, rgba(230, 36, 41, 0.08), transparent 34%),
-    linear-gradient(180deg, rgba(22, 18, 18, 0.94), rgba(9, 8, 8, 0.96));
-  --mv-panel-bg-soft:
-    radial-gradient(circle at top left, rgba(230, 36, 41, 0.06), transparent 34%),
-    linear-gradient(180deg, rgba(19, 16, 16, 0.92), rgba(8, 8, 8, 0.94));
-  --mv-panel-bg-strong:
-    radial-gradient(circle at top right, rgba(230, 36, 41, 0.12), transparent 34%),
-    linear-gradient(180deg, rgba(28, 21, 21, 0.96), rgba(8, 7, 7, 0.98));
-  --mv-control-bg: rgba(255, 255, 255, 0.035);
-  --mv-control-bg-strong: rgba(230, 36, 41, 0.08);
-  --mv-border-subtle: rgba(255, 255, 255, 0.075);
-  --mv-border-strong: rgba(255, 255, 255, 0.13);
-  --mv-border-accent: rgba(230, 36, 41, 0.28);
-
-  /* Dashboard color template: black base, red brand, white only for contrast. */
-  --mv-dashboard-bg: var(--mv-page-bg);
-  --mv-dashboard-panel: var(--mv-panel-bg);
-  --mv-dashboard-panel-soft: var(--mv-panel-bg-soft);
-  --mv-dashboard-panel-strong: var(--mv-panel-bg-strong);
-  --mv-dashboard-red-surface: rgba(230, 36, 41, 0.1);
-  --mv-dashboard-red-surface-strong: rgba(230, 36, 41, 0.16);
-  --mv-dashboard-text: var(--mv-text);
-  --mv-dashboard-muted: var(--mv-muted);
-
-  /* Spacing Scale (fluid, matching landing page) */
+  /* Fixed handoff spacing scale. */
   --mv-space-3xs: 4px;
-  --mv-space-2xs: clamp(6px, 0.8vw, 8px);
-  --mv-space-xs: clamp(10px, 1.2vw, 14px);
-  --mv-space-sm: clamp(14px, 1.8vw, 18px);
-  --mv-space-md: clamp(18px, 2.6vw, 24px);
-  --mv-space-lg: clamp(24px, 3.4vw, 34px);
-  --mv-space-xl: clamp(34px, 4.8vw, 50px);
-  --mv-space-2xl: clamp(46px, 6.4vw, 80px);
+  --mv-space-2xs: 6px;
+  --mv-space-xs: 8px;
+  --mv-space-sm: 10px;
+  --mv-space-md: 14px;
+  --mv-space-lg: 18px;
+  --mv-space-xl: 22px;
+  --mv-space-2xl: 24px;
 
   /* Layout */
   --mv-container: min(1180px, calc(100% - 28px));
@@ -127,9 +73,76 @@
   --mv-content-max: 66ch;
 
   /* Radius scale (dashboard) */
-  --mv-radius-control: 14px;
-  --mv-radius-card: 22px;
-  --mv-radius-card-lg: 28px;
+  /* Marvel Fit v2 source-of-truth tokens. */
+  --mv-canvas: #0A0A0B;
+  --mv-canvas-alt: #1B1B1C;
+  --mv-panel: #0C0C0D;
+  --mv-surface: #161618;
+  --mv-surface-2: #222225;
+  --mv-primary: #E62429;
+  --mv-primary-deep: #B91C21;
+  --mv-primary-bright: #FF5A5E;
+  --mv-primary-tint: #FF6B6E;
+  --mv-primary-gradient: linear-gradient(135deg, #E62429, #C11F24);
+  --mv-primary-wash: rgba(230, 36, 41, 0.14);
+  --mv-rose: #FFD9D8;
+  --mv-rose-deep: #F3C9C8;
+  --mv-mint: #DCEFE2;
+  --mv-lavender: #E7E2F7;
+  --mv-peach: #FBE8CE;
+  --mv-pastel-text: #1D0809;
+  --mv-text: #FFFFFF;
+  --mv-text-2: #C9C4C4;
+  --mv-muted: #928C8C;
+  --mv-muted-2: #6E6868;
+  --mv-line: rgba(255, 255, 255, 0.06);
+  --mv-line-strong: rgba(255, 255, 255, 0.10);
+  --mv-control: rgba(255, 255, 255, 0.05);
+  --mv-control-hover: rgba(255, 255, 255, 0.10);
+  --mv-success: #7ED9A2;
+  --mv-danger: #FF6B6E;
+  --r-pill: 999px;
+  --r-panel-lg: 28px;
+  --r-panel: 22px;
+  --r-surface: 20px;
+  --r-control: 14px;
+  --r-chip: 12px;
+  --r-icon: 11px;
+
+  /* Compatibility aliases while each production surface is re-themed. */
+  --mv-bg: var(--mv-canvas);
+  --mv-bg-soft: var(--mv-canvas-alt);
+  --mv-surface-strong: var(--mv-surface-2);
+  --mv-surface-dark: var(--mv-canvas);
+  --mv-muted-strong: var(--mv-text-2);
+  --mv-primary-soft: var(--mv-primary-wash);
+  --mv-accent: var(--mv-primary-bright);
+  --mv-accent-soft: var(--mv-primary-wash);
+  --mv-warning: var(--mv-peach);
+  --mv-shadow-sm: none;
+  --mv-shadow-md: none;
+  --mv-shadow-glow: none;
+  --mv-page-bg: var(--mv-canvas);
+  --mv-panel-bg: var(--mv-panel);
+  --mv-panel-bg-soft: var(--mv-surface);
+  --mv-panel-bg-strong: var(--mv-surface-2);
+  --mv-control-bg: var(--mv-control);
+  --mv-control-bg-strong: var(--mv-primary-wash);
+  --mv-border-subtle: var(--mv-line);
+  --mv-border-strong: var(--mv-line-strong);
+  --mv-border-accent: rgba(230, 36, 41, 0.28);
+  --mv-dashboard-bg: var(--mv-canvas);
+  --mv-dashboard-panel: var(--mv-panel);
+  --mv-dashboard-panel-soft: var(--mv-surface);
+  --mv-dashboard-panel-strong: var(--mv-surface-2);
+  --mv-dashboard-red-surface: var(--mv-primary-wash);
+  --mv-dashboard-red-surface-strong: rgba(230, 36, 41, 0.18);
+  --mv-dashboard-text: var(--mv-text);
+  --mv-dashboard-muted: var(--mv-muted);
+  --font-display: var(--font-body);
+  --mv-radius-control: var(--r-control);
+  --mv-radius-card: var(--r-panel);
+  --mv-radius-card-lg: var(--r-panel-lg);
 }
 
 /* ─── Base Styles ─── */
@@ -150,10 +163,10 @@
     min-width: 320px;
     overflow-x: hidden;
     color: var(--mv-text);
-    font-family: var(--font-body), "Manrope", sans-serif;
+    font-family: var(--font-body), "Hanken Grotesk", sans-serif;
     font-size: clamp(0.97rem, 0.2vw + 0.95rem, 1.04rem);
     line-height: 1.58;
-    background: var(--mv-page-bg);
+    background: var(--mv-canvas);
   }
 
   a {
@@ -164,7 +177,7 @@
   h1, h2, h3, h4, h5, h6 {
     margin: 0;
     color: var(--mv-text);
-    font-family: var(--font-display), "Space Grotesk", sans-serif;
+    font-family: var(--font-body), "Hanken Grotesk", sans-serif;
     letter-spacing: -0.03em;
   }
 
@@ -201,9 +214,9 @@
     align-items: center;
     gap: 10px;
     color: var(--mv-primary);
-    font-size: 0.74rem;
+    font-size: 12px;
     font-weight: 800;
-    letter-spacing: 0.11em;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
   }
 
@@ -216,29 +229,23 @@
 
   /* Panels — matches landing page .panel variants */
   .mv-panel {
-    border: 1px solid var(--mv-line);
-    border-radius: 22px;
-    background: linear-gradient(180deg, rgba(30, 30, 30, 0.5), rgba(15, 15, 15, 0.5));
-    box-shadow: var(--mv-shadow-sm);
+    border: 0;
+    border-radius: var(--r-panel);
+    background: var(--mv-panel);
+    box-shadow: none;
   }
 
   .mv-panel-soft {
-    background:
-      linear-gradient(180deg, rgba(25, 25, 25, 0.5), rgba(10, 10, 10, 0.5)),
-      var(--mv-surface);
+    background: var(--mv-surface);
   }
 
   .mv-panel-strong {
-    background:
-      linear-gradient(180deg, rgba(40, 40, 40, 0.5), rgba(20, 20, 20, 0.5)),
-      var(--mv-surface-strong);
+    background: var(--mv-surface-2);
   }
 
   .mv-panel-accent {
-    background:
-      radial-gradient(circle at 88% 12%, rgba(230, 36, 41, 0.15), transparent 36%),
-      linear-gradient(180deg, #1a1a1a 0%, #101010 100%);
-    border-color: rgba(230, 36, 41, 0.3);
+    background: var(--mv-panel);
+    border-color: transparent;
   }
 
   /* Buttons — matches landing page .btn system */
@@ -248,14 +255,14 @@
     align-items: center;
     justify-content: center;
     gap: 10px;
-    padding: 0 24px;
+    padding: 15px 28px;
     border: 1px solid transparent;
     border-radius: 999px;
-    font-size: 0.82rem;
+    font-size: 12px;
     font-weight: 800;
     letter-spacing: 0.075em;
     text-transform: uppercase;
-    transition: transform 0.18s ease, border-color 0.18s ease, background-color 0.18s ease, box-shadow 0.18s ease;
+    transition: transform 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
     cursor: pointer;
   }
 
@@ -277,63 +284,93 @@
 
   .mv-btn-primary {
     color: #fff;
-    background: linear-gradient(135deg, var(--mv-primary) 0%, #ff4f54 100%);
-    box-shadow: var(--mv-shadow-glow);
+    background: var(--mv-primary-gradient);
+    box-shadow: none;
   }
 
   .mv-btn-primary:hover:not(:disabled),
   .mv-btn-primary:focus-visible:not(:disabled) {
-    background: linear-gradient(135deg, var(--mv-primary-deep) 0%, #d92b30 100%);
+    background: linear-gradient(135deg, var(--mv-primary-deep), #99191d);
   }
 
   .mv-btn-secondary {
     color: var(--mv-text);
-    background: rgba(30, 30, 30, 0.9);
-    border-color: var(--mv-line-strong);
+    background: var(--mv-control);
+    border-color: transparent;
+  }
+
+  .mv-btn-secondary:hover:not(:disabled),
+  .mv-btn-secondary:focus-visible:not(:disabled) {
+    background: var(--mv-control-hover);
   }
 
   .mv-btn-outline {
     color: var(--mv-muted-strong);
     background: transparent;
-    border-color: var(--mv-line-strong);
+    border-color: rgba(255, 255, 255, 0.16);
   }
 
   .mv-btn-outline:hover:not(:disabled),
   .mv-btn-outline:focus-visible:not(:disabled) {
     color: var(--mv-text);
-    border-color: var(--mv-muted);
-    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.35);
+    background: var(--mv-control);
+  }
+
+  .mv-icon-btn {
+    width: 42px;
+    height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 0;
+    border-radius: var(--r-control);
+    background: var(--mv-control);
+    color: var(--mv-text);
+    cursor: pointer;
+    transition: transform 0.15s ease, background-color 0.15s ease;
+  }
+
+  .mv-icon-btn:hover {
+    transform: translateY(-1px);
+    background: var(--mv-control-hover);
+  }
+
+  .mv-icon-btn:focus-visible {
+    outline: 2px solid var(--mv-primary);
+    outline-offset: 3px;
   }
 
   .mv-btn-danger {
     color: #fff;
-    background: linear-gradient(135deg, #b91c1c 0%, #ef4444 100%);
-    box-shadow: 0 16px 30px rgba(185, 28, 28, 0.25);
+    background: var(--mv-primary-deep);
+    box-shadow: none;
   }
 
   .mv-btn-danger:hover:not(:disabled),
   .mv-btn-danger:focus-visible:not(:disabled) {
-    background: linear-gradient(135deg, #991b1b 0%, #dc2626 100%);
+    background: #99191d;
   }
 
   /* Form Fields — matches landing page .field */
   .mv-field {
     width: 100%;
     min-height: 56px;
-    padding: 0 16px;
-    border: 1px solid var(--mv-line);
-    border-radius: 16px;
-    background: var(--mv-surface);
+    padding: 15px 18px;
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: var(--r-control);
+    background: var(--mv-control);
     color: var(--mv-text);
     font-size: 0.95rem;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    box-shadow: none;
     transition: border-color 0.18s ease, box-shadow 0.18s ease;
   }
 
   .mv-field:focus-visible {
     outline: none;
     border-color: var(--mv-primary);
-    box-shadow: 0 0 0 3px rgba(230, 36, 41, 0.15);
+    box-shadow: 0 0 0 3px rgba(230, 36, 41, 0.22);
   }
 
   .mv-field::placeholder {
@@ -343,7 +380,7 @@
   .mv-field[aria-invalid="true"],
   .mv-field.field-error {
     border-color: var(--mv-danger);
-    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+    box-shadow: none;
   }
 }
 

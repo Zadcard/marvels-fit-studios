@@ -18,17 +18,22 @@ import { getInitials } from "@/lib/utils";
 type DashboardTopbarProps = {
   role: DashboardRole;
   account?: DashboardAccountSummary;
+  activePath?: string;
   onMenuToggle: () => void;
+  isMenuOpen?: boolean;
 };
 
 export function DashboardTopbar({
   role,
   account,
+  activePath,
   onMenuToggle,
+  isMenuOpen = false,
 }: DashboardTopbarProps) {
   const pathname = usePathname();
+  const currentPath = activePath ?? pathname;
   const { data: session } = useSession();
-  const routeMeta = getDashboardRouteMeta(pathname, role);
+  const routeMeta = getDashboardRouteMeta(currentPath, role);
   const profileMeta = getDashboardProfileMeta(role);
   const roleLabel = getDashboardRoleLabel(role);
   const displayName =
@@ -51,6 +56,8 @@ export function DashboardTopbar({
           className="dashboard-menu-toggle"
           onClick={onMenuToggle}
           aria-label="Open navigation"
+          aria-expanded={isMenuOpen}
+          aria-controls="dashboard-navigation"
         >
           <Menu size={20} />
         </button>
