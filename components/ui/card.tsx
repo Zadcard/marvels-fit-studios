@@ -9,7 +9,7 @@ export function Card({
   return (
     <div
       className={cn(
-        "rounded-[8px] border border-[color:var(--mv-line)] bg-[linear-gradient(180deg,rgba(24,24,24,0.92),rgba(10,10,10,0.96))] text-white shadow-[var(--mv-shadow-sm)]",
+        "rounded-[var(--mv-radius-card)] border border-[color:var(--mv-border)] bg-[color:var(--mv-card)] text-[color:var(--mv-ink)] shadow-none",
         className
       )}
       {...props}
@@ -31,7 +31,7 @@ export function CardTitle({
   return (
     <h2
       className={cn(
-        "font-[var(--font-display)] text-lg font-semibold leading-tight text-white",
+        "font-[var(--font-display)] text-lg font-semibold leading-tight text-balance text-[color:var(--mv-ink)]",
         className
       )}
       {...props}
@@ -45,7 +45,7 @@ export function CardDescription({
 }: React.HTMLAttributes<HTMLParagraphElement>) {
   return (
     <p
-      className={cn("text-sm leading-6 text-[color:var(--mv-muted)]", className)}
+      className={cn("text-sm leading-6 text-pretty text-[color:var(--mv-body)]", className)}
       {...props}
     />
   );

@@ -22,25 +22,25 @@ export function PageHeader({
   return (
     <header
       className={cn(
-        "flex flex-col gap-4 rounded-[8px] border border-white/6 bg-white/[0.02] px-4 py-4 sm:flex-row sm:items-end sm:justify-between",
+        "flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between",
         className
       )}
     >
       <div className="min-w-0 space-y-2">
         {eyebrow ? (
-          <span className="block text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-[color:var(--mv-muted-strong)]">
+          <span className="block text-xs font-extrabold uppercase text-[color:var(--mv-primary-deep)]">
             {eyebrow}
           </span>
         ) : null}
 
         {title ? (
-          <h1 className="font-[var(--font-display)] text-[1.4rem] font-semibold leading-tight text-white sm:text-[1.7rem]">
+          <h1 className="font-[var(--font-display)] text-3xl font-bold leading-tight text-balance text-[color:var(--mv-ink)] sm:text-[2.5rem]">
             {title}
           </h1>
         ) : null}
 
         {description ? (
-          <p className="max-w-[58ch] text-sm leading-6 text-[color:var(--mv-muted)]">
+          <p className="max-w-[62ch] text-base leading-7 text-pretty text-[color:var(--mv-body)]">
             {description}
           </p>
         ) : null}
