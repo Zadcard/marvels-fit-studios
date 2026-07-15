@@ -1,4 +1,4 @@
-import { AdminCoachesWorkspace } from "@/components/dashboard/admin-coaches-workspace";
+import { AdminCoachesCommandCenter } from "@/components/dashboard/admin-coaches-command-center";
 import { adminCoachRepository } from "@/lib/repositories/admin-coach-repository";
 
 export const metadata = {
@@ -8,5 +8,5 @@ export const metadata = {
 export default async function AdminCoachesPage() {
   const records = await adminCoachRepository.list();
 
-  return <AdminCoachesWorkspace records={records} />;
+  return <AdminCoachesCommandCenter records={records} />;
 }
