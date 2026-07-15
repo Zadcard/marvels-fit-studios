@@ -133,6 +133,23 @@ describe("REDLINE canonical admin workspaces", () => {
     expect(styles).toContain("@media (max-width: 700px)");
   });
 
+  it("owns the coach weekly calendar and its live filters", () => {
+    const workspace = read("components/dashboard/coach-schedule-workspace.tsx");
+    const styles = read(
+      "components/dashboard/coach-schedule-workspace.module.css",
+    );
+
+    expect(workspace).toContain("See the whole week");
+    expect(workspace).toContain("coachScheduleStatusFilters");
+    expect(workspace).toContain("setView");
+    expect(workspace).toContain("setStatus");
+    expect(workspace).not.toContain("DashboardManagementToolbar");
+    expect(workspace).not.toContain("DashboardPaginationControls");
+    expect(styles).toContain("var(--rl-red)");
+    expect(styles).not.toContain("var(--mv-");
+    expect(styles).toContain("@media (max-width: 700px)");
+  });
+
   it("keeps temporary visual QA routes out of the product tree", () => {
     expect(() => read("app/redline-qa/clients/page.tsx")).toThrow();
     expect(() => read("app/redline-qa/schedule/page.tsx")).toThrow();
