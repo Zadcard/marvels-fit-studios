@@ -9,6 +9,8 @@ import {
   Users,
 } from "lucide-react";
 
+import brandMark from "@/Marvel frontend redesign-handoff/marvel-frontend-redesign/project/assets/ms-mark-red.png";
+
 import { EmptyState } from "@/components/ui/empty-state";
 import { IconChip } from "@/components/ui/icon-chip";
 import { MetricCard } from "@/components/ui/metric-card";
@@ -41,7 +43,7 @@ export default function LightDesignSystemPreviewPage() {
       <div className={styles.shell}>
         <div className={styles.masthead}>
           <Image
-            src="/img/Logo-1.png"
+            src={brandMark}
             alt="Marvel's Fit Studios"
             width={56}
             height={56}

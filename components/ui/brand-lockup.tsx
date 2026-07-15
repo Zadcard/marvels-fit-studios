@@ -1,5 +1,7 @@
 import Image from "next/image";
 
+import brandMark from "@/Marvel frontend redesign-handoff/marvel-frontend-redesign/project/assets/ms-mark-red.png";
+
 import { StatusPill } from "@/components/ui/status-pill";
 import { cn } from "@/lib/utils";
 
@@ -37,13 +39,13 @@ export function BrandLockup({
         )}
       >
         <Image
-          src="/img/Logo-1.png"
+          src={brandMark}
           alt={imageAlt}
           width={80}
           height={80}
           priority={priority}
           className={cn(
-            "w-auto object-contain brightness-0 invert",
+            "w-auto object-contain",
             compact ? "h-7" : "h-8 sm:h-9",
             imageClassName
           )}
@@ -52,13 +54,13 @@ export function BrandLockup({
 
       <span className="grid min-w-0 gap-1">
         {eyebrow ? (
-          <span className="truncate text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-white/55">
+          <span className="truncate text-[0.68rem] font-bold uppercase text-[color:var(--mv-muted)]">
             {eyebrow}
           </span>
         ) : null}
 
         <span className="flex min-w-0 flex-wrap items-center gap-2">
-          <span className="truncate font-[var(--font-display)] text-[0.96rem] font-semibold leading-none text-white sm:text-[1.02rem]">
+          <span className="truncate font-[var(--font-display)] text-[0.96rem] font-semibold leading-none text-[color:var(--mv-ink)] sm:text-[1.02rem]">
             {title}
           </span>
           {contextLabel ? (
