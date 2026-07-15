@@ -1,0 +1,138 @@
+.redline-viewport {
+  min-height: 100dvh;
+  padding: 18px;
+  background:
+    radial-gradient(circle at 12% 4%, rgba(226, 29, 46, 0.18), transparent 28%),
+    var(--rl-graphite);
+}
+
+.redline-frame {
+  width: min(1560px, 100%);
+  min-height: calc(100dvh - 36px);
+  margin: 0 auto;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--rl-radius-shell);
+  background: var(--rl-canvas);
+  box-shadow: var(--rl-shadow-float);
+}
+
+.redline-topbar {
+  min-height: 82px;
+  display: grid;
+  grid-template-columns: minmax(220px, 0.8fr) minmax(420px, 1.35fr) minmax(300px, 0.9fr);
+  align-items: center;
+  gap: 24px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--rl-line);
+  background: rgba(255, 255, 255, 0.96);
+}
+
+.redline-brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.redline-brand > a { min-width: 0; }
+.redline-brand [class*="text-[0.96rem]"] { font-family: var(--font-display); font-size: 1.24rem; font-weight: 800; text-transform: uppercase; }
+
+.redline-mobile-menu {
+  width: 44px; height: 44px; display: none; align-items: center; justify-content: center;
+  border: 1px solid var(--rl-line); border-radius: 12px; background: white; color: var(--rl-ink);
+}
+
+.redline-primary-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 5px;
+  border-radius: 999px;
+  background: var(--rl-soft);
+}
+
+.redline-primary-link {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 9px 17px;
+  border-radius: 999px;
+  color: #5e5e64;
+  font-size: 0.82rem;
+  font-weight: 700;
+  white-space: nowrap;
+  transition: background-color 180ms ease, color 180ms ease;
+}
+.redline-primary-link:hover { color: var(--rl-ink); }
+.redline-primary-link[data-active] { background: var(--rl-ink); color: white; }
+
+.redline-utilities { display: flex; align-items: center; justify-content: flex-end; gap: 8px; min-width: 0; }
+.redline-utility {
+  min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+  border: 1px solid var(--rl-line); border-radius: 13px; background: white; color: var(--rl-ink);
+  font-size: .82rem; font-weight: 650;
+}
+.redline-utility:hover { border-color: var(--rl-line-strong); background: #f8f7f3; }
+.redline-utility--icon { position: relative; width: 44px; padding: 0; }
+.redline-search-trigger { min-width: 126px; padding: 0 11px; justify-content: flex-start; color: var(--rl-muted); }
+.redline-search-trigger kbd { margin-left: auto; padding: 2px 5px; border: 1px solid var(--rl-line); border-radius: 5px; font-size: .65rem; }
+.redline-alert-dot { position: absolute; top: 10px; right: 10px; width: 6px; height: 6px; border: 2px solid white; border-radius: 50%; background: var(--rl-red); }
+.redline-account { min-width: 0; display: flex; align-items: center; gap: 9px; padding: 3px 4px 3px 3px; border-radius: 13px; }
+.redline-account:hover { background: var(--rl-soft); }
+.redline-avatar { width: 38px; height: 38px; display: inline-flex; align-items: center; justify-content: center; border-radius: 11px; background: var(--rl-red); color: white; font-family: var(--font-display); font-size: 1rem; font-weight: 800; }
+.redline-account > span:last-child { min-width: 0; display: grid; }
+.redline-account strong { max-width: 120px; overflow: hidden; color: var(--rl-ink); font-size: .78rem; text-overflow: ellipsis; white-space: nowrap; }
+.redline-account small { color: var(--rl-muted); font-size: .7rem; }
+
+.redline-workspace { display: grid; grid-template-columns: 68px minmax(0, 1fr); min-height: calc(100dvh - 119px); }
+.redline-rail {
+  display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 22px 11px 16px;
+  border-right: 1px solid rgba(255,255,255,.08); background: var(--rl-ink); color: white;
+}
+.redline-rail-label { font-family: var(--font-display); font-size: .72rem; font-weight: 800; letter-spacing: .18em; color: rgba(255,255,255,.45); }
+.redline-rail nav { width: 100%; display: flex; flex: 1; flex-direction: column; gap: 7px; }
+.redline-rail-link {
+  width: 46px; height: 46px; display: inline-flex; align-items: center; justify-content: center;
+  border: 0; border-radius: 14px; background: transparent; color: rgba(255,255,255,.58);
+  transition: background-color 180ms ease, color 180ms ease;
+}
+.redline-rail-link:hover { background: rgba(255,255,255,.1); color: white; }
+.redline-rail-link[data-active] { background: var(--rl-red); color: white; }
+.redline-content { min-width: 0; padding: clamp(22px, 3vw, 42px); background: var(--rl-canvas); }
+
+.redline-drawer-overlay { position: fixed; inset: 0; z-index: 40; background: rgba(0,0,0,.62); backdrop-filter: blur(6px); }
+.redline-drawer {
+  position: fixed; inset: 12px auto 12px 12px; z-index: 50; width: min(380px, calc(100vw - 24px));
+  display: flex; flex-direction: column; padding: 18px; border-radius: 24px; background: var(--rl-canvas); box-shadow: var(--rl-shadow-float);
+}
+.redline-drawer-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-bottom: 18px; border-bottom: 1px solid var(--rl-line); }
+.redline-drawer-nav { display: grid; gap: 7px; padding: 18px 0; overflow-y: auto; }
+.redline-drawer-link { min-height: 58px; display: flex; align-items: center; gap: 13px; padding: 9px 12px; border-radius: 15px; color: var(--rl-muted); }
+.redline-drawer-link:hover, .redline-drawer-link[data-active] { background: white; color: var(--rl-ink); }
+.redline-drawer-link[data-active] { box-shadow: inset 4px 0 0 var(--rl-red); }
+.redline-drawer-link > span { display: grid; }
+.redline-drawer-link strong { font-size: .9rem; }
+.redline-drawer-link small { color: var(--rl-muted); font-size: .75rem; }
+.redline-drawer-footer { margin-top: auto; display: grid; gap: 14px; padding-top: 18px; border-top: 1px solid var(--rl-line); }
+.redline-drawer-footer > div { display: grid; }
+.redline-drawer-footer small { color: var(--rl-muted); }
+
+/* Temporary layout guard while route workspaces move into REDLINE components. */
+.dashboard-page, .dashboard-page-stack, .dashboard-workspace { display: grid; gap: 22px; }
+.dashboard-page-header { display: flex; align-items: end; justify-content: space-between; gap: 18px; }
+.dashboard-page-header h1 { font-size: clamp(2.2rem, 4vw, 4rem); text-transform: uppercase; }
+.dashboard-card, .dashboard-panel, .dashboard-section, .dashboard-stat-card { border: 1px solid var(--rl-line); border-radius: var(--rl-radius-panel); background: white; }
+
+@media (max-width: 1180px) {
+  .redline-topbar { grid-template-columns: minmax(200px, 1fr) auto; }
+  .redline-primary-nav { display: none; }
+  .redline-mobile-menu { display: inline-flex; }
+}
+
+@media (max-width: 760px) {
+  .redline-viewport { padding: 0; background: var(--rl-canvas); }
+  .redline-frame { min-height: 100dvh; border: 0; border-radius: 0; }
+  .redline-topbar { min-height: 70px; grid-template-columns: 1fr auto; gap: 10px; padding: 10px 14px; }
+  .redline-search-trigger, .redline-account > span:last-child { display: none; }
+  .redline-account { padding: 0; }
+  .redline-workspace { display: block; min-height: calc(100dvh - 70px); }
+  .redline-rail { display: none; }
+  .redline-content { padding: 20px 14px 36px; }
+}

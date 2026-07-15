@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Bell, Menu } from "lucide-react";
+import { Bell, Menu, Search } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 
@@ -15,7 +15,7 @@ import {
   getDashboardRoleLabel,
   isDashboardNavItemActive,
 } from "@/lib/navigation/dashboard-nav";
-import { cn, getInitials } from "@/lib/utils";
+import { getInitials } from "@/lib/utils";
 
 type DashboardTopbarProps = {
   role: DashboardRole;
@@ -24,94 +24,64 @@ type DashboardTopbarProps = {
   onOpenMenu: () => void;
 };
 
-export function DashboardTopbar({
-  role,
-  account,
-  isMenuOpen,
-  onOpenMenu,
-}: DashboardTopbarProps) {
+export function DashboardTopbar({ role, account, isMenuOpen, onOpenMenu }: DashboardTopbarProps) {
   const pathname = usePathname();
   const { data: session } = useSession();
-  const profileMeta = getDashboardProfileMeta(role);
   const roleLabel = getDashboardRoleLabel(role);
-  const primaryNav = getDashboardNav(role).filter(
+  const fallback = getDashboardProfileMeta(role);
+  const navItems = getDashboardNav(role).filter(
     (item) => item.section === "primary" && item.available && !item.hidden,
   );
-  const displayName =
-    account?.name?.trim() ||
-    session?.user?.name?.trim() ||
-    session?.user?.email?.trim() ||
-    profileMeta.name;
-  const displaySubtitle =
-    account?.subtitle?.trim() ||
-    session?.user?.email?.trim() ||
-    profileMeta.subtitle;
-  const displayInitials =
-    account?.initials?.trim() || getInitials(displayName) || profileMeta.initials;
+  const displayName = account?.name?.trim() || session?.user?.name?.trim() || fallback.name;
+  const displayInitials = account?.initials?.trim() || getInitials(displayName) || fallback.initials;
 
   return (
-    <header className="dashboard-topbar">
-      <div className="dashboard-topbar__brand-row">
+    <header className="redline-topbar">
+      <div className="redline-brand">
         <button
           type="button"
-          className="dashboard-menu-toggle"
+          className="redline-mobile-menu"
           aria-label="Open navigation"
           aria-expanded={isMenuOpen}
           onClick={onOpenMenu}
         >
-          <Menu size={20} />
+          <Menu size={19} />
         </button>
-
-        <Link href={`/${role}`} aria-label={`${roleLabel} dashboard`}>
-          <BrandLockup
-            size="compact"
-            contextLabel={roleLabel}
-            contextTone="neutral"
-            priority
-          />
+        <Link href={`/${role}`} aria-label={`${roleLabel} home`}>
+          <BrandLockup size="compact" priority />
         </Link>
       </div>
 
-      <nav className="dashboard-topbar__nav" aria-label={`${roleLabel} primary navigation`}>
-        {primaryNav.map((item) => {
+      <nav className="redline-primary-nav" aria-label={`${roleLabel} primary navigation`}>
+        {navItems.map((item) => {
           const active = isDashboardNavItemActive(item, pathname);
           return (
             <Link
               key={item.href}
               href={item.href}
-              className={cn(
-                "dashboard-topbar__nav-link",
-                active && "dashboard-topbar__nav-link--active",
-              )}
+              className="redline-primary-link"
+              data-active={active || undefined}
               aria-current={active ? "page" : undefined}
             >
-              <span aria-hidden="true" />
               {item.label}
             </Link>
           );
         })}
       </nav>
 
-      <div className="dashboard-topbar__right">
-        <Link
-          href={`/${role}/notifications`}
-          className="dashboard-topbar__action"
-          aria-label="Open notifications"
-        >
+      <div className="redline-utilities">
+        <button type="button" className="redline-utility redline-search-trigger" aria-label="Open search">
+          <Search size={18} />
+          <span>Search</span>
+          <kbd>⌘ K</kbd>
+        </button>
+        <Link href={`/${role}/notifications`} className="redline-utility redline-utility--icon" aria-label="Notifications">
           <Bell size={18} />
-          <span className="dashboard-topbar__notification-dot" aria-hidden="true" />
+          <span className="redline-alert-dot" aria-hidden="true" />
         </Link>
-
-        <Link href={getDashboardProfileHref(role)} className="dashboard-topbar__profile">
-          <span className="dashboard-topbar__avatar">{displayInitials}</span>
-          <span className="dashboard-topbar__profile-copy">
-            <strong>{displayName}</strong>
-            <small>
-              <span className="truncate">{displaySubtitle}</span>
-              <span aria-hidden="true">·</span>
-              <span>{roleLabel}</span>
-            </small>
-          </span>
+        <Link href={getDashboardProfileHref(role)} className="redline-account" aria-label="Open account">
+          <span className="redline-avatar">{displayInitials}</span>
+          <span><strong>{displayName}</strong><small>{roleLabel}</small></span>
         </Link>
       </div>
     </header>

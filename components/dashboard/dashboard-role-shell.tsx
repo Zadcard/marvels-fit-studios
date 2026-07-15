@@ -5,8 +5,8 @@ import { Dialog } from "radix-ui";
 
 import { DashboardSidebar } from "@/components/dashboard/dashboard-sidebar";
 import { DashboardTopbar } from "@/components/dashboard/dashboard-topbar";
-import { cn } from "@/lib/utils";
 import type { DashboardRole } from "@/lib/auth/authorization-policy";
+import "@/app/(dashboard)/redline-shell.css";
 
 export type DashboardAccountSummary = {
   name?: string | null;
@@ -20,36 +20,26 @@ type DashboardRoleShellProps = {
   children: React.ReactNode;
 };
 
-export function DashboardRoleShell({
-  role,
-  account,
-  children,
-}: DashboardRoleShellProps) {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
-  const closeSidebar = () => setIsSidebarOpen(false);
+export function DashboardRoleShell({ role, account, children }: DashboardRoleShellProps) {
+  const [isNavigationOpen, setIsNavigationOpen] = useState(false);
 
   return (
-    <Dialog.Root open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
-      <div className={cn("dashboard-shell", `dashboard-shell--${role}`)}>
-        <div className="dashboard-app-frame">
+    <Dialog.Root open={isNavigationOpen} onOpenChange={setIsNavigationOpen}>
+      <div className="redline-viewport">
+        <div className="redline-frame">
           <DashboardTopbar
             role={role}
             account={account}
-            isMenuOpen={isSidebarOpen}
-            onOpenMenu={() => setIsSidebarOpen(true)}
+            isMenuOpen={isNavigationOpen}
+            onOpenMenu={() => setIsNavigationOpen(true)}
           />
-
-          <div className="dashboard-grid">
+          <div className="redline-workspace">
             <DashboardSidebar
               role={role}
               account={account}
-              onClose={closeSidebar}
+              onClose={() => setIsNavigationOpen(false)}
             />
-
-            <div className="dashboard-main">
-              <main className="dashboard-content">{children}</main>
-            </div>
+            <main className="redline-content" id="main-content">{children}</main>
           </div>
         </div>
       </div>

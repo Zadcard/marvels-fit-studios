@@ -1,262 +1,132 @@
 import Link from "next/link";
 import {
-  ArrowRight,
+  ArrowUpRight,
   Bell,
   CalendarDays,
+  ChevronRight,
+  CircleAlert,
   Plus,
   Radio,
+  Users,
 } from "lucide-react";
 
-import { EmptyState } from "@/components/ui/empty-state";
-import { IconChip } from "@/components/ui/icon-chip";
-import { MetricCard } from "@/components/ui/metric-card";
-import { StatusBadge } from "@/components/ui/status-badge";
-import type {
-  AdminOverviewStat,
-  AdminUpcomingSession,
-} from "@/lib/mocks/admin-overview";
 import { adminOverviewRepository } from "@/lib/repositories/admin-overview-repository";
-
 import styles from "./page.module.css";
 
-export const metadata = {
-  title: "Admin Dashboard",
-};
+export const metadata = { title: "Studio Operations" };
 
-const metricTone = {
-  accent: "brand",
-  success: "success",
-  warning: "warning",
-  neutral: "neutral",
-} as const satisfies Record<
-  AdminOverviewStat["tone"],
-  "brand" | "success" | "warning" | "neutral"
->;
-
-function getSessionTone(status: AdminUpcomingSession["status"]) {
-  switch (status) {
-    case "On track":
-      return "success" as const;
-    case "Waitlist forming":
-      return "warning" as const;
-    case "Needs follow-up":
-      return "critical" as const;
-  }
-}
-
-function getActivityTone(tone: "success" | "warning" | "neutral") {
-  return tone === "success" ? styles.activityDotSuccess :
-    tone === "warning" ? styles.activityDotWarning : styles.activityDotNeutral;
+function sessionTone(status: string) {
+  if (status === "On track") return styles.good;
+  if (status === "Waitlist forming") return styles.warning;
+  return styles.danger;
 }
 
 export default async function AdminOverviewPage() {
   const { stats, upcomingSessions, recentActivity, quickActions, studioSnapshot } =
     await adminOverviewRepository.getOverview();
-
-  const capacityAlerts = upcomingSessions.filter(
-    (session) => session.status === "Waitlist forming",
-  ).length;
-  const followUpCount = upcomingSessions.filter(
-    (session) => session.status === "Needs follow-up",
-  ).length;
-  const priorityLabel = capacityAlerts > 0
-    ? `${capacityAlerts} session${capacityAlerts === 1 ? " is" : "s are"} approaching capacity.`
-    : followUpCount > 0
-      ? `${followUpCount} session${followUpCount === 1 ? " needs" : "s need"} follow-up.`
-      : "The next 48 hours are operationally on track.";
+  const memberStat = stats.find((item) => item.id === "members") ?? stats[0];
+  const booked = upcomingSessions.reduce((total, item) => total + item.bookedSeats, 0);
+  const capacity = upcomingSessions.reduce((total, item) => total + item.capacity, 0);
+  const utilization = capacity ? Math.round((booked / capacity) * 100) : 0;
+  const pressure = upcomingSessions.filter((item) => item.status !== "On track").length;
 
   return (
     <div className={styles.page}>
-      <header className={styles.header}>
-        <div className={styles.headingCopy}>
-          <div className={styles.eyebrow}>
-            <Radio size={15} aria-hidden="true" />
-            Overview
-          </div>
-          <div className={styles.titleRow}>
-            <h1>Dashboard Summary</h1>
-            <StatusBadge tone="success">Live</StatusBadge>
-          </div>
-          <p>Studio performance, member activity, and the next operational priorities.</p>
+      <header className={styles.pageHeader}>
+        <div>
+          <span className={styles.kicker}><Radio size={14} /> Live studio desk</span>
+          <h1>Control the floor.</h1>
+          <p>Membership, capacity, money and the next sessions—one operating view.</p>
         </div>
-
         <div className={styles.headerActions}>
-          <Link href="/admin/notifications" className="mv-btn mv-btn-secondary">
-            <Bell size={16} />
-            View alerts
-          </Link>
-          <Link href="/admin/clients" className="mv-btn mv-btn-primary">
-            <Plus size={16} />
-            Add client
-          </Link>
+          <Link href="/admin/notifications" className="mv-btn mv-btn-secondary"><Bell size={17} /> Alerts</Link>
+          <Link href="/admin/sessions" className="mv-btn mv-btn-primary"><Plus size={17} /> New session</Link>
         </div>
       </header>
 
-      <section className={styles.metrics} aria-label="Key studio metrics">
-        {stats.map((stat) => (
-          <MetricCard
-            key={stat.id}
-            label={stat.label}
-            value={stat.value}
-            change={stat.change}
-            detail={stat.detail}
-            icon={stat.icon}
-            tone={metricTone[stat.tone]}
-          />
-        ))}
-      </section>
-
-      <section className={styles.priority} aria-label="Current studio priority">
-        <span className={styles.priorityIcon} aria-hidden="true">
-          <Radio size={17} />
-        </span>
-        <div>
-          <strong>Studio pulse</strong>
-          <p>{priorityLabel}</p>
-        </div>
-        <Link href="/admin/sessions">
-          Open schedule <ArrowRight size={15} />
-        </Link>
-      </section>
-
-      <div className={styles.contentGrid}>
-        <section className={styles.panel} aria-labelledby="upcoming-sessions-title">
-          <div className={styles.panelHeader}>
-            <div className={styles.panelTitle}>
-              <IconChip icon={CalendarDays} tone="success" />
-              <div>
-                <h2 id="upcoming-sessions-title">Upcoming sessions</h2>
-                <p>Today and tomorrow · live schedule</p>
-              </div>
-            </div>
-            <Link href="/admin/sessions" className={styles.textLink}>
-              All sessions <ArrowRight size={14} />
-            </Link>
+      <section className={styles.commandGrid} aria-label="Studio control summary">
+        <article className={`${styles.block} ${styles.heroMetric}`}>
+          <div className={styles.blockTop}>
+            <span>Active membership</span>
+            <Link href="/admin/clients" aria-label="Open client directory"><ArrowUpRight size={18} /></Link>
           </div>
-
-          {upcomingSessions.length > 0 ? (
-            <div className={styles.sessionList}>
-              {upcomingSessions.map((session) => {
-                const occupancy = session.capacity > 0
-                  ? Math.min(100, Math.round((session.bookedSeats / session.capacity) * 100))
-                  : 0;
-
-                return (
-                  <article className={styles.sessionRow} key={session.id}>
-                    <div className={styles.sessionTime}>
-                      <span>{session.dayLabel}</span>
-                      <strong>{session.timeLabel}</strong>
-                    </div>
-                    <div className={styles.sessionDivider} aria-hidden="true" />
-                    <div className={styles.sessionBody}>
-                      <div className={styles.sessionCopy}>
-                        <strong>{session.name}</strong>
-                        <p>{session.coachName} · {session.location}</p>
-                      </div>
-                      <div className={styles.sessionMeta}>
-                        <StatusBadge>{session.sessionType}</StatusBadge>
-                        <StatusBadge tone={getSessionTone(session.status)}>
-                          {session.status}
-                        </StatusBadge>
-                      </div>
-                      {session.sessionType === "Group" ? (
-                        <div className={styles.occupancy}>
-                          <div className={styles.occupancyCopy}>
-                            <span>{session.bookedSeats} / {session.capacity} booked</span>
-                            <strong>{occupancy}%</strong>
-                          </div>
-                          <div className={styles.progress} aria-hidden="true">
-                            <span style={{ width: `${occupancy}%` }} />
-                          </div>
-                        </div>
-                      ) : null}
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
-          ) : (
-            <EmptyState
-              title="No sessions in the next 48 hours"
-              description="Create or schedule the next studio session from the sessions workspace."
-              icon={CalendarDays}
-              action={
-                <Link href="/admin/sessions" className="mv-btn mv-btn-secondary">
-                  Open sessions
-                </Link>
-              }
-            />
-          )}
-        </section>
-
-        <aside className={styles.sideStack} aria-label="Admin activity and actions">
-          <section className={styles.panel} aria-labelledby="recent-activity-title">
-            <div className={styles.panelHeader}>
-              <div>
-                <h2 id="recent-activity-title">Recent activity</h2>
-                <p>Leads, payments, and coaching notes</p>
-              </div>
-            </div>
-            {recentActivity.length > 0 ? (
-              <ol className={styles.activityList}>
-                {recentActivity.map((item) => (
-                  <li key={item.id}>
-                    <span className={`${styles.activityDot} ${getActivityTone(item.tone)}`} aria-hidden="true" />
-                    <div>
-                      <strong>{item.title}</strong>
-                      <p>{item.description}</p>
-                      <time>{item.timeLabel}</time>
-                    </div>
-                  </li>
-                ))}
-              </ol>
-            ) : (
-              <p className={styles.panelEmpty}>New studio activity will appear here.</p>
-            )}
-          </section>
-
-          <section className={styles.panel} aria-labelledby="quick-actions-title">
-            <div className={styles.panelHeader}>
-              <div>
-                <h2 id="quick-actions-title">Quick actions</h2>
-                <p>Continue with the most common admin tasks</p>
-              </div>
-            </div>
-            <div className={styles.actionList}>
-              {quickActions.map((action) => (
-                <Link href={action.href} className={styles.actionRow} key={action.id}>
-                  <IconChip
-                    icon={action.icon}
-                    tone={action.emphasis === "primary" ? "brand" : "neutral"}
-                  />
-                  <span>
-                    <strong>{action.label}</strong>
-                    <small>{action.description}</small>
-                  </span>
-                  <ArrowRight size={16} aria-hidden="true" />
-                </Link>
-              ))}
-            </div>
-          </section>
-        </aside>
-      </div>
-
-      <section className={styles.snapshot} aria-labelledby="studio-snapshot-title">
-        <div className={styles.snapshotHeader}>
-          <div>
-            <span className={styles.eyebrow}>Studio snapshot</span>
-            <h2 id="studio-snapshot-title">Right now</h2>
+          <div className={styles.heroValue}>{memberStat?.value ?? "0"}</div>
+          <p>{memberStat?.change ?? "Roster is live"}</p>
+          <div className={styles.tickTrack} aria-hidden="true">
+            {Array.from({ length: 28 }, (_, index) => <i key={index} data-on={index < 19 || undefined} />)}
           </div>
-          <span>Live operational signals</span>
-        </div>
-        <div className={styles.snapshotGrid}>
-          {studioSnapshot.map((item) => (
-            <article key={item.id}>
-              <span>{item.label}</span>
-              <strong>{item.value}</strong>
-              <p>{item.description}</p>
+          <div className={styles.insight}><Users size={15} /><span><strong>Roster signal</strong>{memberStat?.detail}</span></div>
+        </article>
+
+        {stats.filter((item) => item.id !== "members").map((stat) => {
+          const Icon = stat.icon;
+          return (
+            <article className={`${styles.block} ${styles.smallMetric}`} key={stat.id}>
+              <div className={styles.blockTop}><span>{stat.label}</span><Icon size={18} /></div>
+              <strong>{stat.value}</strong>
+              <p>{stat.change}</p>
+              <span className={styles.metricNote}>{stat.note}</span>
             </article>
-          ))}
+          );
+        })}
+
+        <article className={`${styles.block} ${styles.capacity}`}>
+          <div className={styles.blockTop}><span>48 hour capacity</span><CalendarDays size={18} /></div>
+          <div className={styles.capacityValue}><strong>{utilization}%</strong><span>booked</span></div>
+          <div className={styles.capacityBar}><span style={{ width: `${utilization}%` }} /></div>
+          <div className={styles.capacityLegend}><span>{booked} reservations</span><span>{capacity} places</span></div>
+        </article>
+
+        <article className={`${styles.block} ${styles.alertBlock}`}>
+          <div className={styles.blockTop}><span>Unresolved pressure</span><CircleAlert size={18} /></div>
+          <div className={styles.alertValue}>{pressure}<span>items</span></div>
+          <p>{pressure ? "Capacity or follow-up needs a decision." : "The next sessions are clear."}</p>
+          <Link href="/admin/sessions">Review operations <ChevronRight size={15} /></Link>
+        </article>
+      </section>
+
+      <section className={styles.lowerGrid}>
+        <article className={`${styles.block} ${styles.schedule}`}>
+          <div className={styles.sectionHeading}>
+            <div><span>Next on the floor</span><h2>Session runway</h2></div>
+            <Link href="/admin/schedule">Full calendar <ArrowUpRight size={16} /></Link>
+          </div>
+          <div className={styles.sessionList}>
+            {upcomingSessions.length ? upcomingSessions.map((session) => {
+              const fill = session.capacity ? Math.round((session.bookedSeats / session.capacity) * 100) : 0;
+              return (
+                <Link href="/admin/sessions" className={styles.session} key={session.id}>
+                  <time><span>{session.dayLabel}</span><strong>{session.timeLabel}</strong></time>
+                  <div><strong>{session.name}</strong><p>{session.coachName} · {session.location}</p></div>
+                  <div className={styles.sessionLoad}><span className={sessionTone(session.status)}>{session.status}</span><small>{fill}% full</small></div>
+                  <ChevronRight size={17} />
+                </Link>
+              );
+            }) : <div className={styles.empty}>No sessions in the next 48 hours.</div>}
+          </div>
+        </article>
+
+        <aside className={`${styles.block} ${styles.activity}`}>
+          <div className={styles.sectionHeading}><div><span>Right now</span><h2>Activity wire</h2></div></div>
+          <ol>
+            {recentActivity.slice(0, 5).map((item) => (
+              <li key={item.id}><i data-tone={item.tone} /><div><strong>{item.title}</strong><p>{item.description}</p><time>{item.timeLabel}</time></div></li>
+            ))}
+          </ol>
+        </aside>
+      </section>
+
+      <section className={styles.bottomGrid}>
+        <div className={`${styles.block} ${styles.actions}`}>
+          <div className={styles.sectionHeading}><div><span>Fast lane</span><h2>Move the studio</h2></div></div>
+          <div className={styles.actionGrid}>{quickActions.map((action) => {
+            const Icon = action.icon;
+            return <Link href={action.href} key={action.id}><Icon size={18} /><span><strong>{action.label}</strong><small>{action.description}</small></span><ArrowUpRight size={16} /></Link>;
+          })}</div>
+        </div>
+        <div className={`${styles.block} ${styles.snapshot}`}>
+          <div className={styles.sectionHeading}><div><span>Studio signals</span><h2>Snapshot</h2></div></div>
+          <div>{studioSnapshot.map((item) => <article key={item.id}><span>{item.label}</span><strong>{item.value}</strong><p>{item.description}</p></article>)}</div>
         </div>
       </section>
     </div>
