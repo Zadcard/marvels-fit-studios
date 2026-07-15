@@ -200,6 +200,18 @@ describe("REDLINE canonical admin workspaces", () => {
     expect(styles).toContain("@media (max-width: 700px)");
   });
 
+  it("owns the member coach relationship and direct contact card", () => {
+    const workspace = read("components/dashboard/client-coach-workspace.tsx");
+    const styles = read("components/dashboard/client-coach-workspace.module.css");
+    expect(workspace).toContain("Your person on the floor");
+    expect(workspace).toContain('href={`tel:${data.phone}`}');
+    expect(workspace).toContain('href={`mailto:${data.email}`}');
+    expect(workspace).not.toContain("DashboardMiniStat");
+    expect(workspace).not.toContain("DashboardSurfaceNote");
+    expect(styles).toContain("var(--rl-red)");
+    expect(styles).not.toContain("var(--mv-");
+  });
+
   it("keeps temporary visual QA routes out of the product tree", () => {
     expect(() => read("app/redline-qa/clients/page.tsx")).toThrow();
     expect(() => read("app/redline-qa/schedule/page.tsx")).toThrow();
