@@ -72,6 +72,18 @@ describe("REDLINE canonical admin workspaces", () => {
     expect(styles).not.toContain("var(--mv-");
   });
 
+  it("owns the admin identity surface and removes the redirected billing relic", () => {
+    const workspace = read("components/dashboard/admin-profile-workspace.tsx");
+    const styles = read("components/dashboard/admin-profile-workspace.module.css");
+    expect(workspace).toContain("Own the controls");
+    expect(workspace).toContain("saveAdminProfile");
+    expect(workspace).toContain('href="/change-password"');
+    expect(workspace).not.toContain("DashboardPageHeader");
+    expect(workspace).not.toContain("AccountSecurityPanel");
+    expect(styles).toContain("var(--rl-red)");
+    expect(() => read("components/dashboard/admin-subscriptions-workspace.tsx")).toThrow();
+  });
+
   it("keeps temporary visual QA routes out of the product tree", () => {
     expect(() => read("app/redline-qa/clients/page.tsx")).toThrow();
     expect(() => read("app/redline-qa/schedule/page.tsx")).toThrow();
