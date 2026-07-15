@@ -37,6 +37,7 @@ export function DashboardRoleShell({
             role={role}
             account={account}
             isMenuOpen={isSidebarOpen}
+            onOpenMenu={() => setIsSidebarOpen(true)}
           />
 
           <div className="dashboard-grid">

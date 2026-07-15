@@ -4,7 +4,6 @@ import Link from "next/link";
 import { Bell, Menu } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { Dialog } from "radix-ui";
 
 import type { DashboardAccountSummary } from "@/components/dashboard/dashboard-role-shell";
 import { BrandLockup } from "@/components/ui/brand-lockup";
@@ -22,12 +21,14 @@ type DashboardTopbarProps = {
   role: DashboardRole;
   account?: DashboardAccountSummary;
   isMenuOpen: boolean;
+  onOpenMenu: () => void;
 };
 
 export function DashboardTopbar({
   role,
   account,
   isMenuOpen,
+  onOpenMenu,
 }: DashboardTopbarProps) {
   const pathname = usePathname();
   const { data: session } = useSession();
@@ -51,16 +52,15 @@ export function DashboardTopbar({
   return (
     <header className="dashboard-topbar">
       <div className="dashboard-topbar__brand-row">
-        <Dialog.Trigger asChild>
-          <button
-            type="button"
-            className="dashboard-menu-toggle"
-            aria-label="Open navigation"
-            aria-expanded={isMenuOpen}
-          >
-            <Menu size={20} />
-          </button>
-        </Dialog.Trigger>
+        <button
+          type="button"
+          className="dashboard-menu-toggle"
+          aria-label="Open navigation"
+          aria-expanded={isMenuOpen}
+          onClick={onOpenMenu}
+        >
+          <Menu size={20} />
+        </button>
 
         <Link href={`/${role}`} aria-label={`${roleLabel} dashboard`}>
           <BrandLockup

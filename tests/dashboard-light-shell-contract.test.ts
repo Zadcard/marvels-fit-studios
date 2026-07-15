@@ -25,6 +25,8 @@ describe("warm light dashboard shell contract", () => {
     expect(sidebar).toContain("<Dialog.Title");
     expect(sidebar).toContain("<Dialog.Description");
     expect(sidebar).toContain("<Dialog.Close");
+    expect(shell).toContain("onOpenMenu={() => setIsSidebarOpen(true)}");
+    expect(topbar).toContain("onClick={onOpenMenu}");
     expect(shell).not.toContain("addEventListener");
   });
 
