@@ -84,6 +84,18 @@ describe("REDLINE canonical admin workspaces", () => {
     expect(() => read("components/dashboard/admin-subscriptions-workspace.tsx")).toThrow();
   });
 
+  it("owns the persisted studio rules console", () => {
+    const workspace = read("components/dashboard/admin-settings-workspace.tsx");
+    const styles = read("components/dashboard/admin-settings-workspace.module.css");
+    expect(workspace).toContain("Set the operating code");
+    expect(workspace).toContain("saveSettingsAction");
+    expect(workspace).toContain("overbookWaitlist");
+    expect(workspace).not.toContain("DashboardFormSection");
+    expect(workspace).not.toContain("DashboardSwitch");
+    expect(styles).toContain("var(--rl-red)");
+    expect(styles).not.toContain("var(--mv-");
+  });
+
   it("keeps temporary visual QA routes out of the product tree", () => {
     expect(() => read("app/redline-qa/clients/page.tsx")).toThrow();
     expect(() => read("app/redline-qa/schedule/page.tsx")).toThrow();
