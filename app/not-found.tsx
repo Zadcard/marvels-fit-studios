@@ -9,15 +9,15 @@ export const metadata: Metadata = {
 
 export default function NotFound() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-8 px-6 py-16 text-center">
+    <main className="flex min-h-screen flex-col items-center justify-center gap-8 bg-[color:var(--rl-canvas)] px-6 py-16 text-center">
       <BrandLockup eyebrow="Marvel's Fit Studios" contextLabel="404" priority />
 
       <div className="grid max-w-md gap-3">
-        <p className="mv-eyebrow justify-center">Page not found</p>
-        <h1 className="font-[var(--font-display)] text-3xl font-bold tracking-tight text-white sm:text-4xl">
+        <p className="text-xs font-extrabold uppercase tracking-[.14em] text-[color:var(--rl-red)]">Page not found</p>
+        <h1 className="font-[var(--font-display)] text-3xl font-bold tracking-tight text-[color:var(--rl-ink)] sm:text-4xl">
           This page doesn&apos;t exist.
         </h1>
-        <p className="text-[color:var(--mv-muted)]">
+        <p className="text-[color:var(--rl-muted)]">
           The link may be broken or the page may have moved. Let&apos;s get you
           back on track.
         </p>

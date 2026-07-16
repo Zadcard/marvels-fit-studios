@@ -61,43 +61,6 @@
   --rl-radius-control: 13px;
   --rl-shadow-float: 0 24px 64px rgba(0, 0, 0, 0.18);
 
-  /* Temporary behavior aliases. They disappear when the remaining screens migrate. */
-  --mv-primary: var(--rl-red);
-  --mv-primary-deep: var(--rl-red-deep);
-  --mv-primary-dark: #8f0b16;
-  --mv-primary-soft: var(--rl-red-soft);
-  --mv-primary-tint: var(--rl-red-soft);
-  --mv-ink: var(--rl-ink);
-  --mv-ink-2: var(--rl-charcoal);
-  --mv-body: #4c4c52;
-  --mv-muted: var(--rl-muted);
-  --mv-muted-2: var(--rl-faint);
-  --mv-faint: #a5a5aa;
-  --mv-backdrop: var(--rl-graphite);
-  --mv-app-bg: var(--rl-canvas);
-  --mv-card: var(--rl-white);
-  --mv-border: var(--rl-line);
-  --mv-border-strong: var(--rl-line-strong);
-  --mv-hover: #f8f7f3;
-  --mv-tab-track: var(--rl-soft);
-  --mv-success: var(--rl-success);
-  --mv-success-ink: var(--rl-success);
-  --mv-success-soft: var(--rl-success-soft);
-  --mv-warning: var(--rl-warning);
-  --mv-warning-ink: var(--rl-warning);
-  --mv-warning-soft: var(--rl-warning-soft);
-  --mv-critical: var(--rl-danger);
-  --mv-critical-ink: var(--rl-danger);
-  --mv-critical-soft: var(--rl-danger-soft);
-  --mv-radius-shell: var(--rl-radius-shell);
-  --mv-radius-card: var(--rl-radius-panel);
-  --mv-radius-panel: 16px;
-  --mv-radius-control: var(--rl-radius-control);
-  --mv-radius-chip: 10px;
-  --mv-radius-pill: 999px;
-  --mv-shadow-card: none;
-  --mv-shadow-floating: var(--rl-shadow-float);
-  --mv-shadow-primary: 0 10px 24px rgba(226, 29, 46, 0.24);
 }
 
 @layer base {

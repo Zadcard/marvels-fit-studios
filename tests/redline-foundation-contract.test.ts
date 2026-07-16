@@ -22,6 +22,28 @@ describe("Marvel Fit REDLINE foundation", () => {
     expect(globals).toContain("--rl-canvas: #f4f3ef");
     expect(globals).not.toContain("#3B82F6");
     expect(globals).not.toContain("#8B5CF6");
+    expect(globals).not.toContain("--mv-");
+  });
+
+  it("removes the legacy dashboard component layer", () => {
+    expect(() => read("components/dashboard/dashboard-mini-stat.tsx")).toThrow();
+    expect(() => read("components/dashboard/dashboard-modal.tsx")).toThrow();
+    expect(() => read("components/dashboard/dashboard-page-header.tsx")).toThrow();
+    expect(() => read("components/dashboard/dashboard-stat-card.tsx")).toThrow();
+    expect(() => read("components/ui/metric-card.tsx")).toThrow();
+  });
+
+  it("gives public and auth routes their own REDLINE compositions", () => {
+    const landing = read("app/page.tsx");
+    const landingStyles = read("app/landing.css");
+    const authShell = read("components/auth/redline-auth-shell.tsx");
+    const authStyles = read("app/login/login.css");
+    expect(landing).toContain("Train like the plan matters");
+    expect(landingStyles).toContain("var(--rl-red)");
+    expect(landingStyles).not.toContain("var(--mv-");
+    expect(authShell).toContain("Your work starts before the first rep");
+    expect(authStyles).toContain("var(--rl-ink)");
+    expect(authStyles).not.toContain("var(--mv-");
   });
 
   it("uses the new athletic typography and accessible interaction foundation", () => {

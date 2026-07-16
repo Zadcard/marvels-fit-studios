@@ -1,6 +1,7 @@
 "use client";
 
 import { AlertTriangle, LoaderCircle } from "lucide-react";
+import styles from "./dashboard-route-feedback.module.css";
 
 type DashboardRouteLoadingProps = {
   eyebrow: string;
@@ -18,15 +19,15 @@ export function DashboardRouteLoading({
   description,
 }: DashboardRouteLoadingProps) {
   return (
-    <div className="dashboard-route-state">
-      <div className="dashboard-route-state__icon">
+    <div className={styles.state}>
+      <div className={styles.icon}>
         <LoaderCircle size={22} className="animate-spin-slow" />
       </div>
-      <span className="mv-eyebrow">{eyebrow}</span>
+      <span className={styles.kicker}>{eyebrow}</span>
       <h2>{title}</h2>
       <p>{description}</p>
 
-      <div className="dashboard-route-state__skeleton" aria-hidden="true">
+      <div className={styles.skeleton} aria-hidden="true">
         <span />
         <span />
         <span />
@@ -42,11 +43,11 @@ export function DashboardRouteError({
   onRetry,
 }: DashboardRouteErrorProps) {
   return (
-    <div className="dashboard-route-state dashboard-route-state--error" role="alert">
-      <div className="dashboard-route-state__icon">
+    <div className={`${styles.state} ${styles.error}`} role="alert">
+      <div className={styles.icon}>
         <AlertTriangle size={22} />
       </div>
-      <span className="mv-eyebrow">{eyebrow}</span>
+      <span className={styles.kicker}>{eyebrow}</span>
       <h2>{title}</h2>
       <p>{description}</p>
 

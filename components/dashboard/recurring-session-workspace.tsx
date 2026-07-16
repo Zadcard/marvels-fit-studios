@@ -49,7 +49,7 @@ export function RecurringSessionWorkspace({ templates, coaches, groups }: {
       <header className={styles.hero}>
         <div>
           <span className={styles.kicker}><Repeat2 size={14} /> Weekly cadence</span>
-          <h1>Program once.<br />Run every week.</h1>
+          <h1 style={{ color: "var(--rl-white)" }}>Program once.<br />Run every week.</h1>
           <p>Turn a coaching block into a repeatable studio rhythm, then generate the real calendar only when you are ready.</p>
         </div>
         <div className={styles.heroRail}>

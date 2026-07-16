@@ -114,10 +114,6 @@
 .redline-drawer-footer > div { display: grid; }
 .redline-drawer-footer small { color: var(--rl-muted); }
 
-/* Temporary layout guard while route workspaces move into REDLINE components. */
-.dashboard-page, .dashboard-page-stack, .dashboard-workspace { display: grid; gap: 22px; }
-.dashboard-card, .dashboard-panel, .dashboard-section, .dashboard-stat-card { border: 1px solid var(--rl-line); border-radius: var(--rl-radius-panel); background: white; }
-
 @media (max-width: 1180px) {
   .redline-topbar { grid-template-columns: minmax(200px, 1fr) auto; }
   .redline-primary-nav { display: none; }

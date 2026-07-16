@@ -54,13 +54,13 @@ export function BrandLockup({
 
       <span className="grid min-w-0 gap-1">
         {eyebrow ? (
-          <span className="truncate text-[0.68rem] font-bold uppercase text-[color:var(--mv-muted)]">
+          <span className="truncate text-[0.68rem] font-bold uppercase text-[color:var(--rl-muted)]">
             {eyebrow}
           </span>
         ) : null}
 
         <span className="flex min-w-0 flex-wrap items-center gap-2">
-          <span className="truncate font-[var(--font-display)] text-[0.96rem] font-semibold leading-none text-[color:var(--mv-ink)] sm:text-[1.02rem]">
+          <span className="truncate font-[var(--font-display)] text-[0.96rem] font-semibold leading-none text-[color:var(--rl-ink)] sm:text-[1.02rem]">
             {title}
           </span>
           {contextLabel ? (

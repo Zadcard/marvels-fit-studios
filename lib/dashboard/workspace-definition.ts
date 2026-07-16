@@ -1,3 +1,11 @@
+export type DashboardStatIconKey =
+  | "calendar-check-2"
+  | "calendar-clock"
+  | "clock-3"
+  | "target"
+  | "trending-up"
+  | "users-round";
+
 export type WorkspaceFilterDefinition<
   TFilters extends Record<string, string>
 > = {

@@ -1,4 +1,4 @@
-import type { DashboardStatIconKey } from "@/components/dashboard/dashboard-stat-card";
+import type { DashboardStatIconKey } from "@/lib/dashboard/workspace-definition";
 
 export type AdminScheduleSessionType = "Group" | "Private";
 export type AdminScheduleSessionStatus =
