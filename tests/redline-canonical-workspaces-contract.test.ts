@@ -164,6 +164,26 @@ describe("REDLINE canonical admin workspaces", () => {
     expect(styles).toContain("@media (max-width: 700px)");
   });
 
+  it("owns the coach roster and preserves private assets and safety flags", () => {
+    const workspace = read("components/dashboard/coach-clients-workspace.tsx");
+    const styles = read(
+      "components/dashboard/coach-clients-workspace.module.css",
+    );
+
+    expect(workspace).toContain("Know the person behind the plan");
+    expect(workspace).toContain("savePrivateClientNote");
+    expect(workspace).toContain("uploadCoachFile");
+    expect(workspace).toContain("LAUNCH_TRANSFORMATION_ENABLED");
+    expect(workspace).toContain("client.hasInjuryAlert");
+    expect(workspace).toContain("client.trainingCategory");
+    expect(workspace).toContain("<Dialog.Portal>");
+    expect(workspace).not.toContain("DashboardManagementToolbar");
+    expect(workspace).not.toContain("DashboardModal");
+    expect(styles).toContain("var(--rl-red)");
+    expect(styles).not.toContain("var(--mv-");
+    expect(styles).toContain("@media (max-width: 700px)");
+  });
+
   it("owns the persisted coach identity and secure access handoff", () => {
     const workspace = read("components/dashboard/coach-settings-workspace.tsx");
     const styles = read(
