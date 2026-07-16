@@ -1,184 +1,225 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Save } from "lucide-react";
+import {
+  ArrowUpRight,
+  CheckCircle2,
+  Clock3,
+  LockKeyhole,
+  Save,
+  Target,
+  UserRound,
+} from "lucide-react";
+import Link from "next/link";
 
-import { AccountSecurityPanel } from "@/components/dashboard/account-security-panel";
-import { DashboardFormSection } from "@/components/dashboard/dashboard-form-section";
-import { DashboardMiniStat } from "@/components/dashboard/dashboard-mini-stat";
-import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
-import { DashboardSurfaceNote } from "@/components/dashboard/dashboard-surface-note";
 import {
   clientSettingsOptions,
   type ClientSettingsRecord,
 } from "@/lib/dashboard/client-dashboard-data";
+import styles from "./client-settings-workspace.module.css";
 
-type ClientSettingsWorkspaceProps = {
+type Props = {
   initialSettings: ClientSettingsRecord;
   saveSettingsAction?: (input: ClientSettingsRecord) => Promise<void>;
 };
 
+function initials(name: string) {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
+}
+
 export function ClientSettingsWorkspace({
   initialSettings,
   saveSettingsAction,
-}: ClientSettingsWorkspaceProps) {
-  const [settings, setSettings] = useState<ClientSettingsRecord>(initialSettings);
-  const [saveMessage, setSaveMessage] = useState("Live settings loaded.");
-  const [isSaving, startTransition] = useTransition();
-  const hasChanges = JSON.stringify(settings) !== JSON.stringify(initialSettings);
+}: Props) {
+  const [settings, setSettings] =
+    useState<ClientSettingsRecord>(initialSettings);
+  const [savedSettings, setSavedSettings] =
+    useState<ClientSettingsRecord>(initialSettings);
+  const [message, setMessage] = useState("Your profile is synced.");
+  const [pending, start] = useTransition();
+  const hasChanges = JSON.stringify(settings) !== JSON.stringify(savedSettings);
 
-  const updateField = <Key extends keyof ClientSettingsRecord>(
+  function update<Key extends keyof ClientSettingsRecord>(
     field: Key,
-    value: ClientSettingsRecord[Key]
-  ) => {
-    setSettings((current) => ({
-      ...current,
-      [field]: value,
-    }));
-  };
+    value: ClientSettingsRecord[Key],
+  ) {
+    setSettings((current) => ({ ...current, [field]: value }));
+  }
+
+  function save() {
+    setMessage("");
+    start(async () => {
+      try {
+        await saveSettingsAction?.(settings);
+        setSavedSettings(settings);
+        setMessage("Profile changes saved.");
+      } catch (caught) {
+        setMessage(
+          caught instanceof Error
+            ? caught.message
+            : "Could not save profile changes.",
+        );
+      }
+    });
+  }
 
   return (
-    <div className="dashboard-stack">
-      <DashboardPageHeader
-        eyebrow="My settings"
-        actions={
-          <button
-            type="button"
-            className="mv-btn mv-btn-primary"
-            disabled={!hasChanges || isSaving}
-            onClick={() =>
-              startTransition(async () => {
-                try {
-                  if (saveSettingsAction) {
-                    await saveSettingsAction(settings);
-                  }
-                  setSaveMessage("Client settings saved.");
-                } catch (error) {
-                  setSaveMessage(
-                    error instanceof Error ? error.message : "Could not save client settings."
-                  );
-                }
-              })
-            }
-          >
-            <Save size={16} />
-            {isSaving ? "Saving..." : "Save changes"}
-          </button>
-        }
-      />
+    <div className={styles.page}>
+      <header className={styles.hero}>
+        <div>
+          <span className={styles.kicker}>My settings</span>
+          <h1>Make the plan fit you.</h1>
+          <p>
+            Keep your identity, training intent and preferred session window
+            accurate for every coach touchpoint.
+          </p>
+        </div>
+        <button
+          type="button"
+          className="mv-btn mv-btn-primary"
+          disabled={!hasChanges || pending}
+          onClick={save}
+        >
+          <Save size={16} />
+          {pending ? "Saving…" : "Save changes"}
+        </button>
+      </header>
 
-      <DashboardSurfaceNote
-        eyebrow="Settings"
-        title="Profile details and alerts are grouped separately."
-        description="Update your details and reminder preferences here."
-        items={[
-          hasChanges ? "Unsaved changes pending." : "No pending changes.",
-        ]}
-      />
-
-      <section className="dashboard-mini-grid" aria-label="Client settings highlights">
-        <DashboardMiniStat
-          label="Preferred time"
-          value={settings.preferredSessionTime}
-          description="Current scheduling preference."
-        />
-        <DashboardMiniStat
-          label="Changes pending"
-          value={hasChanges ? "Yes" : "No"}
-          description="Pending edits."
-        />
+      <section className={styles.identity}>
+        <div className={styles.monogram}>
+          {initials(settings.fullName) || "M"}
+        </div>
+        <div>
+          <span className={styles.kicker}>Member identity</span>
+          <h2>{settings.fullName || "Your name"}</h2>
+          <p>{settings.email || "Add your email"}</p>
+        </div>
+        <span data-dirty={hasChanges || undefined}>
+          {hasChanges ? "Unsaved edits" : "Profile synced"}
+        </span>
       </section>
 
-      <section className="dashboard-detail-layout">
-        <div className="dashboard-stack">
-          <DashboardFormSection
-            eyebrow="Profile"
-            title="Personal details"
-            description="Basic profile details."
-          >
-            <div className="dashboard-form-columns">
-              <label className="dashboard-form-field">
-                <span>Full name</span>
-                <input
-                  className="dashboard-input"
-                  value={settings.fullName}
-                  onChange={(event) => updateField("fullName", event.target.value)}
-                />
-              </label>
-              <label className="dashboard-form-field">
-                <span>Email</span>
-                <input
-                  className="dashboard-input"
-                  value={settings.email}
-                  onChange={(event) => updateField("email", event.target.value)}
-                />
-              </label>
-              <label className="dashboard-form-field">
-                <span>Phone</span>
-                <input
-                  className="dashboard-input"
-                  value={settings.phone}
-                  onChange={(event) => updateField("phone", event.target.value)}
-                />
-              </label>
-              <label className="dashboard-form-field">
-                <span>Preferred session time</span>
-                <select
-                  className="dashboard-select"
-                  value={settings.preferredSessionTime}
-                  onChange={(event) =>
-                    updateField("preferredSessionTime", event.target.value)
-                  }
-                >
-                  {clientSettingsOptions.preferredSessionTimes.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
-              </label>
+      <section className={styles.workspace}>
+        <form
+          className={styles.form}
+          onSubmit={(event) => event.preventDefault()}
+        >
+          <header className={styles.sectionHead}>
+            <div>
+              <span className={styles.kicker}>Profile control</span>
+              <h2>Personal details</h2>
             </div>
+            <UserRound size={21} />
+          </header>
 
-            <label className="dashboard-form-field">
-              <span>Goal</span>
-              <textarea
-                className="dashboard-textarea"
-                rows={4}
-                value={settings.goalLabel}
-                onChange={(event) => updateField("goalLabel", event.target.value)}
+          <div className={styles.fields}>
+            <label>
+              <span>Full name</span>
+              <input
+                autoComplete="name"
+                value={settings.fullName}
+                onChange={(event) => update("fullName", event.target.value)}
               />
             </label>
-          </DashboardFormSection>
+            <label>
+              <span>Email</span>
+              <input
+                type="email"
+                autoComplete="email"
+                value={settings.email}
+                onChange={(event) => update("email", event.target.value)}
+              />
+            </label>
+            <label>
+              <span>Phone</span>
+              <input
+                type="tel"
+                autoComplete="tel"
+                value={settings.phone}
+                onChange={(event) => update("phone", event.target.value)}
+              />
+            </label>
+            <label>
+              <span>Preferred session window</span>
+              <select
+                value={settings.preferredSessionTime}
+                onChange={(event) =>
+                  update("preferredSessionTime", event.target.value)
+                }
+              >
+                {clientSettingsOptions.preferredSessionTimes.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className={styles.goalField}>
+              <span>What are you training for?</span>
+              <textarea
+                rows={5}
+                value={settings.goalLabel}
+                onChange={(event) => update("goalLabel", event.target.value)}
+              />
+              <small>
+                This goal gives your coach context when planning sessions.
+              </small>
+            </label>
+          </div>
+        </form>
 
-        </div>
+        <aside className={styles.context}>
+          <article className={styles.goalCard}>
+            <Target size={22} />
+            <span>Current intent</span>
+            <h2>{settings.goalLabel || "No goal written yet"}</h2>
+            <p>Visible to the team supporting your training.</p>
+          </article>
 
-        <aside className="dashboard-panel dashboard-detail-panel">
-          <div className="dashboard-panel__header">
+          <article className={styles.preferenceCard}>
+            <Clock3 size={21} />
             <div>
-              <div className="mv-eyebrow">Profile snapshot</div>
-              <h2>{settings.fullName}</h2>
-              <p>{saveMessage}</p>
+              <span>Preferred window</span>
+              <strong>{settings.preferredSessionTime}</strong>
             </div>
-          </div>
+          </article>
 
-          <div className="dashboard-summary-list">
-            <div className="dashboard-summary-row">
-              <strong>Preferred time</strong>
-              <span>{settings.preferredSessionTime}</span>
+          <article className={styles.statusCard}>
+            <CheckCircle2 size={20} />
+            <div>
+              <span>Save state</span>
+              <strong>
+                {hasChanges
+                  ? "Changes waiting to save."
+                  : message || "Saving your changes…"}
+              </strong>
             </div>
-            <div className="dashboard-summary-row">
-              <strong>Goal</strong>
-              <span>{settings.goalLabel}</span>
-            </div>
-            <div className="dashboard-summary-row">
-              <strong>Save state</strong>
-              <span>{hasChanges ? "Edits pending" : "Up to date"}</span>
-            </div>
-          </div>
+          </article>
         </aside>
       </section>
 
-      <AccountSecurityPanel />
+      <section className={styles.security}>
+        <div className={styles.securityIcon}>
+          <LockKeyhole />
+        </div>
+        <div>
+          <span className={styles.kicker}>Secure access</span>
+          <h2>Password and sign-in</h2>
+          <p>
+            Change your password on the protected account flow. Your profile
+            edits here never expose credential data.
+          </p>
+        </div>
+        <Link href="/change-password">
+          Change password <ArrowUpRight size={16} />
+        </Link>
+      </section>
     </div>
   );
 }
