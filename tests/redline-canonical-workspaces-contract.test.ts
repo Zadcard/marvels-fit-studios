@@ -8,7 +8,9 @@ const read = (path: string) => readFileSync(resolve(root, path), "utf8");
 describe("REDLINE canonical admin workspaces", () => {
   it("owns the member directory without legacy dashboard primitives", () => {
     const workspace = read("components/dashboard/admin-clients-workspace.tsx");
-    const styles = read("components/dashboard/admin-clients-workspace.module.css");
+    const styles = read(
+      "components/dashboard/admin-clients-workspace.module.css",
+    );
 
     expect(workspace).toContain("Know every member");
     expect(workspace).toContain("saveAdminClient");
@@ -25,7 +27,9 @@ describe("REDLINE canonical admin workspaces", () => {
     const workspace = read("components/dashboard/admin-schedule-workspace.tsx");
     const page = read("app/(dashboard)/admin/schedule/page.tsx");
     const repository = read("lib/repositories/admin-schedule-repository.ts");
-    const styles = read("components/dashboard/admin-schedule-workspace.module.css");
+    const styles = read(
+      "components/dashboard/admin-schedule-workspace.module.css",
+    );
 
     expect(workspace).toContain("Program the week");
     expect(workspace).toContain("saveAdminSession");
@@ -42,7 +46,9 @@ describe("REDLINE canonical admin workspaces", () => {
 
   it("owns the session ledger and every existing session mutation", () => {
     const workspace = read("components/dashboard/admin-sessions-workspace.tsx");
-    const styles = read("components/dashboard/admin-sessions-workspace.module.css");
+    const styles = read(
+      "components/dashboard/admin-sessions-workspace.module.css",
+    );
 
     expect(workspace).toContain("Run every block");
     expect(workspace).toContain("saveAdminSession");
@@ -60,7 +66,9 @@ describe("REDLINE canonical admin workspaces", () => {
 
   it("owns the intake decision queue and secure approval handoff", () => {
     const workspace = read("components/dashboard/admin-leads-workspace.tsx");
-    const styles = read("components/dashboard/admin-leads-workspace.module.css");
+    const styles = read(
+      "components/dashboard/admin-leads-workspace.module.css",
+    );
     expect(workspace).toContain("Choose who joins");
     expect(workspace).toContain("approveLeadAsClient");
     expect(workspace).toContain("deleteLead");
@@ -74,19 +82,25 @@ describe("REDLINE canonical admin workspaces", () => {
 
   it("owns the admin identity surface and removes the redirected billing relic", () => {
     const workspace = read("components/dashboard/admin-profile-workspace.tsx");
-    const styles = read("components/dashboard/admin-profile-workspace.module.css");
+    const styles = read(
+      "components/dashboard/admin-profile-workspace.module.css",
+    );
     expect(workspace).toContain("Own the controls");
     expect(workspace).toContain("saveAdminProfile");
     expect(workspace).toContain('href="/change-password"');
     expect(workspace).not.toContain("DashboardPageHeader");
     expect(workspace).not.toContain("AccountSecurityPanel");
     expect(styles).toContain("var(--rl-red)");
-    expect(() => read("components/dashboard/admin-subscriptions-workspace.tsx")).toThrow();
+    expect(() =>
+      read("components/dashboard/admin-subscriptions-workspace.tsx"),
+    ).toThrow();
   });
 
   it("owns the persisted studio rules console", () => {
     const workspace = read("components/dashboard/admin-settings-workspace.tsx");
-    const styles = read("components/dashboard/admin-settings-workspace.module.css");
+    const styles = read(
+      "components/dashboard/admin-settings-workspace.module.css",
+    );
     expect(workspace).toContain("Set the operating code");
     expect(workspace).toContain("saveSettingsAction");
     expect(workspace).toContain("overbookWaitlist");
@@ -167,7 +181,9 @@ describe("REDLINE canonical admin workspaces", () => {
   });
 
   it("owns the member home and preserves private notes and coach files", () => {
-    const workspace = read("components/dashboard/client-overview-workspace.tsx");
+    const workspace = read(
+      "components/dashboard/client-overview-workspace.tsx",
+    );
     const styles = read(
       "components/dashboard/client-overview-workspace.module.css",
     );
@@ -184,7 +200,9 @@ describe("REDLINE canonical admin workspaces", () => {
   });
 
   it("owns the member session ledger and detail readout", () => {
-    const workspace = read("components/dashboard/client-sessions-workspace.tsx");
+    const workspace = read(
+      "components/dashboard/client-sessions-workspace.tsx",
+    );
     const styles = read(
       "components/dashboard/client-sessions-workspace.module.css",
     );
@@ -202,10 +220,12 @@ describe("REDLINE canonical admin workspaces", () => {
 
   it("owns the member coach relationship and direct contact card", () => {
     const workspace = read("components/dashboard/client-coach-workspace.tsx");
-    const styles = read("components/dashboard/client-coach-workspace.module.css");
+    const styles = read(
+      "components/dashboard/client-coach-workspace.module.css",
+    );
     expect(workspace).toContain("Your person on the floor");
-    expect(workspace).toContain('href={`tel:${data.phone}`}');
-    expect(workspace).toContain('href={`mailto:${data.email}`}');
+    expect(workspace).toContain("href={`tel:${data.phone}`}");
+    expect(workspace).toContain("href={`mailto:${data.email}`}");
     expect(workspace).not.toContain("DashboardMiniStat");
     expect(workspace).not.toContain("DashboardSurfaceNote");
     expect(styles).toContain("var(--rl-red)");
@@ -229,6 +249,25 @@ describe("REDLINE canonical admin workspaces", () => {
     expect(workspace).toContain("data.workoutLogs");
     expect(workspace).not.toContain("DashboardFormSection");
     expect(workspace).not.toContain("DashboardMiniStat");
+    expect(styles).toContain("var(--rl-red)");
+    expect(styles).not.toContain("var(--mv-");
+    expect(styles).toContain("@media (max-width: 700px)");
+  });
+
+  it("owns the member subscription pass and keeps receipt access", () => {
+    const workspace = read(
+      "components/dashboard/client-subscription-workspace.tsx",
+    );
+    const styles = read(
+      "components/dashboard/client-subscription-workspace.module.css",
+    );
+
+    expect(workspace).toContain("Know what you own");
+    expect(workspace).toContain("data.paymentHistory");
+    expect(workspace).toContain("payment.receiptHref");
+    expect(workspace).toContain("data.benefits");
+    expect(workspace).not.toContain("DashboardMiniStat");
+    expect(workspace).not.toContain("DashboardSurfaceNote");
     expect(styles).toContain("var(--rl-red)");
     expect(styles).not.toContain("var(--mv-");
     expect(styles).toContain("@media (max-width: 700px)");
