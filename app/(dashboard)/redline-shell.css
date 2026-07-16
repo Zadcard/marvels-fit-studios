@@ -116,8 +116,6 @@
 
 /* Temporary layout guard while route workspaces move into REDLINE components. */
 .dashboard-page, .dashboard-page-stack, .dashboard-workspace { display: grid; gap: 22px; }
-.dashboard-page-header { display: flex; align-items: end; justify-content: space-between; gap: 18px; }
-.dashboard-page-header h1 { font-size: clamp(2.2rem, 4vw, 4rem); text-transform: uppercase; }
 .dashboard-card, .dashboard-panel, .dashboard-section, .dashboard-stat-card { border: 1px solid var(--rl-line); border-radius: var(--rl-radius-panel); background: white; }
 
 @media (max-width: 1180px) {

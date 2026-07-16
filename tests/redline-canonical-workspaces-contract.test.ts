@@ -356,6 +356,35 @@ describe("REDLINE canonical admin workspaces", () => {
     expect(styles).toContain("@media (max-width: 700px)");
   });
 
+  it("owns the shared signal inbox without legacy dashboard primitives", () => {
+    const workspace = read("components/dashboard/notification-workspace.tsx");
+    const styles = read("components/dashboard/notification-workspace.module.css");
+
+    expect(workspace).toContain("Catch what changed");
+    expect(workspace).toContain("markNotificationRead");
+    expect(workspace).toContain("item.href");
+    expect(workspace).not.toContain("dashboard-panel");
+    expect(workspace).not.toContain("dashboard-empty-state");
+    expect(styles).toContain("var(--rl-red)");
+    expect(styles).not.toContain("var(--mv-");
+    expect(styles).toContain("@media(max-width:560px)");
+  });
+
+  it("owns recurring cadence creation and calendar generation", () => {
+    const workspace = read("components/dashboard/recurring-session-workspace.tsx");
+    const styles = read("components/dashboard/recurring-session-workspace.module.css");
+
+    expect(workspace).toContain("Program once");
+    expect(workspace).toContain("createRecurringSessionTemplate");
+    expect(workspace).toContain("generateRecurringSessions");
+    expect(workspace).toContain("setRecurringTemplateActive");
+    expect(workspace).not.toContain("dashboard-form-grid");
+    expect(workspace).not.toContain("dashboard-summary-row");
+    expect(styles).toContain("var(--rl-red)");
+    expect(styles).not.toContain("var(--mv-");
+    expect(styles).toContain("@media(max-width:700px)");
+  });
+
   it("keeps temporary visual QA routes out of the product tree", () => {
     expect(() => read("app/redline-qa/clients/page.tsx")).toThrow();
     expect(() => read("app/redline-qa/schedule/page.tsx")).toThrow();
