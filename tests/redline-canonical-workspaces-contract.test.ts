@@ -184,6 +184,25 @@ describe("REDLINE canonical admin workspaces", () => {
     expect(styles).toContain("@media (max-width: 700px)");
   });
 
+  it("owns coach session command and preserves live roster operations", () => {
+    const workspace = read("components/dashboard/coach-sessions-workspace.tsx");
+    const styles = read(
+      "components/dashboard/coach-sessions-workspace.module.css",
+    );
+
+    expect(workspace).toContain("Own the room before it starts");
+    expect(workspace).toContain("assignCoachClientToSession");
+    expect(workspace).toContain("removeCoachClientFromSession");
+    expect(workspace).toContain("saveCoachSessionNote");
+    expect(workspace).toContain("booking.hasInjuryAlert");
+    expect(workspace).toContain("booking.restrictions");
+    expect(workspace).not.toContain("DashboardManagementToolbar");
+    expect(workspace).not.toContain("DashboardModal");
+    expect(styles).toContain("var(--rl-red)");
+    expect(styles).not.toContain("var(--mv-");
+    expect(styles).toContain("@media (max-width: 700px)");
+  });
+
   it("owns the persisted coach identity and secure access handoff", () => {
     const workspace = read("components/dashboard/coach-settings-workspace.tsx");
     const styles = read(
