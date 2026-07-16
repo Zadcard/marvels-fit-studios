@@ -2,46 +2,43 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Send } from "lucide-react";
+import {
+  Activity,
+  CheckCircle2,
+  Dumbbell,
+  Gauge,
+  HeartPulse,
+  Send,
+  Target,
+  TrendingUp,
+} from "lucide-react";
 
 import { submitClientCheckIn } from "@/app/actions/client-check-ins";
-import { DashboardEmptyState } from "@/components/dashboard/dashboard-empty-state";
-import { DashboardFormSection } from "@/components/dashboard/dashboard-form-section";
-import { DashboardMiniStat } from "@/components/dashboard/dashboard-mini-stat";
-import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
-import { DashboardStatusBadge } from "@/components/dashboard/dashboard-status-badge";
 import type { ClientProgressData } from "@/lib/dashboard/client-progress";
+import styles from "./client-progress-workspace.module.css";
 
-type ClientProgressWorkspaceProps = {
-  data: ClientProgressData;
-};
-
-function titleCase(value: string) {
-  return value
+type Props = { data: ClientProgressData };
+const scale = [1, 2, 3, 4, 5];
+const titleCase = (value: string) =>
+  value
     .toLowerCase()
     .split("_")
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
-}
-
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("en-US", {
+const formatDate = (value: string) =>
+  new Intl.DateTimeFormat("en-US", {
     month: "short",
     day: "numeric",
     year: "numeric",
   }).format(new Date(value));
-}
-
-function getGoalProgress(goal: ClientProgressData["goals"][number]) {
+function progress(goal: ClientProgressData["goals"][number]) {
   if (
     goal.baselineValue === null ||
     goal.targetValue === null ||
     goal.currentValue === null ||
     goal.targetValue === goal.baselineValue
-  ) {
+  )
     return null;
-  }
-
   return Math.max(
     0,
     Math.min(
@@ -49,17 +46,15 @@ function getGoalProgress(goal: ClientProgressData["goals"][number]) {
       Math.round(
         ((goal.currentValue - goal.baselineValue) /
           (goal.targetValue - goal.baselineValue)) *
-          100
-      )
-    )
+          100,
+      ),
+    ),
   );
 }
 
-const readinessOptions = [1, 2, 3, 4, 5];
-
-export function ClientProgressWorkspace({ data }: ClientProgressWorkspaceProps) {
+export function ClientProgressWorkspace({ data }: Props) {
   const router = useRouter();
-  const [isSubmitting, startTransition] = useTransition();
+  const [pending, start] = useTransition();
   const [message, setMessage] = useState("");
   const [checkIn, setCheckIn] = useState({
     sleepQuality: 3,
@@ -70,15 +65,13 @@ export function ClientProgressWorkspace({ data }: ClientProgressWorkspaceProps) 
     painDetails: "",
     memberNote: "",
   });
-  const activeProgram =
-    data.programs.find((program) => program.status === "ACTIVE") ??
-    data.programs[0];
-  const nextWorkout = activeProgram?.workouts[0];
+  const program =
+    data.programs.find((item) => item.status === "ACTIVE") ?? data.programs[0];
+  const nextWorkout = program?.workouts[0];
   const activeGoals = data.goals.filter((goal) => goal.status === "ACTIVE");
-
-  const submitCheckIn = () => {
+  function submit() {
     setMessage("");
-    startTransition(async () => {
+    start(async () => {
       try {
         await submitClientCheckIn(checkIn);
         setCheckIn({
@@ -92,279 +85,284 @@ export function ClientProgressWorkspace({ data }: ClientProgressWorkspaceProps) 
         });
         setMessage("Check-in sent to your coach.");
         router.refresh();
-      } catch (error) {
+      } catch (caught) {
         setMessage(
-          error instanceof Error ? error.message : "Could not send check-in."
+          caught instanceof Error ? caught.message : "Could not send check-in.",
         );
       }
     });
-  };
-
+  }
   return (
-    <div className="dashboard-stack">
-      <DashboardPageHeader eyebrow="My progress" />
-
-      <section className="dashboard-panel dashboard-panel--accent dashboard-panel--dense">
-        <div className="dashboard-panel__header">
-          <div>
-            <div className="mv-eyebrow">Your next action</div>
-            <h2>{nextWorkout?.title ?? "Complete your coaching assessment"}</h2>
-            <p>
-              {nextWorkout?.notes ||
-                activeProgram?.goalSummary ||
-                "Your coach will publish the next training step here."}
-            </p>
-          </div>
-          <DashboardStatusBadge
-            label={activeProgram ? titleCase(activeProgram.status) : "Plan pending"}
-            tone={activeProgram?.status === "ACTIVE" ? "success" : "warning"}
-          />
+    <div className={styles.page}>
+      <header className={styles.hero}>
+        <div>
+          <span className={styles.kicker}>My progress</span>
+          <h1>Build proof, not guesses.</h1>
+          <p>
+            Your goals, training prescription, measured change and weekly
+            readiness in one honest view.
+          </p>
         </div>
-        <div className="dashboard-mini-grid">
-          <DashboardMiniStat
-            label="Primary goal"
-            value={data.primaryGoal}
-            description={data.baselineSummary}
-          />
-          <DashboardMiniStat
-            label="Active goals"
-            value={String(activeGoals.length)}
-            description={`${data.goals.length} goals tracked in total.`}
-          />
-          <DashboardMiniStat
-            label="Workouts logged"
-            value={String(data.workoutLogs.length)}
-            description="Coach-recorded delivered sessions."
-          />
-          <DashboardMiniStat
-            label="Measurements"
-            value={String(data.metrics.length)}
-            description="Comparable progress records."
-          />
+      </header>
+      <section className={styles.next}>
+        <div>
+          <span className={styles.kicker}>Your next action</span>
+          <h2>{nextWorkout?.title ?? "Complete your coaching assessment"}</h2>
+          <p>
+            {nextWorkout?.notes ||
+              program?.goalSummary ||
+              "Your coach will publish the next training step here."}
+          </p>
         </div>
+        <span data-active={program?.status === "ACTIVE" || undefined}>
+          {program ? titleCase(program.status) : "Plan pending"}
+        </span>
       </section>
-
-      <section className="dashboard-panel dashboard-panel--dense">
-        <div className="dashboard-panel__header">
+      <section className={styles.scoreboard}>
+        <article>
+          <Target size={18} />
+          <span>Primary goal</span>
+          <strong>{data.primaryGoal}</strong>
+          <small>{data.baselineSummary}</small>
+        </article>
+        <article>
+          <TrendingUp size={18} />
+          <span>Active goals</span>
+          <strong>{String(activeGoals.length).padStart(2, "0")}</strong>
+          <small>{data.goals.length} tracked total</small>
+        </article>
+        <article>
+          <Dumbbell size={18} />
+          <span>Workouts logged</span>
+          <strong>{String(data.workoutLogs.length).padStart(2, "0")}</strong>
+          <small>Delivered by your coach</small>
+        </article>
+        <article data-dark>
+          <Gauge size={18} />
+          <span>Measurements</span>
+          <strong>{String(data.metrics.length).padStart(2, "0")}</strong>
+          <small>Comparable records</small>
+        </article>
+      </section>
+      <section className={styles.goals}>
+        <div className={styles.sectionHead}>
           <div>
-            <div className="mv-eyebrow">Goals</div>
+            <span className={styles.kicker}>Outcome board</span>
             <h2>What you are working toward</h2>
           </div>
+          <Target size={20} />
         </div>
         {data.goals.length ? (
-          <div className="dashboard-snapshot-list">
+          <div className={styles.goalGrid}>
             {data.goals.map((goal) => {
-              const progress = getGoalProgress(goal);
+              const value = progress(goal);
               return (
-                <article key={goal.id} className="dashboard-snapshot-item">
-                  <DashboardStatusBadge
-                    label={titleCase(goal.status)}
-                    tone={goal.status === "ACHIEVED" ? "success" : "accent"}
-                  />
-                  <strong>{goal.title}</strong>
-                  <p>{goal.description || "Your coach is tracking this outcome."}</p>
-                  <span>
-                    {goal.currentValue ?? "-"} / {goal.targetValue ?? "-"} {goal.unit}
-                  </span>
-                  {progress !== null ? (
-                    <div className="dashboard-progress" aria-label={`${progress}% complete`}>
-                      <span style={{ width: `${progress}%` }} />
-                    </div>
+                <article key={goal.id}>
+                  <span>{titleCase(goal.status)}</span>
+                  <h3>{goal.title}</h3>
+                  <p>
+                    {goal.description || "Your coach is tracking this outcome."}
+                  </p>
+                  <div>
+                    <strong>{goal.currentValue ?? "—"}</strong>
+                    <small>
+                      of {goal.targetValue ?? "—"} {goal.unit}
+                    </small>
+                  </div>
+                  {value !== null ? (
+                    <>
+                      <i>
+                        <b style={{ width: `${value}%` }} />
+                      </i>
+                      <em>{value}% complete</em>
+                    </>
                   ) : null}
-                  {goal.targetDate ? <small>Target {formatDate(goal.targetDate)}</small> : null}
+                  {goal.targetDate ? (
+                    <time>Target {formatDate(goal.targetDate)}</time>
+                  ) : null}
                 </article>
               );
             })}
           </div>
         ) : (
-          <DashboardEmptyState
-            title="No goals published yet"
-            description="Your coach will add measurable goals after assessment."
-          />
+          <div className={styles.empty}>
+            <Target size={25} />
+            <strong>No goals published yet</strong>
+            <span>
+              Your coach will add measurable outcomes after assessment.
+            </span>
+          </div>
         )}
       </section>
-
-      <section className="dashboard-detail-layout">
-        <article className="dashboard-panel dashboard-panel--dense">
-          <div className="dashboard-panel__header">
+      <section className={styles.planGrid}>
+        <article className={styles.program}>
+          <div className={styles.sectionHead}>
             <div>
-              <div className="mv-eyebrow">Training plan</div>
-              <h2>{activeProgram?.name ?? "No active program"}</h2>
-              <p>{activeProgram?.goalSummary || "Your program will appear here."}</p>
+              <span className={styles.kicker}>Training prescription</span>
+              <h2>{program?.name ?? "No active program"}</h2>
+              <p>{program?.goalSummary || "Your program will appear here."}</p>
             </div>
+            <Dumbbell size={20} />
           </div>
-          {activeProgram?.workouts.length ? (
-            <div className="dashboard-stack">
-              {activeProgram.workouts.map((workout) => (
-                <article key={workout.id} className="dashboard-form-section">
-                  <div className="dashboard-form-section__header">
-                    <div>
-                      <div className="mv-eyebrow">Day {workout.dayOrder}</div>
-                      <h3>{workout.title}</h3>
-                      <p>{workout.notes || "Follow the prescribed order."}</p>
-                    </div>
-                  </div>
+          {program?.workouts.length ? (
+            <div className={styles.workouts}>
+              {program.workouts.map((workout) => (
+                <article key={workout.id}>
+                  <header>
+                    <span>Day {workout.dayOrder}</span>
+                    <h3>{workout.title}</h3>
+                    <p>{workout.notes || "Follow the prescribed order."}</p>
+                  </header>
                   {workout.exercises.length ? (
-                    <div className="dashboard-summary-list">
+                    <ol>
                       {workout.exercises.map((item) => (
-                        <div key={item.id} className="dashboard-summary-row">
-                          <strong>
-                            {item.orderIndex}. {item.exercise.name}
-                          </strong>
+                        <li key={item.id}>
                           <span>
-                            {item.sets} sets × {item.reps}
-                            {item.targetLoad !== null
-                              ? ` · ${item.targetLoad} ${item.loadUnit}`
-                              : ""}
+                            {String(item.orderIndex).padStart(2, "0")}
                           </span>
-                          <small>
+                          <div>
+                            <strong>{item.exercise.name}</strong>
+                            <small>
+                              {item.sets} sets × {item.reps}
+                              {item.targetLoad !== null
+                                ? ` · ${item.targetLoad} ${item.loadUnit}`
+                                : ""}
+                            </small>
+                          </div>
+                          <em>
                             {item.restSeconds !== null
                               ? `${item.restSeconds}s rest`
-                              : "Coach-paced rest"}
-                            {item.tempo ? ` · ${item.tempo} tempo` : ""}
-                          </small>
-                        </div>
+                              : "Coach-paced"}
+                          </em>
+                        </li>
                       ))}
-                    </div>
+                    </ol>
                   ) : (
-                    <p>Exercises have not been prescribed yet.</p>
+                    <p>No exercises prescribed yet.</p>
                   )}
                 </article>
               ))}
             </div>
           ) : (
-            <DashboardEmptyState
-              title="No workouts published"
-              description="Your coach is preparing the training plan."
-            />
+            <div className={styles.empty}>
+              <Dumbbell size={25} />
+              <strong>No workouts published</strong>
+            </div>
           )}
         </article>
-
-        <aside className="dashboard-panel dashboard-detail-panel">
-          <div className="dashboard-panel__header">
+        <aside className={styles.delivered}>
+          <div className={styles.sectionHead}>
             <div>
-              <div className="mv-eyebrow">Delivered work</div>
+              <span className={styles.kicker}>Delivered work</span>
               <h2>Recent sessions</h2>
             </div>
+            <CheckCircle2 size={20} />
           </div>
           {data.workoutLogs.length ? (
-            <div className="dashboard-summary-list">
+            <ol>
               {data.workoutLogs.slice(0, 8).map((log) => (
-                <div key={log.id} className="dashboard-summary-row">
+                <li key={log.id}>
+                  <time>{formatDate(log.performedAt)}</time>
                   <strong>{log.workoutTitle}</strong>
-                  <span>{formatDate(log.performedAt)} · RPE {log.sessionRpe ?? "-"}</span>
-                  {log.sets.map((set) => (
+                  <span>RPE {log.sessionRpe ?? "—"}</span>
+                  {log.sets.slice(0, 2).map((set) => (
                     <small key={set.id}>
-                      {set.exerciseName}: {set.reps ?? "-"} × {set.load ?? "-"} {set.loadUnit}
+                      {set.exerciseName}: {set.reps ?? "—"} × {set.load ?? "—"}{" "}
+                      {set.loadUnit}
                     </small>
                   ))}
-                </div>
+                </li>
               ))}
-            </div>
+            </ol>
           ) : (
-            <DashboardEmptyState
-              title="No delivered workouts yet"
-              description="Completed training will appear here."
-            />
+            <div className={styles.empty}>
+              <Activity size={24} />
+              <strong>No delivered workouts yet</strong>
+            </div>
           )}
         </aside>
       </section>
-
-      <section className="dashboard-detail-layout">
-        <article className="dashboard-panel dashboard-panel--dense">
-          <div className="dashboard-panel__header">
+      <section className={styles.readinessGrid}>
+        <article className={styles.checkIn}>
+          <div className={styles.sectionHead}>
             <div>
-              <div className="mv-eyebrow">Measurements</div>
-              <h2>Progress timeline</h2>
+              <span className={styles.kicker}>Weekly readiness</span>
+              <h2>Tell your coach how you are arriving</h2>
+              <p>Use the 1–5 scale before the next training block.</p>
             </div>
+            <HeartPulse size={21} />
           </div>
-          {data.metrics.length ? (
-            <div className="dashboard-summary-list">
-              {data.metrics.map((metric) => (
-                <div key={metric.id} className="dashboard-summary-row">
-                  <strong>{titleCase(metric.metricType)}</strong>
-                  <span>{metric.value} {metric.unit}</span>
-                  <small>{formatDate(metric.measuredAt)}{metric.note ? ` · ${metric.note}` : ""}</small>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <DashboardEmptyState
-              title="No measurements yet"
-              description="Your baseline and reassessments will appear here."
-            />
-          )}
-        </article>
-
-        <DashboardFormSection
-          eyebrow="Weekly check-in"
-          title="Tell your coach how you are arriving"
-          description="Use a 1–5 scale. Your coach will see pain and readiness flags before planning the next session."
-        >
-          <div className="dashboard-form-columns">
+          <div className={styles.scales}>
             {(
               [
                 ["sleepQuality", "Sleep quality"],
                 ["energyLevel", "Energy level"],
-                ["sorenessLevel", "Soreness level"],
-                ["stressLevel", "Stress level"],
+                ["sorenessLevel", "Soreness"],
+                ["stressLevel", "Stress"],
               ] as const
             ).map(([field, label]) => (
-              <label key={field} className="dashboard-form-field">
-                <span>{label}</span>
-                <select
-                  className="dashboard-select"
-                  value={checkIn[field]}
-                  onChange={(event) =>
-                    setCheckIn((current) => ({
-                      ...current,
-                      [field]: Number(event.target.value),
-                    }))
-                  }
-                >
-                  {readinessOptions.map((value) => (
-                    <option key={value} value={value}>{value}</option>
+              <fieldset key={field}>
+                <legend>{label}</legend>
+                <div>
+                  {scale.map((value) => (
+                    <label key={value}>
+                      <input
+                        type="radio"
+                        name={field}
+                        value={value}
+                        checked={checkIn[field] === value}
+                        onChange={() =>
+                          setCheckIn((current) => ({
+                            ...current,
+                            [field]: value,
+                          }))
+                        }
+                      />
+                      <span>{value}</span>
+                    </label>
                   ))}
-                </select>
-              </label>
+                </div>
+              </fieldset>
             ))}
           </div>
-          <label className="dashboard-form-field">
-            <span>
-              <input
-                type="checkbox"
-                checked={checkIn.painPresent}
-                onChange={(event) =>
-                  setCheckIn((current) => ({
-                    ...current,
-                    painPresent: event.target.checked,
-                  }))
-                }
-              />{" "}
-              I feel pain that my coach should know about
-            </span>
+          <label className={styles.pain}>
+            <input
+              type="checkbox"
+              checked={checkIn.painPresent}
+              onChange={(event) =>
+                setCheckIn((current) => ({
+                  ...current,
+                  painPresent: event.target.checked,
+                }))
+              }
+            />
+            <span>I feel pain my coach should know about</span>
           </label>
           {checkIn.painPresent ? (
-            <label className="dashboard-form-field dashboard-form-field--wide">
+            <label className={styles.textField}>
               <span>Where and what does it feel like?</span>
               <textarea
-                className="dashboard-textarea"
                 rows={3}
                 value={checkIn.painDetails}
                 onChange={(event) =>
-                  setCheckIn((current) => ({ ...current, painDetails: event.target.value }))
+                  setCheckIn((current) => ({
+                    ...current,
+                    painDetails: event.target.value,
+                  }))
                 }
               />
             </label>
           ) : null}
-          <label className="dashboard-form-field dashboard-form-field--wide">
+          <label className={styles.textField}>
             <span>Anything else your coach should know?</span>
             <textarea
-              className="dashboard-textarea"
-              rows={4}
+              rows={3}
               value={checkIn.memberNote}
               onChange={(event) =>
-                setCheckIn((current) => ({ ...current, memberNote: event.target.value }))
+                setCheckIn((current) => ({
+                  ...current,
+                  memberNote: event.target.value,
+                }))
               }
             />
           </label>
@@ -372,44 +370,74 @@ export function ClientProgressWorkspace({ data }: ClientProgressWorkspaceProps) 
           <button
             type="button"
             className="mv-btn mv-btn-primary"
-            disabled={isSubmitting}
-            onClick={submitCheckIn}
+            disabled={pending}
+            onClick={submit}
           >
             <Send size={16} />
-            {isSubmitting ? "Sending..." : "Send check-in"}
+            {pending ? "Sending…" : "Send check-in"}
           </button>
-        </DashboardFormSection>
-      </section>
-
-      <section className="dashboard-panel dashboard-panel--dense">
-        <div className="dashboard-panel__header">
-          <div>
-            <div className="mv-eyebrow">Check-in history</div>
-            <h2>Coach feedback</h2>
+        </article>
+        <aside className={styles.history}>
+          <div className={styles.sectionHead}>
+            <div>
+              <span className={styles.kicker}>Readiness history</span>
+              <h2>Coach feedback</h2>
+            </div>
+            <Activity size={20} />
           </div>
+          {data.checkIns.length ? (
+            <ol>
+              {data.checkIns.map((item) => (
+                <li key={item.id}>
+                  <time>{formatDate(item.submittedAt)}</time>
+                  <div>
+                    <span>Sleep {item.sleepQuality}/5</span>
+                    <span>Energy {item.energyLevel}/5</span>
+                    <span>Soreness {item.sorenessLevel}/5</span>
+                  </div>
+                  {item.memberNote ? <p>You: {item.memberNote}</p> : null}
+                  <strong>
+                    {item.coachResponse
+                      ? `Coach: ${item.coachResponse}`
+                      : "Awaiting coach response"}
+                  </strong>
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <div className={styles.empty}>
+              <HeartPulse size={24} />
+              <strong>No check-ins yet</strong>
+            </div>
+          )}
+        </aside>
+      </section>
+      <section className={styles.metrics}>
+        <div className={styles.sectionHead}>
+          <div>
+            <span className={styles.kicker}>Measurements</span>
+            <h2>Progress timeline</h2>
+          </div>
+          <TrendingUp size={20} />
         </div>
-        {data.checkIns.length ? (
-          <div className="dashboard-summary-list">
-            {data.checkIns.map((item) => (
-              <div key={item.id} className="dashboard-summary-row">
-                <strong>{formatDate(item.submittedAt)}</strong>
-                <span>
-                  Sleep {item.sleepQuality}/5 · Energy {item.energyLevel}/5 · Soreness {item.sorenessLevel}/5
-                </span>
-                {item.memberNote ? <small>You: {item.memberNote}</small> : null}
-                <small>
-                  {item.coachResponse
-                    ? `Coach: ${item.coachResponse}`
-                    : "Awaiting coach response"}
-                </small>
-              </div>
+        {data.metrics.length ? (
+          <div>
+            {data.metrics.map((metric) => (
+              <article key={metric.id}>
+                <span>{titleCase(metric.metricType)}</span>
+                <strong>
+                  {metric.value} {metric.unit}
+                </strong>
+                <time>{formatDate(metric.measuredAt)}</time>
+                <p>{metric.note}</p>
+              </article>
             ))}
           </div>
         ) : (
-          <DashboardEmptyState
-            title="No check-ins yet"
-            description="Your first check-in will start the readiness history."
-          />
+          <div className={styles.empty}>
+            <TrendingUp size={24} />
+            <strong>No measurements yet</strong>
+          </div>
         )}
       </section>
     </div>
