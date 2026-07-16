@@ -180,6 +180,31 @@ describe("REDLINE canonical admin workspaces", () => {
     expect(styles).toContain("@media (max-width: 700px)");
   });
 
+  it("owns the coach performance lab and every transformation mutation", () => {
+    const workspace = read(
+      "components/dashboard/coach-transformation-workspace.tsx",
+    );
+    const styles = read(
+      "components/dashboard/coach-transformation-workspace.module.css",
+    );
+
+    expect(workspace).toContain("Engineer the outcome");
+    expect(workspace).toContain("saveClientAssessment");
+    expect(workspace).toContain("saveClientGoal");
+    expect(workspace).toContain("saveTrainingProgram");
+    expect(workspace).toContain("addProgramWorkout");
+    expect(workspace).toContain("createExercise");
+    expect(workspace).toContain("addWorkoutExercise");
+    expect(workspace).toContain("recordWorkoutPerformance");
+    expect(workspace).toContain("addProgressMetric");
+    expect(workspace).toContain("respondToClientCheckIn");
+    expect(workspace).not.toContain("DashboardFormSection");
+    expect(workspace).not.toContain("DashboardMiniStat");
+    expect(styles).toContain("var(--rl-red)");
+    expect(styles).not.toContain("var(--mv-");
+    expect(styles).toContain("@media (max-width: 700px)");
+  });
+
   it("owns the member home and preserves private notes and coach files", () => {
     const workspace = read(
       "components/dashboard/client-overview-workspace.tsx",

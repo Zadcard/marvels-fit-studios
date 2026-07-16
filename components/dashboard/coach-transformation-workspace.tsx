@@ -3,7 +3,18 @@
 import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Plus, Save } from "lucide-react";
+import {
+  Activity,
+  ArrowLeft,
+  ClipboardCheck,
+  Dumbbell,
+  FlaskConical,
+  HeartPulse,
+  Plus,
+  Save,
+  Target,
+  TrendingUp,
+} from "lucide-react";
 
 import {
   addProgramWorkout,
@@ -16,41 +27,37 @@ import {
   saveClientGoal,
   saveTrainingProgram,
 } from "@/app/actions/coach-transformation";
-import { DashboardEmptyState } from "@/components/dashboard/dashboard-empty-state";
-import { DashboardFormSection } from "@/components/dashboard/dashboard-form-section";
-import { DashboardMiniStat } from "@/components/dashboard/dashboard-mini-stat";
-import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
-import { DashboardStatusBadge } from "@/components/dashboard/dashboard-status-badge";
 import type { ClientTransformationData } from "@/lib/dashboard/client-transformation";
+import styles from "./coach-transformation-workspace.module.css";
 
-type CoachTransformationWorkspaceProps = {
-  data: ClientTransformationData;
-};
-
+type Props = { data: ClientTransformationData };
+type Phase = "assessment" | "outcomes" | "program" | "delivery" | "readiness";
 const today = new Date().toISOString().slice(0, 10);
-
-function titleCase(value: string) {
-  return value
+const phases: Array<{ id: Phase; label: string }> = [
+  { id: "assessment", label: "Assessment" },
+  { id: "outcomes", label: "Outcomes" },
+  { id: "program", label: "Program" },
+  { id: "delivery", label: "Delivery" },
+  { id: "readiness", label: "Readiness" },
+];
+const titleCase = (value: string) =>
+  value
     .toLowerCase()
     .split("_")
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
-}
-
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("en-US", {
+const formatDate = (value: string) =>
+  new Intl.DateTimeFormat("en-US", {
     month: "short",
     day: "numeric",
     year: "numeric",
   }).format(new Date(value));
-}
 
-export function CoachTransformationWorkspace({
-  data,
-}: CoachTransformationWorkspaceProps) {
+export function CoachTransformationWorkspace({ data }: Props) {
   const router = useRouter();
-  const [isSaving, startTransition] = useTransition();
-  const [message, setMessage] = useState("Choose the next coaching action.");
+  const [pending, start] = useTransition();
+  const [phase, setPhase] = useState<Phase>("assessment");
+  const [message, setMessage] = useState("Performance record ready.");
   const [assessment, setAssessment] = useState({
     status: data.assessment?.status ?? ("DRAFT" as const),
     experienceLevel: data.assessment?.experienceLevel ?? "",
@@ -94,12 +101,9 @@ export function CoachTransformationWorkspace({
   const allWorkouts = useMemo(
     () =>
       data.programs.flatMap((item) =>
-        item.workouts.map((entry) => ({
-          ...entry,
-          programName: item.name,
-        }))
+        item.workouts.map((entry) => ({ ...entry, programName: item.name })),
       ),
-    [data.programs]
+    [data.programs],
   );
   const [prescription, setPrescription] = useState({
     workoutId: allWorkouts[0]?.id ?? "",
@@ -132,177 +136,183 @@ export function CoachTransformationWorkspace({
     notes: "",
   });
   const [responses, setResponses] = useState<Record<string, string>>({});
-
   const activeProgram =
     data.programs.find((item) => item.status === "ACTIVE") ?? data.programs[0];
 
-  const runAction = (successMessage: string, action: () => Promise<unknown>) => {
+  function run(success: string, action: () => Promise<unknown>) {
     setMessage("");
-    startTransition(async () => {
+    start(async () => {
       try {
         await action();
-        setMessage(successMessage);
+        setMessage(success);
         router.refresh();
-      } catch (error) {
-        setMessage(error instanceof Error ? error.message : "Action failed.");
+      } catch (caught) {
+        setMessage(caught instanceof Error ? caught.message : "Action failed.");
       }
     });
-  };
+  }
 
   return (
-    <div className="dashboard-stack">
-      <DashboardPageHeader
-        eyebrow="Coach transformation"
-        actions={
-          <Link href="/coach/clients" className="mv-btn mv-btn-outline">
-            <ArrowLeft size={16} />
-            Back to clients
+    <div className={styles.page}>
+      <header className={styles.hero}>
+        <div>
+          <Link href="/coach/clients">
+            <ArrowLeft size={15} /> Client roster
           </Link>
-        }
-      />
+          <span className={styles.kicker}>Performance lab</span>
+          <h1>Engineer the outcome.</h1>
+          <p>
+            Assessment, prescription, delivered work and readiness for{" "}
+            {data.client.fullName}.
+          </p>
+        </div>
+        <FlaskConical aria-hidden="true" />
+      </header>
 
-      <section className="dashboard-panel dashboard-panel--accent dashboard-panel--dense">
-        <div className="dashboard-panel__header">
-          <div>
-            <div className="mv-eyebrow">Member outcome</div>
-            <h2>{data.client.fullName}</h2>
-            <p>
-              Assessment, goals, prescribed work, delivered performance, and
-              check-ins in one coaching record.
-            </p>
-          </div>
-          <DashboardStatusBadge
-            label={activeProgram ? titleCase(activeProgram.status) : "No program"}
-            tone={activeProgram?.status === "ACTIVE" ? "success" : "warning"}
-          />
+      <section className={styles.command}>
+        <div>
+          <span>Member</span>
+          <strong>{data.client.fullName}</strong>
+          <small>{data.client.phone || "No phone recorded"}</small>
         </div>
-        <div className="dashboard-mini-grid">
-          <DashboardMiniStat
-            label="Assessment"
-            value={data.assessment ? titleCase(data.assessment.status) : "Missing"}
-            description={data.assessment?.primaryGoal ?? "Complete the baseline first."}
-          />
-          <DashboardMiniStat
-            label="Active goals"
-            value={String(data.goals.filter((item) => item.status === "ACTIVE").length)}
-            description={`${data.goals.length} total goal records.`}
-          />
-          <DashboardMiniStat
-            label="Program"
-            value={activeProgram?.name ?? "Not assigned"}
-            description={`${activeProgram?.workouts.length ?? 0} workout days.`}
-          />
-          <DashboardMiniStat
-            label="Latest check-in"
-            value={data.checkIns[0] ? formatDate(data.checkIns[0].submittedAt) : "None"}
-            description={
-              data.checkIns[0]?.coachResponse
-                ? "Coach response complete."
-                : "Response may be needed."
-            }
-          />
+        <div>
+          <span>Assessment</span>
+          <strong>
+            {data.assessment ? titleCase(data.assessment.status) : "Missing"}
+          </strong>
+          <small>{data.assessment?.primaryGoal || "Baseline required"}</small>
         </div>
-        <div className="dashboard-info-strip" role="status">
-          <strong>Workspace status</strong>
-          <p>{message}</p>
+        <div>
+          <span>Active outcomes</span>
+          <strong>
+            {String(
+              data.goals.filter((item) => item.status === "ACTIVE").length,
+            ).padStart(2, "0")}
+          </strong>
+          <small>{data.goals.length} total records</small>
+        </div>
+        <div data-dark>
+          <span>Live program</span>
+          <strong>{activeProgram?.name ?? "Not assigned"}</strong>
+          <small>{activeProgram?.workouts.length ?? 0} workout days</small>
         </div>
       </section>
 
-      <DashboardFormSection
-        eyebrow="Step 1"
-        title="Assessment and safety baseline"
-        description="Record experience, intent, limitations, and informed consent before prescribing work."
-      >
-        <div className="dashboard-form-columns">
-          <label className="dashboard-form-field">
-            <span>Experience level</span>
-            <input
-              className="dashboard-input"
-              value={assessment.experienceLevel}
-              onChange={(event) =>
-                setAssessment((current) => ({
-                  ...current,
-                  experienceLevel: event.target.value,
-                }))
-              }
-            />
-          </label>
-          <label className="dashboard-form-field">
-            <span>Status</span>
-            <select
-              className="dashboard-select"
-              value={assessment.status}
-              onChange={(event) =>
-                setAssessment((current) => ({
-                  ...current,
-                  status: event.target.value as "DRAFT" | "COMPLETE",
-                }))
-              }
+      <div className={styles.phaseBar}>
+        <nav aria-label="Transformation workflow">
+          {phases.map((item, index) => (
+            <button
+              key={item.id}
+              type="button"
+              data-active={phase === item.id || undefined}
+              onClick={() => setPhase(item.id)}
             >
-              <option value="DRAFT">Draft</option>
-              <option value="COMPLETE">Complete</option>
-            </select>
-          </label>
-        </div>
-        <label className="dashboard-form-field dashboard-form-field--wide">
-          <span>Primary goal</span>
-          <textarea
-            className="dashboard-textarea"
-            rows={3}
-            value={assessment.primaryGoal}
-            onChange={(event) =>
-              setAssessment((current) => ({ ...current, primaryGoal: event.target.value }))
-            }
+              <span>{String(index + 1).padStart(2, "0")}</span>
+              {item.label}
+            </button>
+          ))}
+        </nav>
+        <p role="status" data-pending={pending || undefined}>
+          {pending ? "Saving to the performance record…" : message}
+        </p>
+      </div>
+
+      {phase === "assessment" ? (
+        <section className={styles.panel}>
+          <PanelHead
+            icon={<ClipboardCheck />}
+            step="01 / Baseline"
+            title="Assessment and safety"
+            description="Record intent, limitations and consent before prescribing load."
           />
-        </label>
-        <div className="dashboard-form-columns">
-          <label className="dashboard-form-field">
-            <span>Secondary goals</span>
-            <textarea
-              className="dashboard-textarea"
-              rows={4}
-              value={assessment.secondaryGoals}
-              onChange={(event) =>
-                setAssessment((current) => ({ ...current, secondaryGoals: event.target.value }))
-              }
-            />
-          </label>
-          <label className="dashboard-form-field">
-            <span>Injuries or limitations</span>
-            <textarea
-              className="dashboard-textarea"
-              rows={4}
-              value={assessment.injuriesLimitations}
-              onChange={(event) =>
-                setAssessment((current) => ({ ...current, injuriesLimitations: event.target.value }))
-              }
-            />
-          </label>
-          <label className="dashboard-form-field">
-            <span>Medical notes</span>
-            <textarea
-              className="dashboard-textarea"
-              rows={4}
-              value={assessment.medicalNotes}
-              onChange={(event) =>
-                setAssessment((current) => ({ ...current, medicalNotes: event.target.value }))
-              }
-            />
-          </label>
-          <label className="dashboard-form-field">
-            <span>Baseline summary</span>
-            <textarea
-              className="dashboard-textarea"
-              rows={4}
-              value={assessment.baselineSummary}
-              onChange={(event) =>
-                setAssessment((current) => ({ ...current, baselineSummary: event.target.value }))
-              }
-            />
-          </label>
-        </div>
-        <label className="dashboard-form-field">
-          <span>
+          <div className={styles.fields}>
+            <Field label="Experience level">
+              <input
+                value={assessment.experienceLevel}
+                onChange={(event) =>
+                  setAssessment((current) => ({
+                    ...current,
+                    experienceLevel: event.target.value,
+                  }))
+                }
+              />
+            </Field>
+            <Field label="Assessment state">
+              <select
+                value={assessment.status}
+                onChange={(event) =>
+                  setAssessment((current) => ({
+                    ...current,
+                    status: event.target.value as "DRAFT" | "COMPLETE",
+                  }))
+                }
+              >
+                <option value="DRAFT">Draft</option>
+                <option value="COMPLETE">Complete</option>
+              </select>
+            </Field>
+            <Field label="Primary goal" wide>
+              <textarea
+                rows={3}
+                value={assessment.primaryGoal}
+                onChange={(event) =>
+                  setAssessment((current) => ({
+                    ...current,
+                    primaryGoal: event.target.value,
+                  }))
+                }
+              />
+            </Field>
+            <Field label="Secondary goals">
+              <textarea
+                rows={4}
+                value={assessment.secondaryGoals}
+                onChange={(event) =>
+                  setAssessment((current) => ({
+                    ...current,
+                    secondaryGoals: event.target.value,
+                  }))
+                }
+              />
+            </Field>
+            <Field label="Injuries or limitations">
+              <textarea
+                rows={4}
+                value={assessment.injuriesLimitations}
+                onChange={(event) =>
+                  setAssessment((current) => ({
+                    ...current,
+                    injuriesLimitations: event.target.value,
+                  }))
+                }
+              />
+            </Field>
+            <Field label="Medical notes">
+              <textarea
+                rows={4}
+                value={assessment.medicalNotes}
+                onChange={(event) =>
+                  setAssessment((current) => ({
+                    ...current,
+                    medicalNotes: event.target.value,
+                  }))
+                }
+              />
+            </Field>
+            <Field label="Baseline summary">
+              <textarea
+                rows={4}
+                value={assessment.baselineSummary}
+                onChange={(event) =>
+                  setAssessment((current) => ({
+                    ...current,
+                    baselineSummary: event.target.value,
+                  }))
+                }
+              />
+            </Field>
+          </div>
+          <label className={styles.consent}>
             <input
               type="checkbox"
               checked={assessment.consentAcknowledged}
@@ -312,146 +322,956 @@ export function CoachTransformationWorkspace({
                   consentAcknowledged: event.target.checked,
                 }))
               }
-            />{" "}
-            Consent and readiness discussion acknowledged
-          </span>
-        </label>
-        <button
-          type="button"
-          className="mv-btn mv-btn-primary"
-          disabled={isSaving}
-          onClick={() =>
-            runAction("Assessment saved.", () =>
-              saveClientAssessment({
-                clientId: data.client.id,
-                assessmentId: data.assessment?.id,
-                ...assessment,
-              })
-            )
-          }
-        >
-          <Save size={16} />
-          Save assessment
-        </button>
-      </DashboardFormSection>
+            />
+            <span>Consent and readiness discussion acknowledged</span>
+          </label>
+          <ActionButton
+            pending={pending}
+            label="Save assessment"
+            onClick={() =>
+              run("Assessment saved.", () =>
+                saveClientAssessment({
+                  clientId: data.client.id,
+                  assessmentId: data.assessment?.id,
+                  ...assessment,
+                }),
+              )
+            }
+          />
+        </section>
+      ) : null}
 
-      <section className="dashboard-detail-layout">
-        <DashboardFormSection
-          eyebrow="Step 2"
-          title="Outcome goals"
-          description="Create measurable goals that can be updated as progress is recorded."
-        >
-          <div className="dashboard-form-columns">
-            <label className="dashboard-form-field">
-              <span>Goal title</span>
-              <input className="dashboard-input" value={goal.title} onChange={(event) => setGoal((current) => ({ ...current, title: event.target.value }))} />
-            </label>
-            <label className="dashboard-form-field">
-              <span>Metric</span>
-              <input className="dashboard-input" value={goal.metricType} onChange={(event) => setGoal((current) => ({ ...current, metricType: event.target.value }))} placeholder="e.g. deadlift" />
-            </label>
-            <label className="dashboard-form-field"><span>Baseline</span><input className="dashboard-input" type="number" value={goal.baselineValue} onChange={(event) => setGoal((current) => ({ ...current, baselineValue: event.target.value }))} /></label>
-            <label className="dashboard-form-field"><span>Target</span><input className="dashboard-input" type="number" value={goal.targetValue} onChange={(event) => setGoal((current) => ({ ...current, targetValue: event.target.value }))} /></label>
-            <label className="dashboard-form-field"><span>Current</span><input className="dashboard-input" type="number" value={goal.currentValue} onChange={(event) => setGoal((current) => ({ ...current, currentValue: event.target.value }))} /></label>
-            <label className="dashboard-form-field"><span>Unit</span><input className="dashboard-input" value={goal.unit} onChange={(event) => setGoal((current) => ({ ...current, unit: event.target.value }))} /></label>
-            <label className="dashboard-form-field"><span>Target date</span><input className="dashboard-input" type="date" value={goal.targetDate} onChange={(event) => setGoal((current) => ({ ...current, targetDate: event.target.value }))} /></label>
-          </div>
-          <label className="dashboard-form-field dashboard-form-field--wide"><span>Description</span><textarea className="dashboard-textarea" rows={3} value={goal.description} onChange={(event) => setGoal((current) => ({ ...current, description: event.target.value }))} /></label>
-          <button type="button" className="mv-btn mv-btn-primary" disabled={isSaving} onClick={() => runAction("Goal added.", () => saveClientGoal({ clientId: data.client.id, ...goal }))}>
-            <Plus size={16} /> Add goal
-          </button>
-        </DashboardFormSection>
+      {phase === "outcomes" ? (
+        <section className={styles.split}>
+          <article className={styles.panel}>
+            <PanelHead
+              icon={<Target />}
+              step="02 / Outcomes"
+              title="Set a measurable target"
+              description="Define the number that proves the program worked."
+            />
+            <div className={styles.fields}>
+              <Field label="Goal title">
+                <input
+                  value={goal.title}
+                  onChange={(event) =>
+                    setGoal((current) => ({
+                      ...current,
+                      title: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+              <Field label="Metric">
+                <input
+                  placeholder="e.g. deadlift"
+                  value={goal.metricType}
+                  onChange={(event) =>
+                    setGoal((current) => ({
+                      ...current,
+                      metricType: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+              <Field label="Baseline">
+                <input
+                  type="number"
+                  value={goal.baselineValue}
+                  onChange={(event) =>
+                    setGoal((current) => ({
+                      ...current,
+                      baselineValue: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+              <Field label="Target">
+                <input
+                  type="number"
+                  value={goal.targetValue}
+                  onChange={(event) =>
+                    setGoal((current) => ({
+                      ...current,
+                      targetValue: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+              <Field label="Current">
+                <input
+                  type="number"
+                  value={goal.currentValue}
+                  onChange={(event) =>
+                    setGoal((current) => ({
+                      ...current,
+                      currentValue: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+              <Field label="Unit">
+                <input
+                  value={goal.unit}
+                  onChange={(event) =>
+                    setGoal((current) => ({
+                      ...current,
+                      unit: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+              <Field label="Target date">
+                <input
+                  type="date"
+                  value={goal.targetDate}
+                  onChange={(event) =>
+                    setGoal((current) => ({
+                      ...current,
+                      targetDate: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+              <Field label="Description" wide>
+                <textarea
+                  rows={3}
+                  value={goal.description}
+                  onChange={(event) =>
+                    setGoal((current) => ({
+                      ...current,
+                      description: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+            </div>
+            <ActionButton
+              pending={pending}
+              label="Add outcome"
+              onClick={() =>
+                run("Outcome added.", () =>
+                  saveClientGoal({ clientId: data.client.id, ...goal }),
+                )
+              }
+            />
+          </article>
+          <aside className={styles.board}>
+            <PanelHead
+              icon={<TrendingUp />}
+              step="Goal board"
+              title={`${data.goals.length} outcomes`}
+            />
+            {data.goals.length ? (
+              <ol>
+                {data.goals.map((item) => (
+                  <li key={item.id}>
+                    <span>{titleCase(item.status)}</span>
+                    <strong>{item.title}</strong>
+                    <b>
+                      {item.currentValue ?? "—"} / {item.targetValue ?? "—"}{" "}
+                      {item.unit}
+                    </b>
+                    <small>
+                      {item.targetDate
+                        ? formatDate(item.targetDate)
+                        : "No target date"}
+                    </small>
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <Empty label="No outcomes yet" />
+            )}
+          </aside>
+        </section>
+      ) : null}
 
-        <aside className="dashboard-panel dashboard-detail-panel">
-          <div className="dashboard-panel__header"><div><div className="mv-eyebrow">Goal board</div><h2>{data.goals.length} goals</h2></div></div>
-          {data.goals.length ? <div className="dashboard-summary-list">{data.goals.map((item) => <div key={item.id} className="dashboard-summary-row"><strong>{item.title}</strong><span>{item.currentValue ?? "-"} / {item.targetValue ?? "-"} {item.unit}</span><small>{titleCase(item.status)}{item.targetDate ? ` · ${formatDate(item.targetDate)}` : ""}</small></div>)}</div> : <DashboardEmptyState title="No goals yet" description="Add the first measurable outcome." />}
-        </aside>
-      </section>
+      {phase === "program" ? (
+        <section className={styles.programGrid}>
+          <article className={styles.panel}>
+            <PanelHead
+              icon={<Dumbbell />}
+              step="03 / Program"
+              title="Build the training system"
+              description="Create the block, its training days and the work inside each day."
+            />
+            <Subhead title="A. Training block" />
+            <div className={styles.fields}>
+              <Field label="Program name">
+                <input
+                  value={program.name}
+                  onChange={(event) =>
+                    setProgram((current) => ({
+                      ...current,
+                      name: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+              <Field label="State">
+                <select
+                  value={program.status}
+                  onChange={(event) =>
+                    setProgram((current) => ({
+                      ...current,
+                      status: event.target.value as typeof current.status,
+                    }))
+                  }
+                >
+                  <option value="DRAFT">Draft</option>
+                  <option value="ACTIVE">Active</option>
+                  <option value="COMPLETED">Completed</option>
+                  <option value="ARCHIVED">Archived</option>
+                </select>
+              </Field>
+              <Field label="Starts">
+                <input
+                  type="date"
+                  value={program.startsAt}
+                  onChange={(event) =>
+                    setProgram((current) => ({
+                      ...current,
+                      startsAt: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+              <Field label="Ends">
+                <input
+                  type="date"
+                  value={program.endsAt}
+                  onChange={(event) =>
+                    setProgram((current) => ({
+                      ...current,
+                      endsAt: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+              <Field label="Goal summary" wide>
+                <textarea
+                  rows={3}
+                  value={program.goalSummary}
+                  onChange={(event) =>
+                    setProgram((current) => ({
+                      ...current,
+                      goalSummary: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+            </div>
+            <ActionButton
+              pending={pending}
+              label="Save new program"
+              onClick={() =>
+                run("Program saved.", () =>
+                  saveTrainingProgram({ clientId: data.client.id, ...program }),
+                )
+              }
+            />
 
-      <DashboardFormSection eyebrow="Step 3" title="Program and workout prescription" description="Create a program, add workout days, maintain the exercise library, and prescribe work.">
-        <div className="dashboard-form-columns">
-          <label className="dashboard-form-field"><span>Program name</span><input className="dashboard-input" value={program.name} onChange={(event) => setProgram((current) => ({ ...current, name: event.target.value }))} /></label>
-          <label className="dashboard-form-field"><span>Status</span><select className="dashboard-select" value={program.status} onChange={(event) => setProgram((current) => ({ ...current, status: event.target.value as typeof current.status }))}><option value="DRAFT">Draft</option><option value="ACTIVE">Active</option><option value="COMPLETED">Completed</option><option value="ARCHIVED">Archived</option></select></label>
-          <label className="dashboard-form-field"><span>Starts</span><input className="dashboard-input" type="date" value={program.startsAt} onChange={(event) => setProgram((current) => ({ ...current, startsAt: event.target.value }))} /></label>
-          <label className="dashboard-form-field"><span>Ends</span><input className="dashboard-input" type="date" value={program.endsAt} onChange={(event) => setProgram((current) => ({ ...current, endsAt: event.target.value }))} /></label>
-        </div>
-        <label className="dashboard-form-field dashboard-form-field--wide"><span>Goal summary</span><textarea className="dashboard-textarea" rows={3} value={program.goalSummary} onChange={(event) => setProgram((current) => ({ ...current, goalSummary: event.target.value }))} /></label>
-        <button type="button" className="mv-btn mv-btn-primary" disabled={isSaving} onClick={() => runAction("Program saved.", () => saveTrainingProgram({ clientId: data.client.id, ...program }))}><Save size={16} /> Save new program</button>
+            <Subhead title="B. Add workout day" />
+            <div className={styles.fields}>
+              <Field label="Program">
+                <select
+                  value={workout.programId}
+                  onChange={(event) =>
+                    setWorkout((current) => ({
+                      ...current,
+                      programId: event.target.value,
+                    }))
+                  }
+                >
+                  <option value="">Choose program</option>
+                  {data.programs.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.name}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Workout title">
+                <input
+                  value={workout.title}
+                  onChange={(event) =>
+                    setWorkout((current) => ({
+                      ...current,
+                      title: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+              <Field label="Day order">
+                <input
+                  type="number"
+                  min={1}
+                  value={workout.dayOrder}
+                  onChange={(event) =>
+                    setWorkout((current) => ({
+                      ...current,
+                      dayOrder: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+              <Field label="Notes">
+                <input
+                  value={workout.notes}
+                  onChange={(event) =>
+                    setWorkout((current) => ({
+                      ...current,
+                      notes: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+            </div>
+            <ActionButton
+              pending={pending || !workout.programId}
+              label="Add workout day"
+              onClick={() =>
+                run("Workout day added.", () =>
+                  addProgramWorkout({ clientId: data.client.id, ...workout }),
+                )
+              }
+            />
 
-        <div className="dashboard-form-columns">
-          <label className="dashboard-form-field"><span>Program</span><select className="dashboard-select" value={workout.programId} onChange={(event) => setWorkout((current) => ({ ...current, programId: event.target.value }))}><option value="">Choose program</option>{data.programs.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
-          <label className="dashboard-form-field"><span>Workout title</span><input className="dashboard-input" value={workout.title} onChange={(event) => setWorkout((current) => ({ ...current, title: event.target.value }))} /></label>
-          <label className="dashboard-form-field"><span>Day order</span><input className="dashboard-input" type="number" min={1} value={workout.dayOrder} onChange={(event) => setWorkout((current) => ({ ...current, dayOrder: event.target.value }))} /></label>
-          <label className="dashboard-form-field"><span>Notes</span><input className="dashboard-input" value={workout.notes} onChange={(event) => setWorkout((current) => ({ ...current, notes: event.target.value }))} /></label>
-        </div>
-        <button type="button" className="mv-btn mv-btn-secondary" disabled={isSaving || !workout.programId} onClick={() => runAction("Workout day added.", () => addProgramWorkout({ clientId: data.client.id, ...workout }))}><Plus size={16} /> Add workout day</button>
+            <Subhead title="C. Exercise library" />
+            <div className={styles.fields}>
+              <Field label="Exercise name">
+                <input
+                  value={exercise.name}
+                  onChange={(event) =>
+                    setExercise((current) => ({
+                      ...current,
+                      name: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+              <Field label="Category">
+                <input
+                  value={exercise.category}
+                  onChange={(event) =>
+                    setExercise((current) => ({
+                      ...current,
+                      category: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+              <Field label="Default unit">
+                <input
+                  value={exercise.defaultUnit}
+                  onChange={(event) =>
+                    setExercise((current) => ({
+                      ...current,
+                      defaultUnit: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+              <Field label="Instructions">
+                <input
+                  value={exercise.instructions}
+                  onChange={(event) =>
+                    setExercise((current) => ({
+                      ...current,
+                      instructions: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+            </div>
+            <ActionButton
+              pending={pending}
+              label="Add exercise"
+              onClick={() =>
+                run("Exercise added to the library.", () =>
+                  createExercise(exercise),
+                )
+              }
+            />
 
-        <div className="dashboard-form-columns">
-          <label className="dashboard-form-field"><span>New exercise</span><input className="dashboard-input" value={exercise.name} onChange={(event) => setExercise((current) => ({ ...current, name: event.target.value }))} /></label>
-          <label className="dashboard-form-field"><span>Category</span><input className="dashboard-input" value={exercise.category} onChange={(event) => setExercise((current) => ({ ...current, category: event.target.value }))} /></label>
-          <label className="dashboard-form-field"><span>Default unit</span><input className="dashboard-input" value={exercise.defaultUnit} onChange={(event) => setExercise((current) => ({ ...current, defaultUnit: event.target.value }))} /></label>
-          <label className="dashboard-form-field"><span>Instructions</span><input className="dashboard-input" value={exercise.instructions} onChange={(event) => setExercise((current) => ({ ...current, instructions: event.target.value }))} /></label>
-        </div>
-        <button type="button" className="mv-btn mv-btn-outline" disabled={isSaving} onClick={() => runAction("Exercise added to the library.", () => createExercise(exercise))}><Plus size={16} /> Add exercise</button>
+            <Subhead title="D. Prescribe work" />
+            <div className={styles.fields}>
+              <Field label="Workout">
+                <select
+                  value={prescription.workoutId}
+                  onChange={(event) =>
+                    setPrescription((current) => ({
+                      ...current,
+                      workoutId: event.target.value,
+                    }))
+                  }
+                >
+                  <option value="">Choose workout</option>
+                  {allWorkouts.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.programName} · Day {item.dayOrder} · {item.title}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Exercise">
+                <select
+                  value={prescription.exerciseId}
+                  onChange={(event) =>
+                    setPrescription((current) => ({
+                      ...current,
+                      exerciseId: event.target.value,
+                    }))
+                  }
+                >
+                  <option value="">Choose exercise</option>
+                  {data.exercises.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.name}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Order">
+                <input
+                  type="number"
+                  value={prescription.orderIndex}
+                  onChange={(event) =>
+                    setPrescription((current) => ({
+                      ...current,
+                      orderIndex: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+              <Field label="Sets">
+                <input
+                  type="number"
+                  value={prescription.sets}
+                  onChange={(event) =>
+                    setPrescription((current) => ({
+                      ...current,
+                      sets: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+              <Field label="Reps">
+                <input
+                  value={prescription.reps}
+                  onChange={(event) =>
+                    setPrescription((current) => ({
+                      ...current,
+                      reps: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+              <Field label="Target load">
+                <input
+                  type="number"
+                  value={prescription.targetLoad}
+                  onChange={(event) =>
+                    setPrescription((current) => ({
+                      ...current,
+                      targetLoad: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+              <Field label="Unit">
+                <input
+                  value={prescription.loadUnit}
+                  onChange={(event) =>
+                    setPrescription((current) => ({
+                      ...current,
+                      loadUnit: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+              <Field label="Rest seconds">
+                <input
+                  type="number"
+                  value={prescription.restSeconds}
+                  onChange={(event) =>
+                    setPrescription((current) => ({
+                      ...current,
+                      restSeconds: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+            </div>
+            <ActionButton
+              pending={
+                pending || !prescription.workoutId || !prescription.exerciseId
+              }
+              label="Prescribe exercise"
+              onClick={() =>
+                run("Exercise prescribed.", () =>
+                  addWorkoutExercise({
+                    clientId: data.client.id,
+                    ...prescription,
+                  }),
+                )
+              }
+            />
+          </article>
+          <aside className={styles.board}>
+            <PanelHead
+              icon={<Dumbbell />}
+              step="Current architecture"
+              title={`${data.programs.length} programs`}
+            />
+            {data.programs.length ? (
+              <ol>
+                {data.programs.map((item) => (
+                  <li key={item.id}>
+                    <span>{titleCase(item.status)}</span>
+                    <strong>{item.name}</strong>
+                    <p>{item.goalSummary || "No goal summary"}</p>
+                    <small>
+                      {item.workouts.length} workout days ·{" "}
+                      {formatDate(item.startsAt)}
+                    </small>
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <Empty label="No programs yet" />
+            )}
+          </aside>
+        </section>
+      ) : null}
 
-        <div className="dashboard-form-columns">
-          <label className="dashboard-form-field"><span>Workout</span><select className="dashboard-select" value={prescription.workoutId} onChange={(event) => setPrescription((current) => ({ ...current, workoutId: event.target.value }))}><option value="">Choose workout</option>{allWorkouts.map((item) => <option key={item.id} value={item.id}>{item.programName} · Day {item.dayOrder} · {item.title}</option>)}</select></label>
-          <label className="dashboard-form-field"><span>Exercise</span><select className="dashboard-select" value={prescription.exerciseId} onChange={(event) => setPrescription((current) => ({ ...current, exerciseId: event.target.value }))}><option value="">Choose exercise</option>{data.exercises.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
-          <label className="dashboard-form-field"><span>Order</span><input className="dashboard-input" type="number" value={prescription.orderIndex} onChange={(event) => setPrescription((current) => ({ ...current, orderIndex: event.target.value }))} /></label>
-          <label className="dashboard-form-field"><span>Sets</span><input className="dashboard-input" type="number" value={prescription.sets} onChange={(event) => setPrescription((current) => ({ ...current, sets: event.target.value }))} /></label>
-          <label className="dashboard-form-field"><span>Reps</span><input className="dashboard-input" value={prescription.reps} onChange={(event) => setPrescription((current) => ({ ...current, reps: event.target.value }))} /></label>
-          <label className="dashboard-form-field"><span>Target load</span><input className="dashboard-input" type="number" value={prescription.targetLoad} onChange={(event) => setPrescription((current) => ({ ...current, targetLoad: event.target.value }))} /></label>
-          <label className="dashboard-form-field"><span>Unit</span><input className="dashboard-input" value={prescription.loadUnit} onChange={(event) => setPrescription((current) => ({ ...current, loadUnit: event.target.value }))} /></label>
-          <label className="dashboard-form-field"><span>Rest seconds</span><input className="dashboard-input" type="number" value={prescription.restSeconds} onChange={(event) => setPrescription((current) => ({ ...current, restSeconds: event.target.value }))} /></label>
-        </div>
-        <button type="button" className="mv-btn mv-btn-secondary" disabled={isSaving || !prescription.workoutId || !prescription.exerciseId} onClick={() => runAction("Exercise prescribed.", () => addWorkoutExercise({ clientId: data.client.id, ...prescription }))}><Plus size={16} /> Prescribe exercise</button>
+      {phase === "delivery" ? (
+        <section className={styles.split}>
+          <article className={styles.panel}>
+            <PanelHead
+              icon={<Activity />}
+              step="04 / Delivery"
+              title="Log work and measurement"
+              description="Capture what happened, then add the number that changed."
+            />
+            <Subhead title="Delivered set" />
+            <div className={styles.fields}>
+              <Field label="Workout">
+                <select
+                  value={performance.workoutId}
+                  onChange={(event) => {
+                    const selected = allWorkouts.find(
+                      (item) => item.id === event.target.value,
+                    );
+                    setPerformance((current) => ({
+                      ...current,
+                      workoutId: event.target.value,
+                      exerciseId: selected?.exercises[0]?.exercise.id ?? "",
+                    }));
+                  }}
+                >
+                  <option value="">Choose workout</option>
+                  {allWorkouts.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.programName} · {item.title}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Exercise">
+                <select
+                  value={performance.exerciseId}
+                  onChange={(event) =>
+                    setPerformance((current) => ({
+                      ...current,
+                      exerciseId: event.target.value,
+                    }))
+                  }
+                >
+                  <option value="">Choose exercise</option>
+                  {allWorkouts
+                    .find((item) => item.id === performance.workoutId)
+                    ?.exercises.map((item) => (
+                      <option key={item.exercise.id} value={item.exercise.id}>
+                        {item.exercise.name}
+                      </option>
+                    ))}
+                </select>
+              </Field>
+              <Field label="Set">
+                <input
+                  type="number"
+                  value={performance.setNumber}
+                  onChange={(event) =>
+                    setPerformance((current) => ({
+                      ...current,
+                      setNumber: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+              <Field label="Reps">
+                <input
+                  type="number"
+                  value={performance.reps}
+                  onChange={(event) =>
+                    setPerformance((current) => ({
+                      ...current,
+                      reps: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+              <Field label="Load">
+                <input
+                  type="number"
+                  value={performance.load}
+                  onChange={(event) =>
+                    setPerformance((current) => ({
+                      ...current,
+                      load: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+              <Field label="Unit">
+                <input
+                  value={performance.loadUnit}
+                  onChange={(event) =>
+                    setPerformance((current) => ({
+                      ...current,
+                      loadUnit: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+              <Field label="Set RPE">
+                <input
+                  type="number"
+                  min={1}
+                  max={10}
+                  value={performance.rpe}
+                  onChange={(event) =>
+                    setPerformance((current) => ({
+                      ...current,
+                      rpe: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+              <Field label="Duration minutes">
+                <input
+                  type="number"
+                  value={performance.durationMinutes}
+                  onChange={(event) =>
+                    setPerformance((current) => ({
+                      ...current,
+                      durationMinutes: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+              <Field label="Session RPE">
+                <input
+                  type="number"
+                  min={1}
+                  max={10}
+                  value={performance.sessionRpe}
+                  onChange={(event) =>
+                    setPerformance((current) => ({
+                      ...current,
+                      sessionRpe: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+            </div>
+            <ActionButton
+              pending={
+                pending || !performance.workoutId || !performance.exerciseId
+              }
+              label="Log performance"
+              onClick={() =>
+                run("Performance logged.", () =>
+                  recordWorkoutPerformance({
+                    clientId: data.client.id,
+                    ...performance,
+                  }),
+                )
+              }
+            />
+            <Subhead title="Progress measurement" />
+            <div className={styles.fields}>
+              <Field label="Metric">
+                <input
+                  value={metric.metricType}
+                  onChange={(event) =>
+                    setMetric((current) => ({
+                      ...current,
+                      metricType: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+              <Field label="Value">
+                <input
+                  type="number"
+                  value={metric.value}
+                  onChange={(event) =>
+                    setMetric((current) => ({
+                      ...current,
+                      value: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+              <Field label="Unit">
+                <input
+                  value={metric.unit}
+                  onChange={(event) =>
+                    setMetric((current) => ({
+                      ...current,
+                      unit: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+              <Field label="Note">
+                <input
+                  value={metric.note}
+                  onChange={(event) =>
+                    setMetric((current) => ({
+                      ...current,
+                      note: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+            </div>
+            <ActionButton
+              pending={pending}
+              label="Add measurement"
+              onClick={() =>
+                run("Progress metric recorded.", () =>
+                  addProgressMetric({ clientId: data.client.id, ...metric }),
+                )
+              }
+            />
+          </article>
+          <aside className={styles.board}>
+            <PanelHead
+              icon={<TrendingUp />}
+              step="Evidence stream"
+              title="Recent delivery"
+            />
+            {data.workoutLogs.length ? (
+              <ol>
+                {data.workoutLogs.slice(0, 6).map((log) => (
+                  <li key={log.id}>
+                    <span>{formatDate(log.performedAt)}</span>
+                    <strong>{log.workoutTitle}</strong>
+                    <b>Session RPE {log.sessionRpe ?? "—"}</b>
+                    {log.sets.slice(0, 2).map((set) => (
+                      <small key={set.id}>
+                        {set.exerciseName}: {set.reps ?? "—"} ×{" "}
+                        {set.load ?? "—"} {set.loadUnit}
+                      </small>
+                    ))}
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <Empty label="No delivered work yet" />
+            )}
+            <Subhead title={`${data.metrics.length} measurements`} />
+            {data.metrics.slice(0, 5).map((item) => (
+              <div className={styles.metricRow} key={item.id}>
+                <span>{titleCase(item.metricType)}</span>
+                <strong>
+                  {item.value} {item.unit}
+                </strong>
+                <small>{formatDate(item.measuredAt)}</small>
+              </div>
+            ))}
+          </aside>
+        </section>
+      ) : null}
 
-        {data.programs.length ? <div className="dashboard-summary-list">{data.programs.map((item) => <div key={item.id} className="dashboard-summary-row"><strong>{item.name} · {titleCase(item.status)}</strong><span>{item.goalSummary || "No goal summary"}</span><small>{item.workouts.length} workout days · {formatDate(item.startsAt)}</small>{item.workouts.map((entry) => <span key={entry.id}>Day {entry.dayOrder}: {entry.title} · {entry.exercises.length} exercises</span>)}</div>)}</div> : null}
-      </DashboardFormSection>
+      {phase === "readiness" ? (
+        <section className={styles.panel}>
+          <PanelHead
+            icon={<HeartPulse />}
+            step="05 / Readiness"
+            title="Respond before the next load"
+            description="Pain, low energy and unanswered context belong at the front of the plan."
+          />
+          {data.checkIns.length ? (
+            <div className={styles.checkIns}>
+              {data.checkIns.map((item) => (
+                <article
+                  key={item.id}
+                  data-alert={item.painPresent || undefined}
+                >
+                  <header>
+                    <div>
+                      <span>{formatDate(item.submittedAt)}</span>
+                      <h3>
+                        {item.painPresent
+                          ? "Pain flag"
+                          : item.coachResponse
+                            ? "Response complete"
+                            : "Response needed"}
+                      </h3>
+                    </div>
+                    <b>
+                      {item.painPresent
+                        ? "Priority"
+                        : item.coachResponse
+                          ? "Closed"
+                          : "Open"}
+                    </b>
+                  </header>
+                  <div className={styles.readinessScores}>
+                    <span>
+                      Sleep <strong>{item.sleepQuality}/5</strong>
+                    </span>
+                    <span>
+                      Energy <strong>{item.energyLevel}/5</strong>
+                    </span>
+                    <span>
+                      Soreness <strong>{item.sorenessLevel}/5</strong>
+                    </span>
+                    <span>
+                      Stress <strong>{item.stressLevel}/5</strong>
+                    </span>
+                  </div>
+                  {item.painDetails ? (
+                    <p>
+                      <strong>Pain:</strong> {item.painDetails}
+                    </p>
+                  ) : null}
+                  {item.memberNote ? (
+                    <p>
+                      <strong>Member:</strong> {item.memberNote}
+                    </p>
+                  ) : null}
+                  {item.coachResponse ? (
+                    <p className={styles.response}>
+                      <strong>Coach:</strong> {item.coachResponse}
+                    </p>
+                  ) : (
+                    <div className={styles.reply}>
+                      <Field label="Coach response">
+                        <textarea
+                          rows={3}
+                          value={responses[item.id] ?? ""}
+                          onChange={(event) =>
+                            setResponses((current) => ({
+                              ...current,
+                              [item.id]: event.target.value,
+                            }))
+                          }
+                        />
+                      </Field>
+                      <ActionButton
+                        pending={pending}
+                        label="Send response"
+                        onClick={() =>
+                          run("Check-in response saved.", () =>
+                            respondToClientCheckIn({
+                              clientId: data.client.id,
+                              checkInId: item.id,
+                              coachResponse: responses[item.id] ?? "",
+                            }),
+                          )
+                        }
+                      />
+                    </div>
+                  )}
+                </article>
+              ))}
+            </div>
+          ) : (
+            <Empty label="No member check-ins yet" />
+          )}
+        </section>
+      ) : null}
+    </div>
+  );
+}
 
-      <section className="dashboard-detail-layout">
-        <DashboardFormSection eyebrow="Step 4" title="Delivered performance" description="Log an actual set and session effort against prescribed work.">
-          <div className="dashboard-form-columns">
-            <label className="dashboard-form-field"><span>Workout</span><select className="dashboard-select" value={performance.workoutId} onChange={(event) => { const selected = allWorkouts.find((item) => item.id === event.target.value); setPerformance((current) => ({ ...current, workoutId: event.target.value, exerciseId: selected?.exercises[0]?.exercise.id ?? "" })); }}><option value="">Choose workout</option>{allWorkouts.map((item) => <option key={item.id} value={item.id}>{item.programName} · {item.title}</option>)}</select></label>
-            <label className="dashboard-form-field"><span>Exercise</span><select className="dashboard-select" value={performance.exerciseId} onChange={(event) => setPerformance((current) => ({ ...current, exerciseId: event.target.value }))}><option value="">Choose exercise</option>{allWorkouts.find((item) => item.id === performance.workoutId)?.exercises.map((item) => <option key={item.exercise.id} value={item.exercise.id}>{item.exercise.name}</option>)}</select></label>
-            <label className="dashboard-form-field"><span>Set</span><input className="dashboard-input" type="number" value={performance.setNumber} onChange={(event) => setPerformance((current) => ({ ...current, setNumber: event.target.value }))} /></label>
-            <label className="dashboard-form-field"><span>Reps</span><input className="dashboard-input" type="number" value={performance.reps} onChange={(event) => setPerformance((current) => ({ ...current, reps: event.target.value }))} /></label>
-            <label className="dashboard-form-field"><span>Load</span><input className="dashboard-input" type="number" value={performance.load} onChange={(event) => setPerformance((current) => ({ ...current, load: event.target.value }))} /></label>
-            <label className="dashboard-form-field"><span>Unit</span><input className="dashboard-input" value={performance.loadUnit} onChange={(event) => setPerformance((current) => ({ ...current, loadUnit: event.target.value }))} /></label>
-            <label className="dashboard-form-field"><span>Set RPE</span><input className="dashboard-input" type="number" min={1} max={10} value={performance.rpe} onChange={(event) => setPerformance((current) => ({ ...current, rpe: event.target.value }))} /></label>
-            <label className="dashboard-form-field"><span>Minutes</span><input className="dashboard-input" type="number" value={performance.durationMinutes} onChange={(event) => setPerformance((current) => ({ ...current, durationMinutes: event.target.value }))} /></label>
-            <label className="dashboard-form-field"><span>Session RPE</span><input className="dashboard-input" type="number" min={1} max={10} value={performance.sessionRpe} onChange={(event) => setPerformance((current) => ({ ...current, sessionRpe: event.target.value }))} /></label>
-          </div>
-          <button type="button" className="mv-btn mv-btn-primary" disabled={isSaving || !performance.workoutId || !performance.exerciseId} onClick={() => runAction("Performance logged.", () => recordWorkoutPerformance({ clientId: data.client.id, ...performance }))}><Save size={16} /> Log performance</button>
-        </DashboardFormSection>
-
-        <aside className="dashboard-panel dashboard-detail-panel">
-          <div className="dashboard-panel__header"><div><div className="mv-eyebrow">Recent delivery</div><h2>{data.workoutLogs.length} workout logs</h2></div></div>
-          {data.workoutLogs.length ? <div className="dashboard-summary-list">{data.workoutLogs.slice(0, 6).map((log) => <div key={log.id} className="dashboard-summary-row"><strong>{log.workoutTitle}</strong><span>{formatDate(log.performedAt)} · RPE {log.sessionRpe ?? "-"}</span>{log.sets.map((set) => <small key={set.id}>{set.exerciseName}: {set.reps ?? "-"} reps × {set.load ?? "-"} {set.loadUnit}</small>)}</div>)}</div> : <DashboardEmptyState title="No performance logged" description="Log the first delivered workout above." />}
-        </aside>
-      </section>
-
-      <section className="dashboard-detail-layout">
-        <DashboardFormSection eyebrow="Step 5" title="Progress measurements" description="Record comparable measurements over time.">
-          <div className="dashboard-form-columns">
-            <label className="dashboard-form-field"><span>Metric</span><input className="dashboard-input" value={metric.metricType} onChange={(event) => setMetric((current) => ({ ...current, metricType: event.target.value }))} /></label>
-            <label className="dashboard-form-field"><span>Value</span><input className="dashboard-input" type="number" value={metric.value} onChange={(event) => setMetric((current) => ({ ...current, value: event.target.value }))} /></label>
-            <label className="dashboard-form-field"><span>Unit</span><input className="dashboard-input" value={metric.unit} onChange={(event) => setMetric((current) => ({ ...current, unit: event.target.value }))} /></label>
-            <label className="dashboard-form-field"><span>Note</span><input className="dashboard-input" value={metric.note} onChange={(event) => setMetric((current) => ({ ...current, note: event.target.value }))} /></label>
-          </div>
-          <button type="button" className="mv-btn mv-btn-primary" disabled={isSaving} onClick={() => runAction("Progress metric recorded.", () => addProgressMetric({ clientId: data.client.id, ...metric }))}><Plus size={16} /> Add measurement</button>
-        </DashboardFormSection>
-
-        <aside className="dashboard-panel dashboard-detail-panel">
-          <div className="dashboard-panel__header"><div><div className="mv-eyebrow">Progress timeline</div><h2>{data.metrics.length} measurements</h2></div></div>
-          {data.metrics.length ? <div className="dashboard-summary-list">{data.metrics.slice(0, 10).map((item) => <div key={item.id} className="dashboard-summary-row"><strong>{titleCase(item.metricType)}</strong><span>{item.value} {item.unit}</span><small>{formatDate(item.measuredAt)}{item.note ? ` · ${item.note}` : ""}</small></div>)}</div> : <DashboardEmptyState title="No measurements" description="Record the first baseline metric." />}
-        </aside>
-      </section>
-
-      <section className="dashboard-panel dashboard-panel--dense">
-        <div className="dashboard-panel__header"><div><div className="mv-eyebrow">Member check-ins</div><h2>Readiness and coach responses</h2><p>Prioritize pain, low energy, high soreness, and unanswered notes.</p></div></div>
-        {data.checkIns.length ? <div className="dashboard-stack">{data.checkIns.map((item) => <article key={item.id} className="dashboard-form-section"><div className="dashboard-form-section__header"><div><h3>{formatDate(item.submittedAt)}</h3><p>Sleep {item.sleepQuality}/5 · Energy {item.energyLevel}/5 · Soreness {item.sorenessLevel}/5 · Stress {item.stressLevel}/5</p></div><DashboardStatusBadge label={item.painPresent ? "Pain flagged" : item.coachResponse ? "Responded" : "Needs response"} tone={item.painPresent ? "warning" : item.coachResponse ? "success" : "accent"} /></div>{item.painDetails ? <p><strong>Pain:</strong> {item.painDetails}</p> : null}{item.memberNote ? <p><strong>Member:</strong> {item.memberNote}</p> : null}{item.coachResponse ? <p><strong>Coach:</strong> {item.coachResponse}</p> : <><label className="dashboard-form-field"><span>Coach response</span><textarea className="dashboard-textarea" rows={3} value={responses[item.id] ?? ""} onChange={(event) => setResponses((current) => ({ ...current, [item.id]: event.target.value }))} /></label><button type="button" className="mv-btn mv-btn-primary" disabled={isSaving} onClick={() => runAction("Check-in response saved.", () => respondToClientCheckIn({ clientId: data.client.id, checkInId: item.id, coachResponse: responses[item.id] ?? "" }))}>Respond</button></>}</article>)}</div> : <DashboardEmptyState title="No check-ins yet" description="The member's first check-in will appear here." />}
-      </section>
+function PanelHead({
+  icon,
+  step,
+  title,
+  description,
+}: {
+  icon: React.ReactNode;
+  step: string;
+  title: string;
+  description?: string;
+}) {
+  return (
+    <header className={styles.panelHead}>
+      <div>
+        <span className={styles.kicker}>{step}</span>
+        <h2>{title}</h2>
+        {description ? <p>{description}</p> : null}
+      </div>
+      {icon}
+    </header>
+  );
+}
+function Subhead({ title }: { title: string }) {
+  return <h3 className={styles.subhead}>{title}</h3>;
+}
+function Field({
+  label,
+  wide,
+  children,
+}: {
+  label: string;
+  wide?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className={wide ? styles.wide : undefined}>
+      <span>{label}</span>
+      {children}
+    </label>
+  );
+}
+function ActionButton({
+  pending,
+  label,
+  onClick,
+}: {
+  pending: boolean;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      className="mv-btn mv-btn-primary"
+      disabled={pending}
+      onClick={onClick}
+    >
+      {label.includes("Save") || label.includes("Log") ? (
+        <Save size={15} />
+      ) : (
+        <Plus size={15} />
+      )}
+      {label}
+    </button>
+  );
+}
+function Empty({ label }: { label: string }) {
+  return (
+    <div className={styles.empty}>
+      <FlaskConical size={24} />
+      <strong>{label}</strong>
     </div>
   );
 }
