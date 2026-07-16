@@ -9,9 +9,52 @@ import type {
 } from "@/lib/validators/training-session";
 import { TrainingSessionType } from "@/lib/supabase/domain";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
+import {
+  findCoachConflicts,
+  type ConflictSession,
+} from "@/lib/services/schedule-conflicts";
 
 function optional(value: string | undefined) {
   return value?.trim() ?? "";
+}
+
+const conflictTimeFormatter = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+});
+
+async function assertNoCoachConflict(
+  coachId: string,
+  startsAt: string,
+  endsAt: string,
+  ignoreSessionId?: string,
+) {
+  // Fetch the coach's non-canceled sessions that could overlap the window, then
+  // confirm with the pure overlap check. A coach in two places at once is a hard
+  // conflict (studio-space clashes, by contrast, are allowed).
+  const { data, error } = await getSupabaseServerClient()
+    .from("TrainingSession")
+    .select("id,title,startsAt,endsAt")
+    .eq("coachId", coachId)
+    .neq("status", "CANCELED")
+    .lt("startsAt", endsAt)
+    .gt("endsAt", startsAt);
+  if (error) throw error;
+
+  const conflicts = findCoachConflicts(
+    { startsAt, endsAt },
+    (data ?? []) as ConflictSession[],
+    ignoreSessionId,
+  );
+
+  if (conflicts.length) {
+    const clash = conflicts[0];
+    throw new Error(
+      `This coach already has "${clash.title}" at ${conflictTimeFormatter.format(new Date(clash.startsAt))}. Pick a different time or coach.`,
+    );
+  }
 }
 
 function mapDatabaseError(error: { code?: string; message: string }): never {
@@ -34,6 +77,7 @@ async function ensureCoach(coachId: string) {
 
 export async function createTrainingSession(input: CreateTrainingSessionInput, createdById: string) {
   await ensureCoach(input.coachId);
+  await assertNoCoachConflict(input.coachId, input.startsAt, input.endsAt);
   const { data, error } = await getSupabaseServerClient().from("TrainingSession").insert({
     title: input.title.trim(), description: optional(input.description) || null,
     type: input.type, status: input.status, coachId: input.coachId,
@@ -47,6 +91,14 @@ export async function createTrainingSession(input: CreateTrainingSessionInput, c
 }
 
 export async function updateTrainingSession(input: UpdateTrainingSessionInput) {
+  // Rescheduling must not move a session into a coach double-booking. Ignore the
+  // session being edited so it never conflicts with itself.
+  await assertNoCoachConflict(
+    input.coachId,
+    input.startsAt,
+    input.endsAt,
+    input.sessionId,
+  );
   const { data, error } = await getSupabaseServerClient().rpc("update_training_session", {
     p_capacity: input.capacity ?? -1,
     p_coach_id: input.coachId, p_description: optional(input.description),

@@ -16,22 +16,74 @@ export const BookingSource = enumValues(["BLOCK", "MANUAL"] as const);
 
 export type BookingStatus = PublicEnums["BookingStatus"];
 export const BookingStatus = enumValues(
-  ["BOOKED", "ATTENDED", "MISSED", "CANCELED", "WAITLIST"] as const
+  [
+    "BOOKED",
+    "ATTENDED",
+    "MISSED",
+    "CANCELED",
+    "WAITLIST",
+    "NO_SHOW",
+    "RESCHEDULED",
+  ] as const
 );
 
 export type ClientLifecycleStatus = PublicEnums["ClientLifecycleStatus"];
-export const ClientLifecycleStatus = enumValues(["ACTIVE", "PENDING", "PAUSED"] as const);
+export const ClientLifecycleStatus = enumValues(
+  ["ACTIVE", "PENDING", "PAUSED", "TRIAL", "INACTIVE", "DID_NOT_CONTINUE"] as const
+);
 
 export type ClientPaymentStatus = PublicEnums["ClientPaymentStatus"];
 export const ClientPaymentStatus = enumValues(["PAID", "UNPAID", "DUE_SOON"] as const);
 
 export type CoachSpecialization = PublicEnums["CoachSpecialization"];
 export const CoachSpecialization = enumValues(
-  ["STRENGTH", "CONDITIONING", "MOBILITY", "PRIVATE_COACHING"] as const
+  [
+    "STRENGTH",
+    "CONDITIONING",
+    "MOBILITY",
+    "PRIVATE_COACHING",
+    "FOOTBALL",
+    "TENNIS",
+    "CALISTHENICS",
+    "REHAB",
+    "ATHLETIC_PERFORMANCE",
+    "GENERAL_FITNESS",
+  ] as const
 );
 
 export type GroupType = PublicEnums["GroupType"];
 export const GroupType = enumValues(["GROUP", "PRIVATE"] as const);
+
+export type InjuryStatus = PublicEnums["InjuryStatus"];
+export const InjuryStatus = enumValues(
+  ["NONE", "CURRENT", "PREVIOUS", "REHAB"] as const
+);
+
+export type TrialOutcome = PublicEnums["TrialOutcome"];
+export const TrialOutcome = enumValues(
+  [
+    "SUBSCRIBED",
+    "FOLLOW_UP",
+    "DID_NOT_CONTINUE",
+    "NO_RESPONSE",
+    "NO_SHOW",
+    "NEEDS_DIFFERENT_OPTION",
+  ] as const
+);
+
+export type TrainingCategory = PublicEnums["TrainingCategory"];
+export const TrainingCategory = enumValues(
+  [
+    "FOOTBALL",
+    "TENNIS",
+    "OTHER_SPORT",
+    "FAT_LOSS",
+    "MUSCLE_GAIN",
+    "CALISTHENICS",
+    "REHAB",
+    "GENERAL_FITNESS",
+  ] as const
+);
 
 export type LeadStatus = PublicEnums["LeadStatus"];
 export const LeadStatus = enumValues(["NEW", "CONTACTED", "CONVERTED", "CLOSED"] as const);

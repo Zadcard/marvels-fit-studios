@@ -1,3 +1,5 @@
+import type { InjuryStatusLabel } from "@/lib/dashboard/client-domain-labels";
+
 export type CoachSessionStatus = "Ready" | "Waitlist" | "Prep" | "Completed";
 export type CoachSessionType = "Group" | "Private";
 export type CoachSessionBookingStatus = "Booked" | "Attended" | "Missed" | "Waitlist";
@@ -6,6 +8,10 @@ export type CoachSessionBookingRecord = {
   clientId: string;
   fullName: string;
   status: CoachSessionBookingStatus;
+  injuryStatus: InjuryStatusLabel;
+  injuryNotes: string;
+  restrictions: string;
+  hasInjuryAlert: boolean;
 };
 
 export type CoachSessionRecord = {

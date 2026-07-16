@@ -31,7 +31,7 @@ Use this table when you want to change a specific Admin surface.
 |---|---|---|---|---|
 | Admin overview dashboard cards/activity | `app/(dashboard)/admin/page.tsx` | (inline + shared dashboard components) | `lib/repositories/admin-overview-repository.ts` | Usually none (read-focused page) |
 | Clients table/profile/actions | `app/(dashboard)/admin/clients/page.tsx` | `components/dashboard/admin-clients-workspace.tsx` | `lib/repositories/admin-client-repository.ts` | `app/actions/admin-clients.ts`, `app/actions/admin-payments.ts` |
-| Coaches management | `app/(dashboard)/admin/coaches/page.tsx` | `components/dashboard/admin-coaches-workspace.tsx` | `lib/repositories/admin-coach-repository.ts` | `app/actions/admin-coaches.ts` |
+| Coaches management | `app/(dashboard)/admin/coaches/page.tsx` | `components/dashboard/admin-coaches-command-center.tsx` | `lib/repositories/admin-coach-repository.ts` | `app/actions/admin-coaches.ts` |
 | Join requests / leads approval | `app/(dashboard)/admin/join-requests/page.tsx` | `components/dashboard/admin-leads-workspace.tsx` | `lib/repositories/admin-lead-repository.ts` | `app/actions/admin-leads.ts` |
 | Schedule board | `app/(dashboard)/admin/schedule/page.tsx` | `components/dashboard/admin-schedule-workspace.tsx` | `lib/repositories/admin-schedule-repository.ts` | `app/actions/admin-schedule-blocks.ts`, `app/actions/admin-attendance.ts` |
 | Sessions board | `app/(dashboard)/admin/sessions/page.tsx` | `components/dashboard/admin-sessions-workspace.tsx` | `lib/repositories/admin-session-repository.ts` | `app/actions/admin-sessions.ts`, `app/actions/admin-session-bookings.ts` |

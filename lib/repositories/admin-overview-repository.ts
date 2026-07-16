@@ -17,6 +17,11 @@ import type {
   AdminStudioSnapshot,
   AdminUpcomingSession,
 } from "@/lib/mocks/admin-overview";
+import {
+  buildNeedsAttentionTiles,
+  classifySubscriptionUrgency,
+  type NeedsAttentionTile,
+} from "@/lib/dashboard/needs-attention";
 import { withSupabaseFallback } from "@/lib/supabase/errors";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -463,6 +468,70 @@ export class AdminOverviewRepository {
       quickActions,
       studioSnapshot,
     };
+  }
+
+  async getNeedsAttention(): Promise<NeedsAttentionTile[]> {
+    const supabase = getSupabaseServerClient();
+    const now = new Date();
+    const startOfToday = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+    );
+    const endOfToday = new Date(startOfToday.getTime() + 24 * 60 * 60 * 1000);
+
+    const [subscriptionUrgencies, trialFollowUps, injuryAlertsToday] =
+      await Promise.all([
+        withSupabaseFallback(async () => {
+          const { data, error } = await supabase
+            .from("ClientSubscription")
+            .select("endsAt")
+            .in("status", ["ACTIVE", "EXPIRED"]);
+          if (error) throw error;
+          return data.map((subscription) =>
+            classifySubscriptionUrgency(
+              subscription.endsAt ? new Date(subscription.endsAt) : null,
+              now,
+            ),
+          );
+        }, [] as ReturnType<typeof classifySubscriptionUrgency>[]),
+        withSupabaseFallback(async () => {
+          const { count, error } = await supabase
+            .from("Client")
+            .select("id", { count: "exact", head: true })
+            .eq("status", "TRIAL");
+          if (error) throw error;
+          return count ?? 0;
+        }, 0),
+        withSupabaseFallback(async () => {
+          const { data, error } = await supabase
+            .from("SessionBooking")
+            .select(
+              "id, status, client:Client(injuryStatus), trainingSession:TrainingSession(startsAt, status)",
+            )
+            .in("status", ["BOOKED", "ATTENDED", "WAITLIST"])
+            .gte("trainingSession.startsAt", startOfToday.toISOString())
+            .lt("trainingSession.startsAt", endOfToday.toISOString());
+          if (error) throw error;
+          return data.filter(
+            (booking) =>
+              booking.trainingSession &&
+              booking.trainingSession.status !== "CANCELED" &&
+              ["CURRENT", "REHAB"].includes(booking.client.injuryStatus),
+          ).length;
+        }, 0),
+      ]);
+
+    return buildNeedsAttentionTiles({
+      expiredSubscriptions: subscriptionUrgencies.filter(
+        (urgency) => urgency === "expired",
+      ).length,
+      expiringSubscriptions: subscriptionUrgencies.filter(
+        (urgency) => urgency === "expiring",
+      ).length,
+      trialFollowUps,
+      injuryAlertsToday,
+    });
   }
 }
 

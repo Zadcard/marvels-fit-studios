@@ -6,6 +6,11 @@ import type {
   CoachSessionStatus,
 } from "@/lib/dashboard/coach-session-data";
 import type { CoachScheduleRecord } from "@/lib/dashboard/coach-schedule-data";
+import {
+  injuryStatusHasAlert,
+  injuryStatusLabelFor,
+} from "@/lib/dashboard/client-domain-labels";
+import type { BookingStatus } from "@/lib/supabase/domain";
 import { withSupabaseFallback } from "@/lib/supabase/errors";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -39,7 +44,7 @@ function getDayLabel(date: Date) {
 function mapSessionStatus(input: {
   startsAt: Date;
   status: "DRAFT" | "SCHEDULED" | "COMPLETED" | "CANCELED";
-  bookings: Array<{ status: "BOOKED" | "ATTENDED" | "MISSED" | "CANCELED" | "WAITLIST" }>;
+  bookings: Array<{ status: BookingStatus }>;
 }): CoachSessionStatus {
   if (input.status === "COMPLETED") {
     return "Completed";
@@ -57,7 +62,7 @@ function mapSessionStatus(input: {
 }
 
 function mapBookingStatus(
-  status: "BOOKED" | "ATTENDED" | "MISSED" | "CANCELED" | "WAITLIST"
+  status: BookingStatus
 ): CoachSessionBookingRecord["status"] | null {
   switch (status) {
     case "ATTENDED":
@@ -90,7 +95,7 @@ export class CoachSessionRepository {
     return withSupabaseFallback(async () => {
       const { data, error } = await getSupabaseServerClient()
         .from("TrainingSession")
-        .select("id,title,description,type,status,startsAt,location,capacity,coach:Coach!inner(userId),notes:SessionNote(content,createdAt),bookings:SessionBooking(status,bookedAt,client:Client(id,fullName))")
+        .select("id,title,description,type,status,startsAt,location,capacity,coach:Coach!inner(userId),notes:SessionNote(content,createdAt),bookings:SessionBooking(status,bookedAt,client:Client(id,fullName,injuryStatus,injuryNotes,restrictions))")
         .eq("coach.userId", userId).neq("status", "CANCELED").order("startsAt");
       if (error) throw error;
       const sessions = data.map((session) => ({
@@ -115,6 +120,10 @@ export class CoachSessionRepository {
             clientId: booking.client.id,
             fullName: booking.client.fullName,
             status,
+            injuryStatus: injuryStatusLabelFor(booking.client.injuryStatus),
+            injuryNotes: booking.client.injuryNotes?.trim() ?? "",
+            restrictions: booking.client.restrictions?.trim() ?? "",
+            hasInjuryAlert: injuryStatusHasAlert(booking.client.injuryStatus),
           };
         })
         .filter((booking): booking is CoachSessionBookingRecord => booking !== null);

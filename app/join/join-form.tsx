@@ -31,7 +31,7 @@ export function JoinForm() {
   return (
     <div className="login-form-panel">
       <div className="login-form-header">
-        <div className="mv-eyebrow">Join Marvel Fitness</div>
+        <div className="auth-kicker">Membership request / step 01</div>
         <h1 className="login-form-title">Start your membership request</h1>
         <p className="login-form-subtitle">
           Enter your name and phone number. An admin will approve your lead
@@ -45,7 +45,7 @@ export function JoinForm() {
           password={state.credentials.password}
           header={
             <>
-              <div className="mv-eyebrow">Your Account Details</div>
+              <div className="auth-kicker">Access issued / save this</div>
               <h2 className="login-form-title">Save these login details</h2>
             </>
           }
@@ -66,7 +66,7 @@ export function JoinForm() {
           </label>
           <input
             id="join-full-name"
-            className={`mv-field ${
+            className={`auth-field ${
               state.fieldErrors?.name ? "field-error" : ""
             }`}
             name="name"
@@ -86,7 +86,7 @@ export function JoinForm() {
           </label>
           <input
             id="join-phone"
-            className={`mv-field ${
+            className={`auth-field ${
               state.fieldErrors?.phone ? "field-error" : ""
             }`}
             name="phone"
@@ -103,7 +103,7 @@ export function JoinForm() {
 
         <button
           type="submit"
-          className="mv-btn mv-btn-primary login-submit"
+          className="auth-primary-button login-submit"
           disabled={pending}
         >
           <span className="login-submit-content">

@@ -6,6 +6,7 @@ import {
   getDashboardHomeForUserRole,
   isAuthorizedForArea,
 } from "@/lib/auth/authorization-policy";
+import { parkedRouteRedirect } from "@/lib/launch-scope";
 
 const { auth } = NextAuth(authConfig);
 
@@ -29,6 +30,14 @@ export const proxy = auth((req) => {
       : "/login";
 
     return NextResponse.redirect(new URL(redirectTarget, nextUrl));
+  }
+
+  // Park out-of-scope surfaces for launch (client portal, notifications,
+  // transformation). Data and code remain; the routes are simply unreachable.
+  const roleHome = userRole ? getDashboardHomeForUserRole(userRole) : "/login";
+  const parkedTarget = parkedRouteRedirect(nextUrl.pathname, roleHome);
+  if (parkedTarget && parkedTarget !== nextUrl.pathname) {
+    return NextResponse.redirect(new URL(parkedTarget, nextUrl));
   }
 
   return NextResponse.next();

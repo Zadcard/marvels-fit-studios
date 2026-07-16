@@ -1,892 +1,241 @@
 "use client";
 
-import { useDeferredValue, useEffect, useMemo, useState, useTransition } from "react";
+import { useDeferredValue, useMemo, useState, useTransition, type CSSProperties, type FormEvent } from "react";
 import Link from "next/link";
-import { CalendarPlus2, XCircle, RefreshCw, ChevronDown, ChevronUp, Repeat2 } from "lucide-react";
-import { useRouter } from "next/navigation";
-
+import { Dialog } from "radix-ui";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
-  bulkUpdateAdminSessions,
-  cancelAdminSession,
-  saveAdminSession,
-} from "@/app/actions/admin-sessions";
-import { DashboardEmptyState } from "@/components/dashboard/dashboard-empty-state";
-import { DashboardManagementToolbar } from "@/components/dashboard/dashboard-management-toolbar";
-import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
-import { DashboardPaginationControls } from "@/components/dashboard/dashboard-pagination-controls";
-import { DashboardStatCard } from "@/components/dashboard/dashboard-stat-card";
-import { DashboardStatusBadge } from "@/components/dashboard/dashboard-status-badge";
-import { paginateDashboardItems } from "@/lib/dashboard/pagination";
-import type {
-  AdminScheduleSessionRecord,
-  AdminScheduleStat,
-} from "@/lib/dashboard/admin-schedule-data";
+  CalendarPlus2,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Clock3,
+  Dumbbell,
+  Filter,
+  MapPin,
+  Repeat2,
+  Search,
+  ShieldUser,
+  Users,
+  X,
+  XCircle,
+} from "lucide-react";
+
+import { bulkUpdateAdminSessions, cancelAdminSession, saveAdminSession } from "@/app/actions/admin-sessions";
+import type { AdminScheduleSessionRecord, AdminScheduleStat } from "@/lib/dashboard/admin-schedule-data";
 import type { AdminSessionCoachOption } from "@/lib/repositories/admin-session-repository";
-import type {
-  AdminScheduleGroupOption,
-} from "@/lib/repositories/admin-schedule-repository";
+import type { AdminScheduleGroupOption } from "@/lib/repositories/admin-schedule-repository";
+import styles from "./admin-schedule-workspace.module.css";
 
-type BulkAction = "CANCEL" | "REASSIGN_COACH" | "UPDATE_LOCATION" | "UPDATE_CAPACITY";
-
-function getScheduleTone(status: AdminScheduleSessionRecord["status"]) {
-  switch (status) {
-    case "Confirmed":
-      return "success";
-    case "Waitlist":
-      return "warning";
-    case "Attention":
-      return "accent";
-    default:
-      return "neutral";
-  }
-}
-
-function getSessionTypeTone(type: AdminScheduleSessionRecord["sessionType"]) {
-  return type === "Group" ? "accent" : "neutral";
-}
-
-const cairoDayKeyFormatter = new Intl.DateTimeFormat("en-CA", {
-  timeZone: "Africa/Cairo",
-  year: "numeric",
-  month: "2-digit",
-  day: "2-digit",
-});
-
-const cairoDayCircleFormatter = new Intl.DateTimeFormat("en-US", {
-  timeZone: "Africa/Cairo",
-  weekday: "short",
-  month: "short",
-  day: "numeric",
-});
-
-const cairoDayHeadingFormatter = new Intl.DateTimeFormat("en-US", {
-  timeZone: "Africa/Cairo",
-  weekday: "long",
-  month: "long",
-  day: "numeric",
-});
-
-function getCairoDayKey(dateValue: string) {
-  return cairoDayKeyFormatter.format(new Date(dateValue));
-}
-
-function getDayCircleParts(dateValue: string) {
-  const parts = cairoDayCircleFormatter
-    .formatToParts(new Date(dateValue))
-    .reduce<Record<string, string>>((acc, part) => {
-      if (part.type !== "literal") {
-        acc[part.type] = part.value;
-      }
-      return acc;
-    }, {});
-
-  return {
-    weekday: parts.weekday ?? "",
-    month: parts.month ?? "",
-    day: parts.day ?? "",
-  };
-}
-
-type AdminScheduleWorkspaceProps = {
+type Props = {
   stats: AdminScheduleStat[];
   records: AdminScheduleSessionRecord[];
   coachOptions: AdminSessionCoachOption[];
   groupOptions: AdminScheduleGroupOption[];
+  weekStartIso: string;
 };
 
-export function AdminScheduleWorkspace({
-  stats,
-  records,
-  coachOptions,
-  groupOptions,
-}: AdminScheduleWorkspaceProps) {
+type SessionForm = {
+  title: string;
+  type: "GROUP" | "PRIVATE";
+  status: "DRAFT" | "SCHEDULED" | "COMPLETED" | "CANCELED";
+  coachId: string;
+  location: string;
+  startsAt: string;
+  endsAt: string;
+  capacity: string;
+};
+
+type BulkAction = "CANCEL" | "REASSIGN_COACH" | "UPDATE_LOCATION" | "UPDATE_CAPACITY";
+
+const dayKeyFormatter = new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Cairo", year: "numeric", month: "2-digit", day: "2-digit" });
+const dayHeaderFormatter = new Intl.DateTimeFormat("en-US", { timeZone: "Africa/Cairo", weekday: "short", month: "short", day: "numeric" });
+const monthFormatter = new Intl.DateTimeFormat("en-US", { timeZone: "Africa/Cairo", month: "long", year: "numeric" });
+const timeFormatter = new Intl.DateTimeFormat("en-US", { timeZone: "Africa/Cairo", hour: "numeric", minute: "2-digit" });
+
+function toDateTimeLocal(value: string) {
+  const date = new Date(value);
+  const offset = date.getTimezoneOffset();
+  return new Date(date.getTime() - offset * 60_000).toISOString().slice(0, 16);
+}
+
+function createEmptyForm(coachId = ""): SessionForm {
+  const starts = new Date();
+  starts.setMinutes(0, 0, 0);
+  starts.setHours(starts.getHours() + 1);
+  const ends = new Date(starts.getTime() + 60 * 60 * 1000);
+  return { title: "", type: "GROUP", status: "SCHEDULED", coachId, location: "", startsAt: toDateTimeLocal(starts.toISOString()), endsAt: toDateTimeLocal(ends.toISOString()), capacity: "12" };
+}
+
+function mapStatus(status: AdminScheduleSessionRecord["status"]): SessionForm["status"] {
+  if (status === "Completed") return "COMPLETED";
+  if (status === "Attention") return "DRAFT";
+  return "SCHEDULED";
+}
+
+function statusClass(status: AdminScheduleSessionRecord["status"]) {
+  if (status === "Confirmed") return styles.confirmed;
+  if (status === "Waitlist") return styles.waitlist;
+  if (status === "Completed") return styles.completed;
+  return styles.attention;
+}
+
+function getCairoMinutes(value: string) {
+  const parts = new Intl.DateTimeFormat("en-US", { timeZone: "Africa/Cairo", hour: "2-digit", minute: "2-digit", hour12: false }).formatToParts(new Date(value));
+  const hour = Number(parts.find((part) => part.type === "hour")?.value ?? 0) % 24;
+  const minute = Number(parts.find((part) => part.type === "minute")?.value ?? 0);
+  return hour * 60 + minute;
+}
+
+function sessionPosition(record: AdminScheduleSessionRecord) {
+  const start = getCairoMinutes(record.startsAt);
+  const end = getCairoMinutes(record.endsAt);
+  const top = Math.max(0, ((start - 7 * 60) / 60) * 64);
+  const height = Math.max(48, ((Math.max(end, start + 45) - start) / 60) * 64);
+  return { "--session-top": `${top}px`, "--session-height": `${height}px` } as CSSProperties;
+}
+
+export function AdminScheduleWorkspace({ stats, records, coachOptions, groupOptions, weekStartIso }: Props) {
   const router = useRouter();
-  const [isSaving, startSaveTransition] = useTransition();
-  const [searchTerm, setSearchTerm] = useState("");
-  const deferredSearchTerm = useDeferredValue(searchTerm);
-  const [statusFilter, setStatusFilter] =
-    useState<AdminScheduleSessionRecord["status"] | "All">("All");
-  const [typeFilter, setTypeFilter] =
-    useState<AdminScheduleSessionRecord["sessionType"] | "All">("All");
-  const [coachFilter, setCoachFilter] = useState("all");
-  const [groupFilter, setGroupFilter] = useState("all");
-  const [selectedSessionId, setSelectedSessionId] = useState(records[0]?.id ?? "");
-  const [selectedSessionIds, setSelectedSessionIds] = useState<string[]>([]);
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const [isPending, startTransition] = useTransition();
+  const [search, setSearch] = useState("");
+  const deferredSearch = useDeferredValue(search);
+  const [status, setStatus] = useState<AdminScheduleSessionRecord["status"] | "All">("All");
+  const [type, setType] = useState<AdminScheduleSessionRecord["sessionType"] | "All">("All");
+  const [coach, setCoach] = useState("all");
+  const [group, setGroup] = useState("all");
+  const [selectedId, setSelectedId] = useState(records[0]?.id ?? "");
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState<SessionForm>(() => createEmptyForm(coachOptions[0]?.id));
   const [bulkAction, setBulkAction] = useState<BulkAction>("CANCEL");
-  const [bulkCoachId, setBulkCoachId] = useState(coachOptions[0]?.id ?? "");
-  const [bulkLocation, setBulkLocation] = useState("");
-  const [bulkCapacity, setBulkCapacity] = useState("12");
-  const [errorMessage, setErrorMessage] = useState("");
-  const [isMutating, startMutatingTransition] = useTransition();
-  const [occurrenceCoachId, setOccurrenceCoachId] = useState(coachOptions[0]?.id ?? "");
-  const [selectedDayKey, setSelectedDayKey] = useState("");
-  const [collapsedDays, setCollapsedDays] = useState<string[]>([]);
-  const [page, setPage] = useState(1);
+  const [bulkValue, setBulkValue] = useState("");
+  const [error, setError] = useState("");
 
-  const handleCancelOccurrence = (sessionId: string) => {
-    setErrorMessage("");
-    startMutatingTransition(async () => {
-      try {
-        await cancelAdminSession(sessionId);
-        router.refresh();
-      } catch (error) {
-        setErrorMessage(
-          error instanceof Error ? error.message : "Could not cancel occurrence."
-        );
-      }
-    });
-  };
-
-  const handleReassignOccurrenceCoach = (session: AdminScheduleSessionRecord) => {
-    if (!occurrenceCoachId || occurrenceCoachId === session.coachId) {
-      return;
-    }
-
-    setErrorMessage("");
-    startMutatingTransition(async () => {
-      try {
-        await saveAdminSession({
-          sessionId: session.id,
-          title: session.title,
-          type: session.sessionType === "Group" ? "GROUP" : "PRIVATE",
-          status:
-            session.status === "Confirmed" || session.status === "Waitlist"
-              ? "SCHEDULED"
-              : session.status === "Completed"
-                ? "COMPLETED"
-                : "DRAFT",
-          coachId: occurrenceCoachId,
-          location: session.location,
-          startsAt: session.startsAt,
-          endsAt: session.endsAt,
-          capacity: session.capacity,
-        });
-        router.refresh();
-      } catch (error) {
-        setErrorMessage(
-          error instanceof Error ? error.message : "Could not reassign coach."
-        );
-      }
-    });
-  };
-
-  const filteredRecords = useMemo(() => {
-    const query = deferredSearchTerm.trim().toLowerCase();
-
-    return records.filter((record) => {
-      const matchesQuery =
-        query.length === 0 ||
-        [
-          record.title,
-          record.coachName,
-          record.groupName,
-          record.focus,
-          record.location,
-        ]
-          .join(" ")
-          .toLowerCase()
-          .includes(query);
-
-      const matchesStatus = statusFilter === "All" || record.status === statusFilter;
-      const matchesType = typeFilter === "All" || record.sessionType === typeFilter;
-      const matchesCoach = coachFilter === "all" || record.coachId === coachFilter;
-      const matchesGroup =
-        groupFilter === "all" ||
-        (groupFilter === "none"
-          ? record.groupName === "No linked group"
-          : record.groupName === groupOptions.find((group) => group.id === groupFilter)?.name);
-
-      return (
-        matchesQuery &&
-        matchesStatus &&
-        matchesType &&
-        matchesCoach &&
-        matchesGroup
-      );
-    });
-  }, [
-    coachFilter,
-    deferredSearchTerm,
-    groupFilter,
-    groupOptions,
-    records,
-    statusFilter,
-    typeFilter,
-  ]);
-  const paginatedRecords = paginateDashboardItems(filteredRecords, page);
-
-  const dayBuckets = useMemo(() => {
-    const grouped = new Map<string, AdminScheduleSessionRecord[]>();
-
-    for (const record of paginatedRecords.items) {
-      const dayKey = getCairoDayKey(record.startsAt);
-      const existing = grouped.get(dayKey);
-      if (existing) {
-        existing.push(record);
-      } else {
-        grouped.set(dayKey, [record]);
-      }
-    }
-
-    return Array.from(grouped.entries())
-      .map(([key, dayRecords]) => {
-        const sortedRecords = [...dayRecords].sort(
-          (left, right) =>
-            new Date(left.startsAt).getTime() - new Date(right.startsAt).getTime()
-        );
-
-        const firstRecord = sortedRecords[0];
-        const circleParts = getDayCircleParts(firstRecord.startsAt);
-
-        return {
-          key,
-          label: cairoDayHeadingFormatter.format(new Date(firstRecord.startsAt)),
-          weekdayShort: circleParts.weekday,
-          monthShort: circleParts.month,
-          dayNumber: circleParts.day,
-          records: sortedRecords,
-        };
-      })
-      .sort((left, right) => left.key.localeCompare(right.key));
-  }, [paginatedRecords.items]);
-
-  const selectedSession =
-    filteredRecords.find((record) => record.id === selectedSessionId) ?? filteredRecords[0];
-  const selectedDayBucket =
-    dayBuckets.find((bucket) => bucket.key === selectedDayKey) ?? dayBuckets[0];
-  const selectedDayRecords = useMemo(
-    () => selectedDayBucket?.records ?? [],
-    [selectedDayBucket]
-  );
-  const recordsByDay = new Map<string, AdminScheduleSessionRecord[]>();
-  const weekDays: string[] = [];
-  const isAllCollapsed = false;
-
-  useEffect(() => {
-    setPage(1);
-  }, [searchTerm, statusFilter, typeFilter, coachFilter, groupFilter]);
-
-  useEffect(() => {
-    if (selectedSession?.coachId) {
-      setOccurrenceCoachId(selectedSession.coachId);
-    }
-  }, [selectedSession?.id, selectedSession?.coachId]);
-
-  useEffect(() => {
-    if (dayBuckets.length === 0) {
-      setSelectedDayKey("");
-      return;
-    }
-
-    if (!dayBuckets.some((bucket) => bucket.key === selectedDayKey)) {
-      setSelectedDayKey(dayBuckets[0].key);
-    }
-  }, [dayBuckets, selectedDayKey]);
-
-  useEffect(() => {
-    if (!selectedDayBucket || selectedDayRecords.length === 0) {
-      return;
-    }
-
-    if (!selectedDayRecords.some((record) => record.id === selectedSessionId)) {
-      setSelectedSessionId(selectedDayRecords[0].id);
-    }
-  }, [selectedDayBucket, selectedDayRecords, selectedSessionId]);
-
-  const handleToggleSelection = (sessionId: string) => {
-    setSelectedSessionIds((current) =>
-      current.includes(sessionId)
-        ? current.filter((value) => value !== sessionId)
-        : [...current, sessionId]
+  const filtered = useMemo(() => {
+    const query = deferredSearch.trim().toLowerCase();
+    const groupName = groupOptions.find((item) => item.id === group)?.name;
+    return records.filter((record) =>
+      (!query || [record.title, record.coachName, record.groupName, record.location].join(" ").toLowerCase().includes(query)) &&
+      (status === "All" || record.status === status) &&
+      (type === "All" || record.sessionType === type) &&
+      (coach === "all" || record.coachId === coach) &&
+      (group === "all" || (group === "none" ? record.groupName === "No linked group" : record.groupName === groupName))
     );
-  };
+  }, [coach, deferredSearch, group, groupOptions, records, status, type]);
 
-  const handleToggleDay = (day: string) => {
-    setCollapsedDays((current) =>
-      current.includes(day)
-        ? current.filter((value) => value !== day)
-        : [...current, day]
-    );
-  };
+  const selected = filtered.find((record) => record.id === selectedId) ?? filtered[0] ?? null;
+  const weekStart = new Date(weekStartIso);
+  weekStart.setHours(12, 0, 0, 0);
+  weekStart.setDate(weekStart.getDate() - ((weekStart.getDay() + 6) % 7));
+  const weekDays = Array.from({ length: 7 }, (_, index) => { const date = new Date(weekStart); date.setDate(weekStart.getDate() + index); return date; });
+  const hours = Array.from({ length: 16 }, (_, index) => index + 7);
+  const weekCapacity = records.reduce((sum, item) => sum + (item.capacity ?? 1), 0);
+  const weekBooked = records.reduce((sum, item) => sum + item.bookedCount, 0);
 
-  const handleApplyBulkAction = () => {
-    if (selectedSessionIds.length === 0) {
-      return;
-    }
+  function navigateWeek(offset: number) {
+    const target = new Date(weekStart);
+    target.setDate(target.getDate() + offset * 7);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("week", dayKeyFormatter.format(target));
+    startTransition(() => router.push(`${pathname}?${params.toString()}`));
+  }
 
-    setErrorMessage("");
+  function navigateToday() {
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("week");
+    const query = params.toString();
+    startTransition(() => router.push(query ? `${pathname}?${query}` : pathname));
+  }
 
-    startSaveTransition(async () => {
+  function openCreate() {
+    setEditingId(null);
+    setForm(createEmptyForm(coachOptions[0]?.id));
+    setError("");
+    setEditorOpen(true);
+  }
+
+  function openEdit(record: AdminScheduleSessionRecord) {
+    setEditingId(record.id);
+    setForm({ title: record.title, type: record.sessionType === "Group" ? "GROUP" : "PRIVATE", status: mapStatus(record.status), coachId: record.coachId, location: record.location, startsAt: toDateTimeLocal(record.startsAt), endsAt: toDateTimeLocal(record.endsAt), capacity: String(record.capacity ?? 1) });
+    setError("");
+    setEditorOpen(true);
+  }
+
+  function submitSession(event: FormEvent) {
+    event.preventDefault();
+    setError("");
+    startTransition(async () => {
       try {
-        await bulkUpdateAdminSessions({
-          sessionIds: selectedSessionIds,
-          action: bulkAction,
-          coachId: bulkAction === "REASSIGN_COACH" ? bulkCoachId : undefined,
-          location: bulkAction === "UPDATE_LOCATION" ? bulkLocation : undefined,
-          capacity:
-            bulkAction === "UPDATE_CAPACITY"
-              ? Number(bulkCapacity)
-              : undefined,
-        });
-        setSelectedSessionIds([]);
+        await saveAdminSession({ sessionId: editingId, title: form.title, type: form.type, status: form.status, coachId: form.coachId, location: form.location, startsAt: new Date(form.startsAt).toISOString(), endsAt: new Date(form.endsAt).toISOString(), capacity: form.type === "PRIVATE" ? 1 : Number(form.capacity) || null });
+        setEditorOpen(false);
         router.refresh();
-      } catch (error) {
-        setErrorMessage(
-          error instanceof Error ? error.message : "Could not apply the bulk update."
-        );
-      }
+      } catch (caught) { setError(caught instanceof Error ? caught.message : "Could not save the session."); }
     });
-  };
+  }
+
+  function cancelSession(id: string) {
+    setError("");
+    startTransition(async () => {
+      try { await cancelAdminSession(id); router.refresh(); }
+      catch (caught) { setError(caught instanceof Error ? caught.message : "Could not cancel the session."); }
+    });
+  }
+
+  function toggleSelection(id: string) {
+    setSelectedIds((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
+  }
+
+  function applyBulk() {
+    if (!selectedIds.length) return;
+    setError("");
+    startTransition(async () => {
+      try {
+        await bulkUpdateAdminSessions({ sessionIds: selectedIds, action: bulkAction, coachId: bulkAction === "REASSIGN_COACH" ? bulkValue : undefined, location: bulkAction === "UPDATE_LOCATION" ? bulkValue : undefined, capacity: bulkAction === "UPDATE_CAPACITY" ? Number(bulkValue) : undefined });
+        setSelectedIds([]); setBulkValue(""); router.refresh();
+      } catch (caught) { setError(caught instanceof Error ? caught.message : "Could not update selected sessions."); }
+    });
+  }
 
   return (
-    <div className="dashboard-stack dashboard-stack--dense">
-      <DashboardPageHeader
-        eyebrow="Admin schedule"
-        actions={
-          <>
-            <Link href="/admin/schedule/templates" className="mv-btn mv-btn-outline">
-              <Repeat2 size={16} />
-              Recurring templates
-            </Link>
-            <Link href="/admin/sessions" className="mv-btn mv-btn-primary">
-              <CalendarPlus2 size={16} />
-              Create Session
-            </Link>
-          </>
-        }
-      />
+    <div className={styles.page} aria-busy={isPending}>
+      <header className={styles.header}><div><span className={styles.kicker}>Studio calendar</span><h1>Program the week.</h1><p>See coach coverage, capacity pressure and every training block in one timeline.</p></div><div className={styles.headerActions}><Link href="/admin/schedule/templates" className="mv-btn mv-btn-secondary"><Repeat2 size={17} /> Templates</Link><button type="button" className="mv-btn mv-btn-primary" onClick={openCreate}><CalendarPlus2 size={17} /> New session</button></div></header>
 
-      <section className="dashboard-kpi-grid">
-        {stats.map((stat) => (
-          <DashboardStatCard key={stat.id} {...stat} />
-        ))}
+      <section className={styles.stats} aria-label="Schedule summary">
+        {stats.map((stat) => <article key={stat.id}><span>{stat.label}</span><strong>{stat.value}</strong><p>{stat.change}</p></article>)}
+        <article className={styles.utilization}><span>Seat utilization</span><strong>{weekCapacity ? Math.round((weekBooked / weekCapacity) * 100) : 0}%</strong><div><i style={{ width: `${weekCapacity ? Math.round((weekBooked / weekCapacity) * 100) : 0}%` }} /></div><p>{weekBooked} booked / {weekCapacity} places</p></article>
       </section>
 
-      <section className="dashboard-panel dashboard-panel--accent dashboard-panel--dense">
-        <DashboardManagementToolbar
-          searchValue={searchTerm}
-          onSearchChange={setSearchTerm}
-            searchPlaceholder="Search by session, coach, group, or location"
-            searchSuggestions={records.map((record) => ({
-              label: record.title,
-              value: record.title,
-              detail: `${record.coachName} - ${record.location}`,
-            }))}
-          summary={`${filteredRecords.length} occurrences in the current view`}
-          filters={
-            <>
-              <label className="dashboard-filter-field">
-                <span>Status</span>
-                <select
-                  className="dashboard-select"
-                  value={statusFilter}
-                  onChange={(event) =>
-                    setStatusFilter(
-                      event.target.value as AdminScheduleSessionRecord["status"] | "All"
-                    )
-                  }
-                >
-                  {["All", "Confirmed", "Waitlist", "Attention", "Completed"].map(
-                    (option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    )
-                  )}
-                </select>
-              </label>
-              <label className="dashboard-filter-field">
-                <span>Type</span>
-                <select
-                  className="dashboard-select"
-                  value={typeFilter}
-                  onChange={(event) =>
-                    setTypeFilter(
-                      event.target.value as AdminScheduleSessionRecord["sessionType"] | "All"
-                    )
-                  }
-                >
-                  {["All", "Group", "Private"].map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="dashboard-filter-field">
-                <span>Coach</span>
-                <select
-                  className="dashboard-select"
-                  value={coachFilter}
-                  onChange={(event) => setCoachFilter(event.target.value)}
-                >
-                  <option value="all">All coaches</option>
-                  {coachOptions.map((coach) => (
-                    <option key={coach.id} value={coach.id}>
-                      {coach.fullName}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="dashboard-filter-field">
-                <span>Group</span>
-                <select
-                  className="dashboard-select"
-                  value={groupFilter}
-                  onChange={(event) => setGroupFilter(event.target.value)}
-                >
-                  <option value="all">All groups</option>
-                  <option value="none">No linked group</option>
-                  {groupOptions.map((group) => (
-                    <option key={group.id} value={group.id}>
-                      {group.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </>
-          }
-        />
+      <section className={styles.scheduler}>
+        <div className={styles.schedulerTop}><div className={styles.monthNav}><button type="button" aria-label="Previous week" onClick={() => navigateWeek(-1)} disabled={isPending}><ChevronLeft size={18} /></button><div><button type="button" className={styles.todayButton} onClick={navigateToday} disabled={isPending}>Today</button><strong>{monthFormatter.format(weekStart)}</strong></div><button type="button" aria-label="Next week" onClick={() => navigateWeek(1)} disabled={isPending}><ChevronRight size={18} /></button></div><div className={styles.search}><Search size={17} /><label className="sr-only" htmlFor="schedule-search">Search schedule</label><input id="schedule-search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Session, coach, group or room" /></div><span className={styles.filterButton}><Filter size={17} /> Live filters</span></div>
+        <div className={styles.filterStrip}><label>Status<select value={status} onChange={(event) => setStatus(event.target.value as typeof status)}><option>All</option><option>Confirmed</option><option>Waitlist</option><option>Attention</option><option>Completed</option></select></label><label>Type<select value={type} onChange={(event) => setType(event.target.value as typeof type)}><option>All</option><option>Group</option><option>Private</option></select></label><label>Coach<select value={coach} onChange={(event) => setCoach(event.target.value)}><option value="all">All coaches</option>{coachOptions.map((item) => <option value={item.id} key={item.id}>{item.fullName}</option>)}</select></label><label>Group<select value={group} onChange={(event) => setGroup(event.target.value)}><option value="all">All groups</option><option value="none">No group</option>{groupOptions.map((item) => <option value={item.id} key={item.id}>{item.name}</option>)}</select></label><span>{filtered.length} visible sessions</span></div>
 
-        {filteredRecords.length > 0 ? (
-          <div className="dashboard-schedule-dayline">
-            <div className="dashboard-schedule-dayline__actions">
-              <p>
-                {dayBuckets.length} days - {filteredRecords.length} occurrences
-              </p>
-              <span>{selectedDayBucket?.label ?? "Select a day"}</span>
-            </div>
+        {selectedIds.length ? <div className={styles.bulkBar}><strong>{selectedIds.length} selected</strong><select value={bulkAction} onChange={(event) => { setBulkAction(event.target.value as BulkAction); setBulkValue(""); }}><option value="CANCEL">Cancel sessions</option><option value="REASSIGN_COACH">Reassign coach</option><option value="UPDATE_LOCATION">Change location</option><option value="UPDATE_CAPACITY">Change capacity</option></select>{bulkAction === "REASSIGN_COACH" ? <select value={bulkValue} onChange={(event) => setBulkValue(event.target.value)}><option value="">Select coach</option>{coachOptions.map((item) => <option value={item.id} key={item.id}>{item.fullName}</option>)}</select> : bulkAction !== "CANCEL" ? <input value={bulkValue} onChange={(event) => setBulkValue(event.target.value)} placeholder={bulkAction === "UPDATE_LOCATION" ? "New location" : "New capacity"} /> : null}<button onClick={applyBulk} disabled={isPending || (bulkAction !== "CANCEL" && !bulkValue)}>Apply update</button><button className={styles.clearBulk} onClick={() => setSelectedIds([])} aria-label="Clear selection"><X size={17} /></button></div> : null}
+        {error ? <p className={styles.error} role="alert">{error}</p> : null}
 
-            <div className="dashboard-schedule-dayline__days" role="tablist" aria-label="Schedule days">
-              {dayBuckets.map((day) => {
-                const isActive = selectedDayBucket?.key === day.key;
-
-                return (
-                  <button
-                    key={day.key}
-                    type="button"
-                    role="tab"
-                    aria-selected={isActive}
-                    className={
-                      isActive
-                        ? "dashboard-schedule-dayline__day dashboard-schedule-dayline__day--active"
-                        : "dashboard-schedule-dayline__day"
-                    }
-                    onClick={() => setSelectedDayKey(day.key)}
-                  >
-                    <small>{day.weekdayShort}</small>
-                    <strong>{day.dayNumber}</strong>
-                    <span>{day.monthShort}</span>
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="dashboard-schedule-dayline__lane-wrap">
-              {selectedDayRecords.length > 0 ? (
-                <div className="dashboard-schedule-dayline__lane">
-                  {selectedDayRecords.map((record) => (
-                    <button
-                      key={record.id}
-                      type="button"
-                      className={
-                        selectedSession?.id === record.id
-                          ? "dashboard-schedule-dayline__event dashboard-schedule-dayline__event--active"
-                          : "dashboard-schedule-dayline__event"
-                      }
-                      onClick={() => setSelectedSessionId(record.id)}
-                    >
-                      <div className="dashboard-schedule-dayline__event-head">
-                        <label
-                          className="dashboard-schedule-dayline__check"
-                          onClick={(event) => event.stopPropagation()}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={selectedSessionIds.includes(record.id)}
-                            onChange={() => handleToggleSelection(record.id)}
-                          />
-                        </label>
-                        <div className="dashboard-schedule-dayline__event-badges">
-                          <DashboardStatusBadge
-                            label={record.sessionType}
-                            tone={getSessionTypeTone(record.sessionType)}
-                          />
-                          <DashboardStatusBadge
-                            label={record.status}
-                            tone={getScheduleTone(record.status)}
-                          />
-                        </div>
-                      </div>
-
-                      <strong>{record.title}</strong>
-
-                      <div className="dashboard-schedule-dayline__event-meta">
-                        <span>{record.timeRange}</span>
-                        <span>{record.coachName}</span>
-                        <span>{record.location}</span>
-                      </div>
-
-                      <small>{record.occupancyLabel}</small>
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <DashboardEmptyState
-                  title="No sessions on this day"
-                  description="Pick another date chip or adjust filters."
-                />
-              )}
-            </div>
+        <div className={styles.weekScroll}>
+          <div className={styles.calendar}>
+            <div className={styles.corner}>GMT+3</div>
+            {weekDays.map((day) => <div className={styles.dayHeader} key={day.toISOString()} data-today={dayKeyFormatter.format(day) === dayKeyFormatter.format(new Date()) || undefined}><span>{dayHeaderFormatter.format(day).split(",")[0]}</span><strong>{day.getDate()}</strong></div>)}
+            <div className={styles.timeRail}>{hours.map((hour) => <span key={hour}>{hour > 12 ? hour - 12 : hour} {hour >= 12 ? "PM" : "AM"}</span>)}</div>
+            {weekDays.map((day) => {
+              const dayKey = dayKeyFormatter.format(day);
+              const dayRecords = filtered.filter((record) => dayKeyFormatter.format(new Date(record.startsAt)) === dayKey);
+              return <div className={styles.dayColumn} key={dayKey}>{hours.map((hour) => <i key={hour} />)}{dayRecords.map((record) => <article key={record.id} className={`${styles.sessionBlock} ${statusClass(record.status)}`} style={sessionPosition(record)} data-selected={selected?.id === record.id || undefined}><button type="button" onClick={() => setSelectedId(record.id)}><span>{record.title}</span><small>{timeFormatter.format(new Date(record.startsAt))}</small><em>{record.coachName}</em>{record.injuryAlertCount > 0 || record.trialCount > 0 ? <b className={styles.blockFlags}>{record.injuryAlertCount > 0 ? `⚠ ${record.injuryAlertCount}` : ""}{record.injuryAlertCount > 0 && record.trialCount > 0 ? " · " : ""}{record.trialCount > 0 ? `${record.trialCount} trial` : ""}</b> : null}</button><label aria-label={`Select ${record.title}`}><input type="checkbox" checked={selectedIds.includes(record.id)} onChange={() => toggleSelection(record.id)} /><Check size={12} /></label></article>)}</div>;
+            })}
           </div>
-        ) : (
-          <DashboardEmptyState
-            title="No sessions in this schedule view"
-            description="Try another filter combination or create a session."
-          />
-        )}
-
-        {false ? (
-          <>
-            <div className="dashboard-schedule-planner__actions">
-              <p>
-                {weekDays.length} days · {filteredRecords.length} occurrences
-              </p>
-              <button
-                type="button"
-                className="mv-btn mv-btn-outline"
-                onClick={() => setCollapsedDays(isAllCollapsed ? [] : [...weekDays])}
-              >
-                {isAllCollapsed ? "Expand all days" : "Collapse all days"}
-              </button>
-            </div>
-
-            <div className="dashboard-schedule-planner">
-              {weekDays.map((day) => {
-                const dayRecords = recordsByDay.get(day) ?? [];
-                const isCollapsed = collapsedDays.includes(day);
-                const firstRecord = dayRecords[0];
-
-                return (
-                  <section key={day} className="dashboard-schedule-planner__day">
-                    <header className="dashboard-schedule-planner__day-header">
-                      <div>
-                        <strong>{day}</strong>
-                        <span>{dayRecords.length} occurrences</span>
-                      </div>
-                      <button
-                        type="button"
-                        className="dashboard-schedule-planner__day-toggle"
-                        onClick={() => handleToggleDay(day)}
-                        aria-expanded={!isCollapsed}
-                        aria-label={isCollapsed ? `Expand ${day}` : `Collapse ${day}`}
-                      >
-                        {isCollapsed ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
-                        {isCollapsed ? "Expand" : "Collapse"}
-                      </button>
-                    </header>
-
-                    {isCollapsed ? (
-                      <p className="dashboard-schedule-planner__collapsed-copy">
-                        {firstRecord
-                          ? `${firstRecord.timeRange} · ${firstRecord.title}`
-                          : "No sessions"}
-                      </p>
-                    ) : (
-                      <div className="dashboard-schedule-planner__day-body">
-                        {dayRecords.map((record) => (
-                          <button
-                            key={record.id}
-                            type="button"
-                            className={
-                              selectedSession?.id === record.id
-                                ? "dashboard-schedule-planner__event dashboard-schedule-planner__event--active"
-                                : "dashboard-schedule-planner__event"
-                            }
-                            onClick={() => setSelectedSessionId(record.id)}
-                          >
-                            <div className="dashboard-schedule-planner__event-head">
-                              <label
-                                className="dashboard-schedule-planner__check"
-                                onClick={(event) => event.stopPropagation()}
-                              >
-                                <input
-                                  type="checkbox"
-                                  checked={selectedSessionIds.includes(record.id)}
-                                  onChange={() => handleToggleSelection(record.id)}
-                                />
-                              </label>
-                              <div className="dashboard-schedule-planner__event-badges">
-                                <DashboardStatusBadge
-                                  label={record.sessionType}
-                                  tone={getSessionTypeTone(record.sessionType)}
-                                />
-                                <DashboardStatusBadge
-                                  label={record.status}
-                                  tone={getScheduleTone(record.status)}
-                                />
-                              </div>
-                            </div>
-
-                            <strong>{record.title}</strong>
-
-                            <div className="dashboard-schedule-planner__event-meta">
-                              <span>{record.timeRange}</span>
-                              <span>{record.coachName}</span>
-                              <span>{record.location}</span>
-                            </div>
-
-                            <small>{record.occupancyLabel}</small>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </section>
-                );
-              })}
-            </div>
-          </>
-        ) : null}
-        <DashboardPaginationControls
-          page={paginatedRecords.page}
-          pageCount={paginatedRecords.pageCount}
-          startItem={paginatedRecords.startItem}
-          endItem={paginatedRecords.endItem}
-          totalItems={paginatedRecords.totalItems}
-          onPageChange={setPage}
-        />
+        </div>
       </section>
 
-      <section className="dashboard-detail-layout">
-        <article className="dashboard-panel dashboard-panel--dense">
-          <div className="dashboard-panel__header dashboard-panel__header--tight">
-            <div>
-              <div className="mv-eyebrow">Occurrence detail</div>
-              <h2>{selectedSession?.title ?? "No session selected"}</h2>
-              <p>{selectedSession?.focus ?? "Pick an occurrence from the day timeline."}</p>
-            </div>
-            {selectedSession ? (
-              <div className="dashboard-badge-stack">
-                <DashboardStatusBadge
-                  label={selectedSession.sessionType}
-                  tone={getSessionTypeTone(selectedSession.sessionType)}
-                />
-                <DashboardStatusBadge
-                  label={selectedSession.status}
-                  tone={getScheduleTone(selectedSession.status)}
-                />
-                {selectedSession.waitlistCount > 0 ? (
-                  <DashboardStatusBadge label="Waitlist forming" tone="warning" />
-                ) : null}
-              </div>
-            ) : null}
-          </div>
-
-          {errorMessage ? (
-            <div className="dashboard-empty-state" role="alert">
-              <strong>Action stopped</strong>
-              <p>{errorMessage}</p>
-            </div>
-          ) : null}
-
-          {selectedSession ? (
-            <>
-              <div className="dashboard-detail-grid">
-                <div className="dashboard-detail-stat">
-                  <span className="dashboard-detail-stat__label">Source</span>
-                  <strong>Manual session</strong>
-                  <small>{selectedSession.highlight}</small>
-                </div>
-                <div className="dashboard-detail-stat">
-                  <span className="dashboard-detail-stat__label">Group</span>
-                  <strong>{selectedSession.groupName}</strong>
-                  <small>{selectedSession.rosterCount} rostered</small>
-                </div>
-                <div className="dashboard-detail-stat">
-                  <span className="dashboard-detail-stat__label">Coach</span>
-                  <strong>{selectedSession.coachName}</strong>
-                  <small>{selectedSession.location}</small>
-                </div>
-                <div className="dashboard-detail-stat">
-                  <span className="dashboard-detail-stat__label">Occupancy</span>
-                  <strong>{selectedSession.occupancyLabel}</strong>
-                  <small>
-                    {selectedSession.bookedCount} booked · {selectedSession.waitlistCount} waitlist
-                  </small>
-                </div>
-              </div>
-
-              <div className="dashboard-form-section">
-                <div className="dashboard-form-section__header">
-                  <div>
-                    <div className="mv-eyebrow">This occurrence only</div>
-                    <h3>Quick actions</h3>
-                    <p>Changes here apply to this single occurrence, not the series.</p>
-                  </div>
-                </div>
-
-                <div className="dashboard-form-grid">
-                  <label className="dashboard-form-field">
-                    <span>Replace coach</span>
-                    <select
-                      className="dashboard-select"
-                      value={occurrenceCoachId}
-                      onChange={(event) => setOccurrenceCoachId(event.target.value)}
-                      disabled={isMutating}
-                    >
-                      {coachOptions.map((coach) => (
-                        <option key={coach.id} value={coach.id}>
-                          {coach.fullName}
-                          {coach.id === selectedSession.coachId ? " (current)" : ""}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                </div>
-
-                <div className="dashboard-row-actions">
-                  <button
-                    type="button"
-                    className="mv-btn mv-btn-secondary"
-                    onClick={() => handleReassignOccurrenceCoach(selectedSession)}
-                    disabled={isMutating || occurrenceCoachId === selectedSession.coachId}
-                  >
-                    <RefreshCw size={16} />
-                    {isMutating ? "Saving..." : "Reassign coach"}
-                  </button>
-                  {selectedSession.status !== "Completed" ? (
-                    <button
-                      type="button"
-                      className="mv-btn mv-btn-danger"
-                      onClick={() => handleCancelOccurrence(selectedSession.id)}
-                      disabled={isMutating}
-                    >
-                      <XCircle size={16} />
-                      Cancel occurrence
-                    </button>
-                  ) : null}
-                </div>
-              </div>
-
-              <div className="dashboard-contact-block">
-                <span className="dashboard-detail-stat__label">Admin note</span>
-                <p>{selectedSession.attendanceNote}</p>
-              </div>
-
-            </>
-          ) : (
-            <DashboardEmptyState
-              title="No occurrence available"
-            description="Adjust the filters or create a session to populate the board."
-            />
-          )}
-        </article>
-
-        <aside className="dashboard-panel dashboard-detail-panel dashboard-panel--dense">
-          <div className="dashboard-panel__header dashboard-panel__header--tight">
-            <div>
-              <div className="mv-eyebrow">Bulk actions</div>
-              <h2>{selectedSessionIds.length} selected</h2>
-              <p>Apply one operational change across multiple occurrences at once.</p>
-            </div>
-          </div>
-
-          {errorMessage ? (
-            <div className="dashboard-empty-state" role="alert">
-              <strong>Bulk update stopped</strong>
-              <p>{errorMessage}</p>
-            </div>
-          ) : null}
-
-          <div className="dashboard-form-grid">
-            <label className="dashboard-form-field">
-              <span>Action</span>
-              <select
-                className="dashboard-select"
-                value={bulkAction}
-                onChange={(event) => setBulkAction(event.target.value as BulkAction)}
-              >
-                <option value="CANCEL">Cancel selected</option>
-                <option value="REASSIGN_COACH">Replace coach</option>
-                <option value="UPDATE_LOCATION">Change location</option>
-                <option value="UPDATE_CAPACITY">Change capacity</option>
-              </select>
-            </label>
-
-            {bulkAction === "REASSIGN_COACH" ? (
-              <label className="dashboard-form-field">
-                <span>Coach</span>
-                <select
-                  className="dashboard-select"
-                  value={bulkCoachId}
-                  onChange={(event) => setBulkCoachId(event.target.value)}
-                >
-                  {coachOptions.map((coach) => (
-                    <option key={coach.id} value={coach.id}>
-                      {coach.fullName}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            ) : null}
-
-            {bulkAction === "UPDATE_LOCATION" ? (
-              <label className="dashboard-form-field">
-                <span>Location</span>
-                <input
-                  className="dashboard-input"
-                  value={bulkLocation}
-                  onChange={(event) => setBulkLocation(event.target.value)}
-                />
-              </label>
-            ) : null}
-
-            {bulkAction === "UPDATE_CAPACITY" ? (
-              <label className="dashboard-form-field">
-                <span>Capacity</span>
-                <input
-                  type="number"
-                  min={1}
-                  className="dashboard-input"
-                  value={bulkCapacity}
-                  onChange={(event) => setBulkCapacity(event.target.value)}
-                />
-              </label>
-            ) : null}
-          </div>
-
-          <div className="dashboard-row-actions">
-            <button
-              type="button"
-              className="mv-btn mv-btn-primary"
-              onClick={handleApplyBulkAction}
-              disabled={isSaving || selectedSessionIds.length === 0}
-            >
-              {isSaving ? "Applying..." : "Apply bulk action"}
-            </button>
-          </div>
-
-          {selectedSessionIds.length > 0 ? (
-            <div className="dashboard-summary-list">
-              {filteredRecords
-                .filter((record) => selectedSessionIds.includes(record.id))
-                .map((record) => (
-                  <div key={record.id} className="dashboard-summary-row">
-                    <strong>{record.title}</strong>
-                    <span>
-                      {record.dateLabel} · {record.timeRange} · {record.coachName}
-                    </span>
-                  </div>
-                ))}
-            </div>
-          ) : (
-            <DashboardEmptyState
-              title="No occurrences selected"
-              description="Use the checkboxes on the day timeline to build a bulk edit set."
-            />
-          )}
-        </aside>
+      <section className={styles.detailLayout}>
+        <article className={styles.agenda}><div className={styles.sectionHeading}><div><span>Week agenda</span><h2>All occurrences</h2></div><small>{filtered.length} sessions</small></div><div>{filtered.map((record) => <button type="button" key={record.id} data-active={selected?.id === record.id || undefined} onClick={() => setSelectedId(record.id)}><time><strong>{timeFormatter.format(new Date(record.startsAt))}</strong><span>{dayHeaderFormatter.format(new Date(record.startsAt))}</span></time><div><strong>{record.title}</strong><span>{record.coachName} · {record.location}{record.trainingCategory ? ` · ${record.trainingCategory}` : ""}{record.injuryAlertCount > 0 ? ` · ⚠ ${record.injuryAlertCount} injury` : ""}{record.trialCount > 0 ? ` · ${record.trialCount} trial` : ""}</span></div><span className={statusClass(record.status)}>{record.status}</span><ChevronRight size={17} /></button>)}</div></article>
+        <aside className={styles.inspector}><div className={styles.sectionHeading}><div><span>Selected session</span><h2>{selected?.title ?? "Nothing selected"}</h2></div></div>{selected ? <><div className={styles.inspectorStatus}><span className={statusClass(selected.status)}>{selected.status}</span><span>{selected.sessionType}</span></div><dl><div><dt><Clock3 size={15} /> Time</dt><dd>{selected.dayLabel}, {selected.dateLabel}<br />{selected.timeRange}</dd></div><div><dt><ShieldUser size={15} /> Coach</dt><dd>{selected.coachName}</dd></div><div><dt><MapPin size={15} /> Location</dt><dd>{selected.location}</dd></div><div><dt><Users size={15} /> Capacity</dt><dd>{selected.occupancyLabel}<br />{selected.waitlistCount} waitlisted</dd></div><div><dt><Dumbbell size={15} /> Training</dt><dd>{selected.trainingCategory ?? "—"}</dd></div></dl>{selected.injuryAlertCount > 0 || selected.trialCount > 0 ? <div className={styles.inspectorNote}><strong>Roster flags</strong><p>{selected.injuryAlertCount > 0 ? `⚠ ${selected.injuryAlertCount} client${selected.injuryAlertCount === 1 ? "" : "s"} with an injury alert. ` : ""}{selected.trialCount > 0 ? `${selected.trialCount} trial client${selected.trialCount === 1 ? "" : "s"} in this session.` : ""}</p></div> : null}<div className={styles.inspectorNote}><strong>Training focus</strong><p>{selected.focus}</p></div>{selected.recentChanges.length ? <div className={styles.inspectorNote}><strong>Recent changes</strong><ul>{selected.recentChanges.map((change) => <li key={change.id}>{change.label} · {change.dateLabel}</li>)}</ul></div> : null}{selected.sourceTemplateId ? <div className={styles.inspectorNote}><strong><Repeat2 size={14} /> Part of a recurring series</strong><p>Editing or cancelling here changes <b>this session only</b>. To change the whole series from a date onward, update its recurring template.</p><Link href="/admin/schedule/templates" className={styles.templateLink}>Change the recurring series →</Link></div> : null}<div className={styles.inspectorActions}><button className="mv-btn mv-btn-primary" onClick={() => openEdit(selected)}>{selected.sourceTemplateId ? "Edit this session" : "Edit session"}</button>{selected.status !== "Completed" ? <button className={styles.cancelButton} onClick={() => cancelSession(selected.id)} disabled={isPending}><XCircle size={16} /> Cancel</button> : null}</div></> : <p className={styles.noSelection}>Choose a session from the calendar.</p>}</aside>
       </section>
+
+      <Dialog.Root open={editorOpen} onOpenChange={setEditorOpen}><Dialog.Portal><Dialog.Overlay className={styles.overlay} /><Dialog.Content className={styles.editor}><Dialog.Title>{editingId ? "Edit session" : "Create a session"}</Dialog.Title><Dialog.Description>Define the training block, coach, capacity and floor location.</Dialog.Description><Dialog.Close className={styles.close} aria-label="Close session editor"><X size={18} /></Dialog.Close><form onSubmit={submitSession} className={styles.form}><label className={styles.full}>Session title<input required value={form.title} onChange={(event) => setForm((value) => ({ ...value, title: event.target.value }))} /></label><label>Type<select value={form.type} onChange={(event) => setForm((value) => ({ ...value, type: event.target.value as SessionForm["type"] }))}><option value="GROUP">Group</option><option value="PRIVATE">Private</option></select></label><label>Status<select value={form.status} onChange={(event) => setForm((value) => ({ ...value, status: event.target.value as SessionForm["status"] }))}><option value="DRAFT">Draft</option><option value="SCHEDULED">Scheduled</option><option value="COMPLETED">Completed</option><option value="CANCELED">Canceled</option></select></label><label>Starts<input type="datetime-local" required value={form.startsAt} onChange={(event) => setForm((value) => ({ ...value, startsAt: event.target.value }))} /></label><label>Ends<input type="datetime-local" required value={form.endsAt} onChange={(event) => setForm((value) => ({ ...value, endsAt: event.target.value }))} /></label><label>Coach<select required value={form.coachId} onChange={(event) => setForm((value) => ({ ...value, coachId: event.target.value }))}><option value="">Select coach</option>{coachOptions.map((item) => <option value={item.id} key={item.id}>{item.fullName}</option>)}</select></label><label>Capacity<input type="number" min="1" disabled={form.type === "PRIVATE"} value={form.type === "PRIVATE" ? "1" : form.capacity} onChange={(event) => setForm((value) => ({ ...value, capacity: event.target.value }))} /></label><label className={styles.full}>Location<input value={form.location} onChange={(event) => setForm((value) => ({ ...value, location: event.target.value }))} placeholder="Studio floor or zone" /></label>{error ? <p className={styles.error} role="alert">{error}</p> : null}<div className={`${styles.formActions} ${styles.full}`}><button type="button" className="mv-btn mv-btn-secondary" onClick={() => setEditorOpen(false)}>Cancel</button><button type="submit" className="mv-btn mv-btn-primary" disabled={isPending}>{isPending ? "Saving…" : "Save session"}</button></div></form></Dialog.Content></Dialog.Portal></Dialog.Root>
     </div>
   );
 }

@@ -11,6 +11,7 @@ import {
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
+import { RedlineAuthShell } from "@/components/auth/redline-auth-shell";
 
 import "./login.css";
 
@@ -169,7 +170,7 @@ function LoginForm() {
   return (
     <div className="login-form-panel">
       <div className="login-form-header">
-        <div className="mv-eyebrow">Member Access</div>
+        <div className="auth-kicker">Member access / secure</div>
         <h2 className="login-form-title">Welcome back</h2>
         <p className="login-form-subtitle">
           Sign in to access your dashboard and sessions.
@@ -265,7 +266,7 @@ function LoginForm() {
               id="login-client-id"
               name="clientId"
               type="tel"
-              className={`mv-field ${
+              className={`auth-field ${
                 fieldErrors.clientId ? "field-error" : ""
               }`}
               value={clientId}
@@ -301,7 +302,7 @@ function LoginForm() {
               id="login-email"
               name="email"
               type="email"
-              className={`mv-field ${fieldErrors.email ? "field-error" : ""}`}
+              className={`auth-field ${fieldErrors.email ? "field-error" : ""}`}
               value={email}
               onChange={(event) => {
                 setEmail(event.target.value);
@@ -331,7 +332,7 @@ function LoginForm() {
               id="login-password"
               name="password"
               type={showPassword ? "text" : "password"}
-              className={`mv-field ${fieldErrors.password ? "field-error" : ""}`}
+              className={`auth-field ${fieldErrors.password ? "field-error" : ""}`}
               value={password}
               onChange={(event) => {
                 setPassword(event.target.value);
@@ -402,7 +403,7 @@ function LoginForm() {
 
         <button
           type="submit"
-          className="mv-btn mv-btn-primary login-submit"
+          className="auth-primary-button login-submit"
           disabled={isLoading}
         >
           <span className="login-submit-content">
@@ -434,12 +435,10 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <div className="login-page">
-      <div className="login-container">
+    <RedlineAuthShell>
         <Suspense fallback={<div className="login-loading">Loading secure login...</div>}>
           <LoginForm />
         </Suspense>
-      </div>
-    </div>
+    </RedlineAuthShell>
   );
 }

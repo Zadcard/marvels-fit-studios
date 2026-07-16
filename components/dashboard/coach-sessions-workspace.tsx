@@ -1,679 +1,524 @@
 "use client";
 
-import { useDeferredValue, useEffect, useMemo, useRef, useState, useTransition } from "react";
-import { ClipboardCheck } from "lucide-react";
+import {
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useState,
+  useTransition,
+} from "react";
 import { useRouter } from "next/navigation";
+import {
+  AlertTriangle,
+  CalendarClock,
+  ChevronLeft,
+  ChevronRight,
+  ClipboardCheck,
+  Save,
+  Search,
+  UserMinus,
+  UserPlus,
+  UsersRound,
+} from "lucide-react";
 
 import {
   assignCoachClientToSession,
   removeCoachClientFromSession,
 } from "@/app/actions/coach-session-bookings";
 import { saveCoachSessionNote } from "@/app/actions/coach-session-notes";
-import { DashboardManagementToolbar } from "@/components/dashboard/dashboard-management-toolbar";
-import { DashboardEmptyState } from "@/components/dashboard/dashboard-empty-state";
-import { DashboardModal } from "@/components/dashboard/dashboard-modal";
-import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
-import { DashboardPaginationControls } from "@/components/dashboard/dashboard-pagination-controls";
-import { DashboardStatusBadge } from "@/components/dashboard/dashboard-status-badge";
 import {
   coachSessionStatusFilters,
   coachSessionTypeFilters,
-  type CoachSessionBookingStatus,
   type CoachSessionRecord,
   type CoachSessionStatus,
   type CoachSessionType,
 } from "@/lib/dashboard/coach-session-data";
 import { paginateDashboardItems } from "@/lib/dashboard/pagination";
+import styles from "./coach-sessions-workspace.module.css";
 
-type CoachSessionSort = "soonest" | "latest" | "status" | "type";
-
-const coachSessionSortOptions: Array<{ label: string; value: CoachSessionSort }> = [
-  { label: "Soonest", value: "soonest" },
-  { label: "Latest", value: "latest" },
-  { label: "Status", value: "status" },
-  { label: "Type", value: "type" },
-];
-
-function getCoachSessionTone(status: CoachSessionStatus) {
-  switch (status) {
-    case "Ready":
-      return "success";
-    case "Waitlist":
-      return "warning";
-    case "Prep":
-      return "accent";
-    default:
-      return "neutral";
-  }
-}
-
-function getCoachTypeTone(type: CoachSessionType) {
-  return type === "Group" ? "accent" : "neutral";
-}
-
-function getBookingTone(status: CoachSessionBookingStatus) {
-  switch (status) {
-    case "Attended":
-      return "success";
-    case "Missed":
-      return "warning";
-    case "Waitlist":
-      return "accent";
-    default:
-      return "neutral";
-  }
-}
-
-type CoachSessionsWorkspaceProps = {
+type Props = {
   records: CoachSessionRecord[];
-  clientOptions: Array<{
-    id: string;
-    fullName: string;
-  }>;
+  clientOptions: Array<{ id: string; fullName: string }>;
 };
+type Sort = "soonest" | "latest" | "status" | "type";
 
-export function CoachSessionsWorkspace({
-  records,
-  clientOptions,
-}: CoachSessionsWorkspaceProps) {
+export function CoachSessionsWorkspace({ records, clientOptions }: Props) {
   const router = useRouter();
-  const [isManagingRoster, startRosterTransition] = useTransition();
-  const [isSavingNote, startNoteTransition] = useTransition();
-  const [searchTerm, setSearchTerm] = useState("");
-  const deferredSearchTerm = useDeferredValue(searchTerm);
-  const [typeFilter, setTypeFilter] = useState<"All" | CoachSessionType>("All");
-  const [statusFilter, setStatusFilter] = useState<"All" | CoachSessionStatus>("All");
-  const [sortOrder, setSortOrder] = useState<CoachSessionSort>("soonest");
+  const [rosterPending, startRoster] = useTransition();
+  const [notePending, startNote] = useTransition();
+  const [search, setSearch] = useState("");
+  const deferredSearch = useDeferredValue(search);
+  const [type, setType] = useState<"All" | CoachSessionType>("All");
+  const [status, setStatus] = useState<"All" | CoachSessionStatus>("All");
+  const [sort, setSort] = useState<Sort>("soonest");
   const [page, setPage] = useState(1);
-  const [selectedSessionId, setSelectedSessionId] = useState(records[0]?.id ?? "");
-  const [detailSessionId, setDetailSessionId] = useState<string | null>(null);
-  const [feedbackMessage, setFeedbackMessage] = useState("");
-  const [clientSearchTerm, setClientSearchTerm] = useState("");
-  const [selectedClientId, setSelectedClientId] = useState(clientOptions[0]?.id ?? "");
+  const [selectedSessionId, setSelectedSessionId] = useState(
+    records[0]?.id ?? "",
+  );
+  const [feedback, setFeedback] = useState("");
+  const [clientSearch, setClientSearch] = useState("");
+  const [selectedClientId, setSelectedClientId] = useState(
+    clientOptions[0]?.id ?? "",
+  );
   const [noteDraft, setNoteDraft] = useState(records[0]?.noteValue ?? "");
-  const detailRef = useRef<HTMLElement | null>(null);
 
-  const filteredSessions = records.filter((session) => {
-    const query = deferredSearchTerm.trim().toLowerCase();
-    const matchesSearch =
-      query.length === 0 ||
-      [session.title, session.location, session.focus, session.note]
-        .join(" ")
-        .toLowerCase()
-        .includes(query);
-    const matchesType = typeFilter === "All" || session.sessionType === typeFilter;
-    const matchesStatus = statusFilter === "All" || session.status === statusFilter;
-
-    return matchesSearch && matchesType && matchesStatus;
-  });
-  const sortedSessions = useMemo(() => {
-    return [...filteredSessions].sort((left, right) => {
-      const leftTiming = `${left.dayLabel} ${left.timeLabel}`;
-      const rightTiming = `${right.dayLabel} ${right.timeLabel}`;
-      if (sortOrder === "latest") return rightTiming.localeCompare(leftTiming);
-      if (sortOrder === "status") return left.status.localeCompare(right.status);
-      if (sortOrder === "type") return left.sessionType.localeCompare(right.sessionType);
-      return leftTiming.localeCompare(rightTiming);
+  const filtered = useMemo(() => {
+    const query = deferredSearch.trim().toLowerCase();
+    return records.filter((session) => {
+      const matchesSearch =
+        !query ||
+        [session.title, session.location, session.focus, session.note]
+          .join(" ")
+          .toLowerCase()
+          .includes(query);
+      return (
+        matchesSearch &&
+        (type === "All" || session.sessionType === type) &&
+        (status === "All" || session.status === status)
+      );
     });
-  }, [filteredSessions, sortOrder]);
-  const paginatedSessions = paginateDashboardItems(sortedSessions, page);
-
-  useEffect(() => {
-    if (!filteredSessions.some((session) => session.id === selectedSessionId)) {
-      setSelectedSessionId(filteredSessions[0]?.id ?? "");
-    }
-  }, [filteredSessions, selectedSessionId]);
-
-  const selectedSession =
-    filteredSessions.find((session) => session.id === selectedSessionId) ??
-    filteredSessions[0];
-  const detailSession =
-    filteredSessions.find((session) => session.id === detailSessionId) ?? null;
-
-  useEffect(() => {
-    setNoteDraft(selectedSession?.noteValue ?? "");
-  }, [selectedSession?.id, selectedSession?.noteValue]);
-
-  const availableClientOptions = clientOptions.filter(
+  }, [deferredSearch, records, status, type]);
+  const sorted = useMemo(
+    () =>
+      [...filtered].sort((left, right) => {
+        const leftTiming = `${left.dayLabel} ${left.timeLabel}`;
+        const rightTiming = `${right.dayLabel} ${right.timeLabel}`;
+        if (sort === "latest") return rightTiming.localeCompare(leftTiming);
+        if (sort === "status") return left.status.localeCompare(right.status);
+        if (sort === "type")
+          return left.sessionType.localeCompare(right.sessionType);
+        return leftTiming.localeCompare(rightTiming);
+      }),
+    [filtered, sort],
+  );
+  const paginated = paginateDashboardItems(sorted, page);
+  const selected =
+    filtered.find((item) => item.id === selectedSessionId) ?? filtered[0];
+  const availableClients = clientOptions.filter(
     (client) =>
-      !selectedSession?.bookings.some((booking) => booking.clientId === client.id)
+      !selected?.bookings.some((booking) => booking.clientId === client.id),
   );
-  const filteredClientOptions = availableClientOptions.filter((client) =>
-    clientSearchTerm.trim().length === 0
+  const filteredClients = availableClients.filter((client) =>
+    !clientSearch.trim()
       ? true
-      : client.fullName.toLowerCase().includes(clientSearchTerm.trim().toLowerCase())
+      : client.fullName
+          .toLowerCase()
+          .includes(clientSearch.trim().toLowerCase()),
   );
-  const resolvedSelectedClientId = filteredClientOptions.some(
-    (client) => client.id === selectedClientId
+  const resolvedClientId = filteredClients.some(
+    (client) => client.id === selectedClientId,
   )
     ? selectedClientId
-    : filteredClientOptions[0]?.id ?? "";
-  const hasActiveFilters =
-    searchTerm.trim().length > 0 || typeFilter !== "All" || statusFilter !== "All";
+    : (filteredClients[0]?.id ?? "");
 
+  useEffect(() => setPage(1), [search, type, status, sort]);
   useEffect(() => {
-    setPage(1);
-  }, [searchTerm, typeFilter, statusFilter, sortOrder]);
-
-  const resetFilters = () => {
-    setSearchTerm("");
-    setTypeFilter("All");
-    setStatusFilter("All");
-  };
-
+    if (!filtered.some((item) => item.id === selectedSessionId))
+      setSelectedSessionId(filtered[0]?.id ?? "");
+  }, [filtered, selectedSessionId]);
+  useEffect(
+    () => setNoteDraft(selected?.noteValue ?? ""),
+    [selected?.id, selected?.noteValue],
+  );
   useEffect(() => {
-    if (filteredClientOptions.length === 0) {
-      if (selectedClientId !== "") {
-        setSelectedClientId("");
-      }
-      return;
-    }
+    if (!filteredClients.length) setSelectedClientId("");
+    else if (!filteredClients.some((item) => item.id === selectedClientId))
+      setSelectedClientId(filteredClients[0]?.id ?? "");
+  }, [filteredClients, selectedClientId]);
 
-    if (!filteredClientOptions.some((client) => client.id === selectedClientId)) {
-      setSelectedClientId(filteredClientOptions[0]?.id ?? "");
-    }
-  }, [filteredClientOptions, selectedClientId]);
-
-  const openSessionDetail = (sessionId: string) => {
-    setSelectedSessionId(sessionId);
-    setDetailSessionId(sessionId);
-    requestAnimationFrame(() => {
-      detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
-  };
-
-  const handleAssignClient = () => {
-    if (!selectedSession || !resolvedSelectedClientId) {
-      return;
-    }
-
-    setFeedbackMessage("");
-
-    startRosterTransition(async () => {
+  function assignClient() {
+    if (!selected || !resolvedClientId) return;
+    setFeedback("");
+    startRoster(async () => {
       try {
-        await assignCoachClientToSession(selectedSession.id, resolvedSelectedClientId);
-        setFeedbackMessage("Client assigned successfully.");
+        await assignCoachClientToSession(selected.id, resolvedClientId);
+        setFeedback("Member assigned to this session.");
         router.refresh();
-      } catch (error) {
-        setFeedbackMessage(
-          error instanceof Error ? error.message : "Could not assign client."
+      } catch (caught) {
+        setFeedback(
+          caught instanceof Error ? caught.message : "Could not assign member.",
         );
       }
     });
-  };
-
-  const handleRemoveClient = (clientId: string) => {
-    if (!selectedSession) {
-      return;
-    }
-
-    setFeedbackMessage("");
-
-    startRosterTransition(async () => {
+  }
+  function removeClient(clientId: string) {
+    if (!selected) return;
+    setFeedback("");
+    startRoster(async () => {
       try {
-        await removeCoachClientFromSession(selectedSession.id, clientId);
-        setFeedbackMessage("Client removed from session.");
+        await removeCoachClientFromSession(selected.id, clientId);
+        setFeedback("Member removed from this session.");
         router.refresh();
-      } catch (error) {
-        setFeedbackMessage(
-          error instanceof Error ? error.message : "Could not remove client."
+      } catch (caught) {
+        setFeedback(
+          caught instanceof Error ? caught.message : "Could not remove member.",
         );
       }
     });
-  };
-
-  const handleSaveNote = () => {
-    if (!selectedSession) {
-      return;
-    }
-
-    setFeedbackMessage("");
-
-    startNoteTransition(async () => {
+  }
+  function saveNote() {
+    if (!selected) return;
+    setFeedback("");
+    startNote(async () => {
       try {
-        const result = await saveCoachSessionNote(selectedSession.id, noteDraft);
+        const result = await saveCoachSessionNote(selected.id, noteDraft);
         setNoteDraft(result.content);
-        setFeedbackMessage("Session note saved.");
+        setFeedback("Session note saved.");
         router.refresh();
-      } catch (error) {
-        setFeedbackMessage(
-          error instanceof Error ? error.message : "Could not save session note."
+      } catch (caught) {
+        setFeedback(
+          caught instanceof Error
+            ? caught.message
+            : "Could not save session note.",
         );
       }
     });
-  };
+  }
+
+  const injuryFlags = records
+    .flatMap((item) => item.bookings)
+    .filter((item) => item.hasInjuryAlert).length;
 
   return (
-    <div className="dashboard-stack">
-      <DashboardPageHeader eyebrow="Coach sessions" />
+    <div className={styles.page}>
+      <header className={styles.hero}>
+        <div>
+          <span className={styles.kicker}>Session command</span>
+          <h1>Own the room before it starts.</h1>
+          <p>
+            Read the brief, protect every restriction, set the roster and leave
+            a clean coaching record.
+          </p>
+        </div>
+        <CalendarClock />
+      </header>
 
-      <section className="dashboard-detail-layout">
-        <article className="dashboard-panel dashboard-panel--accent">
-          <DashboardManagementToolbar
-            searchValue={searchTerm}
-            onSearchChange={setSearchTerm}
-            searchPlaceholder="Search by session, focus, or location"
-            searchSuggestions={records.map((session) => ({
-              label: session.title,
-              value: session.title,
-              detail: `${session.focus} - ${session.location}`,
-            }))}
-            summary={`${filteredSessions.length} assigned sessions in view`}
-            sortValue={sortOrder}
-            sortOptions={coachSessionSortOptions}
-            onSortChange={(value) => setSortOrder(value as CoachSessionSort)}
-            isFiltered={hasActiveFilters}
-            onReset={resetFilters}
-            filters={
-              <>
-                <label className="dashboard-filter-field">
-                  <span>Type</span>
-                  <select
-                    className="dashboard-select"
-                    value={typeFilter}
-                    onChange={(event) =>
-                      setTypeFilter(event.target.value as "All" | CoachSessionType)
-                    }
-                  >
-                    {coachSessionTypeFilters.map((filter) => (
-                      <option key={filter} value={filter}>
-                        {filter}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="dashboard-filter-field">
-                  <span>Status</span>
-                  <select
-                    className="dashboard-select"
-                    value={statusFilter}
-                    onChange={(event) =>
-                      setStatusFilter(event.target.value as "All" | CoachSessionStatus)
-                    }
-                  >
-                    {coachSessionStatusFilters.map((filter) => (
-                      <option key={filter} value={filter}>
-                        {filter}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              </>
-            }
+      <section className={styles.scoreboard}>
+        <article>
+          <span>Assigned blocks</span>
+          <strong>{String(records.length).padStart(2, "0")}</strong>
+          <small>Your current session ledger</small>
+        </article>
+        <article>
+          <span>Ready now</span>
+          <strong>
+            {String(
+              records.filter((item) => item.status === "Ready").length,
+            ).padStart(2, "0")}
+          </strong>
+          <small>Cleared to deliver</small>
+        </article>
+        <article data-alert={injuryFlags > 0 || undefined}>
+          <span>Safety flags</span>
+          <strong>{String(injuryFlags).padStart(2, "0")}</strong>
+          <small>Across active rosters</small>
+        </article>
+        <article data-dark>
+          <span>Members booked</span>
+          <strong>
+            {String(
+              records.reduce((sum, item) => sum + item.bookings.length, 0),
+            ).padStart(2, "0")}
+          </strong>
+          <small>Current participant count</small>
+        </article>
+      </section>
+
+      <section className={styles.toolbar}>
+        <label className={styles.search}>
+          <Search size={17} />
+          <input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search session, focus or location"
           />
+        </label>
+        <label>
+          <span>Type</span>
+          <select
+            value={type}
+            onChange={(event) =>
+              setType(event.target.value as "All" | CoachSessionType)
+            }
+          >
+            {coachSessionTypeFilters.map((item) => (
+              <option key={item}>{item}</option>
+            ))}
+          </select>
+        </label>
+        <label>
+          <span>Status</span>
+          <select
+            value={status}
+            onChange={(event) =>
+              setStatus(event.target.value as "All" | CoachSessionStatus)
+            }
+          >
+            {coachSessionStatusFilters.map((item) => (
+              <option key={item}>{item}</option>
+            ))}
+          </select>
+        </label>
+        <label>
+          <span>Sort</span>
+          <select
+            value={sort}
+            onChange={(event) => setSort(event.target.value as Sort)}
+          >
+            <option value="soonest">Soonest</option>
+            <option value="latest">Latest</option>
+            <option value="status">Status</option>
+            <option value="type">Type</option>
+          </select>
+        </label>
+        <button
+          type="button"
+          onClick={() => {
+            setSearch("");
+            setType("All");
+            setStatus("All");
+          }}
+        >
+          Reset
+        </button>
+      </section>
 
-          {feedbackMessage ? (
-            <div className="dashboard-info-strip">
-              <strong>Session update</strong>
-              <p>{feedbackMessage}</p>
-            </div>
-          ) : null}
+      {feedback ? (
+        <p className={styles.feedback} role="status">
+          {feedback}
+        </p>
+      ) : null}
 
-          <div className="dashboard-data-region">
-            {filteredSessions.length > 0 ? (
-              <>
-                <div className="dashboard-table-wrap">
-                  <table className="dashboard-table">
-                    <thead>
-                      <tr>
-                        <th>Session</th>
-                        <th>Type</th>
-                        <th>Status</th>
-                        <th>Timing</th>
-                        <th>Roster</th>
-                        <th>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {paginatedSessions.items.map((session) => (
-                        <tr key={session.id}>
-                          <td>
-                            <div className="dashboard-table__identity">
-                              <strong>{session.title}</strong>
-                              <span>{session.location}</span>
-                              <small>{session.focus}</small>
-                            </div>
-                          </td>
-                          <td>
-                            <DashboardStatusBadge
-                              label={session.sessionType}
-                              tone={getCoachTypeTone(session.sessionType)}
-                            />
-                          </td>
-                          <td>
-                            <DashboardStatusBadge
-                              label={session.status}
-                              tone={getCoachSessionTone(session.status)}
-                            />
-                          </td>
-                          <td>
-                            {session.dayLabel}, {session.timeLabel}
-                          </td>
-                          <td>{session.rosterLabel}</td>
-                          <td>
-                            <button
-                              type="button"
-                              className="dashboard-inline-button"
-                              onClick={() => openSessionDetail(session.id)}
-                            >
-                              Open detail
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+      <section className={styles.layout}>
+        <div className={styles.sessionList}>
+          {paginated.items.length ? (
+            paginated.items.map((session, index) => (
+              <button
+                key={session.id}
+                type="button"
+                data-selected={selected?.id === session.id || undefined}
+                onClick={() => setSelectedSessionId(session.id)}
+              >
+                <span className={styles.index}>
+                  {String(
+                    (paginated.page - 1) * paginated.pageSize + index + 1,
+                  ).padStart(2, "0")}
+                </span>
+                <div className={styles.sessionIdentity}>
+                  <span>
+                    {session.sessionType} · {session.location}
+                  </span>
+                  <h2>{session.title}</h2>
+                  <p>{session.focus}</p>
                 </div>
+                <div className={styles.timing}>
+                  <strong>{session.timeLabel}</strong>
+                  <span>{session.dayLabel}</span>
+                </div>
+                <div className={styles.roster}>
+                  <UsersRound size={15} />
+                  <span>{session.rosterLabel}</span>
+                </div>
+                <b data-status={session.status}>{session.status}</b>
+              </button>
+            ))
+          ) : (
+            <div className={styles.empty}>
+              <ClipboardCheck size={26} />
+              <strong>No sessions match this view</strong>
+              <button
+                type="button"
+                onClick={() => {
+                  setSearch("");
+                  setType("All");
+                  setStatus("All");
+                }}
+              >
+                Clear filters
+              </button>
+            </div>
+          )}
+          <footer className={styles.pagination}>
+            <span>
+              {paginated.totalItems
+                ? `${paginated.startItem}–${paginated.endItem} of ${paginated.totalItems}`
+                : "0 sessions"}
+            </span>
+            <div>
+              <button
+                type="button"
+                aria-label="Previous page"
+                disabled={paginated.page <= 1}
+                onClick={() => setPage((value) => Math.max(1, value - 1))}
+              >
+                <ChevronLeft />
+              </button>
+              <strong>
+                {paginated.page} / {paginated.pageCount}
+              </strong>
+              <button
+                type="button"
+                aria-label="Next page"
+                disabled={paginated.page >= paginated.pageCount}
+                onClick={() =>
+                  setPage((value) => Math.min(paginated.pageCount, value + 1))
+                }
+              >
+                <ChevronRight />
+              </button>
+            </div>
+          </footer>
+        </div>
 
-                <div className="dashboard-mobile-list">
-                  {paginatedSessions.items.map((session) => (
-                    <article key={session.id} className="dashboard-record-card">
-                      <div className="dashboard-record-card__header">
+        <aside className={styles.control}>
+          {selected ? (
+            <>
+              <header>
+                <div>
+                  <span className={styles.kicker}>Selected block</span>
+                  <h2>{selected.title}</h2>
+                  <p>{selected.focus}</p>
+                </div>
+                <ClipboardCheck />
+              </header>
+              <section className={styles.meta}>
+                <div>
+                  <span>Timing</span>
+                  <strong>{selected.timeLabel}</strong>
+                  <small>{selected.dayLabel}</small>
+                </div>
+                <div>
+                  <span>Type</span>
+                  <strong>{selected.sessionType}</strong>
+                  <small>{selected.location}</small>
+                </div>
+                <div>
+                  <span>Status</span>
+                  <strong>{selected.status}</strong>
+                  <small>Current delivery state</small>
+                </div>
+                <div>
+                  <span>Roster</span>
+                  <strong>{selected.rosterLabel}</strong>
+                  <small>{selected.bookings.length} assignments</small>
+                </div>
+              </section>
+              <section className={styles.note}>
+                <h3>Shared session note</h3>
+                <p>Saved to the session and visible across role dashboards.</p>
+                <textarea
+                  rows={4}
+                  value={noteDraft}
+                  onChange={(event) => setNoteDraft(event.target.value)}
+                />
+                <button
+                  type="button"
+                  className="mv-btn mv-btn-primary"
+                  onClick={saveNote}
+                  disabled={notePending || !noteDraft.trim()}
+                >
+                  <Save size={15} />
+                  {notePending ? "Saving…" : "Save note"}
+                </button>
+              </section>
+              <section className={styles.assign}>
+                <h3>Assign member</h3>
+                <label>
+                  <span>Search roster</span>
+                  <input
+                    value={clientSearch}
+                    onChange={(event) => setClientSearch(event.target.value)}
+                    placeholder="Member name"
+                  />
+                </label>
+                <label>
+                  <span>Available member</span>
+                  <select
+                    value={resolvedClientId}
+                    onChange={(event) =>
+                      setSelectedClientId(event.target.value)
+                    }
+                    disabled={!filteredClients.length || rosterPending}
+                  >
+                    {filteredClients.length ? (
+                      filteredClients.map((client) => (
+                        <option key={client.id} value={client.id}>
+                          {client.fullName}
+                        </option>
+                      ))
+                    ) : (
+                      <option value="">
+                        {availableClients.length
+                          ? "No match"
+                          : "No available members"}
+                      </option>
+                    )}
+                  </select>
+                </label>
+                <button
+                  type="button"
+                  className="mv-btn mv-btn-primary"
+                  disabled={rosterPending || !resolvedClientId}
+                  onClick={assignClient}
+                >
+                  <UserPlus size={15} />
+                  {rosterPending ? "Assigning…" : "Assign member"}
+                </button>
+              </section>
+              <section className={styles.currentRoster}>
+                <header>
+                  <div>
+                    <h3>Session roster</h3>
+                    <p>Attendance status is read-only for coaches.</p>
+                  </div>
+                  <span>{selected.bookings.length}</span>
+                </header>
+                {selected.bookings.length ? (
+                  <ol>
+                    {selected.bookings.map((booking) => (
+                      <li
+                        key={booking.clientId}
+                        data-alert={booking.hasInjuryAlert || undefined}
+                      >
                         <div>
-                          <h3>{session.title}</h3>
-                          <p>
-                            {session.dayLabel}, {session.timeLabel}
-                          </p>
+                          <strong>{booking.fullName}</strong>
+                          <span>{booking.status}</span>
+                          {booking.hasInjuryAlert ? (
+                            <p>
+                              <AlertTriangle size={14} />
+                              {booking.injuryStatus}
+                              {booking.injuryNotes
+                                ? ` · ${booking.injuryNotes}`
+                                : ""}
+                              {booking.restrictions
+                                ? ` · Avoid: ${booking.restrictions}`
+                                : ""}
+                            </p>
+                          ) : null}
                         </div>
-                        <DashboardStatusBadge
-                          label={session.status}
-                          tone={getCoachSessionTone(session.status)}
-                        />
-                      </div>
-                      <div className="dashboard-record-card__meta">
-                        <span>{session.sessionType}</span>
-                        <span>{session.location}</span>
-                        <span>{session.rosterLabel}</span>
-                      </div>
-                      <p className="dashboard-record-card__note">{session.note}</p>
-                      <div className="dashboard-row-actions">
                         <button
                           type="button"
-                          className="dashboard-inline-button"
-                          onClick={() => openSessionDetail(session.id)}
+                          aria-label={`Unassign ${booking.fullName}`}
+                          disabled={rosterPending}
+                          onClick={() => removeClient(booking.clientId)}
                         >
-                          View detail
+                          <UserMinus />
                         </button>
-                      </div>
-                    </article>
-                  ))}
-                </div>
-              </>
-            ) : (
-              <DashboardEmptyState
-                title="No sessions match these filters"
-                description="Try a different search or reset the filters."
-                action={
-                  hasActiveFilters ? (
-                    <button
-                      type="button"
-                      className="dashboard-inline-button"
-                      onClick={resetFilters}
-                    >
-                      Clear filters
-                    </button>
-                  ) : null
-                }
-              />
-            )}
-          </div>
-          <DashboardPaginationControls
-            page={paginatedSessions.page}
-            pageCount={paginatedSessions.pageCount}
-            startItem={paginatedSessions.startItem}
-            endItem={paginatedSessions.endItem}
-            totalItems={paginatedSessions.totalItems}
-            onPageChange={setPage}
-          />
-        </article>
-
-        <aside className="dashboard-panel dashboard-detail-panel" ref={detailRef}>
-          {selectedSession ? (
-            <>
-              <div className="dashboard-panel__header">
-                <div>
-                  <div className="mv-eyebrow">Selected session</div>
-                  <h2>{selectedSession.title}</h2>
-                  <p>{selectedSession.focus}</p>
-                </div>
-                <ClipboardCheck size={20} color="#ff8b8f" />
-              </div>
-
-              <div className="dashboard-detail-grid">
-                <div className="dashboard-detail-stat">
-                  <span className="dashboard-detail-stat__label">Timing</span>
-                  <strong>{selectedSession.timeLabel}</strong>
-                  <small>{selectedSession.dayLabel}</small>
-                </div>
-                <div className="dashboard-detail-stat">
-                  <span className="dashboard-detail-stat__label">Type</span>
-                  <strong>{selectedSession.sessionType}</strong>
-                  <small>{selectedSession.location}</small>
-                </div>
-                <div className="dashboard-detail-stat">
-                  <span className="dashboard-detail-stat__label">Status</span>
-                  <strong>{selectedSession.status}</strong>
-                  <small>Current session status</small>
-                </div>
-                <div className="dashboard-detail-stat">
-                  <span className="dashboard-detail-stat__label">Roster</span>
-                  <strong>{selectedSession.rosterLabel}</strong>
-                  <small>Occupancy or assigned client</small>
-                </div>
-              </div>
-
-              <div className="dashboard-contact-block">
-                <span className="dashboard-detail-stat__label">Coach note</span>
-                <p>{selectedSession.note}</p>
-              </div>
-
-              <div className="dashboard-panel">
-                <div className="dashboard-panel__header">
-                  <div>
-                    <div className="mv-eyebrow">Progress note</div>
-                    <h2>Update session note</h2>
-                    <p>This note is saved to the session and shared across the dashboards.</p>
+                      </li>
+                    ))}
+                  </ol>
+                ) : (
+                  <div className={styles.rosterEmpty}>
+                    No active bookings yet.
                   </div>
-                </div>
-                <div className="dashboard-form-grid">
-                  <label className="dashboard-form-field dashboard-form-field--wide">
-                    <span>Coach note</span>
-                    <textarea
-                      className="dashboard-input"
-                      rows={5}
-                      value={noteDraft}
-                      onChange={(event) => setNoteDraft(event.target.value)}
-                    />
-                  </label>
-                </div>
-                <div className="dashboard-row-actions">
-                  <button
-                    type="button"
-                    className="mv-btn mv-btn-primary"
-                    onClick={handleSaveNote}
-                    disabled={isSavingNote || noteDraft.trim().length === 0}
-                  >
-                    {isSavingNote ? "Saving note..." : "Save note"}
-                  </button>
-                </div>
-              </div>
-
-              <div className="dashboard-stack">
-                <div className="dashboard-panel">
-                  <div className="dashboard-panel__header">
-                    <div>
-                      <div className="mv-eyebrow">Roster management</div>
-                      <h2>Assign clients</h2>
-                      <p>Add or remove clients from this session.</p>
-                    </div>
-                  </div>
-
-                  <div className="dashboard-form-grid">
-                    <label className="dashboard-form-field">
-                      <span>Search clients</span>
-                      <input
-                        className="dashboard-input"
-                        placeholder="Search by client name"
-                        value={clientSearchTerm}
-                        onChange={(event) => setClientSearchTerm(event.target.value)}
-                      />
-                    </label>
-                    <label className="dashboard-form-field">
-                      <span>Client</span>
-                      <select
-                        className="dashboard-select"
-                        value={resolvedSelectedClientId}
-                        onChange={(event) => setSelectedClientId(event.target.value)}
-                        disabled={filteredClientOptions.length === 0 || isManagingRoster}
-                      >
-                        {filteredClientOptions.length > 0 ? (
-                          filteredClientOptions.map((client) => (
-                            <option key={client.id} value={client.id}>
-                              {client.fullName}
-                            </option>
-                          ))
-                        ) : (
-                          <option value="">
-                            {availableClientOptions.length === 0
-                              ? "No available clients"
-                              : "No clients match this search"}
-                          </option>
-                        )}
-                      </select>
-                    </label>
-                  </div>
-
-                  <div className="dashboard-row-actions">
-                    <button
-                      type="button"
-                      className="mv-btn mv-btn-primary"
-                      onClick={handleAssignClient}
-                      disabled={
-                        isManagingRoster ||
-                        filteredClientOptions.length === 0 ||
-                        !resolvedSelectedClientId
-                      }
-                    >
-                      {isManagingRoster ? "Saving..." : "Assign client"}
-                    </button>
-                  </div>
-                </div>
-
-                <div className="dashboard-panel">
-                  <div className="dashboard-panel__header">
-                    <div>
-                      <div className="mv-eyebrow">Attendance</div>
-                      <h2>Session roster</h2>
-                      <p>Attendance is recorded by admin. Coaches can review status here.</p>
-                    </div>
-                  </div>
-
-                  {selectedSession.bookings.length > 0 ? (
-                    <>
-                      <div className="dashboard-selection-summary">
-                        <strong>Attendance recorded by admin</strong>
-                        <p>Roster status is visible here after the front desk updates it.</p>
-                      </div>
-                      <div className="dashboard-mobile-list">
-                        {selectedSession.bookings.map((booking) => (
-                          <article key={booking.clientId} className="dashboard-record-card">
-                            <div className="dashboard-record-card__header">
-                              <div>
-                                <h3>{booking.fullName}</h3>
-                                <p>Session participant</p>
-                              </div>
-                              <DashboardStatusBadge
-                                label={booking.status}
-                                tone={getBookingTone(booking.status)}
-                              />
-                            </div>
-                            <div className="dashboard-row-actions">
-                              <button
-                                type="button"
-                                className="dashboard-inline-button"
-                                onClick={() => handleRemoveClient(booking.clientId)}
-                                disabled={isManagingRoster}
-                              >
-                                Unassign
-                              </button>
-                            </div>
-                          </article>
-                        ))}
-                      </div>
-                    </>
-                  ) : (
-                    <DashboardEmptyState
-                      title="No active bookings yet"
-                      description="This session does not have any booked clients to mark."
-                    />
-                  )}
-                </div>
-              </div>
+                )}
+              </section>
             </>
           ) : (
-            <DashboardEmptyState
-              title="Session detail unavailable"
-              description="Choose a session to review details."
-            />
+            <div className={styles.empty}>Choose a session block.</div>
           )}
         </aside>
       </section>
-
-      <DashboardModal
-        open={!!detailSession}
-        onClose={() => setDetailSessionId(null)}
-        title={detailSession?.title ?? "Session details"}
-        description={detailSession?.focus}
-        size="wide"
-      >
-        {detailSession ? (
-          <div className="dashboard-stack">
-            <div className="dashboard-detail-grid">
-              <div className="dashboard-detail-stat">
-                <span className="dashboard-detail-stat__label">Timing</span>
-                <strong>{detailSession.timeLabel}</strong>
-                <small>{detailSession.dayLabel}</small>
-              </div>
-              <div className="dashboard-detail-stat">
-                <span className="dashboard-detail-stat__label">Type</span>
-                <strong>{detailSession.sessionType}</strong>
-                <small>{detailSession.location}</small>
-              </div>
-              <div className="dashboard-detail-stat">
-                <span className="dashboard-detail-stat__label">Status</span>
-                <strong>{detailSession.status}</strong>
-                <small>Current session status</small>
-              </div>
-              <div className="dashboard-detail-stat">
-                <span className="dashboard-detail-stat__label">Roster</span>
-                <strong>{detailSession.rosterLabel}</strong>
-                <small>Occupancy or assigned client</small>
-              </div>
-            </div>
-
-            <div className="dashboard-contact-block">
-              <span className="dashboard-detail-stat__label">Coach note</span>
-              <p>{detailSession.note}</p>
-            </div>
-
-            {detailSession.bookings.length > 0 ? (
-              <div className="dashboard-summary-list">
-                {detailSession.bookings.map((booking) => (
-                  <div key={booking.clientId} className="dashboard-summary-row">
-                    <strong>{booking.fullName}</strong>
-                    <span>{booking.status}</span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <DashboardEmptyState
-                title="No active bookings yet"
-                description="This session does not have any booked clients to review."
-              />
-            )}
-          </div>
-        ) : null}
-      </DashboardModal>
     </div>
   );
 }

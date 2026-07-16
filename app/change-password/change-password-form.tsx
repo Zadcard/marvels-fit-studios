@@ -25,7 +25,7 @@ export function RequiredPasswordChangeForm() {
   return (
     <div className="login-form-panel">
       <div className="login-form-header">
-        <div className="mv-eyebrow">First sign in</div>
+        <div className="auth-kicker">First sign-in / secure access</div>
         <h1 className="login-form-title">Change your password</h1>
         <p className="login-form-subtitle">
           Choose a private password before opening your dashboard.
@@ -72,7 +72,7 @@ export function RequiredPasswordChangeForm() {
             id="current-password"
             name="currentPassword"
             type="password"
-            className="mv-field"
+            className="auth-field"
             value={formState.currentPassword}
             onChange={(event) =>
               updateField("currentPassword", event.target.value)
@@ -91,7 +91,7 @@ export function RequiredPasswordChangeForm() {
             id="new-password"
             name="newPassword"
             type="password"
-            className="mv-field"
+            className="auth-field"
             value={formState.newPassword}
             onChange={(event) => updateField("newPassword", event.target.value)}
             autoComplete="new-password"
@@ -108,7 +108,7 @@ export function RequiredPasswordChangeForm() {
             id="confirm-password"
             name="confirmPassword"
             type="password"
-            className="mv-field"
+            className="auth-field"
             value={formState.confirmPassword}
             onChange={(event) =>
               updateField("confirmPassword", event.target.value)
@@ -121,7 +121,7 @@ export function RequiredPasswordChangeForm() {
 
         <button
           type="submit"
-          className="mv-btn mv-btn-primary login-submit"
+          className="auth-primary-button login-submit"
           disabled={isSaving}
         >
           <span className="login-submit-content">

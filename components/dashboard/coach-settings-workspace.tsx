@@ -1,14 +1,21 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useTransition } from "react";
-import { Save } from "lucide-react";
+import {
+  ArrowRight,
+  CheckCircle2,
+  KeyRound,
+  Mail,
+  Phone,
+  Save,
+  ShieldCheck,
+  UserRound,
+} from "lucide-react";
 
 import { saveCoachSettings } from "@/app/actions/coach-settings";
-import { AccountSecurityPanel } from "@/components/dashboard/account-security-panel";
-import { DashboardFormSection } from "@/components/dashboard/dashboard-form-section";
-import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
-import { DashboardSurfaceNote } from "@/components/dashboard/dashboard-surface-note";
 import type { CoachSettingsRecord } from "@/lib/mocks/coach-settings";
+import styles from "./coach-settings-workspace.module.css";
 
 type CoachSettingsWorkspaceProps = {
   initialSettings?: CoachSettingsRecord | null;
@@ -40,23 +47,29 @@ export function CoachSettingsWorkspace({
   initialSettings,
 }: CoachSettingsWorkspaceProps) {
   const initialValue = initialSettings ?? emptyCoachSettings;
-  const [settings, setSettings] = useState<CoachSettingsRecord>(initialValue);
-  const [savedSettings, setSavedSettings] =
-    useState<CoachSettingsRecord>(initialValue);
-  const [saveMessage, setSaveMessage] = useState("Profile is up to date.");
-  const [isSaving, startTransition] = useTransition();
-  const hasChanges = JSON.stringify(settings) !== JSON.stringify(savedSettings);
+  const [settings, setSettings] = useState(initialValue);
+  const [savedSettings, setSavedSettings] = useState(initialValue);
+  const [message, setMessage] = useState("Profile is up to date.");
+  const [saving, startSaving] = useTransition();
+  const changed = JSON.stringify(settings) !== JSON.stringify(savedSettings);
+  const initials =
+    settings.fullName
+      .split(" ")
+      .map((part) => part[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase() || "CO";
 
-  const updateField = <Key extends keyof CoachSettingsRecord>(
-    field: Key,
-    value: CoachSettingsRecord[Key]
-  ) => {
-    setSettings((current) => ({ ...current, [field]: value }));
-    setSaveMessage("Unsaved profile changes.");
-  };
+  function update<Key extends keyof CoachSettingsRecord>(
+    key: Key,
+    value: CoachSettingsRecord[Key],
+  ) {
+    setSettings((current) => ({ ...current, [key]: value }));
+    setMessage("Unsaved identity changes.");
+  }
 
-  const saveProfile = () => {
-    startTransition(async () => {
+  function save() {
+    startSaving(async () => {
       try {
         await saveCoachSettings({
           fullName: settings.fullName,
@@ -65,81 +78,105 @@ export function CoachSettingsWorkspace({
           specialization: settings.specialization,
         });
         setSavedSettings(settings);
-        setSaveMessage("Coach profile saved.");
-      } catch (error) {
-        setSaveMessage(
-          error instanceof Error
-            ? error.message
-            : "Could not save coach settings."
+        setMessage("Coach identity saved.");
+      } catch (caught) {
+        setMessage(
+          caught instanceof Error ? caught.message : "Could not save settings.",
         );
       }
     });
-  };
+  }
 
   return (
-    <div className="dashboard-stack">
-      <DashboardPageHeader
-        eyebrow="Coach settings"
-        actions={
-          <button
-            type="button"
-            className="mv-btn mv-btn-primary"
-            disabled={!hasChanges || isSaving}
-            onClick={saveProfile}
-          >
-            <Save size={16} />
-            {isSaving ? "Saving..." : "Save profile"}
-          </button>
-        }
-      />
-
-      <DashboardSurfaceNote
-        eyebrow="Member-facing profile"
-        title="Keep the contact details clients and admins rely on current."
-        description="Only settings that are stored and used by the product appear here. Notification preferences will return when delivery is connected."
-        items={[saveMessage]}
-      />
-
-      <section className="dashboard-detail-layout">
-        <DashboardFormSection
-          eyebrow="Profile"
-          title="Coach details"
-          description="These fields save directly to your coach and user records."
+    <div className={styles.page}>
+      <header className={styles.hero}>
+        <div>
+          <span className={styles.kicker}>Coach settings</span>
+          <h1>Shape your coaching identity.</h1>
+          <p>
+            Keep the contact details and specialty seen by the studio team
+            accurate and ready for every assignment.
+          </p>
+        </div>
+        <button
+          type="button"
+          className="mv-btn mv-btn-primary"
+          disabled={!changed || saving}
+          onClick={save}
         >
-          <div className="dashboard-form-columns">
-            <label className="dashboard-form-field">
+          <Save size={17} /> {saving ? "Saving…" : "Save identity"}
+        </button>
+      </header>
+
+      <section className={styles.identityStrip}>
+        <span className={styles.avatar}>{initials}</span>
+        <div>
+          <span>Live studio identity</span>
+          <strong>{settings.fullName || "Unnamed coach"}</strong>
+          <small>{settings.specialization} · Coach account</small>
+        </div>
+        <p data-pending={changed || undefined}>
+          {changed ? "Changes waiting" : "Synced"}
+        </p>
+      </section>
+
+      <section className={styles.settingsGrid}>
+        <form
+          className={styles.formCard}
+          onSubmit={(event) => {
+            event.preventDefault();
+            save();
+          }}
+        >
+          <div className={styles.sectionHead}>
+            <div>
+              <span className={styles.kicker}>Public profile</span>
+              <h2>Identity and contact</h2>
+              <p>These fields save directly to your user and coach records.</p>
+            </div>
+            <UserRound size={21} />
+          </div>
+          <div className={styles.fields}>
+            <label>
               <span>Full name</span>
-              <input
-                className="dashboard-input"
-                value={settings.fullName}
-                onChange={(event) => updateField("fullName", event.target.value)}
-              />
+              <div>
+                <UserRound size={16} />
+                <input
+                  required
+                  value={settings.fullName}
+                  onChange={(event) => update("fullName", event.target.value)}
+                />
+              </div>
             </label>
-            <label className="dashboard-form-field">
-              <span>Email</span>
-              <input
-                className="dashboard-input"
-                type="email"
-                value={settings.email}
-                onChange={(event) => updateField("email", event.target.value)}
-              />
+            <label>
+              <span>Email address</span>
+              <div>
+                <Mail size={16} />
+                <input
+                  required
+                  type="email"
+                  value={settings.email}
+                  onChange={(event) => update("email", event.target.value)}
+                />
+              </div>
             </label>
-            <label className="dashboard-form-field">
-              <span>Phone</span>
-              <input
-                className="dashboard-input"
-                type="tel"
-                value={settings.phone}
-                onChange={(event) => updateField("phone", event.target.value)}
-              />
+            <label>
+              <span>Phone number</span>
+              <div>
+                <Phone size={16} />
+                <input
+                  type="tel"
+                  value={settings.phone}
+                  onChange={(event) => update("phone", event.target.value)}
+                />
+              </div>
             </label>
-            <label className="dashboard-form-field">
-              <span>Specialization</span>
+            <label>
+              <span>Primary specialization</span>
               <select
-                className="dashboard-select"
                 value={settings.specialization}
                 onChange={(event) =>
-                  updateField("specialization", event.target.value)
+                  update("specialization", event.target.value)
                 }
               >
                 {specializationOptions.map((option) => (
@@ -150,34 +187,59 @@ export function CoachSettingsWorkspace({
               </select>
             </label>
           </div>
-        </DashboardFormSection>
+          <div className={styles.formFoot}>
+            <p role="status" data-pending={changed || undefined}>
+              {message}
+            </p>
+            <button
+              type="submit"
+              className="mv-btn mv-btn-primary"
+              disabled={!changed || saving}
+            >
+              <Save size={16} /> {saving ? "Saving…" : "Save changes"}
+            </button>
+          </div>
+        </form>
 
-        <aside className="dashboard-panel dashboard-detail-panel">
-          <div className="dashboard-panel__header">
-            <div>
-              <div className="mv-eyebrow">Profile summary</div>
-              <h2>{settings.fullName}</h2>
-              <p>{saveMessage}</p>
+        <aside className={styles.sideStack}>
+          <article className={styles.summaryCard}>
+            <div className={styles.sectionHead}>
+              <div>
+                <span className={styles.kicker}>Account readout</span>
+                <h2>Profile status</h2>
+              </div>
+              <CheckCircle2 size={21} />
             </div>
-          </div>
-          <div className="dashboard-summary-list">
-            <div className="dashboard-summary-row">
-              <strong>Role</strong>
-              <span>Coach</span>
-            </div>
-            <div className="dashboard-summary-row">
-              <strong>Specialization</strong>
-              <span>{settings.specialization}</span>
-            </div>
-            <div className="dashboard-summary-row">
-              <strong>Save state</strong>
-              <span>{hasChanges ? "Edits pending" : "Up to date"}</span>
-            </div>
-          </div>
+            <dl>
+              <div>
+                <dt>Role</dt>
+                <dd>{settings.roleLabel || "Coach"}</dd>
+              </div>
+              <div>
+                <dt>Specialization</dt>
+                <dd>{settings.specialization}</dd>
+              </div>
+              <div>
+                <dt>Database state</dt>
+                <dd>{changed ? "Edits pending" : "Up to date"}</dd>
+              </div>
+            </dl>
+          </article>
+
+          <article className={styles.securityCard}>
+            <ShieldCheck size={25} />
+            <span className={styles.kicker}>Account security</span>
+            <h2>Protect your access.</h2>
+            <p>
+              Update your password from the secure account flow. Identity edits
+              here never expose authentication credentials.
+            </p>
+            <Link href="/change-password">
+              <KeyRound size={16} /> Change password <ArrowRight size={16} />
+            </Link>
+          </article>
         </aside>
       </section>
-
-      <AccountSecurityPanel />
     </div>
   );
 }

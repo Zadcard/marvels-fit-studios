@@ -1,274 +1,156 @@
 import Link from "next/link";
+import {
+  ArrowUpRight,
+  CalendarDays,
+  ChevronRight,
+  CircleAlert,
+  ClipboardList,
+  Plus,
+  Radio,
+  Users,
+} from "lucide-react";
 
-import { DashboardActivityFeed } from "@/components/dashboard/dashboard-activity-feed";
-import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
-import { DashboardStatCard } from "@/components/dashboard/dashboard-stat-card";
-import { DashboardStatusBadge } from "@/components/dashboard/dashboard-status-badge";
-import { DashboardSurfaceNote } from "@/components/dashboard/dashboard-surface-note";
 import { adminOverviewRepository } from "@/lib/repositories/admin-overview-repository";
+import styles from "./page.module.css";
 
-export const metadata = {
-  title: "Admin Dashboard",
-};
+export const metadata = { title: "Studio Operations" };
 
-function getSessionStatusTone(status: string) {
-  switch (status) {
-    case "On track":
-      return "success";
-    case "Waitlist forming":
-      return "warning";
-    case "Needs follow-up":
-      return "accent";
-    default:
-      return "neutral";
-  }
+function sessionTone(status: string) {
+  if (status === "On track") return styles.good;
+  if (status === "Waitlist forming") return styles.warning;
+  return styles.danger;
 }
 
 export default async function AdminOverviewPage() {
-  const { stats, upcomingSessions, recentActivity, quickActions, studioSnapshot } =
-    await adminOverviewRepository.getOverview();
-
-  const atCapacity = upcomingSessions.filter((s) => s.status === "Waitlist forming").length;
-  const needsFollowUp = upcomingSessions.filter((s) => s.status === "Needs follow-up").length;
+  const [
+    { stats, upcomingSessions, recentActivity, quickActions, studioSnapshot },
+    needsAttention,
+  ] = await Promise.all([
+    adminOverviewRepository.getOverview(),
+    adminOverviewRepository.getNeedsAttention(),
+  ]);
+  const memberStat = stats.find((item) => item.id === "members") ?? stats[0];
+  const booked = upcomingSessions.reduce((total, item) => total + item.bookedSeats, 0);
+  const capacity = upcomingSessions.reduce((total, item) => total + item.capacity, 0);
+  const utilization = capacity ? Math.round((booked / capacity) * 100) : 0;
+  const pressure = upcomingSessions.filter((item) => item.status !== "On track").length;
 
   return (
-    <div className="dashboard-stack">
-      <DashboardPageHeader
-        eyebrow="Admin operations"
-        actions={
-          <>
-            <Link href="/admin/sessions" className="mv-btn mv-btn-secondary">
-              View sessions
-            </Link>
-            <Link href="/admin/clients" className="mv-btn mv-btn-primary">
-              Add Client
-            </Link>
-          </>
-        }
-      />
+    <div className={styles.page}>
+      <header className={styles.pageHeader}>
+        <div>
+          <span className={styles.kicker}><Radio size={14} /> Live studio desk</span>
+          <h1>Control the floor.</h1>
+          <p>Membership, capacity, money and the next sessions—one operating view.</p>
+        </div>
+        <div className={styles.headerActions}>
+          <Link href="/admin/join-requests" className="mv-btn mv-btn-secondary"><ClipboardList size={17} /> Leads</Link>
+          <Link href="/admin/sessions" className="mv-btn mv-btn-primary"><Plus size={17} /> New session</Link>
+        </div>
+      </header>
 
-      <section className="dashboard-kpi-grid" aria-label="Key metrics">
-        {stats.map((stat) => (
-          <DashboardStatCard
-            key={stat.id}
-            label={stat.label}
-            value={stat.value}
-            change={stat.change}
-            detail={stat.detail}
-            note={stat.note}
-            icon={stat.icon}
-            tone={stat.tone}
-          />
-        ))}
+      <section className={`${styles.block} ${styles.needsAttention}`} aria-label="Needs attention">
+        <div className={styles.sectionHeading}>
+          <div><span><CircleAlert size={13} /> Act now</span><h2>Needs attention</h2></div>
+        </div>
+        {needsAttention.length ? (
+          <div className={styles.attentionGrid}>
+            {needsAttention.map((tile) => (
+              <Link href={tile.href} key={tile.id} className={styles.attentionTile} data-tone={tile.tone}>
+                <strong>{tile.count}</strong>
+                <span>{tile.label}</span>
+                <p>{tile.description}</p>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <p className={styles.attentionClear}>Nothing needs attention right now — trials, subscriptions, and injury flags are all clear.</p>
+        )}
       </section>
 
-      <DashboardSurfaceNote
-        eyebrow="Studio pulse"
-        title={
-          atCapacity > 0
-            ? `${atCapacity} upcoming session${atCapacity === 1 ? "" : "s"} ${atCapacity === 1 ? "is" : "are"} filling up — check capacity before the day starts.`
-            : needsFollowUp > 0
-              ? `${needsFollowUp} session${needsFollowUp === 1 ? "" : "s"} still need follow-up before they fill.`
-              : "Sessions are on track — focus on billing follow-up and coach coverage."
-        }
-        description="Use this board to move through sessions, clear billing pressure, and handle incoming requests without leaving the admin workspace."
-        items={[
-          `${upcomingSessions.length} sessions scheduled in the next 48 hours.`,
-          `${recentActivity.length} recent activity items across leads, payments, and notes.`,
-          `${quickActions.length} recommended actions based on current studio state.`,
-        ]}
-      />
-
-      <section className="dashboard-overview-grid dashboard-overview-grid--admin">
-        <article className="dashboard-panel dashboard-panel--accent dashboard-panel--dense">
-          <div className="dashboard-panel__header">
-            <div>
-              <div className="mv-eyebrow">Upcoming</div>
-              <h2>Sessions today &amp; tomorrow</h2>
-              <p>Live schedule view. Open a session to manage it.</p>
-            </div>
-            <Link href="/admin/sessions" className="mv-btn mv-btn-outline">
-              All sessions
-            </Link>
+      <section className={styles.commandGrid} aria-label="Studio control summary">
+        <article className={`${styles.block} ${styles.heroMetric}`}>
+          <div className={styles.blockTop}>
+            <span>Active membership</span>
+            <Link href="/admin/clients" aria-label="Open client directory"><ArrowUpRight size={18} /></Link>
           </div>
-
-          {upcomingSessions.length > 0 ? (
-            <div className="dashboard-session-list">
-              {upcomingSessions.map((session) => {
-                const fill =
-                  session.capacity > 0
-                    ? Math.round((session.bookedSeats / session.capacity) * 100)
-                    : 0;
-                return (
-                  <article
-                    key={session.id}
-                    className="dashboard-session-card dashboard-session-card--admin"
-                  >
-                    <div className="dashboard-session-card__topline">
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div className="dashboard-session-card__meta" style={{ marginBottom: 8 }}>
-                          <DashboardStatusBadge
-                            label={session.sessionType}
-                            tone={session.sessionType === "Private" ? "accent" : "neutral"}
-                          />
-                          <DashboardStatusBadge
-                            label={session.status}
-                            tone={getSessionStatusTone(session.status)}
-                          />
-                        </div>
-                        <strong
-                          style={{
-                            display: "block",
-                            fontSize: "1rem",
-                            letterSpacing: "-0.01em",
-                            color: "#fff",
-                          }}
-                        >
-                          {session.name}
-                        </strong>
-                        <span
-                          style={{
-                            fontSize: "0.82rem",
-                            color: "rgba(255,255,255,0.55)",
-                            marginTop: 2,
-                            display: "block",
-                          }}
-                        >
-                          {session.coachName} · {session.location}
-                        </span>
-                      </div>
-                      <div className="dashboard-session-card__time-block">
-                        <span>{session.dayLabel}</span>
-                        <strong>{session.timeLabel}</strong>
-                      </div>
-                    </div>
-
-                    {session.sessionType === "Group" && (
-                      <div className="dashboard-session-card__footer dashboard-session-card__footer--admin">
-                        <span className="dashboard-session-card__occupancy">
-                          {session.bookedSeats} / {session.capacity}
-                        </span>
-                        <div className="dashboard-session-card__progress-block">
-                          <div className="dashboard-session-card__progress-label">
-                            {fill}% booked
-                          </div>
-                          <div className="dashboard-progress">
-                            <span
-                              style={{
-                                width: `${fill}%`,
-                                background:
-                                  fill >= 100
-                                    ? "var(--mv-warning)"
-                                    : "linear-gradient(90deg, var(--mv-primary), #ff6b6f)",
-                              }}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </article>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="dashboard-empty-state">
-              <strong>No sessions in the next 48 hours</strong>
-              <p>Create or schedule sessions from the sessions workspace.</p>
-              <div className="dashboard-empty-state__action">
-                <Link href="/admin/sessions" className="mv-btn mv-btn-outline">
-                  Open sessions
-                </Link>
-              </div>
-            </div>
-          )}
+          <div className={styles.heroValue}>{memberStat?.value ?? "0"}</div>
+          <p>{memberStat?.change ?? "Roster is live"}</p>
+          <div className={styles.tickTrack} aria-hidden="true">
+            {Array.from({ length: 28 }, (_, index) => <i key={index} data-on={index < 19 || undefined} />)}
+          </div>
+          <div className={styles.insight}><Users size={15} /><span><strong>Roster signal</strong>{memberStat?.detail}</span></div>
         </article>
 
-        <div style={{ display: "grid", gap: 16, alignContent: "start" }}>
-          <article className="dashboard-panel dashboard-panel--dense">
-            <div className="dashboard-panel__header">
-              <div>
-                <div className="mv-eyebrow">Activity</div>
-                <h2>Recent updates</h2>
-              </div>
-            </div>
-            {recentActivity.length > 0 ? (
-              <DashboardActivityFeed items={recentActivity} />
-            ) : (
-              <div className="dashboard-empty-state">
-                <strong>No recent activity</strong>
-                <p>Activity from leads, payments, and session notes will surface here.</p>
-              </div>
-            )}
-          </article>
+        {stats.filter((item) => item.id !== "members").map((stat) => {
+          const Icon = stat.icon;
+          return (
+            <article className={`${styles.block} ${styles.smallMetric}`} key={stat.id}>
+              <div className={styles.blockTop}><span>{stat.label}</span><Icon size={18} /></div>
+              <strong>{stat.value}</strong>
+              <p>{stat.change}</p>
+              <span className={styles.metricNote}>{stat.note}</span>
+            </article>
+          );
+        })}
 
-          <article className="dashboard-panel dashboard-panel--accent dashboard-panel--dense">
-            <div className="dashboard-panel__header">
-              <div>
-                <div className="mv-eyebrow">Quick actions</div>
-                <h2>Common tasks</h2>
-              </div>
-            </div>
-            <div className="dashboard-admin-action-list">
-              {quickActions.map((action) => {
-                const Icon = action.icon;
-                return (
-                  <div
-                    key={action.id}
-                    className={`dashboard-admin-action-row${action.emphasis === "primary" ? " dashboard-admin-action-row--primary" : ""}`}
-                  >
-                    <span className="dashboard-admin-action-row__icon" aria-hidden="true">
-                      <Icon size={20} />
-                    </span>
-                    <div className="dashboard-admin-action-row__content">
-                      <strong>{action.label}</strong>
-                      <p>{action.description}</p>
-                    </div>
-                    <div className="dashboard-admin-action-row__cta">
-                      <Link
-                        href={action.href}
-                        className={
-                          action.emphasis === "primary"
-                            ? "mv-btn mv-btn-primary"
-                            : "mv-btn mv-btn-outline"
-                        }
-                      >
-                        {action.ctaLabel}
-                      </Link>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </article>
-        </div>
+        <article className={`${styles.block} ${styles.capacity}`}>
+          <div className={styles.blockTop}><span>48 hour capacity</span><CalendarDays size={18} /></div>
+          <div className={styles.capacityValue}><strong>{utilization}%</strong><span>booked</span></div>
+          <div className={styles.capacityBar}><span style={{ width: `${utilization}%` }} /></div>
+          <div className={styles.capacityLegend}><span>{booked} reservations</span><span>{capacity} places</span></div>
+        </article>
+
+        <article className={`${styles.block} ${styles.alertBlock}`}>
+          <div className={styles.blockTop}><span>Unresolved pressure</span><CircleAlert size={18} /></div>
+          <div className={styles.alertValue}>{pressure}<span>items</span></div>
+          <p>{pressure ? "Capacity or follow-up needs a decision." : "The next sessions are clear."}</p>
+          <Link href="/admin/sessions">Review operations <ChevronRight size={15} /></Link>
+        </article>
       </section>
 
-      <section className="dashboard-panel dashboard-panel--dense">
-        <div className="dashboard-panel__header dashboard-panel__header--tight">
-          <div>
-            <div className="mv-eyebrow">Studio snapshot</div>
-            <h2>Right now</h2>
+      <section className={styles.lowerGrid}>
+        <article className={`${styles.block} ${styles.schedule}`}>
+          <div className={styles.sectionHeading}>
+            <div><span>Next on the floor</span><h2>Session runway</h2></div>
+            <Link href="/admin/schedule">Full calendar <ArrowUpRight size={16} /></Link>
           </div>
+          <div className={styles.sessionList}>
+            {upcomingSessions.length ? upcomingSessions.map((session) => {
+              const fill = session.capacity ? Math.round((session.bookedSeats / session.capacity) * 100) : 0;
+              return (
+                <Link href="/admin/sessions" className={styles.session} key={session.id}>
+                  <time><span>{session.dayLabel}</span><strong>{session.timeLabel}</strong></time>
+                  <div><strong>{session.name}</strong><p>{session.coachName} · {session.location}</p></div>
+                  <div className={styles.sessionLoad}><span className={sessionTone(session.status)}>{session.status}</span><small>{fill}% full</small></div>
+                  <ChevronRight size={17} />
+                </Link>
+              );
+            }) : <div className={styles.empty}>No sessions in the next 48 hours.</div>}
+          </div>
+        </article>
+
+        <aside className={`${styles.block} ${styles.activity}`}>
+          <div className={styles.sectionHeading}><div><span>Right now</span><h2>Activity wire</h2></div></div>
+          <ol>
+            {recentActivity.slice(0, 5).map((item) => (
+              <li key={item.id}><i data-tone={item.tone} /><div><strong>{item.title}</strong><p>{item.description}</p><time>{item.timeLabel}</time></div></li>
+            ))}
+          </ol>
+        </aside>
+      </section>
+
+      <section className={styles.bottomGrid}>
+        <div className={`${styles.block} ${styles.actions}`}>
+          <div className={styles.sectionHeading}><div><span>Fast lane</span><h2>Move the studio</h2></div></div>
+          <div className={styles.actionGrid}>{quickActions.map((action) => {
+            const Icon = action.icon;
+            return <Link href={action.href} key={action.id}><Icon size={18} /><span><strong>{action.label}</strong><small>{action.description}</small></span><ArrowUpRight size={16} /></Link>;
+          })}</div>
         </div>
-        <div className="dashboard-snapshot-list">
-          {studioSnapshot.map((item) => (
-            <div key={item.id} className="dashboard-snapshot-item">
-              <span
-                style={{
-                  display: "block",
-                  fontSize: "0.72rem",
-                  fontWeight: 800,
-                  letterSpacing: "0.16em",
-                  textTransform: "uppercase",
-                  color: "rgba(255,255,255,0.48)",
-                }}
-              >
-                {item.label}
-              </span>
-              <strong>{item.value}</strong>
-              <p>{item.description}</p>
-            </div>
-          ))}
+        <div className={`${styles.block} ${styles.snapshot}`}>
+          <div className={styles.sectionHeading}><div><span>Studio signals</span><h2>Snapshot</h2></div></div>
+          <div>{studioSnapshot.map((item) => <article key={item.id}><span>{item.label}</span><strong>{item.value}</strong><p>{item.description}</p></article>)}</div>
         </div>
       </section>
     </div>

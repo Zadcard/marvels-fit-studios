@@ -1,90 +1,90 @@
 "use client";
 
 import Link from "next/link";
-import { Bell, Menu } from "lucide-react";
+import { Bell, Menu, Search } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 
-import {
-  getDashboardProfileMeta,
-  getDashboardProfileHref,
-  getDashboardRouteMeta,
-  getDashboardRoleLabel,
-} from "@/lib/navigation/dashboard-nav";
-import type { DashboardRole } from "@/lib/auth/authorization-policy";
 import type { DashboardAccountSummary } from "@/components/dashboard/dashboard-role-shell";
+import { BrandLockup } from "@/components/ui/brand-lockup";
+import type { DashboardRole } from "@/lib/auth/authorization-policy";
+import {
+  getDashboardNav,
+  getDashboardProfileHref,
+  getDashboardProfileMeta,
+  getDashboardRoleLabel,
+  isDashboardNavItemActive,
+} from "@/lib/navigation/dashboard-nav";
 import { getInitials } from "@/lib/utils";
+import { LAUNCH_NOTIFICATIONS_ENABLED } from "@/lib/launch-scope";
 
 type DashboardTopbarProps = {
   role: DashboardRole;
   account?: DashboardAccountSummary;
-  onMenuToggle: () => void;
+  isMenuOpen: boolean;
+  onOpenMenu: () => void;
 };
 
-export function DashboardTopbar({
-  role,
-  account,
-  onMenuToggle,
-}: DashboardTopbarProps) {
+export function DashboardTopbar({ role, account, isMenuOpen, onOpenMenu }: DashboardTopbarProps) {
   const pathname = usePathname();
   const { data: session } = useSession();
-  const routeMeta = getDashboardRouteMeta(pathname, role);
-  const profileMeta = getDashboardProfileMeta(role);
   const roleLabel = getDashboardRoleLabel(role);
-  const displayName =
-    account?.name?.trim() ||
-    session?.user?.name?.trim() ||
-    session?.user?.email?.trim() ||
-    profileMeta.name;
-  const displaySubtitle =
-    account?.subtitle?.trim() ||
-    session?.user?.email?.trim() ||
-    profileMeta.subtitle;
-  const displayInitials =
-    account?.initials?.trim() || getInitials(displayName);
+  const fallback = getDashboardProfileMeta(role);
+  const navItems = getDashboardNav(role).filter(
+    (item) => item.section === "primary" && item.available && !item.hidden,
+  );
+  const displayName = account?.name?.trim() || session?.user?.name?.trim() || fallback.name;
+  const displayInitials = account?.initials?.trim() || getInitials(displayName) || fallback.initials;
 
   return (
-    <header className="dashboard-topbar">
-      <div className="dashboard-topbar__left">
+    <header className="redline-topbar">
+      <div className="redline-brand">
         <button
           type="button"
-          className="dashboard-menu-toggle"
-          onClick={onMenuToggle}
+          className="redline-mobile-menu"
           aria-label="Open navigation"
+          aria-expanded={isMenuOpen}
+          onClick={onOpenMenu}
         >
-          <Menu size={20} />
+          <Menu size={19} />
         </button>
-
-        <div className="dashboard-topbar__meta">
-          <span className="mv-eyebrow">{routeMeta.eyebrow}</span>
-          <h1 className="dashboard-topbar__title">{routeMeta.title}</h1>
-          <p className="dashboard-topbar__subtitle">{routeMeta.subtitle}</p>
-        </div>
+        <Link href={`/${role}`} aria-label={`${roleLabel} home`}>
+          <BrandLockup size="compact" priority />
+        </Link>
       </div>
 
-      <div className="dashboard-topbar__right">
-        <Link
-          href={`/${role.toLowerCase()}/notifications`}
-          className="mv-btn mv-btn-outline"
-          aria-label="Open notifications"
-        >
-          <Bell size={17} />
-          Notifications
-        </Link>
-        <Link href={getDashboardProfileHref(role)} className="dashboard-topbar__profile">
-          <span className="dashboard-topbar__avatar">
-            {displayInitials || profileMeta.initials}
-          </span>
-          <span className="dashboard-topbar__profile-copy">
-            <strong>{displayName}</strong>
-            <small className="dashboard-topbar__profile-status">
-              <span>{displaySubtitle}</span>
-              <span className="dashboard-topbar__profile-separator" aria-hidden="true">
-                /
-              </span>
-              <span>{roleLabel}</span>
-            </small>
-          </span>
+      <nav className="redline-primary-nav" aria-label={`${roleLabel} primary navigation`}>
+        {navItems.map((item) => {
+          const active = isDashboardNavItemActive(item, pathname);
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="redline-primary-link"
+              data-active={active || undefined}
+              aria-current={active ? "page" : undefined}
+            >
+              {item.label}
+            </Link>
+          );
+        })}
+      </nav>
+
+      <div className="redline-utilities">
+        <button type="button" className="redline-utility redline-search-trigger" aria-label="Open search">
+          <Search size={18} />
+          <span>Search</span>
+          <kbd>⌘ K</kbd>
+        </button>
+        {LAUNCH_NOTIFICATIONS_ENABLED ? (
+          <Link href={`/${role}/notifications`} className="redline-utility redline-utility--icon" aria-label="Notifications">
+            <Bell size={18} />
+            <span className="redline-alert-dot" aria-hidden="true" />
+          </Link>
+        ) : null}
+        <Link href={getDashboardProfileHref(role)} className="redline-account" aria-label="Open account">
+          <span className="redline-avatar">{displayInitials}</span>
+          <span><strong>{displayName}</strong><small>{roleLabel}</small></span>
         </Link>
       </div>
     </header>

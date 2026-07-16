@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { Dialog } from "radix-ui";
 
 import { DashboardSidebar } from "@/components/dashboard/dashboard-sidebar";
 import { DashboardTopbar } from "@/components/dashboard/dashboard-topbar";
-import { cn } from "@/lib/utils";
 import type { DashboardRole } from "@/lib/auth/authorization-policy";
+import "@/app/(dashboard)/redline-shell.css";
 
 export type DashboardAccountSummary = {
   name?: string | null;
@@ -19,60 +20,29 @@ type DashboardRoleShellProps = {
   children: React.ReactNode;
 };
 
-export function DashboardRoleShell({
-  role,
-  account,
-  children,
-}: DashboardRoleShellProps) {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
-  useEffect(() => {
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setIsSidebarOpen(false);
-      }
-    };
-
-    window.addEventListener("keydown", handleEscape);
-    return () => window.removeEventListener("keydown", handleEscape);
-  }, []);
-
-  useEffect(() => {
-    document.body.classList.toggle("dashboard-nav-open", isSidebarOpen);
-    return () => document.body.classList.remove("dashboard-nav-open");
-  }, [isSidebarOpen]);
-
-  const closeSidebar = () => setIsSidebarOpen(false);
+export function DashboardRoleShell({ role, account, children }: DashboardRoleShellProps) {
+  const [isNavigationOpen, setIsNavigationOpen] = useState(false);
 
   return (
-    <div className="dashboard-shell">
-      <button
-        type="button"
-        aria-label="Close navigation"
-        className={cn(
-          "dashboard-sidebar-backdrop",
-          isSidebarOpen && "dashboard-sidebar-backdrop--visible"
-        )}
-        onClick={closeSidebar}
-      />
-
-      <div className="dashboard-grid">
-        <DashboardSidebar
-          role={role}
-          account={account}
-          isOpen={isSidebarOpen}
-          onClose={closeSidebar}
-        />
-
-        <div className="dashboard-main">
+    <Dialog.Root open={isNavigationOpen} onOpenChange={setIsNavigationOpen}>
+      <div className="redline-viewport">
+        <div className="redline-frame">
           <DashboardTopbar
             role={role}
             account={account}
-            onMenuToggle={() => setIsSidebarOpen((open) => !open)}
+            isMenuOpen={isNavigationOpen}
+            onOpenMenu={() => setIsNavigationOpen(true)}
           />
-          <main className="dashboard-content">{children}</main>
+          <div className="redline-workspace">
+            <DashboardSidebar
+              role={role}
+              account={account}
+              onClose={() => setIsNavigationOpen(false)}
+            />
+            <main className="redline-content" id="main-content">{children}</main>
+          </div>
         </div>
       </div>
-    </div>
+    </Dialog.Root>
   );
 }

@@ -1,5 +1,3 @@
-import type { ComponentProps } from "react";
-
 import type { WorkspaceDefinition } from "@/lib/dashboard/workspace-definition";
 import {
   adminClientMembershipFilters,
@@ -26,14 +24,15 @@ export type AdminClientWorkspaceFilters = {
   paymentStatus: "All" | AdminPaymentStatus;
 };
 
-type DashboardTone = ComponentProps<
-  typeof import("@/components/dashboard/dashboard-status-badge").DashboardStatusBadge
->["tone"];
+type DashboardTone = "neutral" | "accent" | "success" | "warning" | "danger";
 
 export const adminClientToneByStatus: Record<AdminClientStatus, DashboardTone> = {
   Active: "success",
   Pending: "warning",
+  Trial: "warning",
   Paused: "neutral",
+  Inactive: "neutral",
+  "Did not continue": "neutral",
 };
 
 export const adminClientWorkspaceDefinition: WorkspaceDefinition<

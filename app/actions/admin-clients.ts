@@ -1,46 +1,41 @@
 "use server";
 
 import bcrypt from "bcryptjs";
-import {
-  ClientLifecycleStatus,
-  ClientPaymentStatus,
-  UserRole,
-} from "@/lib/supabase/domain";
+import { ClientPaymentStatus, UserRole } from "@/lib/supabase/domain";
 import { revalidatePath } from "next/cache";
 
 import { requireRole } from "@/lib/auth/session";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { clientIdGenerator } from "@/lib/services/client-id-generator";
 import { passwordGenerator } from "@/lib/services/password-generator";
+import {
+  injuryStatusFromLabel,
+  lifecycleStatusFromLabel,
+  trainingCategoryFromLabel,
+  trialOutcomeFromLabel,
+} from "@/lib/dashboard/client-domain-labels";
 
 type SaveAdminClientInput = {
   clientId?: string | null;
   fullName: string;
   email?: string;
   phone?: string;
-  status: "Active" | "Pending" | "Paused";
+  status: string;
   paymentStatus: "Paid" | "Unpaid" | "Due soon";
   paymentAmount?: string;
   groupId?: string;
+  trainingCategory?: string;
+  sport?: string;
+  injuryStatus?: string;
+  injuryNotes?: string;
+  restrictions?: string;
+  trialOutcome?: string;
 };
 
 type DeleteAdminClientInput = {
   clientId: string;
   confirmationText: string;
 };
-
-function toClientStatus(
-  status: SaveAdminClientInput["status"],
-): ClientLifecycleStatus {
-  switch (status) {
-    case "Active":
-      return ClientLifecycleStatus.ACTIVE;
-    case "Paused":
-      return ClientLifecycleStatus.PAUSED;
-    default:
-      return ClientLifecycleStatus.PENDING;
-  }
-}
 
 function toPaymentStatus(
   status: SaveAdminClientInput["paymentStatus"],
@@ -105,10 +100,16 @@ export async function saveAdminClient(input: SaveAdminClientInput) {
   const fullName = input.fullName.trim();
   const email = normalizeEmail(input.email);
   const phone = input.phone?.trim() || null;
-  const status = toClientStatus(input.status);
+  const status = lifecycleStatusFromLabel(input.status);
   const paymentStatus = toPaymentStatus(input.paymentStatus);
   const amount = parseAmount(input.paymentAmount);
   const groupId = input.groupId?.trim() || null;
+  const trainingCategory = trainingCategoryFromLabel(input.trainingCategory ?? "");
+  const sport = input.sport?.trim() || null;
+  const injuryStatus = injuryStatusFromLabel(input.injuryStatus ?? "");
+  const injuryNotes = input.injuryNotes?.trim() || null;
+  const restrictions = input.restrictions?.trim() || null;
+  const trialOutcome = trialOutcomeFromLabel(input.trialOutcome ?? "");
 
   if (!fullName) {
     throw new Error("Client full name is required.");
@@ -135,6 +136,12 @@ export async function saveAdminClient(input: SaveAdminClientInput) {
         paymentStatus,
         amount,
         groupId,
+        trainingCategory,
+        sport,
+        injuryStatus,
+        injuryNotes,
+        restrictions,
+        trialOutcome,
         loginClientId: generatedClientId,
         password,
       },

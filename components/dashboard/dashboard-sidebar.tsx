@@ -1,187 +1,88 @@
 "use client";
 
-import Link from "next/link";
-import { LoaderCircle, LogOut, X } from "lucide-react";
 import type { ComponentType } from "react";
 import { useState } from "react";
+import Link from "next/link";
+import { LoaderCircle, LogOut, X } from "lucide-react";
 import { usePathname } from "next/navigation";
-import { signOut, useSession } from "next-auth/react";
+import { signOut } from "next-auth/react";
+import { Dialog } from "radix-ui";
 
-import {
-  getDashboardSidebarNav,
-  getDashboardProfileMeta,
-  getDashboardRoleLabel,
-  isDashboardNavItemActive,
-} from "@/lib/navigation/dashboard-nav";
-import type { DashboardRole } from "@/lib/auth/authorization-policy";
 import type { DashboardAccountSummary } from "@/components/dashboard/dashboard-role-shell";
 import { BrandLockup } from "@/components/ui/brand-lockup";
-import { StatusPill } from "@/components/ui/status-pill";
-import { cn } from "@/lib/utils";
+import type { DashboardRole } from "@/lib/auth/authorization-policy";
+import { getDashboardNav, getDashboardRoleLabel, isDashboardNavItemActive } from "@/lib/navigation/dashboard-nav";
 
 type DashboardSidebarProps = {
   role: DashboardRole;
   account?: DashboardAccountSummary;
-  isOpen: boolean;
   onClose: () => void;
 };
 
-const sectionLabels: Record<"primary" | "secondary", string> = {
-  primary: "Workspace",
-  secondary: "Account",
-};
-
-export function DashboardSidebar({
-  role,
-  account,
-  isOpen,
-  onClose,
-}: DashboardSidebarProps) {
+export function DashboardSidebar({ role, account, onClose }: DashboardSidebarProps) {
   const pathname = usePathname();
-  const { data: session } = useSession();
-  const navItems = getDashboardSidebarNav(role);
-  const profileMeta = getDashboardProfileMeta(role);
   const roleLabel = getDashboardRoleLabel(role);
-  const groupedItems = {
-    primary: navItems.filter((item) => item.section === "primary"),
-    secondary: navItems.filter((item) => item.section === "secondary"),
-  };
+  const navItems = getDashboardNav(role).filter((item) => item.available);
   const [isSigningOut, setIsSigningOut] = useState(false);
-  const [signOutError, setSignOutError] = useState("");
-
-  const displayName =
-    account?.name?.trim() ||
-    session?.user?.name?.trim() ||
-    session?.user?.email?.trim() ||
-    profileMeta.name;
-  const displaySubtitle =
-    account?.subtitle?.trim() ||
-    session?.user?.email?.trim() ||
-    profileMeta.subtitle;
 
   async function handleSignOut() {
-    setSignOutError("");
     setIsSigningOut(true);
-
     try {
       await signOut({ redirectTo: "/login" });
     } catch {
-      setSignOutError("Sign out failed. Try again.");
       setIsSigningOut(false);
     }
   }
 
+  function NavLink({ item, expanded = false }: { item: (typeof navItems)[number]; expanded?: boolean }) {
+    const Icon = item.icon as ComponentType<{ size?: number; strokeWidth?: number }>;
+    const active = isDashboardNavItemActive(item, pathname);
+    return (
+      <Link
+        href={item.href}
+        className={expanded ? "redline-drawer-link" : "redline-rail-link"}
+        data-active={active || undefined}
+        aria-current={active ? "page" : undefined}
+        aria-label={expanded ? undefined : item.label}
+        title={expanded ? undefined : item.label}
+        onClick={onClose}
+      >
+        <Icon size={18} strokeWidth={2} />
+        {expanded ? <span><strong>{item.label}</strong><small>{item.description}</small></span> : null}
+      </Link>
+    );
+  }
+
   return (
-    <aside
-      className="dashboard-sidebar"
-      data-open={isOpen}
-      aria-label={`${role} portal navigation`}
-    >
-      <div className="dashboard-sidebar__brand">
-        <BrandLockup
-          className="min-w-0 flex-1"
-          eyebrow="Premium performance training"
-          contextLabel={`${roleLabel} workspace`}
-          priority
-          imageAlt="Marvel's Fit Studios logo"
-        />
-
-        <button
-          type="button"
-          className="dashboard-sidebar__close"
-          onClick={onClose}
-          aria-label="Close sidebar"
-        >
-          <X size={18} />
+    <>
+      <aside className="redline-rail" aria-label={`${roleLabel} navigation`}>
+        <span className="redline-rail-label">MFS</span>
+        <nav>{navItems.map((item) => <NavLink key={item.href} item={item} />)}</nav>
+        <button type="button" className="redline-rail-link" onClick={handleSignOut} disabled={isSigningOut} aria-label="Log out">
+          {isSigningOut ? <LoaderCircle size={18} className="animate-spin-slow" /> : <LogOut size={18} />}
         </button>
-      </div>
+      </aside>
 
-      {(
-        Object.entries(groupedItems) as Array<
-          ["primary" | "secondary", typeof groupedItems.primary]
-        >
-      ).map(([section, items]) => (
-        <div key={section} className="dashboard-sidebar__section">
-          <div className="dashboard-sidebar__section-label">
-            {sectionLabels[section]}
+      <Dialog.Portal>
+        <Dialog.Overlay className="redline-drawer-overlay" />
+        <Dialog.Content className="redline-drawer">
+          <Dialog.Title className="sr-only">{roleLabel} navigation</Dialog.Title>
+          <Dialog.Description className="sr-only">Navigate the Marvel&apos;s Fit Studios workspace.</Dialog.Description>
+          <div className="redline-drawer-header">
+            <BrandLockup size="compact" />
+            <Dialog.Close asChild>
+              <button type="button" className="redline-utility redline-utility--icon" aria-label="Close navigation"><X size={18} /></button>
+            </Dialog.Close>
           </div>
-
-          <nav className="dashboard-sidebar__nav" aria-label={sectionLabels[section]}>
-            {items.map((item) => {
-              const Icon = item.icon as ComponentType<{ size?: number }>;
-
-              if (!item.available) {
-                return (
-                  <div key={item.href} className="dashboard-sidebar__link--muted">
-                    <span className="dashboard-sidebar__icon">
-                      <Icon size={18} />
-                    </span>
-                    <span className="dashboard-sidebar__item-copy">
-                      <span>{item.label}</span>
-                      <small>{item.description}</small>
-                    </span>
-                    <span className="dashboard-badge">{item.badge}</span>
-                  </div>
-                );
-              }
-
-              const isActive = isDashboardNavItemActive(item, pathname);
-
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={cn(
-                    "dashboard-sidebar__link",
-                    isActive && "dashboard-sidebar__link--active"
-                  )}
-                  aria-current={isActive ? "page" : undefined}
-                  onClick={onClose}
-                >
-                  <span className="dashboard-sidebar__icon">
-                    <Icon size={18} />
-                  </span>
-                  <span className="dashboard-sidebar__item-copy">
-                    <span>{item.label}</span>
-                    <small>{item.description}</small>
-                  </span>
-                  {item.badge ? (
-                    <span className="dashboard-badge">{item.badge}</span>
-                  ) : null}
-                </Link>
-              );
-            })}
-          </nav>
-        </div>
-      ))}
-
-      <div className="dashboard-sidebar__account">
-        <div className="dashboard-sidebar__account-copy">
-          <StatusPill tone="accent">{roleLabel}</StatusPill>
-          <strong>{displayName}</strong>
-          <p>{displaySubtitle}</p>
-        </div>
-
-        <button
-          type="button"
-          className="dashboard-sidebar__logout"
-          onClick={handleSignOut}
-          disabled={isSigningOut}
-        >
-          {isSigningOut ? (
-            <LoaderCircle size={16} className="animate-spin-slow" />
-          ) : (
-            <LogOut size={16} />
-          )}
-          {isSigningOut ? "Signing out" : "Log out"}
-        </button>
-
-        {signOutError ? (
-          <p className="dashboard-sidebar__account-error" role="alert">
-            {signOutError}
-          </p>
-        ) : null}
-      </div>
-    </aside>
+          <nav className="redline-drawer-nav">{navItems.map((item) => <NavLink key={item.href} item={item} expanded />)}</nav>
+          <footer className="redline-drawer-footer">
+            <div><strong>{account?.name || roleLabel}</strong><small>{account?.subtitle || `${roleLabel} workspace`}</small></div>
+            <button type="button" className="mv-btn mv-btn-primary" onClick={handleSignOut} disabled={isSigningOut}>
+              {isSigningOut ? <LoaderCircle size={17} className="animate-spin-slow" /> : <LogOut size={17} />} Log out
+            </button>
+          </footer>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </>
   );
 }

@@ -4,11 +4,12 @@ import type {
   AdminCoachRecord,
   AdminCoachSpecialization,
 } from "@/lib/mocks/admin-coaches";
+import type { Database } from "@/lib/supabase/database.types";
 import { withSupabaseFallback } from "@/lib/supabase/errors";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 function toAdminCoachSpecialization(
-  specialization: "STRENGTH" | "CONDITIONING" | "MOBILITY" | "PRIVATE_COACHING"
+  specialization: Database["public"]["Enums"]["CoachSpecialization"]
 ): AdminCoachSpecialization {
   switch (specialization) {
     case "CONDITIONING":
@@ -17,6 +18,18 @@ function toAdminCoachSpecialization(
       return "Mobility";
     case "PRIVATE_COACHING":
       return "Private Coaching";
+    case "FOOTBALL":
+      return "Football";
+    case "TENNIS":
+      return "Tennis";
+    case "CALISTHENICS":
+      return "Calisthenics";
+    case "REHAB":
+      return "Rehab";
+    case "ATHLETIC_PERFORMANCE":
+      return "Athletic Performance";
+    case "GENERAL_FITNESS":
+      return "General Fitness";
     default:
       return "Strength";
   }

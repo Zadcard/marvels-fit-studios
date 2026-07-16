@@ -1,36 +1,45 @@
 "use client";
 
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-  useTransition,
-  type FormEvent,
-} from "react";
+import { useMemo, useState, useTransition, type FormEvent } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { MessageCircle, Plus, Search, UploadCloud } from "lucide-react";
+import { Dialog } from "radix-ui";
+import {
+  ArrowDownAZ,
+  ArrowUpAZ,
+  ChevronLeft,
+  ChevronRight,
+  CircleDollarSign,
+  Dumbbell,
+  MessageCircle,
+  Pencil,
+  Plus,
+  Search,
+  Trash2,
+  UploadCloud,
+  UserRound,
+  Users,
+  X,
+} from "lucide-react";
 
 import { deleteAdminClient, saveAdminClient } from "@/app/actions/admin-clients";
-import { DashboardEmptyState } from "@/components/dashboard/dashboard-empty-state";
-import { DashboardModal } from "@/components/dashboard/dashboard-modal";
-import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
-import { DashboardPaginationControls } from "@/components/dashboard/dashboard-pagination-controls";
-import { DashboardStatusBadge } from "@/components/dashboard/dashboard-status-badge";
+import type { AdminClientInitialOption, AdminClientRecord } from "@/lib/dashboard/admin-dashboard-data";
 import {
-  adminClientToneByStatus,
-  adminClientWorkspaceDefinition,
-  type ClientFormState,
-} from "@/lib/dashboard/admin-client-workspace";
-import type {
-  AdminClientInitialOption,
-  AdminClientRecord,
+  adminClientMembershipFilters,
+  adminClientStatusFilters,
+  adminPaymentStatusFilters,
+  adminTrainingCategoryFilters,
 } from "@/lib/dashboard/admin-dashboard-data";
+import {
+  injuryStatusLabels,
+  trainingCategoryLabels,
+  trialOutcomeLabels,
+} from "@/lib/dashboard/client-domain-labels";
 import { paginateDashboardItems } from "@/lib/dashboard/pagination";
 import { buildWhatsAppHref } from "@/lib/whatsapp";
+import styles from "./admin-clients-workspace.module.css";
 
-type AdminClientsWorkspaceProps = {
+type Props = {
   records: AdminClientRecord[];
   searchValue: string;
   selectedInitial: string | null;
@@ -42,16 +51,53 @@ type AdminClientsWorkspaceProps = {
   groupOptions: Array<{ id: string; name: string }>;
 };
 
-function getPaymentTone(status: AdminClientRecord["paymentStatus"]) {
-  if (status === "Paid") return "success";
-  if (status === "Due soon") return "warning";
-  return "neutral";
+type LocalFilters = {
+  status: (typeof adminClientStatusFilters)[number];
+  membership: (typeof adminClientMembershipFilters)[number];
+  payment: (typeof adminPaymentStatusFilters)[number];
+  category: (typeof adminTrainingCategoryFilters)[number];
+};
+
+type ClientForm = {
+  fullName: string;
+  email: string;
+  phone: string;
+  status: AdminClientRecord["status"];
+  trialOutcome: AdminClientRecord["trialOutcome"];
+  paymentStatus: AdminClientRecord["paymentStatus"];
+  paymentAmount: string;
+  groupId: string;
+  trainingCategory: AdminClientRecord["trainingCategory"];
+  sport: string;
+  injuryStatus: AdminClientRecord["injuryStatus"];
+  injuryNotes: string;
+  restrictions: string;
+};
+
+const emptyForm: ClientForm = {
+  fullName: "",
+  email: "",
+  phone: "",
+  status: "Pending",
+  trialOutcome: "Not recorded",
+  paymentStatus: "Unpaid",
+  paymentAmount: "",
+  groupId: "",
+  trainingCategory: "General fitness",
+  sport: "",
+  injuryStatus: "None",
+  injuryNotes: "",
+  restrictions: "",
+};
+
+function initials(name: string) {
+  return name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
 }
 
-function formatResultsLabel(filteredCount: number, totalCount: number) {
-  return filteredCount === totalCount
-    ? `${totalCount} clients`
-    : `${filteredCount} of ${totalCount} clients`;
+function tone(status: string) {
+  if (["Active", "Paid"].includes(status)) return styles.success;
+  if (["Pending", "Due soon", "Trial"].includes(status)) return styles.warning;
+  return styles.neutral;
 }
 
 export function AdminClientsWorkspace({
@@ -64,625 +110,187 @@ export function AdminClientsWorkspace({
   filteredCount,
   initialOptions,
   groupOptions,
-}: AdminClientsWorkspaceProps) {
+}: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [isSaving, startTransition] = useTransition();
-  const [isDeleting, startDeleteTransition] = useTransition();
-  const [isFilterPending, startFilterTransition] = useTransition();
-  const [errorMessage, setErrorMessage] = useState("");
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingRecordId, setEditingRecordId] = useState<string | null>(null);
-  const [formState, setFormState] = useState<ClientFormState>(
-    adminClientWorkspaceDefinition.createEmptyForm()
-  );
-  const [searchInput, setSearchInput] = useState(searchValue);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [deleteConfirmationText, setDeleteConfirmationText] = useState("");
-  const [detailClientId, setDetailClientId] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+  const [search, setSearch] = useState(searchValue);
+  const [filters, setFilters] = useState<LocalFilters>({ status: "All", membership: "All", payment: "All", category: "All" });
+  const [detailId, setDetailId] = useState<string | null>(null);
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteText, setDeleteText] = useState("");
+  const [form, setForm] = useState<ClientForm>(emptyForm);
+  const [error, setError] = useState("");
 
-  useEffect(() => {
-    setSearchInput(searchValue);
-  }, [searchValue]);
+  const filtered = useMemo(() => records.filter((record) =>
+    (filters.status === "All" || record.status === filters.status) &&
+    (filters.membership === "All" || record.membership === filters.membership) &&
+    (filters.payment === "All" || record.paymentStatus === filters.payment) &&
+    (filters.category === "All" || record.trainingCategory === filters.category)
+  ), [records, filters]);
+  const paginated = paginateDashboardItems(filtered, currentPage);
+  const detail = records.find((record) => record.id === detailId) ?? null;
+  const editing = records.find((record) => record.id === editingId) ?? null;
 
-  const detailClient = records.find((client) => client.id === detailClientId) ?? null;
-  const paginatedClients = paginateDashboardItems(records, currentPage);
-  const searchSuggestions = useMemo(() => {
-    const query = searchInput.trim().toLowerCase();
+  function setQuery(key: string, value?: string) {
+    const params = new URLSearchParams(searchParams.toString());
+    if (value) params.set(key, value); else params.delete(key);
+    if (key !== "page") params.delete("page");
+    startTransition(() => router.push(`${pathname}?${params.toString()}`));
+  }
 
-    if (!query) {
-      return [];
-    }
+  function openCreate() {
+    setEditingId(null);
+    setForm(emptyForm);
+    setError("");
+    setEditorOpen(true);
+  }
 
-    return records
-      .filter((client) =>
-        [client.fullName, client.clientId, client.phone, client.assignedCoach]
-          .join(" ")
-          .toLowerCase()
-          .includes(query)
-      )
-      .slice(0, 6);
-  }, [records, searchInput]);
+  function openEdit(record: AdminClientRecord) {
+    setEditingId(record.id);
+    setForm({
+      fullName: record.fullName,
+      email: record.email,
+      phone: record.phone,
+      status: record.status,
+      trialOutcome: record.trialOutcome,
+      paymentStatus: record.paymentStatus,
+      paymentAmount: record.paymentAmountLabel === "No payment yet" ? "" : record.paymentAmountLabel.replace(/^EGP\s*/, ""),
+      groupId: record.primaryGroupId ?? "",
+      trainingCategory: record.trainingCategory,
+      sport: record.sport,
+      injuryStatus: record.injuryStatus,
+      injuryNotes: record.injuryNotes,
+      restrictions: record.restrictions,
+    });
+    setError("");
+    setEditorOpen(true);
+  }
 
-  const updateFormField = (key: keyof ClientFormState, value: string) => {
-    setFormState((current) => ({ ...current, [key]: value }));
-  };
-
-  const openCreateModal = () => {
-    setEditingRecordId(null);
-    setFormState(adminClientWorkspaceDefinition.createEmptyForm());
-    setErrorMessage("");
-    setIsModalOpen(true);
-  };
-
-  const openEditModal = (record: AdminClientRecord) => {
-    setEditingRecordId(record.id);
-    setFormState(adminClientWorkspaceDefinition.toFormState(record));
-    setErrorMessage("");
-    setIsModalOpen(true);
-  };
-
-  const updateQuery = useCallback(
-    (updates: Record<string, string | null>) => {
-      const params = new URLSearchParams(searchParams.toString());
-
-      for (const [key, value] of Object.entries(updates)) {
-        if (!value) params.delete(key);
-        else params.set(key, value);
-      }
-
-      const nextQuery = params.toString();
-      const nextUrl = nextQuery ? `${pathname}?${nextQuery}` : pathname;
-
-      startFilterTransition(() => {
-        router.replace(nextUrl, { scroll: false });
-      });
-    },
-    [pathname, router, searchParams]
-  );
-
-  const handleSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
+  function submitSearch(event: FormEvent) {
     event.preventDefault();
+    setQuery("q", search.trim() || undefined);
+  }
 
-    const normalizedSearch = searchInput.trim();
-
-    if (normalizedSearch === searchValue) return;
-
-    updateQuery({ q: normalizedSearch || null, page: null });
-  };
-
-  const handleSaveClient = () => {
-    setErrorMessage("");
-
+  function submitClient(event: FormEvent) {
+    event.preventDefault();
+    setError("");
     startTransition(async () => {
       try {
-        await saveAdminClient({
-          clientId: editingRecordId,
-          fullName: formState.fullName,
-          phone: formState.phone,
-          status: formState.status,
-          paymentStatus: formState.paymentStatus,
-          paymentAmount: formState.paymentAmount,
-          groupId: formState.groupId,
-        });
-        setIsModalOpen(false);
+        await saveAdminClient({ clientId: editingId, ...form });
+        setEditorOpen(false);
         router.refresh();
-      } catch (error) {
-        setErrorMessage(
-          error instanceof Error ? error.message : "Could not save client."
-        );
+      } catch (caught) {
+        setError(caught instanceof Error ? caught.message : "Could not save the member.");
       }
     });
-  };
+  }
 
-  const handleDeleteClient = () => {
-    if (!editingRecordId) return;
-    setErrorMessage("");
-
-    startDeleteTransition(async () => {
+  function confirmDelete() {
+    if (!editing) return;
+    setError("");
+    startTransition(async () => {
       try {
-        await deleteAdminClient({
-          clientId: editingRecordId,
-          confirmationText: deleteConfirmationText,
-        });
-        setIsDeleteModalOpen(false);
-        setDeleteConfirmationText("");
-        setIsModalOpen(false);
+        await deleteAdminClient({ clientId: editing.id, confirmationText: deleteText });
+        setDeleteOpen(false);
+        setEditorOpen(false);
+        setDetailId(null);
+        setDeleteText("");
         router.refresh();
-      } catch (error) {
-        setErrorMessage(
-          error instanceof Error ? error.message : "Could not delete client."
-        );
+      } catch (caught) {
+        setError(caught instanceof Error ? caught.message : "Could not delete the member.");
       }
     });
-  };
+  }
 
   return (
-    <div className="dashboard-stack dashboard-stack--dense">
-      <DashboardPageHeader
-        eyebrow="Admin clients"
-        actions={
-          <>
-            <Link href="/admin/bulk-import" className="mv-btn mv-btn-outline">
-              <UploadCloud size={16} />
-              Import CSV
-            </Link>
-            <button type="button" className="mv-btn mv-btn-primary" onClick={openCreateModal}>
-              <Plus size={16} />
-              Add Client
-            </button>
-          </>
-        }
-      />
+    <div className={styles.page} aria-busy={isPending}>
+      <header className={styles.header}>
+        <div><span className={styles.kicker}>Member intelligence</span><h1>Know every member.</h1><p>Search the roster, read account health, and act without losing context.</p></div>
+        <div className={styles.headerActions}>
+          <Link href="/admin/bulk-import" className="mv-btn mv-btn-secondary"><UploadCloud size={17} /> Import</Link>
+          <button type="button" className="mv-btn mv-btn-primary" onClick={openCreate}><Plus size={17} /> New member</button>
+        </div>
+      </header>
 
-      <section className="dashboard-clients-shell dashboard-clients-shell--single">
-        <article className="dashboard-clients-roster-panel">
-          <div className="dashboard-clients-toolbar">
-            <div className="dashboard-clients-toolbar__copy">
-              <div className="mv-eyebrow">Client directory</div>
-              <h2>Search clients</h2>
-              <p>
-                {formatResultsLabel(filteredCount, totalCount)}
-                {isFilterPending ? " updating..." : ""}
-              </p>
-            </div>
-
-            <form className="dashboard-clients-search" onSubmit={handleSearchSubmit}>
-              <label htmlFor="admin-client-search">Search</label>
-              <div className="dashboard-clients-search__controls">
-                <input
-                  id="admin-client-search"
-                  type="search"
-                  className="dashboard-clients-search__input"
-                  placeholder="Search name, ID, phone, email"
-                  value={searchInput}
-                  onChange={(event) => setSearchInput(event.target.value)}
-                  autoComplete="off"
-                />
-                <button
-                  type="submit"
-                  className="mv-btn mv-btn-primary"
-                  disabled={isFilterPending}
-                >
-                  <Search size={16} />
-                  Search
-                </button>
-              </div>
-              {searchSuggestions.length > 0 ? (
-                <div className="dashboard-search-suggestions" role="listbox">
-                  {searchSuggestions.map((client) => (
-                    <button
-                      key={client.id}
-                      type="button"
-                      className="dashboard-search-suggestion"
-                      onMouseDown={(event) => event.preventDefault()}
-                      onClick={() => {
-                        setSearchInput(client.fullName);
-                        updateQuery({ q: client.fullName, page: null });
-                      }}
-                    >
-                      <strong>{client.fullName}</strong>
-                      <span>
-                        {client.clientId} - {client.phone}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              ) : null}
-            </form>
-          </div>
-
-          <div className="dashboard-clients-filters">
-            <div className="dashboard-clients-filter-group">
-              <span className="dashboard-clients-filter-group__label">Sort</span>
-              <div className="dashboard-clients-checkbox-row">
-                {(["asc", "desc"] as const).map((order) => (
-                  <label key={order} className="dashboard-clients-checkbox">
-                    <input
-                      type="checkbox"
-                      checked={sortOrder === order}
-                      onChange={() =>
-                        updateQuery({
-                          sort: sortOrder === order ? null : order,
-                          page: null,
-                        })
-                      }
-                    />
-                    <span>{order === "asc" ? "A-Z" : "Z-A"}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            <div className="dashboard-clients-filter-group">
-              <span className="dashboard-clients-filter-group__label">Initial</span>
-              <div className="dashboard-clients-initials">
-                <label className="dashboard-clients-checkbox dashboard-clients-checkbox--compact">
-                  <input
-                    type="checkbox"
-                    checked={!selectedInitial}
-                    onChange={() => updateQuery({ initial: null, page: null })}
-                  />
-                  <span>All</span>
-                </label>
-                {initialOptions.map((option) => (
-                  <label
-                    key={option.label}
-                    className="dashboard-clients-checkbox dashboard-clients-checkbox--compact"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={selectedInitial === option.label}
-                      onChange={() =>
-                        updateQuery({
-                          initial:
-                            selectedInitial === option.label ? null : option.label,
-                          page: null,
-                        })
-                      }
-                    />
-                    <span>
-                      {option.label}
-                      <small>{option.count}</small>
-                    </span>
-                  </label>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="dashboard-clients-roster-list">
-            {records.length > 0 ? (
-              paginatedClients.items.map((client) => {
-                const whatsappHref = buildWhatsAppHref(client.phone);
-
-                return (
-                  <div key={client.id} className="dashboard-clients-roster-item">
-                    <button
-                      type="button"
-                      className="dashboard-clients-roster-item__button"
-                      onClick={() => setDetailClientId(client.id)}
-                    >
-                      <div className="dashboard-clients-roster-item__topline">
-                        <strong>{client.fullName}</strong>
-                        <DashboardStatusBadge
-                          label={client.status}
-                          tone={adminClientToneByStatus[client.status]}
-                        />
-                      </div>
-                      <div className="dashboard-clients-roster-item__meta">
-                        <span>{client.clientId}</span>
-                        <span>{client.phone}</span>
-                        <span>{client.assignedCoach}</span>
-                      </div>
-                    </button>
-                    <div className="dashboard-row-actions">
-                      <button
-                        type="button"
-                        className="dashboard-inline-button"
-                        onClick={() => setDetailClientId(client.id)}
-                      >
-                        View details
-                      </button>
-                      <button
-                        type="button"
-                        className="dashboard-inline-button"
-                        onClick={() => openEditModal(client)}
-                      >
-                        Edit
-                      </button>
-                      {whatsappHref ? (
-                        <a
-                          className="dashboard-inline-button"
-                          href={whatsappHref}
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          <MessageCircle size={14} />
-                          WhatsApp
-                        </a>
-                      ) : null}
-                    </div>
-                  </div>
-                );
-              })
-            ) : (
-              <DashboardEmptyState
-                title="No clients found"
-                description="Try a different search term or choose another initial."
-              />
-            )}
-          </div>
-          <DashboardPaginationControls
-            page={paginatedClients.page}
-            pageCount={paginatedClients.pageCount}
-            startItem={paginatedClients.startItem}
-            endItem={paginatedClients.endItem}
-            totalItems={paginatedClients.totalItems}
-            onPageChange={(nextPage) =>
-              updateQuery({ page: nextPage > 1 ? String(nextPage) : null })
-            }
-          />
-        </article>
+      <section className={styles.summary} aria-label="Member directory summary">
+        <article><Users size={18} /><span>Total roster</span><strong>{totalCount}</strong><small>All member records</small></article>
+        <article><UserRound size={18} /><span>In this view</span><strong>{filtered.length}</strong><small>{filteredCount === totalCount ? "No server filters" : `${filteredCount} server matches`}</small></article>
+        <article><CircleDollarSign size={18} /><span>Payment watch</span><strong>{records.filter((item) => item.paymentStatus !== "Paid").length}</strong><small>Due or unpaid</small></article>
+        <article><Dumbbell size={18} /><span>Training ready</span><strong>{records.filter((item) => item.status === "Active").length}</strong><small>Active status</small></article>
       </section>
 
-      <DashboardModal
-        open={!!detailClient}
-        onClose={() => setDetailClientId(null)}
-        title={detailClient?.fullName ?? "Client details"}
-        description={detailClient?.progressNote}
-        size="wide"
-        footer={
-          detailClient ? (
-            <>
-              {buildWhatsAppHref(detailClient.phone) ? (
-                <a
-                  className="mv-btn mv-btn-outline"
-                  href={buildWhatsAppHref(detailClient.phone) ?? undefined}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  <MessageCircle size={16} />
-                  WhatsApp
-                </a>
-              ) : null}
-              <button
-                type="button"
-                className="mv-btn mv-btn-primary"
-                onClick={() => openEditModal(detailClient)}
-              >
-                Edit Client
-              </button>
-            </>
-          ) : null
-        }
-      >
-        {detailClient ? (
-          <div className="dashboard-stack">
-            <div className="dashboard-badge-stack">
-              <DashboardStatusBadge
-                label={detailClient.status}
-                tone={adminClientToneByStatus[detailClient.status]}
-              />
-              <DashboardStatusBadge
-                label={detailClient.paymentStatus}
-                tone={getPaymentTone(detailClient.paymentStatus)}
-              />
-            </div>
-
-            <div className="dashboard-detail-grid">
-              <div className="dashboard-detail-stat">
-                <span className="dashboard-detail-stat__label">Client ID</span>
-                <strong>{detailClient.clientId}</strong>
-              </div>
-              <div className="dashboard-detail-stat">
-                <span className="dashboard-detail-stat__label">Coach</span>
-                <strong>{detailClient.assignedCoach}</strong>
-              </div>
-              <div className="dashboard-detail-stat">
-                <span className="dashboard-detail-stat__label">Group</span>
-                <strong>{detailClient.primaryGroup}</strong>
-              </div>
-              <div className="dashboard-detail-stat">
-                <span className="dashboard-detail-stat__label">Membership</span>
-                <strong>{detailClient.membership}</strong>
-                <small>{detailClient.paymentAmountLabel}</small>
-              </div>
-            </div>
-
-            <div className="dashboard-form-section">
-              <div className="dashboard-form-section__header">
-                <div>
-                  <div className="mv-eyebrow">Sessions</div>
-                  <h3>Upcoming schedule</h3>
-                  <p>Next booked sessions for this client.</p>
-                </div>
-              </div>
-              {detailClient.nextSessions.length > 0 ? (
-                <div className="dashboard-summary-list">
-                  {detailClient.nextSessions.slice(0, 3).map((session, index) => (
-                    <div key={index} className="dashboard-summary-row">
-                      <strong>{session}</strong>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <DashboardEmptyState
-                  title="No upcoming sessions"
-                  description={detailClient.nextSession}
-                />
-              )}
-            </div>
+      <section className={styles.directory}>
+        <div className={styles.toolbar}>
+          <form onSubmit={submitSearch} className={styles.search}><Search size={18} /><label className="sr-only" htmlFor="member-search">Search members</label><input id="member-search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Name, member ID, phone or coach" /><button type="submit">Search</button></form>
+          <div className={styles.filters}>
+            <label>Status<select value={filters.status} onChange={(event) => setFilters((value) => ({ ...value, status: event.target.value as LocalFilters["status"] }))}>{adminClientStatusFilters.map((option) => <option key={option}>{option}</option>)}</select></label>
+            <label>Plan<select value={filters.membership} onChange={(event) => setFilters((value) => ({ ...value, membership: event.target.value as LocalFilters["membership"] }))}>{adminClientMembershipFilters.map((option) => <option key={option}>{option}</option>)}</select></label>
+            <label>Training<select value={filters.category} onChange={(event) => setFilters((value) => ({ ...value, category: event.target.value as LocalFilters["category"] }))}>{adminTrainingCategoryFilters.map((option) => <option key={option}>{option}</option>)}</select></label>
+            <label>Payment<select value={filters.payment} onChange={(event) => setFilters((value) => ({ ...value, payment: event.target.value as LocalFilters["payment"] }))}>{adminPaymentStatusFilters.map((option) => <option key={option}>{option}</option>)}</select></label>
+            <button type="button" className={styles.sort} aria-label={`Sort ${sortOrder === "asc" ? "descending" : "ascending"}`} onClick={() => setQuery("sort", sortOrder === "asc" ? "desc" : "asc")}>{sortOrder === "asc" ? <ArrowDownAZ size={19} /> : <ArrowUpAZ size={19} />}</button>
           </div>
-        ) : null}
-      </DashboardModal>
+        </div>
 
-      <DashboardModal
-        open={isModalOpen}
-        onClose={() => {
-          setErrorMessage("");
-          setIsModalOpen(false);
-        }}
-        title={editingRecordId ? "Edit client" : "Add client"}
-        description="Client details"
-        footer={
-          <>
-            {editingRecordId ? (
-              <button
-                type="button"
-                className="mv-btn mv-btn-danger"
-                onClick={() => {
-                  setErrorMessage("");
-                  setDeleteConfirmationText("");
-                  setIsDeleteModalOpen(true);
-                }}
-                disabled={isSaving || isDeleting}
-              >
-                Delete client
-              </button>
-            ) : null}
-            <button
-              type="button"
-              className="mv-btn mv-btn-outline"
-              onClick={() => {
-                setErrorMessage("");
-                setIsModalOpen(false);
-              }}
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              className="mv-btn mv-btn-primary"
-              onClick={handleSaveClient}
-              disabled={isSaving || isDeleting}
-            >
-              {isSaving
-                ? "Saving..."
-                : editingRecordId
-                  ? "Save client"
-                  : "Create client"}
-            </button>
-          </>
-        }
-      >
-        {errorMessage ? (
-          <div className="dashboard-empty-state" role="alert">
-            <strong>Could not save client</strong>
-            <p>{errorMessage}</p>
-          </div>
-        ) : null}
-        <div className="dashboard-stack">
-          <div className="dashboard-panel">
-            <div className="dashboard-panel__header">
-              <div>
-                <div className="mv-eyebrow">Payment controls</div>
-                <h2>Set payment status</h2>
-                <p>Client profile, status, and payment changes save to the database.</p>
-              </div>
-            </div>
-            <div className="dashboard-row-actions">
-              {(["Paid", "Due soon", "Unpaid"] as const).map((status) => (
-                <button
-                  key={status}
-                  type="button"
-                  className={
-                    formState.paymentStatus === status
-                      ? "mv-btn mv-btn-primary"
-                      : "mv-btn mv-btn-outline"
-                  }
-                  onClick={() => updateFormField("paymentStatus", status)}
-                >
-                  {status}
+        <div className={styles.initials} aria-label="Filter members by initial">
+          <button type="button" data-active={!selectedInitial || undefined} onClick={() => setQuery("initial")}>All</button>
+          {initialOptions.map((option) => <button key={option.label} type="button" data-active={selectedInitial === option.label || undefined} onClick={() => setQuery("initial", option.label)}><span>{option.label}</span><small>{option.count}</small></button>)}
+        </div>
+
+        {paginated.items.length ? (
+          <div className={styles.grid}>
+            {paginated.items.map((record) => (
+              <article className={styles.memberCard} key={record.id}>
+                <button type="button" className={styles.cardMain} onClick={() => setDetailId(record.id)} aria-label={`Open ${record.fullName}`}>
+                  <div className={styles.cardHead}><span className={styles.avatar}>{initials(record.fullName)}</span><div><small>{record.clientId}</small><h2>{record.fullName}</h2><p>{record.email || record.phone}</p></div><ChevronRight size={18} /></div>
+                  <div className={styles.statusRow}><span className={tone(record.status)}>{record.status}</span><span className={tone(record.paymentStatus)}>{record.paymentStatus}</span>{record.hasInjuryAlert ? <span className={styles.warning} title={record.injuryNotes || undefined}>⚠ {record.injuryStatus}</span> : null}</div>
+                  <dl><div><dt>Program</dt><dd>{record.membership}</dd></div><div><dt>Training</dt><dd>{record.trainingCategory}{record.sport ? ` · ${record.sport}` : ""}</dd></div><div><dt>Coach</dt><dd>{record.assignedCoach}</dd></div><div><dt>Next</dt><dd>{record.nextSession}</dd></div></dl>
+                  <div className={styles.progress}><span>{record.progressNote}</span><i><b style={{ width: record.status === "Active" ? "76%" : record.status === "Pending" ? "38%" : "18%" }} /></i></div>
                 </button>
-              ))}
-            </div>
-          </div>
-        </div>
-        <div className="dashboard-form-grid">
-          {adminClientWorkspaceDefinition.formFields
-            .filter((field) => field.key !== "paymentStatus")
-            .map((field) => (
-              <label key={field.key} className="dashboard-form-field">
-                <span>{field.label}</span>
-                {field.kind === "select" ? (
-                  <select
-                    className="dashboard-select"
-                    value={formState[field.key]}
-                    onChange={(event) =>
-                      updateFormField(field.key, event.target.value)
-                    }
-                  >
-                    {field.options.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <input
-                    type={field.kind}
-                    className="dashboard-input"
-                    value={formState[field.key]}
-                    onChange={(event) =>
-                      updateFormField(field.key, event.target.value)
-                    }
-                  />
-                )}
-              </label>
+                <footer><button type="button" onClick={() => openEdit(record)}><Pencil size={15} /> Edit</button>{buildWhatsAppHref(record.phone) ? <a href={buildWhatsAppHref(record.phone) ?? undefined} target="_blank" rel="noreferrer"><MessageCircle size={15} /> Message</a> : <span>No phone</span>}</footer>
+              </article>
             ))}
-          <label className="dashboard-form-field">
-            <span>Primary group</span>
-            <select
-              className="dashboard-select"
-              value={formState.groupId}
-              onChange={(event) => updateFormField("groupId", event.target.value)}
-            >
-              <option value="">No group</option>
-              {groupOptions.map((group) => (
-                <option key={group.id} value={group.id}>
-                  {group.name}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-      </DashboardModal>
-
-      <DashboardModal
-        open={isDeleteModalOpen}
-        onClose={() => {
-          if (isDeleting) return;
-          setErrorMessage("");
-          setDeleteConfirmationText("");
-          setIsDeleteModalOpen(false);
-        }}
-        title="Delete client"
-        description='Type "Delete" to confirm client deletion'
-        footer={
-          <>
-            <button
-              type="button"
-              className="mv-btn mv-btn-outline"
-              onClick={() => {
-                setErrorMessage("");
-                setDeleteConfirmationText("");
-                setIsDeleteModalOpen(false);
-              }}
-              disabled={isDeleting}
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              className="mv-btn mv-btn-danger"
-              onClick={handleDeleteClient}
-              disabled={isDeleting || deleteConfirmationText.trim() !== "Delete"}
-            >
-              {isDeleting ? "Deleting..." : "Delete client"}
-            </button>
-          </>
-        }
-      >
-        {errorMessage ? (
-          <div className="dashboard-empty-state" role="alert">
-            <strong>Could not delete client</strong>
-            <p>{errorMessage}</p>
           </div>
-        ) : null}
-        <div className="dashboard-form-grid">
-          <label className="dashboard-form-field dashboard-form-field--wide">
-            <span>Confirmation</span>
-            <input
-              className="dashboard-input"
-              value={deleteConfirmationText}
-              onChange={(event) => setDeleteConfirmationText(event.target.value)}
-              placeholder='Type "Delete" to confirm client deletion'
-            />
-          </label>
-        </div>
-      </DashboardModal>
+        ) : <div className={styles.empty}><Search size={30} /><h2>No members found</h2><p>Change the filters or add the first matching member.</p><button className="mv-btn mv-btn-primary" onClick={openCreate}>Add member</button></div>}
+
+        <footer className={styles.pagination}><span>Showing {paginated.items.length} of {filtered.length}</span><div><button type="button" disabled={paginated.page <= 1} onClick={() => setQuery("page", String(Math.max(1, paginated.page - 1)))}><ChevronLeft size={17} /> Previous</button><strong>{paginated.page} / {paginated.pageCount}</strong><button type="button" disabled={paginated.page >= paginated.pageCount} onClick={() => setQuery("page", String(paginated.page + 1))}>Next <ChevronRight size={17} /></button></div></footer>
+      </section>
+
+      <Dialog.Root open={!!detail} onOpenChange={(open) => !open && setDetailId(null)}>
+        <Dialog.Portal><Dialog.Overlay className={styles.overlay} /><Dialog.Content className={styles.drawer}>
+          <Dialog.Title className={styles.drawerTitle}>{detail?.fullName ?? "Member dossier"}</Dialog.Title><Dialog.Description className={styles.drawerDescription}>{detail?.progressNote}</Dialog.Description>
+          <Dialog.Close className={styles.close} aria-label="Close member details"><X size={18} /></Dialog.Close>
+          {detail ? <><div className={styles.dossierHero}><span className={styles.avatar}>{initials(detail.fullName)}</span><div><small>{detail.clientId}</small><strong>{detail.fullName}</strong><p>{detail.email || detail.phone}</p></div></div><div className={styles.statusRow}><span className={tone(detail.status)}>{detail.status}</span><span className={tone(detail.paymentStatus)}>{detail.paymentStatus}</span></div><section className={styles.dossierSection}><h3>Membership</h3><dl><div><dt>Program</dt><dd>{detail.membership}</dd></div><div><dt>Training</dt><dd>{detail.trainingCategory}</dd></div><div><dt>Sport</dt><dd>{detail.sport || "—"}</dd></div><div><dt>Trial outcome</dt><dd>{detail.trialOutcome}</dd></div><div><dt>Group</dt><dd>{detail.primaryGroup}</dd></div><div><dt>Coach</dt><dd>{detail.assignedCoach}</dd></div><div><dt>Payment</dt><dd>{detail.paymentAmountLabel}</dd></div></dl></section><section className={styles.dossierSection}><h3>Injury &amp; restrictions{detail.hasInjuryAlert ? <span className={styles.warning}>⚠ {detail.injuryStatus}</span> : null}</h3><dl><div><dt>Status</dt><dd>{detail.injuryStatus}</dd></div><div><dt>Injury notes</dt><dd>{detail.injuryNotes || "None recorded"}</dd></div><div><dt>Restrictions</dt><dd>{detail.restrictions || "None recorded"}</dd></div></dl></section><section className={styles.dossierSection}><h3>Next sessions</h3>{detail.nextSessions.length ? <ol>{detail.nextSessions.slice(0, 3).map((session) => <li key={session}>{session}</li>)}</ol> : <p>{detail.nextSession}</p>}</section><div className={styles.drawerActions}>{buildWhatsAppHref(detail.phone) ? <a className="mv-btn mv-btn-secondary" href={buildWhatsAppHref(detail.phone) ?? undefined} target="_blank" rel="noreferrer"><MessageCircle size={17} /> Message</a> : null}<button type="button" className="mv-btn mv-btn-primary" onClick={() => { setDetailId(null); openEdit(detail); }}><Pencil size={17} /> Edit member</button></div></> : null}
+        </Dialog.Content></Dialog.Portal>
+      </Dialog.Root>
+
+      <Dialog.Root open={editorOpen} onOpenChange={setEditorOpen}>
+        <Dialog.Portal><Dialog.Overlay className={styles.overlay} /><Dialog.Content className={styles.editor}>
+          <Dialog.Title>{editingId ? "Edit member" : "Add a new member"}</Dialog.Title><Dialog.Description>Update the roster record and account state.</Dialog.Description><Dialog.Close className={styles.close} aria-label="Close editor"><X size={18} /></Dialog.Close>
+          <form onSubmit={submitClient} className={styles.form}>
+            <label className={styles.full}>Full name<input required value={form.fullName} onChange={(event) => setForm((value) => ({ ...value, fullName: event.target.value }))} /></label>
+            <label>Email<input type="email" value={form.email} onChange={(event) => setForm((value) => ({ ...value, email: event.target.value }))} /></label>
+            <label>Phone<input type="tel" value={form.phone} onChange={(event) => setForm((value) => ({ ...value, phone: event.target.value }))} /></label>
+            <label>Status<select value={form.status} onChange={(event) => setForm((value) => ({ ...value, status: event.target.value as ClientForm["status"] }))}>{adminClientStatusFilters.filter((item) => item !== "All").map((item) => <option key={item}>{item}</option>)}</select></label>
+            <label>Trial outcome<select value={form.trialOutcome} onChange={(event) => setForm((value) => ({ ...value, trialOutcome: event.target.value as ClientForm["trialOutcome"] }))}>{trialOutcomeLabels.map((item) => <option key={item}>{item}</option>)}</select></label>
+            <label>Payment<select value={form.paymentStatus} onChange={(event) => setForm((value) => ({ ...value, paymentStatus: event.target.value as ClientForm["paymentStatus"] }))}>{adminPaymentStatusFilters.filter((item) => item !== "All").map((item) => <option key={item}>{item}</option>)}</select></label>
+            <label>Amount<input inputMode="decimal" value={form.paymentAmount} onChange={(event) => setForm((value) => ({ ...value, paymentAmount: event.target.value }))} /></label>
+            <label>Group<select value={form.groupId} onChange={(event) => setForm((value) => ({ ...value, groupId: event.target.value }))}><option value="">No group</option>{groupOptions.map((group) => <option key={group.id} value={group.id}>{group.name}</option>)}</select></label>
+            <label>Training category<select value={form.trainingCategory} onChange={(event) => setForm((value) => ({ ...value, trainingCategory: event.target.value as ClientForm["trainingCategory"] }))}>{trainingCategoryLabels.map((item) => <option key={item}>{item}</option>)}</select></label>
+            <label>Sport (optional)<input value={form.sport} onChange={(event) => setForm((value) => ({ ...value, sport: event.target.value }))} placeholder="e.g. Football" /></label>
+            <label>Injury status<select value={form.injuryStatus} onChange={(event) => setForm((value) => ({ ...value, injuryStatus: event.target.value as ClientForm["injuryStatus"] }))}>{injuryStatusLabels.map((item) => <option key={item}>{item}</option>)}</select></label>
+            <label className={styles.full}>Injury notes<input value={form.injuryNotes} onChange={(event) => setForm((value) => ({ ...value, injuryNotes: event.target.value }))} placeholder="Current or previous injury the coach must know about" /></label>
+            <label className={styles.full}>Exercise restrictions<input value={form.restrictions} onChange={(event) => setForm((value) => ({ ...value, restrictions: event.target.value }))} placeholder="Movements or loads to avoid" /></label>
+            {error ? <p className={styles.error} role="alert">{error}</p> : null}
+            <div className={`${styles.formActions} ${styles.full}`}>{editingId ? <button type="button" className={styles.deleteButton} onClick={() => { setDeleteText(""); setDeleteOpen(true); }}><Trash2 size={16} /> Delete</button> : <span />}<button type="button" className="mv-btn mv-btn-secondary" onClick={() => setEditorOpen(false)}>Cancel</button><button type="submit" className="mv-btn mv-btn-primary" disabled={isPending}>{isPending ? "Saving…" : "Save member"}</button></div>
+          </form>
+        </Dialog.Content></Dialog.Portal>
+      </Dialog.Root>
+
+      <Dialog.Root open={deleteOpen} onOpenChange={setDeleteOpen}><Dialog.Portal><Dialog.Overlay className={styles.overlay} /><Dialog.Content className={styles.confirm}><Dialog.Title>Delete this member?</Dialog.Title><Dialog.Description>This removes the account and connected operational records. Type Delete to continue.</Dialog.Description><label>Confirmation<input value={deleteText} onChange={(event) => setDeleteText(event.target.value)} placeholder="Delete" /></label>{error ? <p className={styles.error} role="alert">{error}</p> : null}<div><button className="mv-btn mv-btn-secondary" onClick={() => setDeleteOpen(false)}>Cancel</button><button className={styles.deleteButton} disabled={deleteText !== "Delete" || isPending} onClick={confirmDelete}>Delete permanently</button></div></Dialog.Content></Dialog.Portal></Dialog.Root>
     </div>
   );
 }

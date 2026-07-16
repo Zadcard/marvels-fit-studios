@@ -1,141 +1,72 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-/* ===================================================================
-   MARVEL FITNESS STUDIO — DESIGN SYSTEM
-   Extracted from the production landing page (modern-styles.css)
-   and unified for use across all Next.js app pages.
-   =================================================================== */
-
 @custom-variant dark (&:is(.dark *));
 
-/* ─── Tailwind Theme Overrides ─── */
 @theme inline {
-  /* Typography */
-  --font-sans: var(--font-body), "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-body), "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-display), "Sora", ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, monospace;
-  --font-heading: var(--font-display), "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
-
-  /* Functional Color Tokens (Tailwind) — mapped to Marvel palette */
-  --color-background: var(--mv-bg);
-  --color-foreground: var(--mv-text);
-  --color-card: var(--mv-surface);
-  --color-card-foreground: var(--mv-text);
-  --color-popover: var(--mv-surface-strong);
-  --color-popover-foreground: var(--mv-text);
-  --color-primary: var(--mv-primary);
-  --color-primary-foreground: #ffffff;
-  --color-secondary: var(--mv-surface-strong);
-  --color-secondary-foreground: var(--mv-text);
-  --color-muted: var(--mv-surface);
-  --color-muted-foreground: var(--mv-muted);
-  --color-accent: var(--mv-primary-soft);
-  --color-accent-foreground: var(--mv-text);
-  --color-destructive: var(--mv-danger);
-  --color-border: var(--mv-line);
-  --color-input: var(--mv-line);
-  --color-ring: var(--mv-primary);
-
-  /* Radii */
-  --radius-sm: 14px;
-  --radius-md: 22px;
-  --radius-lg: 30px;
-  --radius-xl: 999px;
+  --color-background: var(--rl-canvas);
+  --color-foreground: var(--rl-ink);
+  --color-card: var(--rl-surface);
+  --color-card-foreground: var(--rl-ink);
+  --color-popover: var(--rl-surface);
+  --color-popover-foreground: var(--rl-ink);
+  --color-primary: var(--rl-red);
+  --color-primary-foreground: var(--rl-white);
+  --color-secondary: var(--rl-soft);
+  --color-secondary-foreground: var(--rl-ink);
+  --color-muted: var(--rl-soft);
+  --color-muted-foreground: var(--rl-muted);
+  --color-accent: var(--rl-red-soft);
+  --color-accent-foreground: var(--rl-red-deep);
+  --color-destructive: var(--rl-danger);
+  --color-border: var(--rl-line);
+  --color-input: var(--rl-line-strong);
+  --color-ring: var(--rl-red);
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
 }
 
-/* ─── Marvel Design Tokens (CSS Custom Properties) ─── */
 :root {
-  /* Backgrounds */
-  --mv-bg: #030303;
-  --mv-bg-soft: #080606;
+  color-scheme: light;
+  --rl-ink: #0b0b0d;
+  --rl-graphite: #19191c;
+  --rl-charcoal: #2b2b2f;
+  --rl-red: #e21d2e;
+  --rl-red-deep: #b90f1d;
+  --rl-red-soft: #fde8ea;
+  --rl-white: #ffffff;
+  --rl-canvas: #f4f3ef;
+  --rl-soft: #ecebe7;
+  --rl-soft-2: #e3e2dd;
+  --rl-surface: #ffffff;
+  --rl-line: rgba(11, 11, 13, 0.1);
+  --rl-line-strong: rgba(11, 11, 13, 0.18);
+  --rl-muted: #69696f;
+  --rl-faint: #96969b;
+  --rl-success: #177c4d;
+  --rl-success-soft: #e5f4eb;
+  --rl-warning: #a95f08;
+  --rl-warning-soft: #fff0d7;
+  --rl-info: #28639b;
+  --rl-info-soft: #e5f0f9;
+  --rl-danger: #bd1726;
+  --rl-danger-soft: #fde8ea;
+  --rl-radius-shell: 30px;
+  --rl-radius-panel: 20px;
+  --rl-radius-control: 13px;
+  --rl-shadow-float: 0 24px 64px rgba(0, 0, 0, 0.18);
 
-  /* Surfaces */
-  --mv-surface: #111010;
-  --mv-surface-strong: #191313;
-  --mv-surface-dark: #000000;
-
-  /* Text */
-  --mv-text: #ffffff;
-  --mv-muted: #9b9292;
-  --mv-muted-strong: #d4cccc;
-
-  /* Lines / Borders */
-  --mv-line: rgba(255, 255, 255, 0.1);
-  --mv-line-strong: rgba(255, 255, 255, 0.16);
-
-  /* Brand Colors */
-  --mv-primary: #e62429;
-  --mv-primary-deep: #b91c21;
-  --mv-primary-soft: #2d1011;
-  --mv-accent: #ff0000;
-  --mv-accent-soft: #1d0b0c;
-
-  /* Semantic Colors — distinct hues so status states stay scannable
-     against the red brand (danger/attention stays red). */
-  --mv-success: #34d399;
-  --mv-warning: #f59e0b;
-  --mv-danger: #ef4444;
-
-  /* Shadows */
-  --mv-shadow-sm: 0 14px 28px rgba(12, 16, 24, 0.08);
-  --mv-shadow-md: 0 28px 54px rgba(12, 16, 24, 0.12);
-  --mv-shadow-glow: 0 16px 30px rgba(230, 36, 41, 0.22);
-
-  /* Shared Marvel app surfaces */
-  --mv-page-bg:
-    radial-gradient(circle at 0% 0%, rgba(230, 36, 41, 0.16), transparent 28%),
-    radial-gradient(circle at 100% 0%, rgba(230, 36, 41, 0.08), transparent 26%),
-    linear-gradient(180deg, #050303 0%, #090606 48%, #030303 100%);
-  --mv-panel-bg:
-    radial-gradient(circle at top right, rgba(230, 36, 41, 0.08), transparent 34%),
-    linear-gradient(180deg, rgba(22, 18, 18, 0.94), rgba(9, 8, 8, 0.96));
-  --mv-panel-bg-soft:
-    radial-gradient(circle at top left, rgba(230, 36, 41, 0.06), transparent 34%),
-    linear-gradient(180deg, rgba(19, 16, 16, 0.92), rgba(8, 8, 8, 0.94));
-  --mv-panel-bg-strong:
-    radial-gradient(circle at top right, rgba(230, 36, 41, 0.12), transparent 34%),
-    linear-gradient(180deg, rgba(28, 21, 21, 0.96), rgba(8, 7, 7, 0.98));
-  --mv-control-bg: rgba(255, 255, 255, 0.035);
-  --mv-control-bg-strong: rgba(230, 36, 41, 0.08);
-  --mv-border-subtle: rgba(255, 255, 255, 0.075);
-  --mv-border-strong: rgba(255, 255, 255, 0.13);
-  --mv-border-accent: rgba(230, 36, 41, 0.28);
-
-  /* Dashboard color template: black base, red brand, white only for contrast. */
-  --mv-dashboard-bg: var(--mv-page-bg);
-  --mv-dashboard-panel: var(--mv-panel-bg);
-  --mv-dashboard-panel-soft: var(--mv-panel-bg-soft);
-  --mv-dashboard-panel-strong: var(--mv-panel-bg-strong);
-  --mv-dashboard-red-surface: rgba(230, 36, 41, 0.1);
-  --mv-dashboard-red-surface-strong: rgba(230, 36, 41, 0.16);
-  --mv-dashboard-text: var(--mv-text);
-  --mv-dashboard-muted: var(--mv-muted);
-
-  /* Spacing Scale (fluid, matching landing page) */
-  --mv-space-3xs: 4px;
-  --mv-space-2xs: clamp(6px, 0.8vw, 8px);
-  --mv-space-xs: clamp(10px, 1.2vw, 14px);
-  --mv-space-sm: clamp(14px, 1.8vw, 18px);
-  --mv-space-md: clamp(18px, 2.6vw, 24px);
-  --mv-space-lg: clamp(24px, 3.4vw, 34px);
-  --mv-space-xl: clamp(34px, 4.8vw, 50px);
-  --mv-space-2xl: clamp(46px, 6.4vw, 80px);
-
-  /* Layout */
-  --mv-container: min(1180px, calc(100% - 28px));
-  --mv-card-pad: clamp(20px, 3.8vw, 30px);
-  --mv-content-max: 66ch;
-
-  /* Radius scale (dashboard) */
-  --mv-radius-control: 14px;
-  --mv-radius-card: 22px;
-  --mv-radius-card-lg: 28px;
 }
 
-/* ─── Base Styles ─── */
 @layer base {
-  * {
-    @apply border-border;
+  *, *::before, *::after {
+    box-sizing: border-box;
+    border-color: var(--rl-line);
   }
 
   html {
@@ -148,257 +79,88 @@
   body {
     margin: 0;
     min-width: 320px;
+    min-height: 100dvh;
     overflow-x: hidden;
-    color: var(--mv-text);
-    font-family: var(--font-body), "Manrope", sans-serif;
-    font-size: clamp(0.97rem, 0.2vw + 0.95rem, 1.04rem);
-    line-height: 1.58;
-    background: var(--mv-page-bg);
+    background: var(--rl-graphite);
+    color: var(--rl-ink);
+    font-family: var(--font-body), "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+    font-size: 1rem;
+    line-height: 1.5;
   }
 
-  a {
-    color: inherit;
-    text-decoration: none;
-  }
-
+  a { color: inherit; text-decoration: none; }
   h1, h2, h3, h4, h5, h6 {
     margin: 0;
-    color: var(--mv-text);
-    font-family: var(--font-display), "Space Grotesk", sans-serif;
-    letter-spacing: -0.03em;
+    color: var(--rl-ink);
+    font-family: var(--font-display), "Sora", ui-sans-serif, system-ui, sans-serif;
+    font-weight: 700;
+    line-height: 0.98;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
   }
-
-  p {
-    margin: 0;
-    color: var(--mv-muted);
-    line-height: 1.72;
-  }
-
-  img {
-    display: block;
-    max-width: 100%;
-  }
-
-  button, input, select, textarea {
-    font: inherit;
-  }
-
-  button {
-    cursor: pointer;
-  }
-
-  ::selection {
-    background: rgba(230, 36, 41, 0.3);
-    color: #fff;
-  }
+  p { margin: 0; color: #4c4c52; text-wrap: pretty; }
+  img { display: block; max-width: 100%; }
+  button, input, select, textarea { font: inherit; }
+  button, [role="button"] { cursor: pointer; }
+  button:disabled, [aria-disabled="true"] { cursor: not-allowed; }
+  :focus-visible { outline: 3px solid rgba(226, 29, 46, 0.32); outline-offset: 3px; }
+  ::selection { background: rgba(226, 29, 46, 0.2); color: var(--rl-ink); }
 }
 
-/* ─── Reusable Component Utilities ─── */
 @layer components {
-  /* Eyebrow / Overline text — matches landing page .eyebrow */
-  .mv-eyebrow {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    color: var(--mv-primary);
-    font-size: 0.74rem;
-    font-weight: 800;
-    letter-spacing: 0.11em;
-    text-transform: uppercase;
-  }
-
-  .mv-eyebrow::before {
-    content: "";
-    width: 28px;
-    height: 1px;
-    background: currentColor;
-  }
-
-  /* Panels — matches landing page .panel variants */
-  .mv-panel {
-    border: 1px solid var(--mv-line);
-    border-radius: 22px;
-    background: linear-gradient(180deg, rgba(30, 30, 30, 0.5), rgba(15, 15, 15, 0.5));
-    box-shadow: var(--mv-shadow-sm);
-  }
-
-  .mv-panel-soft {
-    background:
-      linear-gradient(180deg, rgba(25, 25, 25, 0.5), rgba(10, 10, 10, 0.5)),
-      var(--mv-surface);
-  }
-
-  .mv-panel-strong {
-    background:
-      linear-gradient(180deg, rgba(40, 40, 40, 0.5), rgba(20, 20, 20, 0.5)),
-      var(--mv-surface-strong);
-  }
-
-  .mv-panel-accent {
-    background:
-      radial-gradient(circle at 88% 12%, rgba(230, 36, 41, 0.15), transparent 36%),
-      linear-gradient(180deg, #1a1a1a 0%, #101010 100%);
-    border-color: rgba(230, 36, 41, 0.3);
-  }
-
-  /* Buttons — matches landing page .btn system */
   .mv-btn {
-    min-height: 52px;
+    min-height: 44px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
-    padding: 0 24px;
+    gap: 8px;
+    padding: 10px 17px;
     border: 1px solid transparent;
-    border-radius: 999px;
-    font-size: 0.82rem;
-    font-weight: 800;
-    letter-spacing: 0.075em;
-    text-transform: uppercase;
-    transition: transform 0.18s ease, border-color 0.18s ease, background-color 0.18s ease, box-shadow 0.18s ease;
-    cursor: pointer;
+    border-radius: var(--rl-radius-control);
+    font-size: 0.88rem;
+    font-weight: 700;
+    line-height: 1;
+    transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease;
   }
-
-  .mv-btn:hover,
-  .mv-btn:focus-visible {
-    transform: translateY(-1px);
+  .mv-btn-primary { border-color: var(--rl-red); background: var(--rl-red); color: white; }
+  .mv-btn-primary:hover:not(:disabled) { background: var(--rl-red-deep); border-color: var(--rl-red-deep); }
+  .mv-btn-secondary, .mv-btn-outline { border-color: var(--rl-line-strong); background: white; color: var(--rl-ink); }
+  .mv-btn-secondary:hover:not(:disabled), .mv-btn-outline:hover:not(:disabled) { background: var(--rl-ink); color: white; }
+  .mv-btn-danger { background: var(--rl-danger); color: white; }
+  .mv-icon-btn {
+    width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center;
+    border: 1px solid var(--rl-line); border-radius: var(--rl-radius-control); background: white; color: var(--rl-ink);
   }
-
-  .mv-btn:focus-visible {
-    outline: 2px solid var(--mv-primary);
-    outline-offset: 3px;
-  }
-
-  .mv-btn:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none;
-  }
-
-  .mv-btn-primary {
-    color: #fff;
-    background: linear-gradient(135deg, var(--mv-primary) 0%, #ff4f54 100%);
-    box-shadow: var(--mv-shadow-glow);
-  }
-
-  .mv-btn-primary:hover:not(:disabled),
-  .mv-btn-primary:focus-visible:not(:disabled) {
-    background: linear-gradient(135deg, var(--mv-primary-deep) 0%, #d92b30 100%);
-  }
-
-  .mv-btn-secondary {
-    color: var(--mv-text);
-    background: rgba(30, 30, 30, 0.9);
-    border-color: var(--mv-line-strong);
-  }
-
-  .mv-btn-outline {
-    color: var(--mv-muted-strong);
-    background: transparent;
-    border-color: var(--mv-line-strong);
-  }
-
-  .mv-btn-outline:hover:not(:disabled),
-  .mv-btn-outline:focus-visible:not(:disabled) {
-    color: var(--mv-text);
-    border-color: var(--mv-muted);
-    background: rgba(255, 255, 255, 0.04);
-  }
-
-  .mv-btn-danger {
-    color: #fff;
-    background: linear-gradient(135deg, #b91c1c 0%, #ef4444 100%);
-    box-shadow: 0 16px 30px rgba(185, 28, 28, 0.25);
-  }
-
-  .mv-btn-danger:hover:not(:disabled),
-  .mv-btn-danger:focus-visible:not(:disabled) {
-    background: linear-gradient(135deg, #991b1b 0%, #dc2626 100%);
-  }
-
-  /* Form Fields — matches landing page .field */
   .mv-field {
-    width: 100%;
-    min-height: 56px;
-    padding: 0 16px;
-    border: 1px solid var(--mv-line);
-    border-radius: 16px;
-    background: var(--mv-surface);
-    color: var(--mv-text);
-    font-size: 0.95rem;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
-    transition: border-color 0.18s ease, box-shadow 0.18s ease;
+    width: 100%; min-height: 44px; padding: 10px 14px; border: 1px solid var(--rl-line-strong);
+    border-radius: var(--rl-radius-control); background: white; color: var(--rl-ink);
   }
-
-  .mv-field:focus-visible {
-    outline: none;
-    border-color: var(--mv-primary);
-    box-shadow: 0 0 0 3px rgba(230, 36, 41, 0.15);
+  textarea.mv-field { min-height: 112px; resize: vertical; }
+  .mv-field:focus-visible { outline: none; border-color: var(--rl-red); box-shadow: 0 0 0 3px rgba(226,29,46,.14); }
+  .mv-panel, .mv-panel-soft, .mv-panel-strong, .mv-panel-accent {
+    border: 1px solid var(--rl-line); border-radius: var(--rl-radius-panel); background: white;
   }
-
-  .mv-field::placeholder {
-    color: #555;
+  .mv-panel-soft { background: var(--rl-soft); }
+  .mv-panel-accent { background: var(--rl-red-soft); border-color: rgba(226,29,46,.2); }
+  .mv-status {
+    display: inline-flex; min-height: 28px; align-items: center; gap: 6px; padding: 5px 10px;
+    border-radius: 999px; background: var(--rl-soft); color: var(--rl-muted); font-size: .76rem; font-weight: 700;
   }
-
-  .mv-field[aria-invalid="true"],
-  .mv-field.field-error {
-    border-color: var(--mv-danger);
-    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
-  }
+  .mv-status::before { width: 6px; height: 6px; border-radius: 50%; background: currentColor; content: ""; }
+  .mv-status--success { background: var(--rl-success-soft); color: var(--rl-success); }
+  .mv-status--warning { background: var(--rl-warning-soft); color: var(--rl-warning); }
+  .mv-status--critical { background: var(--rl-danger-soft); color: var(--rl-danger); }
 }
 
-/* ─── Animations ─── */
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(16px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
+@keyframes rl-spin { to { transform: rotate(360deg); } }
+.animate-spin-slow { animation: rl-spin 800ms linear infinite; }
 
-@keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  20% { transform: translateX(-6px); }
-  40% { transform: translateX(6px); }
-  60% { transform: translateX(-4px); }
-  80% { transform: translateX(4px); }
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-@keyframes pulse-subtle {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.6; }
-}
-
-.animate-fade-in-up {
-  animation: fadeInUp 0.5s ease both;
-}
-
-.animate-shake {
-  animation: shake 0.3s ease;
-}
-
-.animate-spin-slow {
-  animation: spin 0.8s linear infinite;
-}
-
-/* ─── Reduced Motion ─── */
 @media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
-
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
     animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
   }
 }

@@ -13,6 +13,7 @@ import {
   type ClientSubscriptionRecord,
   type ClientUpcomingSession,
 } from "@/lib/dashboard/client-dashboard-data";
+import type { BookingStatus } from "@/lib/supabase/domain";
 import { withSupabaseFallback } from "@/lib/supabase/errors";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -186,8 +187,7 @@ type ClientDashboardSessionEntry = {
   coachEmail: string | null;
   coachPhone: string | null;
   coachSpecialization: string | null;
-  bookingStatus:
-    "BOOKED" | "ATTENDED" | "MISSED" | "CANCELED" | "WAITLIST" | null;
+  bookingStatus: BookingStatus | null;
   attendedAt: Date | null;
 };
 

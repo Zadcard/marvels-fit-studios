@@ -1,5 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import {
+  ClipboardCheck,
   ClipboardList,
   CalendarRange,
   CreditCard,
@@ -10,6 +11,7 @@ import {
   Target,
   UserRound,
   Users,
+  UsersRound,
   UploadCloud,
 } from "lucide-react";
 import type { DashboardRole } from "@/lib/auth/authorization-policy";
@@ -59,6 +61,22 @@ const dashboardNavConfig: Record<DashboardRole, DashboardNavItem[]> = {
       href: "/admin/clients",
       icon: Users,
       description: "Roster and status",
+      section: "primary",
+      available: true,
+    },
+    {
+      label: "Attendance",
+      href: "/admin/attendance",
+      icon: ClipboardCheck,
+      description: "Today's roster",
+      section: "primary",
+      available: true,
+    },
+    {
+      label: "Groups",
+      href: "/admin/groups",
+      icon: UsersRound,
+      description: "Training groups",
       section: "primary",
       available: true,
     },

@@ -7,6 +7,11 @@ import type {
   CoachClientRecord,
   CoachClientStatus,
 } from "@/lib/dashboard/coach-client-record";
+import {
+  injuryStatusHasAlert,
+  injuryStatusLabelFor,
+  trainingCategoryLabelFor,
+} from "@/lib/dashboard/client-domain-labels";
 import { withSupabaseFallback } from "@/lib/supabase/errors";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -154,6 +159,7 @@ export class SupabaseCoachClientRepository implements CoachClientRepository {
         .select(
           `
           id, fullName, phone, createdAt,
+          trainingCategory, injuryStatus, injuryNotes, restrictions,
           group:Group(id, name, coach:Coach(userId)),
           subscriptions:ClientSubscription(startsAt,
             plan:SubscriptionPlan(name, slug)),
@@ -248,6 +254,11 @@ export class SupabaseCoachClientRepository implements CoachClientRepository {
           phone: client.phone ?? "No phone",
           planType: determinePlanType(client, userId),
           status: determineStatus(client),
+          trainingCategory: trainingCategoryLabelFor(client.trainingCategory),
+          injuryStatus: injuryStatusLabelFor(client.injuryStatus),
+          injuryNotes: client.injuryNotes?.trim() ?? "",
+          restrictions: client.restrictions?.trim() ?? "",
+          hasInjuryAlert: injuryStatusHasAlert(client.injuryStatus),
           nextSession: nextSessionLabel,
           lastTouchpoint: describeLastTouchpoint(client),
           currentFocus: describeCurrentFocus(client),

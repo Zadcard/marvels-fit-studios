@@ -1,150 +1,115 @@
-import { Mail, MessageSquareMore, Phone, ShieldUser } from "lucide-react";
+import {
+  ArrowRight,
+  CalendarClock,
+  Mail,
+  MessageSquareMore,
+  Phone,
+  ShieldUser,
+  Target,
+} from "lucide-react";
 
-import { DashboardMiniStat } from "@/components/dashboard/dashboard-mini-stat";
-import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
-import { DashboardSurfaceNote } from "@/components/dashboard/dashboard-surface-note";
 import type { ClientCoachRecord } from "@/lib/dashboard/client-dashboard-data";
+import styles from "./client-coach-workspace.module.css";
 
-type ClientCoachWorkspaceProps = {
-  data: ClientCoachRecord;
-};
+type ClientCoachWorkspaceProps = { data: ClientCoachRecord };
 
 export function ClientCoachWorkspace({ data }: ClientCoachWorkspaceProps) {
-  const sanitizedNextSession = data.nextSession.replace("Â·", "·");
+  const nextSession = data.nextSession.replace("Ã‚Â·", "·").replace("Â·", "·");
+  const initials = data.fullName
+    .split(" ")
+    .map((part) => part[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 
   return (
-    <div className="dashboard-stack">
-      <DashboardPageHeader eyebrow="My coach" />
-
-      <DashboardSurfaceNote
-        eyebrow="Coach"
-        title="Your coach details and next touchpoint stay in one place."
-        description="Contact details and session timing are easy to review here."
-        items={[
-          "Direct contact details.",
-          "Next planned touchpoint.",
-        ]}
-      />
-
-      <section className="dashboard-mini-grid" aria-label="Coach relationship highlights">
-        <DashboardMiniStat
-          className="dashboard-mini-stat--coach"
-          label="Specialization"
-          value={data.specialization}
-          description="Main focus area."
-        />
-        <DashboardMiniStat
-          className="dashboard-mini-stat--coach"
-          label="Next touchpoint"
-          value={sanitizedNextSession}
-          description="Next touchpoint."
-        />
-        <DashboardMiniStat
-          className="dashboard-mini-stat--coach"
-          label="Communication"
-          value="Direct"
-          description="Phone and email available."
-        />
+    <div className={styles.page}>
+      <header className={styles.hero}>
+        <div>
+          <span className={styles.kicker}>My coach</span>
+          <h1>Your person on the floor.</h1>
+          <p>
+            Know who is guiding your training, what comes next and how to reach
+            them.
+          </p>
+        </div>
+      </header>
+      <section className={styles.profile}>
+        <div className={styles.identity}>
+          <span className={styles.avatar}>{initials}</span>
+          <div>
+            <span>{data.roleLabel}</span>
+            <h2>{data.fullName}</h2>
+            <p>{data.specialization}</p>
+          </div>
+        </div>
+        <div className={styles.next}>
+          <CalendarClock size={20} />
+          <span>Next touchpoint</span>
+          <strong>{nextSession}</strong>
+        </div>
+        <a href={`tel:${data.phone}`}>
+          <Phone size={17} />
+          Call coach
+          <ArrowRight size={16} />
+        </a>
       </section>
-
-      <section className="dashboard-secondary-grid">
-        <article className="dashboard-panel dashboard-panel--accent dashboard-profile-hero">
-          <div className="dashboard-profile-hero__identity">
-            <div className="dashboard-profile-avatar">
-              {data.fullName
-                .split(" ")
-                .map((part) => part[0])
-                .slice(0, 2)
-                .join("")
-                .toUpperCase()}
-            </div>
-            <div className="dashboard-profile-hero__copy">
-              <span className="mv-eyebrow">{data.roleLabel}</span>
-              <h2>{data.fullName}</h2>
-              <p>{data.bio}</p>
-            </div>
-          </div>
-
-          <div className="dashboard-record-card__meta">
-            <span>{data.specialization}</span>
-            <span>{sanitizedNextSession}</span>
-          </div>
-
-          <div
-            className="dashboard-row-actions"
-            style={{ width: "auto", alignItems: "center" }}
-          >
-            <a
-              className="mv-btn mv-btn-primary"
-              href={`tel:${data.phone}`}
-              style={{
-                minHeight: 38,
-                paddingInline: 16,
-                borderRadius: 14,
-                width: "fit-content",
-                justifyContent: "center",
-                fontSize: "0.88rem",
-              }}
-            >
-              <Phone size={16} />
-              Call coach
-            </a>
-          </div>
+      <section className={styles.scoreboard}>
+        <article>
+          <Target size={18} />
+          <span>Specialization</span>
+          <strong>{data.specialization}</strong>
         </article>
-
-        <article className="dashboard-panel">
-          <div className="dashboard-panel__header">
+        <article>
+          <CalendarClock size={18} />
+          <span>Next session</span>
+          <strong>{nextSession}</strong>
+        </article>
+        <article data-dark>
+          <ShieldUser size={18} />
+          <span>Support channel</span>
+          <strong>Direct</strong>
+        </article>
+      </section>
+      <section className={styles.detailGrid}>
+        <article className={styles.story}>
+          <div>
+            <span className={styles.kicker}>Coaching approach</span>
+            <h2>How you are supported</h2>
+          </div>
+          <blockquote>{data.bio}</blockquote>
+          <div className={styles.note}>
+            <MessageSquareMore size={20} />
             <div>
-              <div className="mv-eyebrow">Coach details</div>
-              <h2>Current support</h2>
-              <p>Coach, timing, and contact details.</p>
-            </div>
-            <ShieldUser size={20} color="#ff8b8f" />
-          </div>
-
-          <div className="dashboard-summary-list">
-            <div className="dashboard-summary-row">
-              <strong>Specialization</strong>
-              <span>{data.specialization}</span>
-            </div>
-            <div className="dashboard-summary-row">
-              <strong>Next session</strong>
-              <span>{sanitizedNextSession}</span>
-            </div>
-            <div className="dashboard-summary-row">
-              <strong>Support summary</strong>
-              <span>{data.coachingNote}</span>
-            </div>
-            <div className="dashboard-summary-row">
-              <strong>Focus</strong>
-              <span>Coach timing and communication in one place.</span>
-            </div>
-          </div>
-
-          <div className="dashboard-contact-grid">
-            <div className="dashboard-contact-card">
-              <Mail size={18} />
-              <div>
-                <strong>Coach email</strong>
-                <span>{data.email}</span>
-              </div>
-            </div>
-            <div className="dashboard-contact-card">
-              <Phone size={18} />
-              <div>
-                <strong>Coach phone</strong>
-                <span>{data.phone}</span>
-              </div>
-            </div>
-            <div className="dashboard-contact-card">
-              <MessageSquareMore size={18} />
-              <div>
-                <strong>Next support detail</strong>
-                <span>{data.coachingNote}</span>
-              </div>
+              <span>Current support note</span>
+              <p>{data.coachingNote}</p>
             </div>
           </div>
         </article>
+        <aside className={styles.contact}>
+          <span className={styles.kicker}>Contact card</span>
+          <h2>Reach {data.fullName.split(" ")[0]}</h2>
+          <p>
+            Use the verified studio contact details below when you need direct
+            support.
+          </p>
+          <a href={`mailto:${data.email}`}>
+            <Mail size={18} />
+            <div>
+              <span>Email</span>
+              <strong>{data.email}</strong>
+            </div>
+            <ArrowRight size={16} />
+          </a>
+          <a href={`tel:${data.phone}`}>
+            <Phone size={18} />
+            <div>
+              <span>Phone</span>
+              <strong>{data.phone}</strong>
+            </div>
+            <ArrowRight size={16} />
+          </a>
+        </aside>
       </section>
     </div>
   );

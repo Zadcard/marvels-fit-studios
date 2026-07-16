@@ -81,7 +81,7 @@ export async function updateSessionAttendance(input: UpdateSessionAttendanceInpu
       data: {
         status: input.status,
         attendedAt: input.status === BookingStatus.ATTENDED ? new Date() : null,
-        canceledAt: null,
+        canceledAt: input.status === BookingStatus.CANCELED ? new Date() : null,
       },
       select: {
         id: true,

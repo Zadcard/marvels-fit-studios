@@ -1,4 +1,5 @@
 import { JoinForm } from "@/app/join/join-form";
+import { RedlineAuthShell } from "@/components/auth/redline-auth-shell";
 import "@/app/login/login.css";
 
 export const metadata = {
@@ -7,10 +8,12 @@ export const metadata = {
 
 export default function JoinPage() {
   return (
-    <main className="login-page">
-      <div className="login-container">
-        <JoinForm />
-      </div>
-    </main>
+    <RedlineAuthShell
+      eyebrow="Membership intake"
+      title="Ask for a place on the floor."
+      note="Send the essentials. The studio team reviews every request before access is issued."
+    >
+      <JoinForm />
+    </RedlineAuthShell>
   );
 }
