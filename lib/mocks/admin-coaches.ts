@@ -2,7 +2,13 @@ export type AdminCoachSpecialization =
   | "Strength"
   | "Conditioning"
   | "Mobility"
-  | "Private Coaching";
+  | "Private Coaching"
+  | "Football"
+  | "Tennis"
+  | "Calisthenics"
+  | "Rehab"
+  | "Athletic Performance"
+  | "General Fitness";
 
 export type AdminCoachRecord = {
   id: string;

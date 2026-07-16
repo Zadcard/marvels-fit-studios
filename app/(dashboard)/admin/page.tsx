@@ -1,10 +1,10 @@
 import Link from "next/link";
 import {
   ArrowUpRight,
-  Bell,
   CalendarDays,
   ChevronRight,
   CircleAlert,
+  ClipboardList,
   Plus,
   Radio,
   Users,
@@ -22,8 +22,13 @@ function sessionTone(status: string) {
 }
 
 export default async function AdminOverviewPage() {
-  const { stats, upcomingSessions, recentActivity, quickActions, studioSnapshot } =
-    await adminOverviewRepository.getOverview();
+  const [
+    { stats, upcomingSessions, recentActivity, quickActions, studioSnapshot },
+    needsAttention,
+  ] = await Promise.all([
+    adminOverviewRepository.getOverview(),
+    adminOverviewRepository.getNeedsAttention(),
+  ]);
   const memberStat = stats.find((item) => item.id === "members") ?? stats[0];
   const booked = upcomingSessions.reduce((total, item) => total + item.bookedSeats, 0);
   const capacity = upcomingSessions.reduce((total, item) => total + item.capacity, 0);
@@ -39,10 +44,29 @@ export default async function AdminOverviewPage() {
           <p>Membership, capacity, money and the next sessions—one operating view.</p>
         </div>
         <div className={styles.headerActions}>
-          <Link href="/admin/notifications" className="mv-btn mv-btn-secondary"><Bell size={17} /> Alerts</Link>
+          <Link href="/admin/join-requests" className="mv-btn mv-btn-secondary"><ClipboardList size={17} /> Leads</Link>
           <Link href="/admin/sessions" className="mv-btn mv-btn-primary"><Plus size={17} /> New session</Link>
         </div>
       </header>
+
+      <section className={`${styles.block} ${styles.needsAttention}`} aria-label="Needs attention">
+        <div className={styles.sectionHeading}>
+          <div><span><CircleAlert size={13} /> Act now</span><h2>Needs attention</h2></div>
+        </div>
+        {needsAttention.length ? (
+          <div className={styles.attentionGrid}>
+            {needsAttention.map((tile) => (
+              <Link href={tile.href} key={tile.id} className={styles.attentionTile} data-tone={tile.tone}>
+                <strong>{tile.count}</strong>
+                <span>{tile.label}</span>
+                <p>{tile.description}</p>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <p className={styles.attentionClear}>Nothing needs attention right now — trials, subscriptions, and injury flags are all clear.</p>
+        )}
+      </section>
 
       <section className={styles.commandGrid} aria-label="Studio control summary">
         <article className={`${styles.block} ${styles.heroMetric}`}>

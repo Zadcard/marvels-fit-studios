@@ -11,6 +11,8 @@ describe("dashboard navigation", () => {
     expect(getDashboardSidebarNav("admin").map((item) => item.label)).toEqual([
       "Dashboard",
       "Clients",
+      "Attendance",
+      "Groups",
       "Coaches",
       "Calendar",
       "Leads",

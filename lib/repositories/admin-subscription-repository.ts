@@ -192,10 +192,22 @@ export class AdminSubscriptionRepository {
             .slice(0, 5)
             .map((payment) => ({ ...payment, date: new Date(payment.date) })),
         }));
-        const activePlans = subscriptions.filter(
+        // Renewals create a new subscription row per period (history preserved
+        // in the database). The operational table shows only the current period
+        // per client+plan; `subscriptions` is already ordered startsAt desc, so
+        // the first row seen for each key is the most recent one.
+        const latestByClientPlan = new Map<string, (typeof subscriptions)[number]>();
+        for (const subscription of subscriptions) {
+          const key = `${subscription.client.id}:${subscription.plan.id}`;
+          if (!latestByClientPlan.has(key)) {
+            latestByClientPlan.set(key, subscription);
+          }
+        }
+        const currentSubscriptions = [...latestByClientPlan.values()];
+        const activePlans = currentSubscriptions.filter(
           (subscription) => subscription.status === "ACTIVE",
         ).length;
-        const renewalsThisWeek = subscriptions.filter(
+        const renewalsThisWeek = currentSubscriptions.filter(
           (subscription) =>
             subscription.renewsAt &&
             subscription.renewsAt >= now &&
@@ -204,7 +216,7 @@ export class AdminSubscriptionRepository {
         const collectedThisCycle = paymentsResult.data
           .filter((payment) => new Date(payment.date) >= startOfMonth)
           .reduce((sum, payment) => sum + payment.amount, 0);
-        const atRiskAccounts = subscriptions.filter(
+        const atRiskAccounts = currentSubscriptions.filter(
           (subscription) =>
             ["PAUSED", "EXPIRED", "CANCELED"].includes(subscription.status) ||
             (!!subscription.renewsAt &&
@@ -212,7 +224,7 @@ export class AdminSubscriptionRepository {
               subscription.payments.length === 0),
         ).length;
 
-        const records = subscriptions.map((subscription) => {
+        const records = currentSubscriptions.map((subscription) => {
           const planName = mapPlanName(subscription);
           const subscriptionStatus = mapSubscriptionStatus(
             subscription.status,

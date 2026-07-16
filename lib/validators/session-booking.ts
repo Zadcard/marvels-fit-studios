@@ -13,7 +13,15 @@ export const cancelSessionBookingSchema = z.object({
 export const updateSessionAttendanceSchema = z.object({
   trainingSessionId: z.string().trim().min(1, "Session id is required."),
   clientId: z.string().trim().min(1, "Client is required."),
-  status: z.enum(["BOOKED", "ATTENDED", "MISSED", "WAITLIST"]),
+  status: z.enum([
+    "BOOKED",
+    "ATTENDED",
+    "MISSED",
+    "WAITLIST",
+    "CANCELED",
+    "NO_SHOW",
+    "RESCHEDULED",
+  ]),
 });
 
 export type CreateSessionBookingInput = z.infer<

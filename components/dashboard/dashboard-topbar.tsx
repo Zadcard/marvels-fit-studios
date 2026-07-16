@@ -16,6 +16,7 @@ import {
   isDashboardNavItemActive,
 } from "@/lib/navigation/dashboard-nav";
 import { getInitials } from "@/lib/utils";
+import { LAUNCH_NOTIFICATIONS_ENABLED } from "@/lib/launch-scope";
 
 type DashboardTopbarProps = {
   role: DashboardRole;
@@ -75,10 +76,12 @@ export function DashboardTopbar({ role, account, isMenuOpen, onOpenMenu }: Dashb
           <span>Search</span>
           <kbd>⌘ K</kbd>
         </button>
-        <Link href={`/${role}/notifications`} className="redline-utility redline-utility--icon" aria-label="Notifications">
-          <Bell size={18} />
-          <span className="redline-alert-dot" aria-hidden="true" />
-        </Link>
+        {LAUNCH_NOTIFICATIONS_ENABLED ? (
+          <Link href={`/${role}/notifications`} className="redline-utility redline-utility--icon" aria-label="Notifications">
+            <Bell size={18} />
+            <span className="redline-alert-dot" aria-hidden="true" />
+          </Link>
+        ) : null}
         <Link href={getDashboardProfileHref(role)} className="redline-account" aria-label="Open account">
           <span className="redline-avatar">{displayInitials}</span>
           <span><strong>{displayName}</strong><small>{roleLabel}</small></span>

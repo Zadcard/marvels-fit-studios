@@ -12,7 +12,17 @@ type SaveCoachInput = {
   fullName: string;
   email: string;
   phone?: string;
-  specialization: "Strength" | "Conditioning" | "Mobility" | "Private Coaching";
+  specialization:
+    | "Strength"
+    | "Conditioning"
+    | "Mobility"
+    | "Private Coaching"
+    | "Football"
+    | "Tennis"
+    | "Calisthenics"
+    | "Rehab"
+    | "Athletic Performance"
+    | "General Fitness";
 };
 
 type DeleteCoachInput = {
@@ -30,6 +40,18 @@ function toCoachSpecialization(
       return CoachSpecialization.MOBILITY;
     case "Private Coaching":
       return CoachSpecialization.PRIVATE_COACHING;
+    case "Football":
+      return CoachSpecialization.FOOTBALL;
+    case "Tennis":
+      return CoachSpecialization.TENNIS;
+    case "Calisthenics":
+      return CoachSpecialization.CALISTHENICS;
+    case "Rehab":
+      return CoachSpecialization.REHAB;
+    case "Athletic Performance":
+      return CoachSpecialization.ATHLETIC_PERFORMANCE;
+    case "General Fitness":
+      return CoachSpecialization.GENERAL_FITNESS;
     default:
       return CoachSpecialization.STRENGTH;
   }

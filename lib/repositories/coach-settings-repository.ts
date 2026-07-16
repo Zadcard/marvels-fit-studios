@@ -1,11 +1,12 @@
 import "server-only";
 
 import type { CoachSettingsRecord } from "@/lib/mocks/coach-settings";
+import type { Database } from "@/lib/supabase/database.types";
 import { withSupabaseFallback } from "@/lib/supabase/errors";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 function toCoachSpecializationLabel(
-  specialization: "STRENGTH" | "CONDITIONING" | "MOBILITY" | "PRIVATE_COACHING"
+  specialization: Database["public"]["Enums"]["CoachSpecialization"]
 ) {
   switch (specialization) {
     case "CONDITIONING":
@@ -14,6 +15,18 @@ function toCoachSpecializationLabel(
       return "Mobility";
     case "PRIVATE_COACHING":
       return "Private Coaching";
+    case "FOOTBALL":
+      return "Football";
+    case "TENNIS":
+      return "Tennis";
+    case "CALISTHENICS":
+      return "Calisthenics";
+    case "REHAB":
+      return "Rehab";
+    case "ATHLETIC_PERFORMANCE":
+      return "Athletic Performance";
+    case "GENERAL_FITNESS":
+      return "General Fitness";
     default:
       return "Strength";
   }

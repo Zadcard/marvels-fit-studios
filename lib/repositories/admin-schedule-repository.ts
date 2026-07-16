@@ -10,6 +10,10 @@ import type {
   AdminScheduleStat,
 } from "@/lib/dashboard/admin-schedule-data";
 import type { AdminSessionCoachOption } from "@/lib/repositories/admin-session-repository";
+import {
+  injuryStatusHasAlert,
+  trainingCategoryLabelFor,
+} from "@/lib/dashboard/client-domain-labels";
 import { withSupabaseFallback } from "@/lib/supabase/errors";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -54,6 +58,19 @@ function getTimeRange(startsAt: Date, endsAt: Date) {
   return `${timeFormatter.format(startsAt)} - ${timeFormatter.format(endsAt)}`;
 }
 
+function mapChangeTypeLabel(changeType: string) {
+  switch (changeType) {
+    case "RESCHEDULED":
+      return "Rescheduled";
+    case "CANCELED":
+      return "Canceled";
+    case "COACH_CHANGED":
+      return "Coach changed";
+    default:
+      return "Updated";
+  }
+}
+
 export type AdminScheduleGroupOption = {
   id: string;
   name: string;
@@ -80,10 +97,11 @@ export class AdminScheduleRepository {
           .select(
             `
           id, title, description, type, status, startsAt, endsAt, location,
-          capacity, coachId,
+          capacity, coachId, sourceTemplateId,
           coach:Coach(fullName),
-          group:Group(name, clients:Client(id)),
-          bookings:SessionBooking(id, status)
+          group:Group(name, trainingCategory, clients:Client(id)),
+          bookings:SessionBooking(id, status, client:Client(status, injuryStatus)),
+          changes:ScheduleChangeLog(id, changeType, createdAt)
         `,
           )
           .gte("startsAt", scheduleWindowStart.toISOString())
@@ -114,6 +132,14 @@ export class AdminScheduleRepository {
           const waitlistCount = activeBookings.filter(
             (booking) => booking.status === "WAITLIST",
           ).length;
+          const injuryAlertCount = activeBookings.filter(
+            (booking) =>
+              booking.client &&
+              injuryStatusHasAlert(booking.client.injuryStatus),
+          ).length;
+          const trialCount = activeBookings.filter(
+            (booking) => booking.client?.status === "TRIAL",
+          ).length;
           const scheduleStatus: AdminScheduleSessionStatus = mapScheduleStatus({
             status: session.status,
             bookingsCount,
@@ -135,6 +161,11 @@ export class AdminScheduleRepository {
             timeRange: getTimeRange(startsAt, endsAt),
             coachId: session.coachId,
             coachName: session.coach.fullName,
+            trainingCategory: session.group?.trainingCategory
+              ? trainingCategoryLabelFor(session.group.trainingCategory)
+              : null,
+            injuryAlertCount,
+            trialCount,
             location: session.location ?? "Studio floor",
             occupancyLabel:
               session.type === TrainingSessionType.PRIVATE
@@ -166,6 +197,15 @@ export class AdminScheduleRepository {
               session.type === TrainingSessionType.PRIVATE
                 ? 1
                 : session.capacity,
+            sourceTemplateId: session.sourceTemplateId,
+            recentChanges: [...session.changes]
+              .sort((left, right) => right.createdAt.localeCompare(left.createdAt))
+              .slice(0, 3)
+              .map((change) => ({
+                id: change.id,
+                label: mapChangeTypeLabel(change.changeType),
+                dateLabel: dateLabelFormatter.format(new Date(change.createdAt)),
+              })),
           } satisfies AdminScheduleSessionRecord;
         });
 

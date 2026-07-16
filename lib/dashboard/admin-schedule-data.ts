@@ -1,4 +1,5 @@
 import type { DashboardStatIconKey } from "@/lib/dashboard/workspace-definition";
+import type { TrainingCategoryLabel } from "@/lib/dashboard/client-domain-labels";
 
 export type AdminScheduleSessionType = "Group" | "Private";
 export type AdminScheduleSessionStatus =
@@ -30,6 +31,9 @@ export type AdminScheduleSessionRecord = {
   timeRange: string;
   coachId: string;
   coachName: string;
+  trainingCategory: TrainingCategoryLabel | null;
+  injuryAlertCount: number;
+  trialCount: number;
   location: string;
   occupancyLabel: string;
   rosterCount: number;
@@ -41,6 +45,8 @@ export type AdminScheduleSessionRecord = {
   startsAt: string;
   endsAt: string;
   capacity: number | null;
+  sourceTemplateId: string | null;
+  recentChanges: Array<{ id: string; label: string; dateLabel: string }>;
 };
 
 export const adminScheduleDayFilters = [

@@ -5,6 +5,7 @@ import type {
   AdminPrivateSessionRecord,
   AdminSessionStatus,
 } from "@/lib/mocks/admin-sessions";
+import type { BookingStatus } from "@/lib/supabase/domain";
 import { withSupabaseFallback } from "@/lib/supabase/errors";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -54,7 +55,7 @@ function mapStatus(
 }
 
 function mapBookedClientStatus(
-  status: "BOOKED" | "ATTENDED" | "MISSED" | "CANCELED" | "WAITLIST",
+  status: BookingStatus,
 ): AdminSessionEditorRecord["bookedClients"][number]["status"] | null {
   switch (status) {
     case "BOOKED":

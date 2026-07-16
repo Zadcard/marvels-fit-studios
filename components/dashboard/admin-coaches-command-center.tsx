@@ -14,7 +14,7 @@ type CoachForm = { fullName: string; email: string; phone: string; specializatio
 type Sort = "name" | "load" | "open";
 
 const emptyForm: CoachForm = { fullName: "", email: "", phone: "", specialization: "Strength" };
-const specialties: Array<"All" | AdminCoachSpecialization> = ["All", "Strength", "Conditioning", "Mobility", "Private Coaching"];
+const specialties: Array<"All" | AdminCoachSpecialization> = ["All", "Strength", "Conditioning", "Mobility", "Private Coaching", "Football", "Tennis", "Calisthenics", "Rehab", "Athletic Performance", "General Fitness"];
 
 function coachState(coach: AdminCoachRecord) {
   if (coach.conflicts) return { label: "Conflict", className: styles.danger };

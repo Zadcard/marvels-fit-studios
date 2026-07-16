@@ -205,12 +205,18 @@ export type Database = {
           fullName: string
           groupId: string | null
           id: string
+          injuryNotes: string | null
+          injuryStatus: Database["public"]["Enums"]["InjuryStatus"]
           isPaid: boolean
           membershipType: string
           paymentStatus: Database["public"]["Enums"]["ClientPaymentStatus"]
           phone: string | null
+          restrictions: string | null
           sessionsLeft: number
+          sport: string | null
           status: Database["public"]["Enums"]["ClientLifecycleStatus"]
+          trainingCategory: Database["public"]["Enums"]["TrainingCategory"]
+          trialOutcome: Database["public"]["Enums"]["TrialOutcome"] | null
           updatedAt: string
           userId: string
         }
@@ -220,12 +226,18 @@ export type Database = {
           fullName: string
           groupId?: string | null
           id?: string
+          injuryNotes?: string | null
+          injuryStatus?: Database["public"]["Enums"]["InjuryStatus"]
           isPaid?: boolean
           membershipType?: string
           paymentStatus?: Database["public"]["Enums"]["ClientPaymentStatus"]
           phone?: string | null
+          restrictions?: string | null
           sessionsLeft?: number
+          sport?: string | null
           status?: Database["public"]["Enums"]["ClientLifecycleStatus"]
+          trainingCategory?: Database["public"]["Enums"]["TrainingCategory"]
+          trialOutcome?: Database["public"]["Enums"]["TrialOutcome"] | null
           updatedAt?: string
           userId: string
         }
@@ -235,12 +247,18 @@ export type Database = {
           fullName?: string
           groupId?: string | null
           id?: string
+          injuryNotes?: string | null
+          injuryStatus?: Database["public"]["Enums"]["InjuryStatus"]
           isPaid?: boolean
           membershipType?: string
           paymentStatus?: Database["public"]["Enums"]["ClientPaymentStatus"]
           phone?: string | null
+          restrictions?: string | null
           sessionsLeft?: number
+          sport?: string | null
           status?: Database["public"]["Enums"]["ClientLifecycleStatus"]
+          trainingCategory?: Database["public"]["Enums"]["TrainingCategory"]
+          trialOutcome?: Database["public"]["Enums"]["TrialOutcome"] | null
           updatedAt?: string
           userId?: string
         }
@@ -717,24 +735,36 @@ export type Database = {
       }
       Group: {
         Row: {
+          capacity: number | null
           coachId: string
           createdAt: string
           id: string
+          isActive: boolean
           name: string
+          notes: string | null
+          trainingCategory: Database["public"]["Enums"]["TrainingCategory"]
           type: Database["public"]["Enums"]["GroupType"]
         }
         Insert: {
+          capacity?: number | null
           coachId: string
           createdAt?: string
           id?: string
+          isActive?: boolean
           name: string
+          notes?: string | null
+          trainingCategory?: Database["public"]["Enums"]["TrainingCategory"]
           type?: Database["public"]["Enums"]["GroupType"]
         }
         Update: {
+          capacity?: number | null
           coachId?: string
           createdAt?: string
           id?: string
+          isActive?: boolean
           name?: string
+          notes?: string | null
+          trainingCategory?: Database["public"]["Enums"]["TrainingCategory"]
           type?: Database["public"]["Enums"]["GroupType"]
         }
         Relationships: [
@@ -1110,6 +1140,59 @@ export type Database = {
             columns: ["userId"]
             isOneToOne: false
             referencedRelation: "User"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ScheduleChangeLog: {
+        Row: {
+          changeType: string
+          createdAt: string
+          id: string
+          newCoachId: string | null
+          newEndsAt: string | null
+          newStartsAt: string | null
+          newStatus: Database["public"]["Enums"]["TrainingSessionStatus"] | null
+          previousCoachId: string | null
+          previousEndsAt: string | null
+          previousStartsAt: string | null
+          previousStatus: Database["public"]["Enums"]["TrainingSessionStatus"] | null
+          trainingSessionId: string
+        }
+        Insert: {
+          changeType: string
+          createdAt?: string
+          id?: string
+          newCoachId?: string | null
+          newEndsAt?: string | null
+          newStartsAt?: string | null
+          newStatus?: Database["public"]["Enums"]["TrainingSessionStatus"] | null
+          previousCoachId?: string | null
+          previousEndsAt?: string | null
+          previousStartsAt?: string | null
+          previousStatus?: Database["public"]["Enums"]["TrainingSessionStatus"] | null
+          trainingSessionId: string
+        }
+        Update: {
+          changeType?: string
+          createdAt?: string
+          id?: string
+          newCoachId?: string | null
+          newEndsAt?: string | null
+          newStartsAt?: string | null
+          newStatus?: Database["public"]["Enums"]["TrainingSessionStatus"] | null
+          previousCoachId?: string | null
+          previousEndsAt?: string | null
+          previousStartsAt?: string | null
+          previousStatus?: Database["public"]["Enums"]["TrainingSessionStatus"] | null
+          trainingSessionId?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ScheduleChangeLog_trainingSessionId_fkey"
+            columns: ["trainingSessionId"]
+            isOneToOne: false
+            referencedRelation: "TrainingSession"
             referencedColumns: ["id"]
           },
         ]
@@ -2016,16 +2099,36 @@ export type Database = {
       AssessmentStatus: "DRAFT" | "COMPLETE"
       BillingCycle: "MONTHLY" | "WEEKLY" | "CUSTOM"
       BookingSource: "BLOCK" | "MANUAL"
-      BookingStatus: "BOOKED" | "ATTENDED" | "MISSED" | "CANCELED" | "WAITLIST"
-      ClientLifecycleStatus: "ACTIVE" | "PENDING" | "PAUSED"
+      BookingStatus:
+        | "BOOKED"
+        | "ATTENDED"
+        | "MISSED"
+        | "CANCELED"
+        | "WAITLIST"
+        | "NO_SHOW"
+        | "RESCHEDULED"
+      ClientLifecycleStatus:
+        | "ACTIVE"
+        | "PENDING"
+        | "PAUSED"
+        | "TRIAL"
+        | "INACTIVE"
+        | "DID_NOT_CONTINUE"
       ClientPaymentStatus: "PAID" | "UNPAID" | "DUE_SOON"
       CoachSpecialization:
         | "STRENGTH"
         | "CONDITIONING"
         | "MOBILITY"
         | "PRIVATE_COACHING"
+        | "FOOTBALL"
+        | "TENNIS"
+        | "CALISTHENICS"
+        | "REHAB"
+        | "ATHLETIC_PERFORMANCE"
+        | "GENERAL_FITNESS"
       GoalStatus: "ACTIVE" | "ACHIEVED" | "PAUSED" | "CANCELED"
       GroupType: "GROUP" | "PRIVATE"
+      InjuryStatus: "NONE" | "CURRENT" | "PREVIOUS" | "REHAB"
       LeadStatus: "NEW" | "CONTACTED" | "CONVERTED" | "CLOSED"
       LedgerEntryStatus: "POSTED" | "VOID"
       LedgerEntryType: "PAYMENT" | "CHARGE" | "CREDIT" | "REFUND"
@@ -2033,6 +2136,22 @@ export type Database = {
       NotificationStatus: "SENT" | "READ" | "FAILED"
       ProgramStatus: "DRAFT" | "ACTIVE" | "COMPLETED" | "ARCHIVED"
       SubscriptionStatus: "ACTIVE" | "TRIAL" | "PAUSED" | "EXPIRED" | "CANCELED"
+      TrialOutcome:
+        | "SUBSCRIBED"
+        | "FOLLOW_UP"
+        | "DID_NOT_CONTINUE"
+        | "NO_RESPONSE"
+        | "NO_SHOW"
+        | "NEEDS_DIFFERENT_OPTION"
+      TrainingCategory:
+        | "FOOTBALL"
+        | "TENNIS"
+        | "OTHER_SPORT"
+        | "FAT_LOSS"
+        | "MUSCLE_GAIN"
+        | "CALISTHENICS"
+        | "REHAB"
+        | "GENERAL_FITNESS"
       TrainingSessionStatus: "DRAFT" | "SCHEDULED" | "COMPLETED" | "CANCELED"
       TrainingSessionType: "GROUP" | "PRIVATE"
       UserRole: "ADMIN" | "COACH" | "CLIENT"
@@ -2166,17 +2285,39 @@ export const Constants = {
       AssessmentStatus: ["DRAFT", "COMPLETE"],
       BillingCycle: ["MONTHLY", "WEEKLY", "CUSTOM"],
       BookingSource: ["BLOCK", "MANUAL"],
-      BookingStatus: ["BOOKED", "ATTENDED", "MISSED", "CANCELED", "WAITLIST"],
-      ClientLifecycleStatus: ["ACTIVE", "PENDING", "PAUSED"],
+      BookingStatus: [
+        "BOOKED",
+        "ATTENDED",
+        "MISSED",
+        "CANCELED",
+        "WAITLIST",
+        "NO_SHOW",
+        "RESCHEDULED",
+      ],
+      ClientLifecycleStatus: [
+        "ACTIVE",
+        "PENDING",
+        "PAUSED",
+        "TRIAL",
+        "INACTIVE",
+        "DID_NOT_CONTINUE",
+      ],
       ClientPaymentStatus: ["PAID", "UNPAID", "DUE_SOON"],
       CoachSpecialization: [
         "STRENGTH",
         "CONDITIONING",
         "MOBILITY",
         "PRIVATE_COACHING",
+        "FOOTBALL",
+        "TENNIS",
+        "CALISTHENICS",
+        "REHAB",
+        "ATHLETIC_PERFORMANCE",
+        "GENERAL_FITNESS",
       ],
       GoalStatus: ["ACTIVE", "ACHIEVED", "PAUSED", "CANCELED"],
       GroupType: ["GROUP", "PRIVATE"],
+      InjuryStatus: ["NONE", "CURRENT", "PREVIOUS", "REHAB"],
       LeadStatus: ["NEW", "CONTACTED", "CONVERTED", "CLOSED"],
       LedgerEntryStatus: ["POSTED", "VOID"],
       LedgerEntryType: ["PAYMENT", "CHARGE", "CREDIT", "REFUND"],
@@ -2184,6 +2325,24 @@ export const Constants = {
       NotificationStatus: ["SENT", "READ", "FAILED"],
       ProgramStatus: ["DRAFT", "ACTIVE", "COMPLETED", "ARCHIVED"],
       SubscriptionStatus: ["ACTIVE", "TRIAL", "PAUSED", "EXPIRED", "CANCELED"],
+      TrialOutcome: [
+        "SUBSCRIBED",
+        "FOLLOW_UP",
+        "DID_NOT_CONTINUE",
+        "NO_RESPONSE",
+        "NO_SHOW",
+        "NEEDS_DIFFERENT_OPTION",
+      ],
+      TrainingCategory: [
+        "FOOTBALL",
+        "TENNIS",
+        "OTHER_SPORT",
+        "FAT_LOSS",
+        "MUSCLE_GAIN",
+        "CALISTHENICS",
+        "REHAB",
+        "GENERAL_FITNESS",
+      ],
       TrainingSessionStatus: ["DRAFT", "SCHEDULED", "COMPLETED", "CANCELED"],
       TrainingSessionType: ["GROUP", "PRIVATE"],
       UserRole: ["ADMIN", "COACH", "CLIENT"],

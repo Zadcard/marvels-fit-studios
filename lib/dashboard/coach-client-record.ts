@@ -1,3 +1,8 @@
+import type {
+  InjuryStatusLabel,
+  TrainingCategoryLabel,
+} from "@/lib/dashboard/client-domain-labels";
+
 export type CoachClientStatus =
   | "On track"
   | "Needs check-in"
@@ -12,6 +17,11 @@ export type CoachClientRecord = {
   phone: string;
   planType: CoachClientPlan;
   status: CoachClientStatus;
+  trainingCategory: TrainingCategoryLabel;
+  injuryStatus: InjuryStatusLabel;
+  injuryNotes: string;
+  restrictions: string;
+  hasInjuryAlert: boolean;
   nextSession: string;
   lastTouchpoint: string;
   currentFocus: string;

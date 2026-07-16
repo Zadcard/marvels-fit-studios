@@ -23,7 +23,14 @@ function revalidateAttendanceViews() {
 export async function markAttendance(
   trainingSessionId: string,
   clientId: string,
-  status: "BOOKED" | "ATTENDED" | "MISSED" | "WAITLIST"
+  status:
+    | "BOOKED"
+    | "ATTENDED"
+    | "MISSED"
+    | "WAITLIST"
+    | "CANCELED"
+    | "NO_SHOW"
+    | "RESCHEDULED"
 ) {
   await requireRole(UserRole.ADMIN);
 

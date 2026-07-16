@@ -5,6 +5,19 @@ import type {
   AdminClientStatus,
   AdminPaymentStatus,
 } from "@/lib/dashboard/admin-dashboard-data";
+import {
+  injuryStatusHasAlert,
+  injuryStatusLabelFor,
+  lifecycleStatusLabelFor,
+  trainingCategoryLabelFor,
+  trialOutcomeLabelFor,
+} from "@/lib/dashboard/client-domain-labels";
+import type {
+  ClientLifecycleStatus,
+  InjuryStatus,
+  TrainingCategory,
+  TrialOutcome,
+} from "@/lib/supabase/domain";
 
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
   month: "short",
@@ -48,7 +61,13 @@ export type AdminClientListRecord = {
   fullName: string;
   phone: string | null;
   paymentStatus: "PAID" | "UNPAID" | "DUE_SOON";
-  status: "ACTIVE" | "PENDING" | "PAUSED";
+  status: ClientLifecycleStatus;
+  trialOutcome: TrialOutcome | null;
+  trainingCategory: TrainingCategory;
+  sport: string | null;
+  injuryStatus: InjuryStatus;
+  injuryNotes: string | null;
+  restrictions: string | null;
   createdAt: Date;
   user: {
     email: string | null;
@@ -119,17 +138,8 @@ function inferMembership(record: {
   return "Group Membership";
 }
 
-function mapClientStatus(
-  status: "ACTIVE" | "PENDING" | "PAUSED"
-): AdminClientStatus {
-  switch (status) {
-    case "ACTIVE":
-      return "Active";
-    case "PAUSED":
-      return "Paused";
-    default:
-      return "Pending";
-  }
+function mapClientStatus(status: ClientLifecycleStatus): AdminClientStatus {
+  return lifecycleStatusLabelFor(status);
 }
 
 function inferPaymentStatus(record: {
@@ -272,8 +282,15 @@ export function mapAdminClientRecord(client: AdminClientListRecord): AdminClient
     email: client.user.email ?? "No email",
     phone: client.phone ?? "No phone",
     membership,
+    trainingCategory: trainingCategoryLabelFor(client.trainingCategory),
+    sport: client.sport?.trim() ?? "",
     status: mapClientStatus(client.status),
+    trialOutcome: trialOutcomeLabelFor(client.trialOutcome),
     paymentStatus: inferPaymentStatus(client),
+    injuryStatus: injuryStatusLabelFor(client.injuryStatus),
+    injuryNotes: client.injuryNotes?.trim() ?? "",
+    restrictions: client.restrictions?.trim() ?? "",
+    hasInjuryAlert: injuryStatusHasAlert(client.injuryStatus),
     paymentAmountLabel: client.payments[0]
       ? currencyFormatter.format(client.payments[0].amount)
       : "No payment yet",

@@ -1,4 +1,15 @@
-export type AdminClientStatus = "Active" | "Pending" | "Paused";
+import type {
+  InjuryStatusLabel,
+  LifecycleStatusLabel,
+  TrainingCategoryLabel,
+  TrialOutcomeLabel,
+} from "@/lib/dashboard/client-domain-labels";
+import {
+  lifecycleStatusLabels,
+  trainingCategoryLabels,
+} from "@/lib/dashboard/client-domain-labels";
+
+export type AdminClientStatus = LifecycleStatusLabel;
 export type AdminClientMembership =
   | "Group Membership"
   | "Private Coaching"
@@ -12,9 +23,16 @@ export type AdminClientRecord = {
   email: string;
   phone: string;
   membership: AdminClientMembership;
+  trainingCategory: TrainingCategoryLabel;
+  sport: string;
   status: AdminClientStatus;
+  trialOutcome: TrialOutcomeLabel;
   paymentStatus: AdminPaymentStatus;
   paymentAmountLabel: string;
+  injuryStatus: InjuryStatusLabel;
+  injuryNotes: string;
+  restrictions: string;
+  hasInjuryAlert: boolean;
   joinedDate: string;
   primaryGroupId: string | null;
   primaryGroup: string;
@@ -31,14 +49,17 @@ export type AdminClientInitialOption = {
 
 export const adminClientStatusFilters: Array<"All" | AdminClientStatus> = [
   "All",
-  "Active",
-  "Pending",
-  "Paused",
+  ...lifecycleStatusLabels,
 ];
 
 export const adminClientMembershipFilters: Array<
   "All" | AdminClientMembership
 > = ["All", "Group Membership", "Private Coaching", "Hybrid"];
+
+export const adminTrainingCategoryFilters: Array<"All" | TrainingCategoryLabel> = [
+  "All",
+  ...trainingCategoryLabels,
+];
 
 export const adminPaymentStatusFilters: Array<"All" | AdminPaymentStatus> = [
   "All",

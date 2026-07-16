@@ -26,7 +26,7 @@ export class AdminClientRepository {
       const { data, error } = await getSupabaseServerClient()
         .from("Client")
         .select(
-          "id,fullName,phone,paymentStatus,status,createdAt,user:User(email,clientId),group:Group(id,name,coach:Coach(fullName)),subscriptions:ClientSubscription(id,status,startsAt,plan:SubscriptionPlan(name),payments:Payment(date)),payments:Payment(amount,date),bookings:SessionBooking(status,trainingSession:TrainingSession(startsAt,title,type,status,coach:Coach(fullName)))"
+          "id,fullName,phone,paymentStatus,status,trialOutcome,trainingCategory,sport,injuryStatus,injuryNotes,restrictions,createdAt,user:User(email,clientId),group:Group(id,name,coach:Coach(fullName)),subscriptions:ClientSubscription(id,status,startsAt,plan:SubscriptionPlan(name),payments:Payment(date)),payments:Payment(amount,date),bookings:SessionBooking(status,trainingSession:TrainingSession(startsAt,title,type,status,coach:Coach(fullName)))"
         );
       if (error) throw error;
 
@@ -36,6 +36,12 @@ export class AdminClientRepository {
         phone: client.phone,
         paymentStatus: client.paymentStatus,
         status: client.status,
+        trialOutcome: client.trialOutcome,
+        trainingCategory: client.trainingCategory,
+        sport: client.sport,
+        injuryStatus: client.injuryStatus,
+        injuryNotes: client.injuryNotes,
+        restrictions: client.restrictions,
         createdAt: new Date(client.createdAt),
         user: client.user,
         group: client.group,
