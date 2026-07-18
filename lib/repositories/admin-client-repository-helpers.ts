@@ -60,6 +60,7 @@ export type AdminClientListRecord = {
   id: string;
   fullName: string;
   phone: string | null;
+  sessionsLeft: number;
   paymentStatus: "PAID" | "UNPAID" | "DUE_SOON";
   status: ClientLifecycleStatus;
   trialOutcome: TrialOutcome | null;
@@ -83,6 +84,7 @@ export type AdminClientListRecord = {
   subscriptions: Array<{
     id: string;
     status: string;
+    sessionsTotal: number | null;
     plan: {
       name: string;
     };
@@ -91,8 +93,19 @@ export type AdminClientListRecord = {
     }>;
   }>;
   payments: Array<{
+    id: string;
     amount: number;
+    currency: string;
     date: Date;
+    method: string | null;
+  }>;
+  receipts: Array<{
+    id: string;
+    receiptNumber: string;
+    occurredAt: Date;
+    amount: number;
+    currency: string;
+    method: string | null;
   }>;
   bookings: AdminClientBookingRecord[];
 };
@@ -111,6 +124,19 @@ function titleCase(value: string) {
     .split("_")
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
+}
+
+function paymentMethodLabel(value: string | null) {
+  switch (value) {
+    case "INSTA_PAY":
+      return "InstaPay";
+    case "VISA":
+      return "Visa";
+    case "CASH":
+      return "Cash";
+    default:
+      return "Not recorded";
+  }
 }
 
 function inferMembership(record: {
@@ -294,6 +320,8 @@ export function mapAdminClientRecord(client: AdminClientListRecord): AdminClient
     paymentAmountLabel: client.payments[0]
       ? currencyFormatter.format(client.payments[0].amount)
       : "No payment yet",
+    sessionsLeft: client.sessionsLeft,
+    sessionsTotal: client.subscriptions[0]?.sessionsTotal ?? client.sessionsLeft,
     joinedDate: formatDate(client.createdAt),
     primaryGroupId: client.group?.id ?? null,
     primaryGroup: client.group?.name ?? "No group",
@@ -305,6 +333,14 @@ export function mapAdminClientRecord(client: AdminClientListRecord): AdminClient
       (booking) =>
         `${formatDateTime(booking.trainingSession.startsAt)} - ${booking.trainingSession.title}`
     ),
+    receipts: client.receipts.map((receipt) => ({
+      id: receipt.id,
+      receiptNumber: receipt.receiptNumber,
+      amountLabel: currencyFormatter.format(receipt.amount),
+      dateLabel: formatDate(receipt.occurredAt),
+      method: paymentMethodLabel(receipt.method),
+      href: `/api/receipts/${receipt.id}`,
+    })),
     progressNote: `Membership profile: ${titleCase(membership)}`,
   };
 }

@@ -1,37 +1,34 @@
-import { AdminScheduleWorkspace } from "@/components/dashboard/admin-schedule-workspace";
+import { MarvelOpsScheduleWorkspace } from "@/components/dashboard/marvel-ops-schedule-workspace";
+import type { MarvelOpsScheduleSession } from "@/components/dashboard/marvel-ops-schedule-workspace";
 import { adminScheduleRepository } from "@/lib/repositories/admin-schedule-repository";
 
-export const metadata = {
-  title: "Schedule Control",
-};
+export const metadata = { title: "Schedule" };
 
-function parseWeekStart(value: string | string[] | undefined) {
-  const raw = Array.isArray(value) ? value[0] : value;
-  const parsed = raw && /^\d{4}-\d{2}-\d{2}$/.test(raw)
-    ? new Date(`${raw}T12:00:00+03:00`)
-    : new Date();
+const days = ["Saturday", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+const tones = ["red", "green", "violet", "blue", "amber", "teal"] as const;
 
-  if (Number.isNaN(parsed.getTime())) return new Date();
-  parsed.setHours(12, 0, 0, 0);
-  parsed.setDate(parsed.getDate() - ((parsed.getDay() + 6) % 7));
-  return parsed;
+function initials(name: string) {
+  return name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase();
 }
 
-export default async function AdminSchedulePage(
-  props: PageProps<"/admin/schedule">,
-) {
-  const searchParams = await props.searchParams;
-  const weekStart = parseWeekStart(searchParams.week);
-  const { stats, records, coachOptions, groupOptions } =
-    await adminScheduleRepository.getSchedule({ weekStart });
-
-  return (
-    <AdminScheduleWorkspace
-      stats={stats}
-      records={records}
-      coachOptions={coachOptions}
-      groupOptions={groupOptions}
-      weekStartIso={weekStart.toISOString()}
-    />
-  );
+export default async function AdminSchedulePage() {
+  const { records } = await adminScheduleRepository.getSchedule();
+  const sessions: MarvelOpsScheduleSession[] = records.flatMap((record, index) => {
+    const day = days.indexOf(record.dayKey);
+    if (day < 0) return [];
+    return [{
+      id: record.id,
+      day,
+      time: record.timeRange.split(" - ")[0] ?? record.timeRange,
+      title: record.title,
+      coach: record.coachName,
+      coachInitials: initials(record.coachName),
+      tone: tones[index % tones.length],
+      capacity: record.occupancyLabel,
+      location: record.location,
+      note: record.focus,
+      flags: record.injuryAlertCount ? `${record.injuryAlertCount} injury flag${record.injuryAlertCount === 1 ? "" : "s"}` : record.trialCount ? `${record.trialCount} trial` : undefined,
+    }];
+  });
+  return <MarvelOpsScheduleWorkspace sessions={sessions} requests={[]} />;
 }

@@ -3,7 +3,7 @@
 import { useDeferredValue, useMemo, useState, useTransition, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Dialog } from "radix-ui";
-import { AlertTriangle, CalendarDays, ChevronRight, Mail, Pencil, Phone, Plus, Search, ShieldCheck, Trash2, Users, X } from "lucide-react";
+import { Pencil, Plus, Search, Trash2, X } from "lucide-react";
 
 import { deleteCoach, saveCoach } from "@/app/actions/admin-coaches";
 import type { AdminCoachRecord, AdminCoachSpecialization } from "@/lib/mocks/admin-coaches";
@@ -30,7 +30,6 @@ export function AdminCoachesCommandCenter({ records }: { records: AdminCoachReco
   const deferredSearch = useDeferredValue(search);
   const [specialty, setSpecialty] = useState<(typeof specialties)[number]>("All");
   const [sort, setSort] = useState<Sort>("name");
-  const [selectedId, setSelectedId] = useState(records[0]?.id ?? "");
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteMode, setDeleteMode] = useState(false);
@@ -46,11 +45,6 @@ export function AdminCoachesCommandCenter({ records }: { records: AdminCoachReco
       return a.fullName.localeCompare(b.fullName);
     });
   }, [deferredSearch, records, sort, specialty]);
-
-  const selected = visible.find((coach) => coach.id === selectedId) ?? visible[0] ?? null;
-  const sessions = visible.reduce((sum, coach) => sum + coach.sessionsThisWeek, 0);
-  const clients = visible.reduce((sum, coach) => sum + coach.activeClients, 0);
-  const alerts = visible.filter((coach) => coach.conflicts || !coach.sessionsThisWeek).length;
 
   function openCreate() {
     setEditingId(null); setForm(emptyForm); setDeleteMode(false); setConfirmation(""); setError(""); setEditorOpen(true);
@@ -75,42 +69,19 @@ export function AdminCoachesCommandCenter({ records }: { records: AdminCoachReco
 
   return (
     <div className={styles.page} aria-busy={pending}>
-      <header className={styles.hero}>
-        <div><span className={styles.kicker}><ShieldCheck size={15} /> Coaching operations</span><h1>Deploy the team.</h1><p>Balance weekly delivery, client responsibility and open capacity before the floor gets busy.</p></div>
-        <button type="button" className="mv-btn mv-btn-primary" onClick={openCreate}><Plus size={17} /> New coach</button>
-      </header>
-
-      <section className={styles.scoreboard} aria-label="Coach operations summary">
-        <article><span>Coaches online</span><strong>{visible.length}</strong><small>{clients} active client relationships</small></article>
-        <article><span>Weekly blocks</span><strong>{sessions}</strong><small>Assigned sessions in the next 7 days</small></article>
-        <article data-alert={alerts > 0 || undefined}><span>Coverage alerts</span><strong>{alerts}</strong><small>{alerts ? "Conflicts or empty calendars" : "No deployment gaps"}</small></article>
-        <article className={styles.blackCard}><span>Open capacity</span><strong>{visible.reduce((sum, coach) => sum + coach.openSlots, 0)}</strong><small>Available weekly session slots</small></article>
-      </section>
-
       <section className={styles.board}>
-        <div className={styles.controls}>
+        <header className={styles.controls}>
           <label className={styles.search}><Search size={17} /><span className="sr-only">Search coaches</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Coach, specialty or note" /></label>
           <div className={styles.specialties}>{specialties.map((item) => <button type="button" key={item} data-active={specialty === item || undefined} onClick={() => setSpecialty(item)}>{item}</button>)}</div>
           <label className={styles.sort}>Sort<select value={sort} onChange={(event) => setSort(event.target.value as Sort)}><option value="name">Name A-Z</option><option value="load">Highest load</option><option value="open">Most capacity</option></select></label>
-        </div>
+          <button type="button" className="mv-btn mv-btn-primary" onClick={openCreate}><Plus size={17} /> New coach</button>
+        </header>
 
-        <div className={styles.boardGrid}>
-          <section className={styles.roster} aria-label="Coach roster">
-            <div className={styles.sectionTitle}><div><span>Team roster</span><h2>{visible.length} coaches</h2></div><small>Select to inspect</small></div>
-            {visible.length ? <div className={styles.rosterList}>{visible.map((coach) => { const state = coachState(coach); return <button type="button" key={coach.id} data-selected={selected?.id === coach.id || undefined} onClick={() => setSelectedId(coach.id)}><span className={styles.avatar}>{getInitials(coach.fullName)}</span><span className={styles.identity}><strong>{coach.fullName}</strong><small>{coach.specialization}</small></span><span className={`${styles.state} ${state.className}`}>{state.label}</span><span className={styles.metrics}><b>{coach.sessionsThisWeek}</b> sessions <b>{coach.openSlots}</b> open</span><ChevronRight size={17} /></button>; })}</div> : <div className={styles.empty}><Search size={24} /><strong>No coaches match</strong><span>Change the search or specialty filter.</span></div>}
-          </section>
-
-          <aside className={styles.focus}>
-            {selected ? <>
-              <div className={styles.focusTop}><span className={styles.focusAvatar}>{getInitials(selected.fullName)}</span><div><small>{selected.specialization}</small><h2>{selected.fullName}</h2><p>{selected.summary}</p></div><button type="button" aria-label={`Edit ${selected.fullName}`} onClick={() => openEdit(selected)}><Pencil size={17} /></button></div>
-              <div className={styles.contact}><a href={`mailto:${selected.email}`}><Mail size={15} /> {selected.email}</a><a href={`tel:${selected.phone}`}><Phone size={15} /> {selected.phone}</a></div>
-              <div className={styles.focusNumbers}><article><span>Clients</span><strong>{selected.activeClients}</strong></article><article><span>Sessions</span><strong>{selected.sessionsThisWeek}</strong></article><article><span>Open</span><strong>{selected.openSlots}</strong></article><article><span>Conflicts</span><strong>{selected.conflicts}</strong></article></div>
-              <section className={styles.load}><div><CalendarDays size={17} /><span><strong>7-day deployment</strong><small>Scheduled blocks by day</small></span></div><div className={styles.loadBars}>{selected.weeklyLoad.map((day) => <span key={day.day}><i style={{ height: `${Math.max(8, Math.min(100, day.sessions * 28))}%` }} /><b>{day.sessions}</b><small>{day.day.slice(0, 1)}</small></span>)}</div></section>
-              {selected.conflicts ? <div className={styles.alert}><AlertTriangle size={17} /><span><strong>Schedule conflict detected</strong><small>Resolve overlapping blocks before publishing.</small></span></div> : null}
-              <div className={styles.focusActions}><a className="mv-btn mv-btn-secondary" href="/admin/schedule">View schedule</a><button className="mv-btn mv-btn-primary" type="button" onClick={() => openEdit(selected)}>Manage coach</button></div>
-            </> : <div className={styles.empty}><Users size={26} /><strong>No coach selected</strong></div>}
-          </aside>
-        </div>
+        {visible.length ? <div className={styles.coachGrid}>{visible.map((coach) => { const state=coachState(coach); const load=Math.min(100,Math.round(coach.sessionsThisWeek/12*100)); return <article className={styles.coachCard} key={coach.id}>
+          <header><span className={styles.avatar}>{getInitials(coach.fullName)}</span><div><h2>{coach.fullName}</h2><small>{coach.specialization} · {coach.email}</small></div><span className={`${styles.state} ${state.className}`}>{coach.openSlots ? `${coach.openSlots} free slots` : state.label}</span><button type="button" onClick={()=>openEdit(coach)} aria-label={`Edit ${coach.fullName}`}><Pencil size={15}/></button></header>
+          <div className={styles.timeline}>{coach.weeklyLoad.map((day)=><span key={day.day}><i data-active={day.sessions>0||undefined} style={{opacity:day.sessions ? Math.min(1,.28+day.sessions*.23) : .15}}/><small>{day.day.slice(0,1)}</small></span>)}</div>
+          <footer><div><strong>{coach.sessionsThisWeek}</strong><small>Sessions/wk</small></div><div><strong>{coach.activeClients}</strong><small>Clients</small></div><div className={styles.loadLine}><span>Weekly load <b>{load}%</b></span><i><b style={{width:`${load}%`}}/></i></div></footer>
+        </article>})}</div> : <div className={styles.empty}><Search size={24}/><strong>No coaches match</strong><span>Change the search or specialty filter.</span></div>}
       </section>
 
       <Dialog.Root open={editorOpen} onOpenChange={setEditorOpen}><Dialog.Portal><Dialog.Overlay className={styles.overlay} /><Dialog.Content className={styles.editor}><Dialog.Title>{editingId ? "Manage coach" : "Add a coach"}</Dialog.Title><Dialog.Description>Maintain the coach account and core training specialty.</Dialog.Description><Dialog.Close className={styles.close} aria-label="Close coach editor"><X size={18} /></Dialog.Close>

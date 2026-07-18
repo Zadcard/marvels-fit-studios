@@ -21,18 +21,18 @@ export function throwIfSupabaseError(
 
 export async function withSupabaseFallback<T>(
   operation: () => Promise<T>,
-  _fallback: T
+  fallback: T
 ): Promise<T> {
-  void _fallback;
-
   try {
     return await operation();
   } catch (error) {
-    // Keep the legacy helper signature while repositories migrate to an
-    // explicit result type. Rendering an empty studio during an outage is
-    // unsafe, so log the failure and let the nearest route error boundary
-    // present an unavailable state.
-    console.error("[withSupabaseFallback] database operation failed:", error);
-    throw error;
+    // Dashboard reads deliberately supply a render-safe value so an empty or
+    // temporarily unavailable database does not turn the whole route into a
+    // runtime error. Writes do not use this helper.
+    console.warn(
+      "[withSupabaseFallback] database operation unavailable; rendering fallback:",
+      error
+    );
+    return fallback;
   }
 }

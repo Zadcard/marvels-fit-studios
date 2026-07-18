@@ -47,6 +47,38 @@ const emptyForm: GroupForm = {
   notes: "",
 };
 
+const AVATAR_GRADIENTS = [
+  "linear-gradient(135deg,#e62429,#ff4f54)",
+  "linear-gradient(135deg,#3b82f6,#8b5cf6)",
+  "linear-gradient(135deg,#8b5cf6,#ec4899)",
+  "linear-gradient(135deg,#f59e0b,#ef4444)",
+  "linear-gradient(135deg,#059669,#25d366)",
+  "linear-gradient(135deg,#14b8a6,#3b82f6)",
+];
+
+function coachInitials(name: string) {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("");
+}
+
+function gradientFor(name: string) {
+  let hash = 0;
+  for (let index = 0; index < name.length; index += 1) {
+    hash = (hash + name.charCodeAt(index)) % AVATAR_GRADIENTS.length;
+  }
+  return AVATAR_GRADIENTS[hash];
+}
+
+function fillColor(percent: number) {
+  if (percent >= 100) return "var(--ops-danger)";
+  if (percent >= 85) return "var(--ops-warning)";
+  return "linear-gradient(90deg,#e62429,#ff4f54)";
+}
+
 export function AdminGroupsWorkspace({
   records,
   coachOptions,
@@ -216,38 +248,58 @@ export function AdminGroupsWorkspace({
 
       {filtered.length ? (
         <div className={styles.grid}>
-          {filtered.map((record) => (
-            <article className={styles.card} key={record.id}>
-              <div className={styles.cardTop}>
-                <div>
-                  <small>{record.groupType}</small>
-                  <h2>{record.name}</h2>
+          {filtered.map((record) => {
+            const percent =
+              record.capacity && record.capacity > 0
+                ? Math.min(100, Math.round((record.memberCount / record.capacity) * 100))
+                : 0;
+            const isFull =
+              record.capacity != null && record.memberCount >= record.capacity;
+            return (
+              <article className={styles.card} key={record.id}>
+                <div className={styles.cardTop}>
+                  <div>
+                    <h2>{record.name}</h2>
+                    <div className={styles.days}>{record.scheduleSummary}</div>
+                  </div>
+                  {isFull ? (
+                    <span className={styles.fullBadge}>Full</span>
+                  ) : (
+                    <span className={styles.statusPill} data-active={record.isActive || undefined}>
+                      {record.isActive ? "Active" : "Inactive"}
+                    </span>
+                  )}
                 </div>
-                <div className={styles.badges}>
-                  <span className={styles.badge} data-tone={record.isActive ? "success" : "neutral"}>
-                    {record.isActive ? "Active" : "Inactive"}
+
+                <dl className={styles.statRow}>
+                  <div><dt>Category</dt><dd>{record.trainingCategory}</dd></div>
+                  <div><dt>Type</dt><dd>{record.groupType}</dd></div>
+                </dl>
+
+                <div className={styles.coachLine}>
+                  <span className={styles.avatar} style={{ background: gradientFor(record.coachName) }}>
+                    {coachInitials(record.coachName)}
                   </span>
+                  <div>
+                    <div className={styles.coachName}>{record.coachName}</div>
+                    <div className={styles.memberCount}>{record.capacityLabel} members</div>
+                  </div>
+                  <div className={styles.bar}>
+                    <i style={{ width: `${percent}%`, background: fillColor(percent) }} />
+                  </div>
                 </div>
-              </div>
-              <div className={styles.badges}>
-                <span className={styles.badge}>{record.trainingCategory}</span>
-              </div>
-              <dl className={styles.meta}>
-                <div><dt>Coach</dt><dd>{record.coachName}</dd></div>
-                <div><dt>Members</dt><dd>{record.capacityLabel}</dd></div>
-                <div><dt>Schedule</dt><dd>{record.scheduleSummary}</dd></div>
-                {record.notes ? <div><dt>Notes</dt><dd>{record.notes}</dd></div> : null}
-              </dl>
-              <div className={styles.cardActions}>
-                <button type="button" onClick={() => openEdit(record)}>
-                  <Pencil size={15} /> Edit
-                </button>
-                <button type="button" onClick={() => { setMembersId(record.id); setAddClientId(""); setError(""); }}>
-                  <Users size={15} /> Members ({record.memberCount})
-                </button>
-              </div>
-            </article>
-          ))}
+
+                <div className={styles.cardActions}>
+                  <button type="button" onClick={() => openEdit(record)}>
+                    <Pencil size={15} /> Edit
+                  </button>
+                  <button type="button" onClick={() => { setMembersId(record.id); setAddClientId(""); setError(""); }}>
+                    <Users size={15} /> Members ({record.memberCount})
+                  </button>
+                </div>
+              </article>
+            );
+          })}
         </div>
       ) : (
         <div className={styles.empty}>

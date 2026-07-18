@@ -32,8 +32,8 @@ export const proxy = auth((req) => {
     return NextResponse.redirect(new URL(redirectTarget, nextUrl));
   }
 
-  // Park out-of-scope surfaces for launch (client portal, notifications,
-  // transformation). Data and code remain; the routes are simply unreachable.
+  // Park out-of-scope surfaces for launch (client portal and transformation).
+  // Data and code remain; only the unavailable routes are unreachable.
   const roleHome = userRole ? getDashboardHomeForUserRole(userRole) : "/login";
   const parkedTarget = parkedRouteRedirect(nextUrl.pathname, roleHome);
   if (parkedTarget && parkedTarget !== nextUrl.pathname) {

@@ -1,4 +1,4 @@
-import type { DashboardActivityFeedItem } from "@/components/dashboard/dashboard-activity-feed";
+import type { DashboardActivityFeedItem } from "@/lib/dashboard/activity-feed";
 import type { DashboardStatIconKey } from "@/lib/dashboard/workspace-definition";
 
 export type CoachOverviewStat = {

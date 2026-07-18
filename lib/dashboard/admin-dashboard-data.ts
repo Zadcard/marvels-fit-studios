@@ -29,6 +29,8 @@ export type AdminClientRecord = {
   trialOutcome: TrialOutcomeLabel;
   paymentStatus: AdminPaymentStatus;
   paymentAmountLabel: string;
+  sessionsLeft: number;
+  sessionsTotal: number;
   injuryStatus: InjuryStatusLabel;
   injuryNotes: string;
   restrictions: string;
@@ -39,6 +41,14 @@ export type AdminClientRecord = {
   assignedCoach: string;
   nextSession: string;
   nextSessions: string[];
+  receipts: Array<{
+    id: string;
+    receiptNumber: string;
+    amountLabel: string;
+    dateLabel: string;
+    method: string;
+    href: string;
+  }>;
   progressNote: string;
 };
 
@@ -68,7 +78,7 @@ export const adminPaymentStatusFilters: Array<"All" | AdminPaymentStatus> = [
   "Due soon",
 ];
 
-export type AdminLeadStatus = "New" | "Contacted" | "Converted" | "Closed";
+export type AdminLeadStatus = "New" | "Contacted" | "Trial done" | "Converted" | "Closed";
 
 export type AdminLeadRecord = {
   id: string;
@@ -79,12 +89,14 @@ export type AdminLeadRecord = {
   status: AdminLeadStatus;
   createdAt: string;
   message: string;
+  trialGroupId: string | null;
 };
 
 export const adminLeadStatusFilters: Array<"All" | AdminLeadStatus> = [
   "All",
   "New",
   "Contacted",
+  "Trial done",
   "Converted",
   "Closed",
 ];

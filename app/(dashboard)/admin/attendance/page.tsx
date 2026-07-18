@@ -6,7 +6,12 @@ export const metadata = {
 };
 
 export default async function AdminAttendancePage() {
-  const sessions = await adminAttendanceRepository.getToday();
+  const liveSessions = await adminAttendanceRepository.getToday();
 
-  return <AdminAttendanceWorkspace sessions={sessions} />;
+  return (
+    <AdminAttendanceWorkspace
+      sessions={liveSessions}
+      dataSource="live"
+    />
+  );
 }

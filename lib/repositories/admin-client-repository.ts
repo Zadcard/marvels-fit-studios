@@ -23,17 +23,51 @@ export class AdminClientRepository {
   }> {
     const filters = normalizeAdminClientListFilters(input);
     const clients = await withSupabaseFallback<AdminClientListRecord[]>(async () => {
-      const { data, error } = await getSupabaseServerClient()
-        .from("Client")
-        .select(
-          "id,fullName,phone,paymentStatus,status,trialOutcome,trainingCategory,sport,injuryStatus,injuryNotes,restrictions,createdAt,user:User(email,clientId),group:Group(id,name,coach:Coach(fullName)),subscriptions:ClientSubscription(id,status,startsAt,plan:SubscriptionPlan(name),payments:Payment(date)),payments:Payment(amount,date),bookings:SessionBooking(status,trainingSession:TrainingSession(startsAt,title,type,status,coach:Coach(fullName)))"
-        );
-      if (error) throw error;
+      const supabase = getSupabaseServerClient();
+      const [clientsResult, ledgerResult] = await Promise.all([
+        supabase
+          .from("Client")
+          .select(
+            "id,fullName,phone,sessionsLeft,paymentStatus,status,trialOutcome,trainingCategory,sport,injuryStatus,injuryNotes,restrictions,createdAt,user:User(email,clientId),group:Group(id,name,coach:Coach(fullName)),subscriptions:ClientSubscription(id,status,startsAt,sessionsTotal,plan:SubscriptionPlan(name),payments:Payment(date)),payments:Payment(id,amount,currency,date,method),bookings:SessionBooking(status,trainingSession:TrainingSession(startsAt,title,type,status,coach:Coach(fullName)))"
+          ),
+        supabase
+          .from("BillingLedgerEntry")
+          .select("id,clientId,paymentId,receiptNumber,occurredAt")
+          .eq("type", "PAYMENT")
+          .not("paymentId", "is", null),
+      ]);
+      if (clientsResult.error) throw clientsResult.error;
+      if (ledgerResult.error) throw ledgerResult.error;
 
-      return data.map((client) => ({
+      const receiptByPaymentId = new Map(
+        ledgerResult.data.flatMap((entry) =>
+          entry.paymentId ? [[entry.paymentId, entry] as const] : [],
+        ),
+      );
+
+      return clientsResult.data.map((client) => {
+        const payments = client.payments
+          .sort((a, b) => b.date.localeCompare(a.date))
+          .map((payment) => ({ ...payment, date: new Date(payment.date) }));
+        const receipts = payments.flatMap((payment) => {
+          const receipt = receiptByPaymentId.get(payment.id);
+          return receipt && receipt.clientId === client.id
+            ? [{
+                id: receipt.id,
+                receiptNumber: receipt.receiptNumber,
+                occurredAt: new Date(receipt.occurredAt),
+                amount: payment.amount,
+                currency: payment.currency,
+                method: payment.method,
+              }]
+            : [];
+        });
+
+        return {
         id: client.id,
         fullName: client.fullName,
         phone: client.phone,
+        sessionsLeft: client.sessionsLeft,
         paymentStatus: client.paymentStatus,
         status: client.status,
         trialOutcome: client.trialOutcome,
@@ -50,15 +84,14 @@ export class AdminClientRepository {
           .slice(0, 1)
           .map((subscription) => ({
             ...subscription,
+            sessionsTotal: subscription.sessionsTotal,
             payments: subscription.payments
               .sort((a, b) => b.date.localeCompare(a.date))
               .slice(0, 1)
               .map((payment) => ({ date: new Date(payment.date) })),
           })),
-        payments: client.payments
-          .sort((a, b) => b.date.localeCompare(a.date))
-          .slice(0, 1)
-          .map((payment) => ({ ...payment, date: new Date(payment.date) })),
+        payments,
+        receipts,
         bookings: client.bookings
           .filter(
             (booking) =>
@@ -76,7 +109,8 @@ export class AdminClientRepository {
               startsAt: new Date(booking.trainingSession.startsAt),
             },
           })),
-      }));
+      };
+      });
     }, []);
 
     const initialNameRecords = clients.map(({ fullName }) => ({ fullName }));

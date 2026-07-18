@@ -23,6 +23,8 @@ function toLeadStatus(status: LeadStatus): AdminLeadStatus {
       return "New";
     case LeadStatus.CONTACTED:
       return "Contacted";
+    case LeadStatus.TRIAL_DONE:
+      return "Trial done";
     case LeadStatus.CONVERTED:
       return "Converted";
     default:
@@ -95,8 +97,7 @@ export class AdminLeadRepository {
     return withSupabaseFallback(async () => {
       const { data, error } = await getSupabaseServerClient()
         .from("Lead")
-        .select("id,fullName,email,phone,source,status,createdAt,message")
-        .neq("status", LeadStatus.CONTACTED);
+        .select("id,fullName,email,phone,source,status,createdAt,message,trialGroupId");
       if (error) throw error;
 
       const search = filters.search.toLowerCase();
@@ -128,6 +129,7 @@ export class AdminLeadRepository {
           status: toLeadStatus(lead.status),
           createdAt: formatDate(new Date(lead.createdAt)),
           message: normalizeMessage(lead.message),
+          trialGroupId: lead.trialGroupId,
         })),
         totalCount: data.length,
         filteredCount: filtered.length,

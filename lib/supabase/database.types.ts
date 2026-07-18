@@ -789,6 +789,7 @@ export type Database = {
           phone: string
           source: string
           status: Database["public"]["Enums"]["LeadStatus"]
+          trialGroupId: string | null
           updatedAt: string
         }
         Insert: {
@@ -802,6 +803,7 @@ export type Database = {
           phone: string
           source?: string
           status?: Database["public"]["Enums"]["LeadStatus"]
+          trialGroupId?: string | null
           updatedAt?: string
         }
         Update: {
@@ -815,9 +817,18 @@ export type Database = {
           phone?: string
           source?: string
           status?: Database["public"]["Enums"]["LeadStatus"]
+          trialGroupId?: string | null
           updatedAt?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "Lead_trialGroupId_fkey"
+            columns: ["trialGroupId"]
+            isOneToOne: false
+            referencedRelation: "Group"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       Notification: {
         Row: {
@@ -881,6 +892,7 @@ export type Database = {
           currency: string
           date: string
           id: string
+          method: string | null
           note: string | null
         }
         Insert: {
@@ -891,6 +903,7 @@ export type Database = {
           currency?: string
           date?: string
           id?: string
+          method?: string | null
           note?: string | null
         }
         Update: {
@@ -901,6 +914,7 @@ export type Database = {
           currency?: string
           date?: string
           id?: string
+          method?: string | null
           note?: string | null
         }
         Relationships: [
@@ -1100,6 +1114,69 @@ export type Database = {
           },
         ]
       }
+      ScheduleChangeLog: {
+        Row: {
+          changeType: string
+          createdAt: string
+          id: string
+          newCoachId: string | null
+          newEndsAt: string | null
+          newStartsAt: string | null
+          newStatus: Database["public"]["Enums"]["TrainingSessionStatus"] | null
+          previousCoachId: string | null
+          previousEndsAt: string | null
+          previousStartsAt: string | null
+          previousStatus:
+            | Database["public"]["Enums"]["TrainingSessionStatus"]
+            | null
+          trainingSessionId: string
+        }
+        Insert: {
+          changeType: string
+          createdAt?: string
+          id?: string
+          newCoachId?: string | null
+          newEndsAt?: string | null
+          newStartsAt?: string | null
+          newStatus?:
+            | Database["public"]["Enums"]["TrainingSessionStatus"]
+            | null
+          previousCoachId?: string | null
+          previousEndsAt?: string | null
+          previousStartsAt?: string | null
+          previousStatus?:
+            | Database["public"]["Enums"]["TrainingSessionStatus"]
+            | null
+          trainingSessionId: string
+        }
+        Update: {
+          changeType?: string
+          createdAt?: string
+          id?: string
+          newCoachId?: string | null
+          newEndsAt?: string | null
+          newStartsAt?: string | null
+          newStatus?:
+            | Database["public"]["Enums"]["TrainingSessionStatus"]
+            | null
+          previousCoachId?: string | null
+          previousEndsAt?: string | null
+          previousStartsAt?: string | null
+          previousStatus?:
+            | Database["public"]["Enums"]["TrainingSessionStatus"]
+            | null
+          trainingSessionId?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ScheduleChangeLog_trainingSessionId_fkey"
+            columns: ["trainingSessionId"]
+            isOneToOne: false
+            referencedRelation: "TrainingSession"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       SecurityEvent: {
         Row: {
           authMethod: string | null
@@ -1140,59 +1217,6 @@ export type Database = {
             columns: ["userId"]
             isOneToOne: false
             referencedRelation: "User"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      ScheduleChangeLog: {
-        Row: {
-          changeType: string
-          createdAt: string
-          id: string
-          newCoachId: string | null
-          newEndsAt: string | null
-          newStartsAt: string | null
-          newStatus: Database["public"]["Enums"]["TrainingSessionStatus"] | null
-          previousCoachId: string | null
-          previousEndsAt: string | null
-          previousStartsAt: string | null
-          previousStatus: Database["public"]["Enums"]["TrainingSessionStatus"] | null
-          trainingSessionId: string
-        }
-        Insert: {
-          changeType: string
-          createdAt?: string
-          id?: string
-          newCoachId?: string | null
-          newEndsAt?: string | null
-          newStartsAt?: string | null
-          newStatus?: Database["public"]["Enums"]["TrainingSessionStatus"] | null
-          previousCoachId?: string | null
-          previousEndsAt?: string | null
-          previousStartsAt?: string | null
-          previousStatus?: Database["public"]["Enums"]["TrainingSessionStatus"] | null
-          trainingSessionId: string
-        }
-        Update: {
-          changeType?: string
-          createdAt?: string
-          id?: string
-          newCoachId?: string | null
-          newEndsAt?: string | null
-          newStartsAt?: string | null
-          newStatus?: Database["public"]["Enums"]["TrainingSessionStatus"] | null
-          previousCoachId?: string | null
-          previousEndsAt?: string | null
-          previousStartsAt?: string | null
-          previousStatus?: Database["public"]["Enums"]["TrainingSessionStatus"] | null
-          trainingSessionId?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "ScheduleChangeLog_trainingSessionId_fkey"
-            columns: ["trainingSessionId"]
-            isOneToOne: false
-            referencedRelation: "TrainingSession"
             referencedColumns: ["id"]
           },
         ]
@@ -1909,7 +1933,11 @@ export type Database = {
         Returns: undefined
       }
       admin_mutate_subscription: {
-        Args: { target_action: string; target_id: string }
+        Args: {
+          target_action: string
+          target_id: string
+          target_payment_method: string
+        }
         Returns: Json
       }
       admin_save_client: { Args: { payload: Json }; Returns: string }
@@ -2129,20 +2157,13 @@ export type Database = {
       GoalStatus: "ACTIVE" | "ACHIEVED" | "PAUSED" | "CANCELED"
       GroupType: "GROUP" | "PRIVATE"
       InjuryStatus: "NONE" | "CURRENT" | "PREVIOUS" | "REHAB"
-      LeadStatus: "NEW" | "CONTACTED" | "CONVERTED" | "CLOSED"
+      LeadStatus: "NEW" | "CONTACTED" | "CONVERTED" | "CLOSED" | "TRIAL_DONE"
       LedgerEntryStatus: "POSTED" | "VOID"
       LedgerEntryType: "PAYMENT" | "CHARGE" | "CREDIT" | "REFUND"
       NotificationKind: "SESSION_REMINDER" | "RENEWAL_REMINDER" | "SYSTEM"
       NotificationStatus: "SENT" | "READ" | "FAILED"
       ProgramStatus: "DRAFT" | "ACTIVE" | "COMPLETED" | "ARCHIVED"
       SubscriptionStatus: "ACTIVE" | "TRIAL" | "PAUSED" | "EXPIRED" | "CANCELED"
-      TrialOutcome:
-        | "SUBSCRIBED"
-        | "FOLLOW_UP"
-        | "DID_NOT_CONTINUE"
-        | "NO_RESPONSE"
-        | "NO_SHOW"
-        | "NEEDS_DIFFERENT_OPTION"
       TrainingCategory:
         | "FOOTBALL"
         | "TENNIS"
@@ -2154,6 +2175,13 @@ export type Database = {
         | "GENERAL_FITNESS"
       TrainingSessionStatus: "DRAFT" | "SCHEDULED" | "COMPLETED" | "CANCELED"
       TrainingSessionType: "GROUP" | "PRIVATE"
+      TrialOutcome:
+        | "SUBSCRIBED"
+        | "FOLLOW_UP"
+        | "DID_NOT_CONTINUE"
+        | "NO_RESPONSE"
+        | "NO_SHOW"
+        | "NEEDS_DIFFERENT_OPTION"
       UserRole: "ADMIN" | "COACH" | "CLIENT"
     }
     CompositeTypes: {
@@ -2318,21 +2346,13 @@ export const Constants = {
       GoalStatus: ["ACTIVE", "ACHIEVED", "PAUSED", "CANCELED"],
       GroupType: ["GROUP", "PRIVATE"],
       InjuryStatus: ["NONE", "CURRENT", "PREVIOUS", "REHAB"],
-      LeadStatus: ["NEW", "CONTACTED", "CONVERTED", "CLOSED"],
+      LeadStatus: ["NEW", "CONTACTED", "CONVERTED", "CLOSED", "TRIAL_DONE"],
       LedgerEntryStatus: ["POSTED", "VOID"],
       LedgerEntryType: ["PAYMENT", "CHARGE", "CREDIT", "REFUND"],
       NotificationKind: ["SESSION_REMINDER", "RENEWAL_REMINDER", "SYSTEM"],
       NotificationStatus: ["SENT", "READ", "FAILED"],
       ProgramStatus: ["DRAFT", "ACTIVE", "COMPLETED", "ARCHIVED"],
       SubscriptionStatus: ["ACTIVE", "TRIAL", "PAUSED", "EXPIRED", "CANCELED"],
-      TrialOutcome: [
-        "SUBSCRIBED",
-        "FOLLOW_UP",
-        "DID_NOT_CONTINUE",
-        "NO_RESPONSE",
-        "NO_SHOW",
-        "NEEDS_DIFFERENT_OPTION",
-      ],
       TrainingCategory: [
         "FOOTBALL",
         "TENNIS",
@@ -2345,6 +2365,14 @@ export const Constants = {
       ],
       TrainingSessionStatus: ["DRAFT", "SCHEDULED", "COMPLETED", "CANCELED"],
       TrainingSessionType: ["GROUP", "PRIVATE"],
+      TrialOutcome: [
+        "SUBSCRIBED",
+        "FOLLOW_UP",
+        "DID_NOT_CONTINUE",
+        "NO_RESPONSE",
+        "NO_SHOW",
+        "NEEDS_DIFFERENT_OPTION",
+      ],
       UserRole: ["ADMIN", "COACH", "CLIENT"],
     },
   },

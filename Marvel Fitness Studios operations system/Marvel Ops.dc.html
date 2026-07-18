@@ -1,0 +1,1253 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Archivo+Black&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#050505; --bg2:#0a0a0a; --surface:#111111; --surface2:#171717; --surface3:#1c1c1c;
+    --line:#2a2a2a; --line2:#3a3a3a; --line3:#4a4a4a;
+    --red:#e62429; --red2:#ff4f54; --red-deep:#b91c21; --red-soft:#2d1011;
+    --text:#ffffff; --muted:#8f8f8f; --muted2:#c4c4c4;
+    --success:#25d366; --warn:#f59e0b; --danger:#ef4444; --blue:#3b82f6; --violet:#8b5cf6; --teal:#14b8a6;
+    --fd:"Space Grotesk", ui-sans-serif, system-ui; --fb:"Manrope", ui-sans-serif, system-ui;
+    --fm:"JetBrains Mono", ui-monospace, monospace; --fs:"Archivo Black", sans-serif;
+  }
+  *,*::before,*::after{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; background:var(--bg); }
+  ::selection{ background:rgba(230,36,41,.4); color:#fff; }
+  .mv-scroll::-webkit-scrollbar{ width:10px; height:10px; }
+  .mv-scroll::-webkit-scrollbar-thumb{ background:#2a2a2a; border-radius:10px; border:2px solid var(--bg); }
+  .mv-scroll::-webkit-scrollbar-track{ background:transparent; }
+  @keyframes mvpulse{ 0%,100%{ box-shadow:0 0 0 4px rgba(230,36,41,.18);} 50%{ box-shadow:0 0 0 8px rgba(230,36,41,.03);} }
+  @keyframes mvblink{ 0%,100%{ opacity:1;} 50%{ opacity:.35;} }
+</style>
+</helmet>
+
+<div class="mv-scroll" style="display:flex; height:100vh; width:100%; background:radial-gradient(ellipse at 12% 0%, rgba(230,36,41,.10) 0%, transparent 40%), radial-gradient(ellipse at 90% 100%, rgba(200,20,28,.07) 0%, transparent 40%), var(--bg); color:var(--text); font-family:var(--fb); overflow:hidden;">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside style="width:264px; flex-shrink:0; border-right:1px solid var(--line); background:linear-gradient(180deg, var(--bg2), var(--bg)); display:flex; flex-direction:column; height:100%;">
+    <div style="padding:20px 20px 16px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:12px;">
+      <img src="assets/logo.png" alt="Marvel" style="width:38px; height:38px; object-fit:contain; filter:brightness(0) invert(1);">
+      <div style="display:grid; gap:2px;">
+        <strong style="font-family:var(--fd); font-size:.98rem; font-weight:700; letter-spacing:-.02em;">Marvel Fit Studios</strong>
+        <span style="font-family:var(--fm); font-size:.56rem; letter-spacing:.2em; text-transform:uppercase; color:var(--muted);">6th of October · Ops</span>
+      </div>
+    </div>
+
+    <!-- role switch -->
+    <div style="padding:14px 16px 6px;">
+      <div style="display:flex; gap:4px; padding:4px; background:var(--surface); border:1px solid var(--line); border-radius:12px;">
+        <button onClick="{{ toAdmin }}" style="flex:1; min-height:34px; border:0; border-radius:9px; cursor:pointer; font-family:var(--fm); font-size:.6rem; letter-spacing:.16em; text-transform:uppercase; font-weight:700; {{ adminTabStyle }}">Admin</button>
+        <button onClick="{{ toCoach }}" style="flex:1; min-height:34px; border:0; border-radius:9px; cursor:pointer; font-family:var(--fm); font-size:.6rem; letter-spacing:.16em; text-transform:uppercase; font-weight:700; {{ coachTabStyle }}">Coach</button>
+      </div>
+    </div>
+
+    <nav class="mv-scroll" style="flex:1; overflow-y:auto; padding:12px 12px 8px;">
+      <!-- ADMIN NAV -->
+      <sc-if value="{{ isAdmin }}" hint-placeholder-val="{{ true }}">
+      <div style="font-family:var(--fm); font-size:.56rem; letter-spacing:.2em; text-transform:uppercase; color:#5a5a5a; padding:8px 12px 10px;">Operations</div>
+      <div style="display:flex; flex-direction:column; gap:2px;">
+        <button onClick="{{ goToday }}" style="display:flex; align-items:center; gap:12px; width:100%; padding:10px 12px; background:transparent; border:0; border-left:3px solid transparent; border-radius:0 9px 9px 0; cursor:pointer; text-align:left; font-family:var(--fb); {{ navToday }}" style-hover="background:rgba(255,255,255,.03);">
+          <span style="font-size:1rem; width:18px; text-align:center;">◎</span>
+          <span style="display:grid; gap:1px;"><span style="font-size:.86rem; font-weight:600; white-space:nowrap; line-height:1.2;">Today</span><span style="font-size:.62rem; color:var(--muted); white-space:nowrap; line-height:1.2;">Who's on the floor</span></span>
+          <span style="margin-left:auto; font-family:var(--fm); font-size:.6rem; color:var(--red); font-weight:700;">{{ liveCount }}</span>
+        </button>
+        <button onClick="{{ goAttendance }}" style="display:flex; align-items:center; gap:12px; width:100%; padding:10px 12px; background:transparent; border:0; border-left:3px solid transparent; border-radius:0 9px 9px 0; cursor:pointer; text-align:left; font-family:var(--fb); {{ navAttendance }}" style-hover="background:rgba(255,255,255,.03);">
+          <span style="font-size:1rem; width:18px; text-align:center;">✓</span>
+          <span style="display:grid; gap:1px;"><span style="font-size:.86rem; font-weight:600; white-space:nowrap; line-height:1.2;">Attendance</span><span style="font-size:.62rem; color:var(--muted); white-space:nowrap; line-height:1.2;">Mark check-ins fast</span></span>
+        </button>
+        <button onClick="{{ goSchedule }}" style="display:flex; align-items:center; gap:12px; width:100%; padding:10px 12px; background:transparent; border:0; border-left:3px solid transparent; border-radius:0 9px 9px 0; cursor:pointer; text-align:left; font-family:var(--fb); {{ navSchedule }}" style-hover="background:rgba(255,255,255,.03);">
+          <span style="font-size:1rem; width:18px; text-align:center;">▤</span>
+          <span style="display:grid; gap:1px;"><span style="font-size:.86rem; font-weight:600; white-space:nowrap; line-height:1.2;">Schedule</span><span style="font-size:.62rem; color:var(--muted); white-space:nowrap; line-height:1.2;">Recurring & changes</span></span>
+          <sc-if value="{{ hasScheduleChanges }}" hint-placeholder-val="{{ true }}"><span style="margin-left:auto; font-family:var(--fm); font-size:.6rem; color:var(--warn); font-weight:700;">{{ changeCount }}</span></sc-if>
+        </button>
+      </div>
+      <div style="font-family:var(--fm); font-size:.56rem; letter-spacing:.2em; text-transform:uppercase; color:#5a5a5a; padding:16px 12px 10px;">People</div>
+      <div style="display:flex; flex-direction:column; gap:2px;">
+        <button onClick="{{ goLeads }}" style="display:flex; align-items:center; gap:12px; width:100%; padding:10px 12px; background:transparent; border:0; border-left:3px solid transparent; border-radius:0 9px 9px 0; cursor:pointer; text-align:left; font-family:var(--fb); {{ navLeads }}" style-hover="background:rgba(255,255,255,.03);">
+          <span style="font-size:1rem; width:18px; text-align:center;">⚑</span>
+          <span style="display:grid; gap:1px;"><span style="font-size:.86rem; font-weight:600; white-space:nowrap; line-height:1.2;">Leads & Trials</span><span style="font-size:.62rem; color:var(--muted); white-space:nowrap; line-height:1.2;">Follow-up pipeline</span></span>
+          <span style="margin-left:auto; font-family:var(--fm); font-size:.6rem; color:var(--muted); font-weight:700;">{{ leadCount }}</span>
+        </button>
+        <button onClick="{{ goClients }}" style="display:flex; align-items:center; gap:12px; width:100%; padding:10px 12px; background:transparent; border:0; border-left:3px solid transparent; border-radius:0 9px 9px 0; cursor:pointer; text-align:left; font-family:var(--fb); {{ navClients }}" style-hover="background:rgba(255,255,255,.03);">
+          <span style="font-size:1rem; width:18px; text-align:center;">◉</span>
+          <span style="display:grid; gap:1px;"><span style="font-size:.86rem; font-weight:600; white-space:nowrap; line-height:1.2;">Clients</span><span style="font-size:.62rem; color:var(--muted); white-space:nowrap; line-height:1.2;">Roster & profiles</span></span>
+        </button>
+        <button onClick="{{ goGroups }}" style="display:flex; align-items:center; gap:12px; width:100%; padding:10px 12px; background:transparent; border:0; border-left:3px solid transparent; border-radius:0 9px 9px 0; cursor:pointer; text-align:left; font-family:var(--fb); {{ navGroups }}" style-hover="background:rgba(255,255,255,.03);">
+          <span style="font-size:1rem; width:18px; text-align:center;">⬡</span>
+          <span style="display:grid; gap:1px;"><span style="font-size:.86rem; font-weight:600; white-space:nowrap; line-height:1.2;">Groups</span><span style="font-size:.62rem; color:var(--muted); white-space:nowrap; line-height:1.2;">Recurring classes</span></span>
+        </button>
+        <button onClick="{{ goCoaches }}" style="display:flex; align-items:center; gap:12px; width:100%; padding:10px 12px; background:transparent; border:0; border-left:3px solid transparent; border-radius:0 9px 9px 0; cursor:pointer; text-align:left; font-family:var(--fb); {{ navCoaches }}" style-hover="background:rgba(255,255,255,.03);">
+          <span style="font-size:1rem; width:18px; text-align:center;">◭</span>
+          <span style="display:grid; gap:1px;"><span style="font-size:.86rem; font-weight:600; white-space:nowrap; line-height:1.2;">Coaches</span><span style="font-size:.62rem; color:var(--muted); white-space:nowrap; line-height:1.2;">Load & free slots</span></span>
+        </button>
+      </div>
+      <div style="font-family:var(--fm); font-size:.56rem; letter-spacing:.2em; text-transform:uppercase; color:#5a5a5a; padding:16px 12px 10px;">Money</div>
+      <div style="display:flex; flex-direction:column; gap:2px;">
+        <button onClick="{{ goSubs }}" style="display:flex; align-items:center; gap:12px; width:100%; padding:10px 12px; background:transparent; border:0; border-left:3px solid transparent; border-radius:0 9px 9px 0; cursor:pointer; text-align:left; font-family:var(--fb); {{ navSubs }}" style-hover="background:rgba(255,255,255,.03);">
+          <span style="font-size:1rem; width:18px; text-align:center;">$</span>
+          <span style="display:grid; gap:1px;"><span style="font-size:.86rem; font-weight:600; white-space:nowrap; line-height:1.2;">Subscriptions</span><span style="font-size:.62rem; color:var(--muted); white-space:nowrap; line-height:1.2;">Renewals & cash flow</span></span>
+          <span style="margin-left:auto; font-family:var(--fm); font-size:.6rem; color:var(--warn); font-weight:700;">{{ expiringCount }}</span>
+        </button>
+      </div>
+      </sc-if>
+
+      <!-- COACH NAV -->
+      <sc-if value="{{ isCoach }}" hint-placeholder-val="{{ false }}">
+      <div style="font-family:var(--fm); font-size:.56rem; letter-spacing:.2em; text-transform:uppercase; color:#5a5a5a; padding:8px 12px 10px;">Coach · {{ coachSelfName }}</div>
+      <div style="display:flex; flex-direction:column; gap:2px;">
+        <button onClick="{{ goCoachToday }}" style="display:flex; align-items:center; gap:12px; width:100%; padding:10px 12px; background:transparent; border:0; border-left:3px solid transparent; border-radius:0 9px 9px 0; cursor:pointer; text-align:left; font-family:var(--fb); {{ navCoachToday }}" style-hover="background:rgba(255,255,255,.03);">
+          <span style="font-size:1rem; width:18px; text-align:center;">◎</span>
+          <span style="display:grid; gap:1px;"><span style="font-size:.86rem; font-weight:600; white-space:nowrap; line-height:1.2;">Today</span><span style="font-size:.62rem; color:var(--muted); white-space:nowrap; line-height:1.2;">My sessions & groups</span></span>
+        </button>
+        <button onClick="{{ goCoachPhone }}" style="display:flex; align-items:center; gap:12px; width:100%; padding:10px 12px; background:transparent; border:0; border-left:3px solid transparent; border-radius:0 9px 9px 0; cursor:pointer; text-align:left; font-family:var(--fb); {{ navCoachPhone }}" style-hover="background:rgba(255,255,255,.03);">
+          <span style="font-size:1rem; width:18px; text-align:center;">▢</span>
+          <span style="display:grid; gap:1px;"><span style="font-size:.86rem; font-weight:600; white-space:nowrap; line-height:1.2;">On my phone</span><span style="font-size:.62rem; color:var(--muted); white-space:nowrap; line-height:1.2;">Coach mobile view</span></span>
+        </button>
+      </div>
+      </sc-if>
+    </nav>
+
+    <!-- user card -->
+    <div style="padding:12px 14px; border-top:1px solid var(--line);">
+      <div style="display:flex; align-items:center; gap:11px; padding:10px 12px; background:var(--surface); border:1px solid var(--line); border-radius:14px;">
+        <span style="width:34px; height:34px; border-radius:50%; display:grid; place-items:center; font-family:var(--fd); font-weight:700; font-size:.78rem; color:#fff; background:{{ userGrad }}; flex-shrink:0;">{{ userInitials }}</span>
+        <div style="flex:1; min-width:0;">
+          <div style="font-size:.82rem; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ userName }}</div>
+          <div style="font-family:var(--fm); font-size:.58rem; letter-spacing:.12em; text-transform:uppercase; color:var(--muted);">{{ userRole }}</div>
+        </div>
+        <button style="width:26px; height:26px; border-radius:8px; border:1px solid var(--line2); background:transparent; color:var(--muted); cursor:pointer;" style-hover="color:#fff; border-color:var(--line3);">⎋</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <div style="flex:1; display:flex; flex-direction:column; min-width:0; height:100%;">
+    <!-- topbar -->
+    <header style="flex-shrink:0; height:68px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:20px; padding:0 28px; background:rgba(5,5,5,.6); backdrop-filter:blur(8px);">
+      <div style="min-width:0;">
+        <div style="font-family:var(--fm); font-size:.58rem; letter-spacing:.2em; text-transform:uppercase; color:var(--red); margin-bottom:3px;">{{ crumb }}</div>
+        <h1 style="margin:0; font-family:var(--fd); font-size:1.28rem; font-weight:700; letter-spacing:-.02em; white-space:nowrap;">{{ pageTitle }}</h1>
+      </div>
+      <div style="margin-left:auto; display:flex; align-items:center; gap:14px;">
+        <div style="display:flex; align-items:center; gap:10px; min-width:280px; padding:0 16px; height:42px; background:var(--surface); border:1px solid var(--line); border-radius:12px;" style-hover="border-color:var(--line2);">
+          <span style="color:var(--muted); font-size:.9rem;">⌕</span>
+          <span style="font-size:.82rem; color:#6a6a6a; flex:1;">Search clients, coaches, sessions…</span>
+          <kbd style="font-family:var(--fm); font-size:.6rem; color:var(--muted); border:1px solid var(--line2); border-radius:5px; padding:2px 6px;">/</kbd>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px; padding:0 14px; height:42px; background:var(--surface); border:1px solid var(--line); border-radius:12px;">
+          <span style="width:7px; height:7px; border-radius:50%; background:var(--red); animation:mvpulse 2s ease-in-out infinite;"></span>
+          <span style="font-family:var(--fm); font-size:.62rem; letter-spacing:.14em; text-transform:uppercase; color:var(--muted2);">{{ nowLabel }}</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- content -->
+    <main class="mv-scroll" style="flex:1; overflow-y:auto; overflow-x:hidden;">
+      <div style="max-width:1180px; margin:0 auto; padding:28px;">
+
+        <!-- ==================== TODAY ==================== -->
+        <sc-if value="{{ isTodayView }}" hint-placeholder-val="{{ true }}">
+        <div style="display:grid; gap:20px;">
+
+          <!-- operational tiles -->
+          <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:0; border:1px solid var(--line); border-radius:18px; overflow:hidden; background:var(--surface);">
+            <div style="padding:18px 20px; border-right:1px solid var(--line);">
+              <div style="font-family:var(--fm); font-size:.58rem; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); margin-bottom:10px;">On floor now</div>
+              <div style="font-family:var(--fs); font-size:2rem; line-height:1; letter-spacing:-.03em;">{{ liveCount }}<span style="color:var(--red); font-size:1.1rem;"> live</span></div>
+              <div style="font-family:var(--fm); font-size:.62rem; color:var(--success); margin-top:8px;">{{ liveNames }}</div>
+            </div>
+            <div style="padding:18px 20px; border-right:1px solid var(--line);">
+              <div style="font-family:var(--fm); font-size:.58rem; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); margin-bottom:10px;">Coming today</div>
+              <div style="font-family:var(--fs); font-size:2rem; line-height:1; letter-spacing:-.03em;">{{ sessionsToday }}</div>
+              <div style="font-family:var(--fm); font-size:.62rem; color:var(--muted2); margin-top:8px;">{{ clientsExpected }} clients expected</div>
+            </div>
+            <div style="padding:18px 20px; border-right:1px solid var(--line);">
+              <div style="font-family:var(--fm); font-size:.58rem; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); margin-bottom:10px;">Trials today</div>
+              <div style="font-family:var(--fs); font-size:2rem; line-height:1; letter-spacing:-.03em; color:var(--red2);">{{ trialCount }}</div>
+              <div style="font-family:var(--fm); font-size:.62rem; color:var(--muted2); margin-top:8px;">Need an outcome</div>
+            </div>
+            <div style="padding:18px 20px; border-right:1px solid var(--line);">
+              <div style="font-family:var(--fm); font-size:.58rem; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); margin-bottom:10px;">Renew this week</div>
+              <div style="font-family:var(--fs); font-size:2rem; line-height:1; letter-spacing:-.03em; color:var(--warn);">{{ expiringCount }}</div>
+              <div style="font-family:var(--fm); font-size:.62rem; color:var(--muted2); margin-top:8px;">{{ expiringValue }} at stake</div>
+            </div>
+            <div style="padding:18px 20px;">
+              <div style="font-family:var(--fm); font-size:.58rem; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); margin-bottom:10px;">Cash today</div>
+              <div style="font-family:var(--fs); font-size:2rem; line-height:1; letter-spacing:-.03em; color:var(--success);">{{ cashTodayNet }}</div>
+              <div style="font-family:var(--fm); font-size:.62rem; color:var(--muted2); margin-top:8px;">{{ cashTodayCount }} payments in</div>
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:1.55fr 1fr; gap:20px; align-items:start;">
+            <!-- LEFT COLUMN -->
+            <div style="display:grid; gap:20px; min-width:0;">
+            <!-- today's floor -->
+            <section style="border:1px solid var(--line); border-radius:18px; background:var(--surface); overflow:hidden;">
+              <div style="padding:18px 22px; border-bottom:1px solid var(--line); display:flex; align-items:center; justify-content:space-between;">
+                <div>
+                  <h2 style="margin:0; font-family:var(--fd); font-size:1.05rem; font-weight:700;">Today's floor</h2>
+                  <div style="font-family:var(--fm); font-size:.62rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-top:3px;">{{ dateLong }}</div>
+                </div>
+                <button onClick="{{ goSchedule }}" style="min-height:34px; padding:0 14px; border-radius:9px; border:1px solid var(--line2); background:transparent; color:var(--muted2); font-family:var(--fb); font-size:.72rem; font-weight:700; cursor:pointer;" style-hover="color:#fff; border-color:var(--line3);">Full schedule →</button>
+              </div>
+              <div>
+                <sc-for list="{{ todaySessions }}" as="s" hint-placeholder-count="5">
+                  <div onClick="{{ s.open }}" style="display:grid; grid-template-columns:74px 1fr auto; gap:16px; padding:16px 22px; border-bottom:1px solid var(--line); cursor:pointer; align-items:center; {{ s.rowStyle }}" style-hover="background:rgba(255,255,255,.02);">
+                    <div style="font-family:var(--fm);">
+                      <div style="font-size:.92rem; color:#fff; font-weight:500;">{{ s.time }}</div>
+                      <div style="font-size:.56rem; letter-spacing:.14em; color:var(--muted); margin-top:3px;">{{ s.dur }}</div>
+                    </div>
+                    <div style="min-width:0;">
+                      <div style="display:flex; align-items:center; gap:9px; margin-bottom:5px;">
+                        <strong style="font-family:var(--fd); font-size:.98rem; font-weight:700; letter-spacing:-.01em; white-space:nowrap;">{{ s.category }}</strong>
+                        <span style="font-family:var(--fm); font-size:.54rem; letter-spacing:.12em; text-transform:uppercase; padding:2px 7px; border-radius:5px; border:1px solid var(--line2); color:var(--muted); {{ s.typeStyle }}">{{ s.type }}</span>
+                        <sc-if value="{{ s.isLive }}" hint-placeholder-val="{{ false }}"><span style="font-family:var(--fm); font-size:.54rem; letter-spacing:.12em; text-transform:uppercase; padding:2px 7px; border-radius:5px; background:rgba(230,36,41,.15); border:1px solid rgba(230,36,41,.4); color:var(--red2); animation:mvblink 1.6s ease-in-out infinite;">● Live</span></sc-if>
+                      </div>
+                      <div style="display:flex; align-items:center; gap:8px; font-size:.76rem; color:var(--muted2); white-space:nowrap;">
+                        <span style="width:22px; height:22px; border-radius:50%; display:grid; place-items:center; font-family:var(--fd); font-weight:700; font-size:.58rem; color:#fff; background:{{ s.coachGrad }}; flex-shrink:0;">{{ s.coachInitials }}</span>
+                        {{ s.coach }}
+                      </div>
+                    </div>
+                    <div style="text-align:right; display:grid; gap:8px; justify-items:end;">
+                      <div style="font-family:var(--fm); font-size:.72rem; color:var(--muted2);"><span style="color:var(--success); font-weight:700;">{{ s.present }}</span>/{{ s.total }} in</div>
+                      <div style="width:120px; height:6px; border-radius:99px; background:var(--surface3); overflow:hidden;"><i style="display:block; height:100%; width:{{ s.pct }}; background:linear-gradient(90deg,var(--red),var(--red2));"></i></div>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </section>
+
+              <!-- who's busy right now (left column) -->
+              <section style="border:1px solid var(--line); border-radius:18px; background:var(--surface); overflow:hidden;">
+                <div style="padding:16px 22px; border-bottom:1px solid var(--line); display:flex; align-items:center; justify-content:space-between;">
+                  <h2 style="margin:0; font-family:var(--fd); font-size:1rem; font-weight:700;">Who's busy right now</h2>
+                  <button onClick="{{ goCoaches }}" style="font-family:var(--fm); font-size:.6rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); background:transparent; border:0; cursor:pointer;" style-hover="color:#fff;">Availability →</button>
+                </div>
+                <div style="padding:6px 0;">
+                  <sc-for list="{{ coachNow }}" as="c" hint-placeholder-count="6">
+                    <div style="display:flex; align-items:center; gap:12px; padding:11px 22px; border-bottom:1px solid var(--line);">
+                      <span style="width:30px; height:30px; border-radius:50%; display:grid; place-items:center; font-family:var(--fd); font-weight:700; font-size:.66rem; color:#fff; background:{{ c.grad }}; flex-shrink:0;">{{ c.initials }}</span>
+                      <div style="width:150px;">
+                        <div style="font-size:.82rem; font-weight:600; white-space:nowrap;">{{ c.name }}</div>
+                        <div style="font-family:var(--fm); font-size:.58rem; color:var(--muted); text-transform:uppercase; letter-spacing:.08em;">{{ c.role }}</div>
+                      </div>
+                      <div style="flex:1; font-size:.74rem; color:var(--muted2);">{{ c.now }}</div>
+                      <span style="font-family:var(--fb); font-size:.62rem; font-weight:700; letter-spacing:.05em; text-transform:uppercase; padding:3px 10px; border-radius:99px; white-space:nowrap; {{ c.statusStyle }}">{{ c.status }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </section>
+            </div>
+
+            <!-- RIGHT COLUMN -->
+            <div style="display:grid; gap:20px; min-width:0;">
+              <!-- trials -->
+              <section style="border:1px solid rgba(230,36,41,.3); border-radius:18px; background:radial-gradient(circle at 90% 0%, rgba(230,36,41,.12), transparent 55%), var(--surface); overflow:hidden;">
+                <div style="padding:16px 20px; border-bottom:1px solid var(--line); display:flex; align-items:center; justify-content:space-between;">
+                  <h2 style="margin:0; font-family:var(--fd); font-size:1rem; font-weight:700;">Trials today</h2>
+                  <span style="font-family:var(--fm); font-size:.6rem; letter-spacing:.14em; text-transform:uppercase; color:var(--red2);">Decide & convert</span>
+                </div>
+                <div style="padding:6px 0;">
+                  <sc-for list="{{ trials }}" as="t" hint-placeholder-count="2">
+                    <div style="padding:14px 20px; border-bottom:1px solid var(--line);">
+                      <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+                        <span style="width:30px; height:30px; border-radius:50%; display:grid; place-items:center; font-family:var(--fd); font-weight:700; font-size:.66rem; color:#fff; background:{{ t.grad }};">{{ t.initials }}</span>
+                        <div style="flex:1; min-width:0;">
+                          <div style="font-size:.86rem; font-weight:600;">{{ t.name }}</div>
+                          <div style="font-family:var(--fm); font-size:.6rem; color:var(--muted); letter-spacing:.06em;">{{ t.time }} · {{ t.category }} · {{ t.type }}</div>
+                        </div>
+                        <span style="font-family:var(--fm); font-size:.56rem; letter-spacing:.1em; text-transform:uppercase; padding:2px 8px; border-radius:5px; {{ t.sourceStyle }}">{{ t.source }}</span>
+                      </div>
+                      <div style="display:flex; gap:8px;">
+                        <button style="flex:1; min-height:32px; border-radius:8px; border:0; cursor:pointer; font-family:var(--fb); font-size:.68rem; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:#fff; background:linear-gradient(135deg,var(--red),var(--red2));" style-hover="filter:brightness(1.08);">Subscribed</button>
+                        <button style="flex:1; min-height:32px; border-radius:8px; border:1px solid var(--line2); cursor:pointer; font-family:var(--fb); font-size:.68rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--muted2); background:transparent;" style-hover="color:#fff;">Follow up</button>
+                      </div>
+                    </div>
+                  </sc-for>
+                </div>
+              </section>
+
+              <!-- renewals -->
+              <section style="border:1px solid var(--line); border-radius:18px; background:var(--surface); overflow:hidden;">
+                <div style="padding:16px 20px; border-bottom:1px solid var(--line); display:flex; align-items:center; justify-content:space-between;">
+                  <h2 style="margin:0; font-family:var(--fd); font-size:1rem; font-weight:700;">Renew this week</h2>
+                  <button onClick="{{ goSubs }}" style="font-family:var(--fm); font-size:.6rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); background:transparent; border:0; cursor:pointer;" style-hover="color:#fff;">All →</button>
+                </div>
+                <div>
+                  <sc-for list="{{ renewSoon }}" as="r" hint-placeholder-count="4">
+                    <div style="display:flex; align-items:center; gap:11px; padding:12px 20px; border-bottom:1px solid var(--line);">
+                      <span style="width:28px; height:28px; border-radius:50%; display:grid; place-items:center; font-family:var(--fd); font-weight:700; font-size:.62rem; color:#fff; background:{{ r.grad }};">{{ r.initials }}</span>
+                      <div style="flex:1; min-width:0;">
+                        <div style="font-size:.82rem; font-weight:600;">{{ r.name }}</div>
+                        <div style="font-family:var(--fm); font-size:.58rem; color:var(--muted);">{{ r.plan }} · {{ r.amount }}</div>
+                      </div>
+                      <div style="text-align:right;">
+                        <div style="font-family:var(--fm); font-size:.66rem; font-weight:700; color:{{ r.dueColor }};">{{ r.due }}</div>
+                        <button style="margin-top:4px; min-height:24px; padding:0 10px; border-radius:6px; border:0; cursor:pointer; font-family:var(--fb); font-size:.6rem; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:#fff; background:var(--red);" style-hover="background:var(--red-deep);">Remind</button>
+                      </div>
+                    </div>
+                  </sc-for>
+                </div>
+              </section>
+
+              <!-- cash today -->
+              <section style="border:1px solid var(--line); border-radius:18px; background:var(--surface); overflow:hidden;">
+                <div style="padding:16px 20px; border-bottom:1px solid var(--line); display:flex; align-items:center; justify-content:space-between;">
+                  <h2 style="margin:0; font-family:var(--fd); font-size:1rem; font-weight:700;">Cash today</h2>
+                  <button onClick="{{ goSubs }}" style="font-family:var(--fm); font-size:.6rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); background:transparent; border:0; cursor:pointer;" style-hover="color:#fff;">Cash flow →</button>
+                </div>
+                <div style="padding:18px 20px; display:grid; gap:16px;">
+                  <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                    <div style="padding:12px 14px; border:1px solid var(--line); border-radius:12px;">
+                      <div style="font-family:var(--fm); font-size:.56rem; letter-spacing:.14em; text-transform:uppercase; color:var(--muted);">Cash in</div>
+                      <div style="font-family:var(--fs); font-size:1.4rem; color:var(--success); margin-top:6px;">{{ cashIn }}</div>
+                    </div>
+                    <div style="padding:12px 14px; border:1px solid var(--line); border-radius:12px;">
+                      <div style="font-family:var(--fm); font-size:.56rem; letter-spacing:.14em; text-transform:uppercase; color:var(--muted);">Cash out</div>
+                      <div style="font-family:var(--fs); font-size:1.4rem; color:var(--danger); margin-top:6px;">{{ cashOut }}</div>
+                    </div>
+                  </div>
+                  <div style="display:grid; gap:9px;">
+                    <sc-for list="{{ methodsToday }}" as="m" hint-placeholder-count="3">
+                      <div>
+                        <div style="display:flex; justify-content:space-between; font-family:var(--fm); font-size:.66rem; color:var(--muted2); margin-bottom:5px;"><span>{{ m.label }}</span><span style="color:#fff; font-weight:700;">{{ m.value }}</span></div>
+                        <div style="height:7px; border-radius:99px; background:var(--surface3); overflow:hidden;"><i style="display:block; height:100%; width:{{ m.pct }}; background:{{ m.color }};"></i></div>
+                      </div>
+                    </sc-for>
+                  </div>
+                  <button onClick="{{ goSubs }}" style="min-height:38px; border-radius:10px; border:1px dashed var(--line3); background:transparent; color:var(--muted2); font-family:var(--fb); font-size:.68rem; font-weight:800; letter-spacing:.06em; text-transform:uppercase; cursor:pointer;" style-hover="color:#fff; border-color:var(--muted);">+ Record cash out</button>
+                </div>
+              </section>
+            </div>
+          </div>
+
+        </div>
+        </sc-if>
+
+        <!-- ==================== ATTENDANCE ==================== -->
+        <sc-if value="{{ isAttendanceView }}" hint-placeholder-val="{{ false }}">
+        <div style="display:grid; gap:18px;">
+          <!-- session chips -->
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <sc-for list="{{ sessionChips }}" as="c" hint-placeholder-count="5">
+              <button onClick="{{ c.select }}" style="display:flex; align-items:center; gap:9px; min-height:44px; padding:0 16px; border-radius:12px; cursor:pointer; font-family:var(--fb); text-align:left; {{ c.chipStyle }}">
+                <span style="font-family:var(--fm); font-size:.78rem; font-weight:500;">{{ c.time }}</span>
+                <span style="width:1px; height:20px; background:var(--line2);"></span>
+                <span style="display:grid; gap:1px;">
+                  <span style="font-size:.78rem; font-weight:700; font-family:var(--fd);">{{ c.category }}</span>
+                  <span style="font-family:var(--fm); font-size:.56rem; color:var(--muted);">{{ c.present }}/{{ c.total }} in</span>
+                </span>
+              </button>
+            </sc-for>
+          </div>
+
+          <!-- selected session roster -->
+          <section style="border:1px solid var(--line); border-radius:18px; background:var(--surface); overflow:hidden;">
+            <div style="padding:18px 24px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:20px; background:linear-gradient(90deg, rgba(230,36,41,.06), transparent);">
+              <div style="flex:1;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                  <h2 style="margin:0; font-family:var(--fd); font-size:1.3rem; font-weight:700; letter-spacing:-.02em; white-space:nowrap;">{{ selCategory }}</h2>
+                  <span style="font-family:var(--fm); font-size:.56rem; letter-spacing:.12em; text-transform:uppercase; padding:2px 8px; border-radius:5px; border:1px solid var(--line2); color:var(--muted);">{{ selType }}</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px; margin-top:6px; font-size:.8rem; color:var(--muted2);">
+                  <span style="width:24px; height:24px; border-radius:50%; display:grid; place-items:center; font-family:var(--fd); font-weight:700; font-size:.6rem; color:#fff; background:{{ selCoachGrad }};">{{ selCoachInitials }}</span>
+                  {{ selCoach }} · {{ selTime }} · {{ selLocation }}
+                </div>
+              </div>
+              <div style="text-align:right;">
+                <div style="font-family:var(--fs); font-size:2.2rem; line-height:1; letter-spacing:-.03em;"><span style="color:var(--success);">{{ selPresent }}</span><span style="color:var(--muted);">/{{ selTotal }}</span></div>
+                <div style="font-family:var(--fm); font-size:.6rem; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin-top:4px;">Checked in</div>
+              </div>
+              <button onClick="{{ markAll }}" style="min-height:44px; padding:0 20px; border-radius:12px; border:0; cursor:pointer; font-family:var(--fb); font-size:.74rem; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:#fff; background:linear-gradient(135deg,var(--red),var(--red2)); box-shadow:0 12px 24px rgba(230,36,41,.28);" style-hover="filter:brightness(1.08);">✓ Mark all in</button>
+            </div>
+
+            <div style="padding:10px 12px 12px; font-family:var(--fm); font-size:.56rem; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); display:flex; gap:20px; padding-left:24px;">
+              <span>Tap a row to check in · use the flags for exceptions</span>
+            </div>
+
+            <div>
+              <sc-for list="{{ selRoster }}" as="p" hint-placeholder-count="8">
+                <div onClick="{{ p.tap }}" style="display:grid; grid-template-columns:44px 1fr auto; gap:14px; padding:12px 24px; border-top:1px solid var(--line); align-items:center; cursor:pointer; {{ p.rowStyle }}" style-hover="background:rgba(255,255,255,.02);">
+                  <span style="width:36px; height:36px; border-radius:10px; display:grid; place-items:center; font-family:var(--fd); font-weight:700; font-size:.78rem; {{ p.checkStyle }}">{{ p.checkGlyph }}</span>
+                  <div style="min-width:0;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                      <span style="font-size:.92rem; font-weight:600; white-space:nowrap;">{{ p.name }}</span>
+                      <sc-if value="{{ p.hasInjury }}" hint-placeholder-val="{{ false }}"><span style="font-family:var(--fm); font-size:.54rem; letter-spacing:.08em; text-transform:uppercase; padding:2px 7px; border-radius:5px; background:rgba(245,158,11,.12); border:1px solid rgba(245,158,11,.35); color:var(--warn);">⚠ {{ p.injury }}</span></sc-if>
+                      <sc-if value="{{ p.isTrial }}" hint-placeholder-val="{{ false }}"><span style="font-family:var(--fm); font-size:.54rem; letter-spacing:.08em; text-transform:uppercase; padding:2px 7px; border-radius:5px; background:rgba(230,36,41,.12); border:1px solid rgba(230,36,41,.35); color:var(--red2);">Trial</span></sc-if>
+                    </div>
+                    <div style="font-family:var(--fm); font-size:.62rem; color:var(--muted); margin-top:2px;">{{ p.meta }}</div>
+                  </div>
+                  <div style="display:flex; gap:6px;" onClick="{{ p.stop }}">
+                    <button onClick="{{ p.setAbsent }}" title="Absent" style="width:34px; height:34px; border-radius:9px; cursor:pointer; font-family:var(--fb); font-weight:800; font-size:.8rem; {{ p.absentStyle }}">✕</button>
+                    <button onClick="{{ p.setLate }}" title="Late" style="width:34px; height:34px; border-radius:9px; cursor:pointer; font-family:var(--fb); font-weight:800; font-size:.66rem; {{ p.lateStyle }}">L</button>
+                    <button onClick="{{ p.setNoshow }}" title="No-show" style="width:34px; height:34px; border-radius:9px; cursor:pointer; font-family:var(--fb); font-weight:800; font-size:.66rem; {{ p.noshowStyle }}">N</button>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+
+            <div style="padding:16px 24px; border-top:1px solid var(--line2); display:flex; align-items:center; gap:20px; background:var(--bg2);">
+              <div style="display:flex; gap:18px; font-family:var(--fm); font-size:.68rem;">
+                <span style="color:var(--success);">● {{ selPresent }} in</span>
+                <span style="color:var(--danger);">● {{ selAbsent }} absent</span>
+                <span style="color:var(--warn);">● {{ selLate }} late</span>
+                <span style="color:var(--muted);">● {{ selPending }} pending</span>
+              </div>
+              <button style="margin-left:auto; min-height:36px; padding:0 16px; border-radius:9px; border:1px solid rgba(37,211,102,.4); background:rgba(37,211,102,.1); color:var(--success); font-family:var(--fb); font-size:.7rem; font-weight:800; letter-spacing:.06em; text-transform:uppercase; cursor:pointer;" style-hover="background:rgba(37,211,102,.16);">Send summary to coach</button>
+            </div>
+          </section>
+        </div>
+        </sc-if>
+
+        <!-- ==================== SCHEDULE ==================== -->
+        <sc-if value="{{ isScheduleView }}" hint-placeholder-val="{{ false }}">
+        <div style="display:grid; grid-template-columns:1fr 320px; gap:20px; align-items:start;">
+          <section style="border:1px solid var(--line); border-radius:18px; background:var(--surface); overflow:hidden;">
+            <div style="padding:16px 22px; border-bottom:1px solid var(--line); display:flex; align-items:center; justify-content:space-between;">
+              <div>
+                <h2 style="margin:0; font-family:var(--fd); font-size:1.05rem; font-weight:700;">Recurring week</h2>
+                <div style="font-family:var(--fm); font-size:.62rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-top:3px;">Every week · permanent groups</div>
+              </div>
+              <div style="display:flex; gap:6px;">
+                <button style="width:32px; height:32px; border-radius:8px; border:1px solid var(--line2); background:transparent; color:#fff; cursor:pointer;" style-hover="background:rgba(255,255,255,.05);">‹</button>
+                <button style="width:32px; height:32px; border-radius:8px; border:1px solid var(--line2); background:transparent; color:#fff; cursor:pointer;" style-hover="background:rgba(255,255,255,.05);">›</button>
+              </div>
+            </div>
+            <div style="overflow-x:auto;" class="mv-scroll">
+            <div style="min-width:640px;">
+              <div style="display:grid; grid-template-columns:56px repeat(7,1fr); border-bottom:1px solid var(--line);">
+                <div></div>
+                <sc-for list="{{ weekDays }}" as="d" hint-placeholder-count="7">
+                  <div style="padding:12px 8px; text-align:center; font-family:var(--fm); font-size:.62rem; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); border-left:1px solid var(--line);">{{ d }}</div>
+                </sc-for>
+              </div>
+              <sc-for list="{{ schedGrid }}" as="row" hint-placeholder-count="6">
+                <div style="display:grid; grid-template-columns:56px repeat(7,1fr); border-bottom:1px solid var(--line); min-height:60px;">
+                  <div style="padding:8px 6px; font-family:var(--fm); font-size:.62rem; color:var(--muted2); display:flex; align-items:center; justify-content:center;">{{ row.time }}</div>
+                  <sc-for list="{{ row.cells }}" as="cell" hint-placeholder-count="7">
+                    <div style="border-left:1px solid var(--line); padding:5px;">
+                      <sc-if value="{{ cell.notEmpty }}" hint-placeholder-val="{{ true }}">
+                        <div style="height:100%; border-radius:8px; padding:7px 9px; {{ cell.style }}">
+                          <div style="display:flex; align-items:center; gap:5px;">
+                            <span style="font-family:var(--fd); font-size:.68rem; font-weight:700; line-height:1.15;">{{ cell.cat }}</span>
+                            <sc-if value="{{ cell.isLive }}" hint-placeholder-val="{{ false }}"><span style="width:6px; height:6px; border-radius:50%; background:var(--red); animation:mvblink 1.4s infinite;"></span></sc-if>
+                          </div>
+                          <div style="font-family:var(--fm); font-size:.54rem; color:var(--muted2); margin-top:4px;">{{ cell.coach }}</div>
+                        </div>
+                      </sc-if>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-for>
+            </div>
+            </div>
+          </section>
+
+          <section style="border:1px solid var(--line); border-radius:18px; background:var(--surface); overflow:hidden;">
+            <div style="padding:16px 20px; border-bottom:1px solid var(--line);">
+              <h2 style="margin:0; font-family:var(--fd); font-size:1rem; font-weight:700;">Change requests</h2>
+              <div style="font-family:var(--fm); font-size:.6rem; letter-spacing:.1em; text-transform:uppercase; color:var(--warn); margin-top:3px;">3 waiting · one-off vs recurring</div>
+            </div>
+            <div>
+              <sc-for list="{{ scheduleChanges }}" as="ch" hint-placeholder-count="3">
+                <div style="padding:15px 20px; border-bottom:1px solid var(--line);">
+                  <div style="display:flex; align-items:center; gap:10px; margin-bottom:9px;">
+                    <span style="width:28px; height:28px; border-radius:50%; display:grid; place-items:center; font-family:var(--fd); font-weight:700; font-size:.62rem; color:#fff; background:{{ ch.grad }};">{{ ch.initials }}</span>
+                    <div style="flex:1; min-width:0;"><div style="font-size:.82rem; font-weight:600;">{{ ch.name }}</div><div style="font-family:var(--fm); font-size:.58rem; color:var(--muted);">{{ ch.reason }}</div></div>
+                    <span style="font-family:var(--fm); font-size:.52rem; letter-spacing:.1em; text-transform:uppercase; padding:2px 7px; border-radius:5px; {{ ch.kindStyle }}">{{ ch.kind }}</span>
+                  </div>
+                  <div style="font-size:.78rem; color:var(--muted2); margin-bottom:10px; padding-left:38px;">{{ ch.detail }}</div>
+                  <div style="display:flex; gap:8px; padding-left:38px;">
+                    <button style="flex:1; min-height:30px; border-radius:7px; border:0; cursor:pointer; font-family:var(--fb); font-size:.64rem; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:#fff; background:var(--red);" style-hover="background:var(--red-deep);">Approve</button>
+                    <button style="flex:1; min-height:30px; border-radius:7px; border:1px solid var(--line2); cursor:pointer; font-family:var(--fb); font-size:.64rem; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--muted2); background:transparent;" style-hover="color:#fff;">Decline</button>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </section>
+        </div>
+        </sc-if>
+
+        <!-- ==================== COACHES ==================== -->
+        <sc-if value="{{ isCoachesView }}" hint-placeholder-val="{{ false }}">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+          <sc-for list="{{ coachCards }}" as="c" hint-placeholder-count="6">
+            <section style="border:1px solid var(--line); border-radius:18px; background:var(--surface); padding:20px;">
+              <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+                <span style="width:42px; height:42px; border-radius:50%; display:grid; place-items:center; font-family:var(--fd); font-weight:700; font-size:.86rem; color:#fff; background:{{ c.grad }}; flex-shrink:0;">{{ c.initials }}</span>
+                <div style="flex:1; min-width:0;">
+                  <div style="font-family:var(--fd); font-size:1rem; font-weight:700; white-space:nowrap;">{{ c.name }}</div>
+                  <div style="font-family:var(--fm); font-size:.6rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ c.role }} · {{ c.cats }}</div>
+                </div>
+                <div style="text-align:right; flex-shrink:0;"><div style="font-family:var(--fm); font-size:.66rem; color:var(--success); font-weight:700; white-space:nowrap;">{{ c.free }}</div><div style="font-family:var(--fm); font-size:.56rem; color:var(--muted); margin-top:2px; white-space:nowrap;">{{ c.today }}</div></div>
+              </div>
+              <div style="display:flex; align-items:flex-end; gap:4px; height:44px; margin-bottom:14px;">
+                <sc-for list="{{ c.timeline }}" as="b" hint-placeholder-count="7">
+                  <div style="flex:1; display:grid; gap:3px; justify-items:center;">
+                    <div style="width:100%; height:28px; border-radius:4px; {{ b.style }}"></div>
+                    <span style="font-family:var(--fm); font-size:.5rem; color:var(--muted);">{{ b.h }}</span>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="display:grid; grid-template-columns:auto 1fr; gap:10px; align-items:center;">
+                <div style="display:flex; gap:16px;">
+                  <div><div style="font-family:var(--fs); font-size:1.2rem;">{{ c.week }}</div><div style="font-family:var(--fm); font-size:.54rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted);">Sessions/wk</div></div>
+                  <div><div style="font-family:var(--fs); font-size:1.2rem;">{{ c.clients }}</div><div style="font-family:var(--fm); font-size:.54rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted);">Clients</div></div>
+                </div>
+                <div>
+                  <div style="display:flex; justify-content:space-between; font-family:var(--fm); font-size:.58rem; color:var(--muted); margin-bottom:4px;"><span>Weekly load</span><span style="color:{{ c.loadColor }};">{{ c.loadPct }}</span></div>
+                  <div style="height:6px; border-radius:99px; background:var(--surface3); overflow:hidden;"><i style="display:block; height:100%; width:{{ c.loadPct }}; background:{{ c.loadColor }};"></i></div>
+                </div>
+              </div>
+            </section>
+          </sc-for>
+        </div>
+        </sc-if>
+
+        <!-- ==================== SUBSCRIPTIONS ==================== -->
+        <sc-if value="{{ isSubsView }}" hint-placeholder-val="{{ false }}">
+        <div style="display:grid; gap:20px;">
+          <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:0; border:1px solid var(--line); border-radius:18px; overflow:hidden; background:var(--surface);">
+            <sc-for list="{{ subTiles }}" as="tile" hint-placeholder-count="4">
+              <div style="padding:18px 20px; border-right:1px solid var(--line);">
+                <div style="font-family:var(--fm); font-size:.58rem; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); margin-bottom:10px;">{{ tile.label }}</div>
+                <div style="font-family:var(--fs); font-size:2.1rem; line-height:1; letter-spacing:-.03em; color:{{ tile.color }};">{{ tile.value }}</div>
+                <div style="font-family:var(--fm); font-size:.6rem; color:var(--muted2); margin-top:8px;">{{ tile.sub }}</div>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="display:grid; grid-template-columns:1.5fr 1fr; gap:20px; align-items:start;">
+            <section style="border:1px solid var(--line); border-radius:18px; background:var(--surface); overflow:hidden;">
+              <div style="padding:16px 22px; border-bottom:1px solid var(--line); display:flex; align-items:center; justify-content:space-between;">
+                <h2 style="margin:0; font-family:var(--fd); font-size:1rem; font-weight:700;">Members & renewals</h2>
+                <div style="display:flex; gap:6px;">
+                  <span style="font-family:var(--fm); font-size:.58rem; padding:4px 10px; border-radius:99px; background:rgba(245,158,11,.1); border:1px solid rgba(245,158,11,.3); color:var(--warn);">Expiring first</span>
+                </div>
+              </div>
+              <div style="display:grid; grid-template-columns:1.4fr .9fr .8fr .7fr auto; gap:10px; padding:11px 22px; border-bottom:1px solid var(--line); font-family:var(--fm); font-size:.54rem; letter-spacing:.14em; text-transform:uppercase; color:var(--muted);">
+                <span>Member</span><span>Plan</span><span>Method</span><span>Renews</span><span></span>
+              </div>
+              <sc-for list="{{ subs }}" as="s" hint-placeholder-count="9">
+                <div style="display:grid; grid-template-columns:1.4fr .9fr .8fr .7fr auto; gap:10px; padding:13px 22px; border-bottom:1px solid var(--line); align-items:center;">
+                  <div style="display:flex; align-items:center; gap:10px; min-width:0;">
+                    <span style="width:30px; height:30px; border-radius:50%; display:grid; place-items:center; font-family:var(--fd); font-weight:700; font-size:.62rem; color:#fff; background:{{ s.grad }}; flex-shrink:0;">{{ s.initials }}</span>
+                    <div style="min-width:0;"><div style="font-size:.82rem; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ s.name }}</div><span style="font-family:var(--fm); font-size:.56rem; font-weight:700; letter-spacing:.04em; text-transform:uppercase; padding:1px 6px; border-radius:4px; {{ s.statusStyle }}">{{ s.status }}</span></div>
+                  </div>
+                  <div style="font-size:.76rem; color:var(--muted2);">{{ s.plan }}<div style="font-family:var(--fm); font-size:.62rem; color:#fff; margin-top:2px;">{{ s.amount }}</div></div>
+                  <div><span style="font-family:var(--fm); font-size:.56rem; font-weight:700; letter-spacing:.06em; padding:3px 8px; border-radius:6px; {{ s.methodStyle }}">{{ s.method }}</span></div>
+                  <div style="font-family:var(--fm); font-size:.68rem; color:{{ s.dueColor }};">{{ s.due }}<div style="font-size:.56rem; color:var(--muted); margin-top:2px;">{{ s.expiry }}</div></div>
+                  <button style="min-height:28px; padding:0 12px; border-radius:7px; border:0; cursor:pointer; font-family:var(--fb); font-size:.62rem; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:#fff; background:var(--red);" style-hover="background:var(--red-deep);">{{ s.cta }}</button>
+                </div>
+              </sc-for>
+            </section>
+
+            <div style="display:grid; gap:20px;">
+              <section style="border:1px solid var(--line); border-radius:18px; background:var(--surface); padding:20px;">
+                <h2 style="margin:0 0 16px; font-family:var(--fd); font-size:1rem; font-weight:700;">Cash flow · February</h2>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px;">
+                  <div style="padding:12px 14px; border:1px solid var(--line); border-radius:12px;"><div style="font-family:var(--fm); font-size:.54rem; letter-spacing:.12em; text-transform:uppercase; color:var(--muted);">Cash in</div><div style="font-family:var(--fs); font-size:1.15rem; color:var(--success); margin-top:5px;">{{ cashInMonth }}</div></div>
+                  <div style="padding:12px 14px; border:1px solid var(--line); border-radius:12px;"><div style="font-family:var(--fm); font-size:.54rem; letter-spacing:.12em; text-transform:uppercase; color:var(--muted);">Cash out</div><div style="font-family:var(--fs); font-size:1.15rem; color:var(--danger); margin-top:5px;">{{ cashOutMonth }}</div></div>
+                </div>
+                <div style="padding:14px; border:1px solid rgba(37,211,102,.25); border-radius:12px; background:rgba(37,211,102,.05); margin-bottom:18px;">
+                  <div style="font-family:var(--fm); font-size:.54rem; letter-spacing:.12em; text-transform:uppercase; color:var(--muted);">Net this month</div><div style="font-family:var(--fs); font-size:1.6rem; color:var(--success); margin-top:5px;">{{ cashNetMonth }}</div>
+                </div>
+                <div style="font-family:var(--fm); font-size:.56rem; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin-bottom:12px;">By method</div>
+                <div style="display:grid; gap:9px;">
+                  <sc-for list="{{ methodSplit }}" as="m" hint-placeholder-count="3">
+                    <div><div style="display:flex; justify-content:space-between; font-family:var(--fm); font-size:.64rem; color:var(--muted2); margin-bottom:5px;"><span>{{ m.label }}</span><span style="color:#fff; font-weight:700;">{{ m.value }}</span></div><div style="height:7px; border-radius:99px; background:var(--surface3); overflow:hidden;"><i style="display:block; height:100%; width:{{ m.pct }}; background:{{ m.color }};"></i></div></div>
+                  </sc-for>
+                </div>
+              </section>
+
+              <section style="border:1px solid var(--line); border-radius:18px; background:var(--surface); overflow:hidden;">
+                <div style="padding:14px 20px; border-bottom:1px solid var(--line);"><h2 style="margin:0; font-family:var(--fd); font-size:.95rem; font-weight:700;">Recent transactions</h2></div>
+                <sc-for list="{{ cashLedger }}" as="tx" hint-placeholder-count="6">
+                  <div style="display:flex; align-items:center; gap:10px; padding:11px 20px; border-bottom:1px solid var(--line);">
+                    <span style="width:24px; height:24px; border-radius:7px; display:grid; place-items:center; font-family:var(--fd); font-weight:800; font-size:.72rem; {{ tx.iconStyle }}">{{ tx.icon }}</span>
+                    <div style="flex:1; min-width:0;"><div style="font-size:.74rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ tx.label }}</div><div style="font-family:var(--fm); font-size:.56rem; color:var(--muted);">{{ tx.time }} · {{ tx.method }}</div></div>
+                    <span style="font-family:var(--fm); font-size:.74rem; font-weight:700; color:{{ tx.amountColor }};">{{ tx.amount }}</span>
+                  </div>
+                </sc-for>
+              </section>
+            </div>
+          </div>
+        </div>
+        </sc-if>
+
+        <!-- ==================== LEADS ==================== -->
+        <sc-if value="{{ isLeadsView }}" hint-placeholder-val="{{ false }}">
+        <div style="display:grid; gap:18px;">
+          <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+            <sc-for list="{{ leadSources }}" as="src" hint-placeholder-count="4">
+              <div style="display:flex; align-items:center; gap:9px; padding:9px 15px; border:1px solid var(--line); border-radius:12px; background:var(--surface);">
+                <span style="width:9px; height:9px; border-radius:50%; background:{{ src.color }};"></span>
+                <span style="font-family:var(--fb); font-size:.76rem; font-weight:600;">{{ src.label }}</span>
+                <span style="font-family:var(--fs); font-size:.9rem; margin-left:4px;">{{ src.count }}</span>
+              </div>
+            </sc-for>
+            <button style="margin-left:auto; min-height:40px; padding:0 18px; border-radius:11px; border:0; cursor:pointer; font-family:var(--fb); font-size:.72rem; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:#fff; background:linear-gradient(135deg,var(--red),var(--red2)); box-shadow:0 10px 22px rgba(230,36,41,.25);" style-hover="filter:brightness(1.08);">+ Add lead</button>
+          </div>
+
+          <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:14px; align-items:start;">
+            <sc-for list="{{ leadCols }}" as="col" hint-placeholder-count="5">
+              <div style="border:1px solid var(--line); border-radius:16px; background:var(--bg2); overflow:hidden;">
+                <div style="padding:13px 15px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:8px;">
+                  <span style="width:7px; height:7px; border-radius:50%; background:{{ col.accent }};"></span>
+                  <span style="font-family:var(--fm); font-size:.6rem; letter-spacing:.12em; text-transform:uppercase; color:var(--muted2); font-weight:700;">{{ col.stage }}</span>
+                  <span style="margin-left:auto; font-family:var(--fm); font-size:.66rem; color:var(--muted); font-weight:700;">{{ col.count }}</span>
+                </div>
+                <div style="padding:10px; display:grid; gap:10px;">
+                  <sc-for list="{{ col.leads }}" as="l" hint-placeholder-count="2">
+                    <div style="border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:12px;" style-hover="border-color:var(--line2);">
+                      <div style="display:flex; align-items:center; gap:9px; margin-bottom:9px;">
+                        <span style="width:28px; height:28px; border-radius:50%; display:grid; place-items:center; font-family:var(--fd); font-weight:700; font-size:.6rem; color:#fff; background:{{ l.grad }}; flex-shrink:0;">{{ l.initials }}</span>
+                        <div style="min-width:0;"><div style="font-size:.78rem; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ l.name }}</div><div style="font-family:var(--fm); font-size:.56rem; color:var(--muted);">{{ l.interest }}</div></div>
+                      </div>
+                      <span style="display:inline-block; font-family:var(--fm); font-size:.52rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; padding:2px 7px; border-radius:5px; margin-bottom:8px; {{ l.sourceStyle }}">{{ l.source }}</span>
+                      <sc-if value="{{ l.hasInjury }}" hint-placeholder-val="{{ false }}"><div style="font-family:var(--fm); font-size:.56rem; color:var(--warn); margin-bottom:6px;">⚠ {{ l.injury }}</div></sc-if>
+                      <div style="font-size:.68rem; color:var(--muted2); line-height:1.4; margin-bottom:9px;">{{ l.note }}</div>
+                      <div style="display:flex; align-items:center; gap:6px; font-family:var(--fm); font-size:.58rem; color:var(--muted); padding-top:8px; border-top:1px solid var(--line);">
+                        <span style="color:var(--success);">✆</span> {{ l.phone }}
+                      </div>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        </sc-if>
+
+        <!-- ==================== GROUPS ==================== -->
+        <sc-if value="{{ isGroupsView }}" hint-placeholder-val="{{ false }}">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+          <sc-for list="{{ groups }}" as="g" hint-placeholder-count="5">
+            <section style="border:1px solid var(--line); border-radius:18px; background:var(--surface); padding:22px; position:relative; overflow:hidden;">
+              <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:16px;">
+                <div>
+                  <h2 style="margin:0; font-family:var(--fd); font-size:1.25rem; font-weight:700; letter-spacing:-.02em;">{{ g.name }}</h2>
+                  <div style="font-family:var(--fm); font-size:.62rem; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin-top:5px;">{{ g.days }}</div>
+                </div>
+                <sc-if value="{{ g.full }}" hint-placeholder-val="{{ false }}"><span style="font-family:var(--fb); font-size:.6rem; font-weight:800; letter-spacing:.06em; text-transform:uppercase; padding:3px 10px; border-radius:99px; background:rgba(239,68,68,.12); border:1px solid rgba(239,68,68,.4); color:var(--danger);">Full</span></sc-if>
+              </div>
+              <div style="display:grid; grid-template-columns:repeat(3,1fr); border-top:1px solid var(--line); border-bottom:1px solid var(--line); padding:14px 0; margin-bottom:16px;">
+                <div style="border-right:1px solid var(--line); padding-right:14px;"><div style="font-family:var(--fm); font-size:.54rem; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin-bottom:4px;">Time</div><div style="font-family:var(--fd); font-weight:700; font-size:.92rem;">{{ g.time }}</div></div>
+                <div style="border-right:1px solid var(--line); padding:0 14px;"><div style="font-family:var(--fm); font-size:.54rem; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin-bottom:4px;">Location</div><div style="font-family:var(--fd); font-weight:700; font-size:.92rem;">{{ g.location }}</div></div>
+                <div style="padding-left:14px;"><div style="font-family:var(--fm); font-size:.54rem; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin-bottom:4px;">Spots</div><div style="font-family:var(--fd); font-weight:700; font-size:.92rem;">{{ g.spots }} open</div></div>
+              </div>
+              <div style="display:flex; align-items:center; gap:12px;">
+                <span style="width:32px; height:32px; border-radius:50%; display:grid; place-items:center; font-family:var(--fd); font-weight:700; font-size:.68rem; color:#fff; background:{{ g.coachGrad }};">{{ g.initials }}</span>
+                <div style="flex:1;"><div style="font-size:.8rem; font-weight:600;">{{ g.coach }}</div><div style="font-family:var(--fm); font-size:.58rem; color:var(--muted);">{{ g.members }}/{{ g.capacity }} members</div></div>
+                <div style="width:120px;"><div style="height:7px; border-radius:99px; background:var(--surface3); overflow:hidden;"><i style="display:block; height:100%; width:{{ g.pct }}; background:{{ g.barColor }};"></i></div></div>
+              </div>
+            </section>
+          </sc-for>
+        </div>
+        </sc-if>
+
+        <!-- ==================== CLIENTS ==================== -->
+        <sc-if value="{{ isClientsView }}" hint-placeholder-val="{{ false }}">
+        <section style="border:1px solid var(--line); border-radius:18px; background:var(--surface); overflow:hidden;">
+          <div style="padding:16px 22px; border-bottom:1px solid var(--line); display:flex; align-items:center; justify-content:space-between;">
+            <h2 style="margin:0; font-family:var(--fd); font-size:1.05rem; font-weight:700;">Client roster</h2>
+            <button style="min-height:38px; padding:0 16px; border-radius:10px; border:0; cursor:pointer; font-family:var(--fb); font-size:.72rem; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:#fff; background:linear-gradient(135deg,var(--red),var(--red2));" style-hover="filter:brightness(1.08);">+ New client</button>
+          </div>
+          <div style="display:grid; grid-template-columns:1.3fr 1fr .9fr .7fr .9fr; gap:12px; padding:11px 22px; border-bottom:1px solid var(--line); font-family:var(--fm); font-size:.54rem; letter-spacing:.14em; text-transform:uppercase; color:var(--muted);">
+            <span>Client</span><span>Category</span><span>Coach</span><span>Status</span><span>Phone</span>
+          </div>
+          <sc-for list="{{ clients }}" as="cl" hint-placeholder-count="10">
+            <div style="display:grid; grid-template-columns:1.3fr 1fr .9fr .7fr .9fr; gap:12px; padding:13px 22px; border-bottom:1px solid var(--line); align-items:center;" style-hover="background:rgba(255,255,255,.02);">
+              <div style="display:flex; align-items:center; gap:10px; min-width:0;">
+                <span style="width:32px; height:32px; border-radius:50%; display:grid; place-items:center; font-family:var(--fd); font-weight:700; font-size:.66rem; color:#fff; background:{{ cl.grad }}; flex-shrink:0;">{{ cl.initials }}</span>
+                <div style="min-width:0;"><div style="font-size:.84rem; font-weight:600;">{{ cl.name }}</div><sc-if value="{{ cl.hasInjury }}" hint-placeholder-val="{{ false }}"><div style="font-family:var(--fm); font-size:.56rem; color:var(--warn);">⚠ {{ cl.injury }}</div></sc-if></div>
+              </div>
+              <div style="font-size:.78rem; color:var(--muted2);">{{ cl.category }}<div style="font-family:var(--fm); font-size:.56rem; color:var(--muted); margin-top:2px;">{{ cl.type }}</div></div>
+              <div style="display:flex; align-items:center; gap:8px;"><span style="width:24px; height:24px; border-radius:50%; display:grid; place-items:center; font-family:var(--fd); font-weight:700; font-size:.56rem; color:#fff; background:{{ cl.coachGrad }};">{{ cl.coachInitials }}</span><span style="font-size:.74rem; color:var(--muted2);">{{ cl.coach }}</span></div>
+              <div><span style="font-family:var(--fb); font-size:.6rem; font-weight:700; letter-spacing:.04em; text-transform:uppercase; padding:3px 9px; border-radius:99px; {{ cl.statusStyle }}">{{ cl.status }}</span></div>
+              <div style="font-family:var(--fm); font-size:.68rem; color:var(--muted2);">{{ cl.phone }}</div>
+            </div>
+          </sc-for>
+        </section>
+        </sc-if>
+
+        <!-- ==================== COACH · TODAY ==================== -->
+        <sc-if value="{{ isCoachTodayView }}" hint-placeholder-val="{{ false }}">
+        <div style="display:grid; gap:20px;">
+          <div style="display:flex; align-items:center; gap:16px; padding:22px 24px; border:1px solid var(--line); border-radius:18px; background:radial-gradient(circle at 92% 0%, rgba(230,36,41,.12), transparent 55%), var(--surface);">
+            <span style="width:52px; height:52px; border-radius:50%; display:grid; place-items:center; font-family:var(--fd); font-weight:700; font-size:1.05rem; color:#fff; background:{{ selfGrad }};">{{ selfInitials }}</span>
+            <div style="flex:1;">
+              <h2 style="margin:0; font-family:var(--fd); font-size:1.35rem; font-weight:700; letter-spacing:-.02em;">Morning, {{ selfName }}</h2>
+              <div style="font-family:var(--fm); font-size:.64rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-top:4px;">{{ selfRole }} · Thursday 16 July</div>
+            </div>
+            <div style="display:flex; gap:24px; text-align:center;">
+              <div><div style="font-family:var(--fs); font-size:1.5rem;">{{ myWeekCount }}</div><div style="font-family:var(--fm); font-size:.54rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted);">Sessions/wk</div></div>
+              <div><div style="font-family:var(--fs); font-size:1.5rem; color:var(--red2);">{{ myClientCount }}</div><div style="font-family:var(--fm); font-size:.54rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted);">My clients</div></div>
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:1.5fr 1fr; gap:20px; align-items:start;">
+            <section style="border:1px solid var(--line); border-radius:18px; background:var(--surface); overflow:hidden;">
+              <div style="padding:16px 22px; border-bottom:1px solid var(--line);"><h2 style="margin:0; font-family:var(--fd); font-size:1rem; font-weight:700;">My sessions today</h2></div>
+              <sc-for list="{{ mySessions }}" as="s" hint-placeholder-count="1">
+                <div style="padding:18px 22px;">
+                  <div style="display:flex; align-items:center; gap:14px; margin-bottom:14px;">
+                    <div style="font-family:var(--fm);"><div style="font-size:1.1rem; color:#fff;">{{ s.time }}</div><div style="font-size:.56rem; letter-spacing:.14em; color:var(--muted); margin-top:2px;">{{ s.dur }}</div></div>
+                    <div style="flex:1;"><div style="display:flex; align-items:center; gap:8px;"><strong style="font-family:var(--fd); font-size:1.1rem; font-weight:700;">{{ s.category }}</strong><sc-if value="{{ s.isLive }}" hint-placeholder-val="{{ false }}"><span style="font-family:var(--fm); font-size:.54rem; letter-spacing:.12em; text-transform:uppercase; padding:2px 7px; border-radius:5px; background:rgba(230,36,41,.15); border:1px solid rgba(230,36,41,.4); color:var(--red2); animation:mvblink 1.6s infinite;">● Live</span></sc-if></div><div style="font-family:var(--fm); font-size:.64rem; color:var(--muted); margin-top:3px;">{{ s.type }} · {{ s.location }} · {{ s.present }}/{{ s.total }} in</div></div>
+                    <button onClick="{{ s.open }}" style="min-height:40px; padding:0 18px; border-radius:11px; border:0; cursor:pointer; font-family:var(--fb); font-size:.72rem; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:#fff; background:linear-gradient(135deg,var(--red),var(--red2));" style-hover="filter:brightness(1.08);">Mark attendance</button>
+                  </div>
+                  <div style="border-top:1px solid var(--line); padding-top:12px; display:flex; flex-wrap:wrap; gap:8px;">
+                    <sc-for list="{{ s.roster }}" as="p" hint-placeholder-count="8">
+                      <span style="display:inline-flex; align-items:center; gap:6px; padding:5px 11px; border-radius:99px; border:1px solid var(--line2); font-size:.72rem; color:var(--muted2); {{ p.chipStyle }}">{{ p.name }}<sc-if value="{{ p.hasInjury }}" hint-placeholder-val="{{ false }}"><span style="color:var(--warn); font-size:.62rem;">⚠</span></sc-if></span>
+                    </sc-for>
+                  </div>
+                </div>
+              </sc-for>
+            </section>
+
+            <div style="display:grid; gap:20px;">
+              <section style="border:1px solid rgba(245,158,11,.3); border-radius:18px; background:var(--surface); overflow:hidden;">
+                <div style="padding:15px 20px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:8px;"><span style="color:var(--warn);">⚠</span><h2 style="margin:0; font-family:var(--fd); font-size:.95rem; font-weight:700;">Injuries to watch</h2></div>
+                <sc-for list="{{ myNotes }}" as="n" hint-placeholder-count="2">
+                  <div style="display:flex; align-items:center; gap:11px; padding:13px 20px; border-bottom:1px solid var(--line);">
+                    <span style="width:8px; height:8px; border-radius:50%; background:var(--warn); flex-shrink:0;"></span>
+                    <div style="flex:1;"><div style="font-size:.82rem; font-weight:600;">{{ n.name }}</div><div style="font-family:var(--fm); font-size:.6rem; color:var(--warn);">{{ n.injury }}</div></div>
+                    <span style="font-family:var(--fm); font-size:.56rem; letter-spacing:.08em; text-transform:uppercase; color:var(--muted);">{{ n.cat }}</span>
+                  </div>
+                </sc-for>
+              </section>
+
+              <section style="border:1px solid var(--line); border-radius:18px; background:var(--surface); overflow:hidden;">
+                <div style="padding:15px 20px; border-bottom:1px solid var(--line);"><h2 style="margin:0; font-family:var(--fd); font-size:.95rem; font-weight:700;">Schedule changes</h2></div>
+                <sc-for list="{{ myChanges }}" as="ch" hint-placeholder-count="1">
+                  <div style="padding:14px 20px;">
+                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;"><span style="font-size:.82rem; font-weight:600;">{{ ch.name }}</span><span style="font-family:var(--fm); font-size:.52rem; letter-spacing:.1em; text-transform:uppercase; padding:2px 7px; border-radius:5px; background:rgba(255,255,255,.05); border:1px solid var(--line2); color:var(--muted2);">{{ ch.kind }}</span></div>
+                    <div style="font-size:.76rem; color:var(--muted2);">{{ ch.detail }}</div>
+                  </div>
+                </sc-for>
+              </section>
+            </div>
+          </div>
+        </div>
+        </sc-if>
+
+        <!-- ==================== COACH · PHONE ==================== -->
+        <sc-if value="{{ isCoachPhoneView }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex; gap:32px; align-items:flex-start; justify-content:center; padding:10px 0;">
+          <div style="width:340px; flex-shrink:0;">
+            <div style="position:relative; width:340px; height:720px; border-radius:52px; background:#000; border:10px solid #1a1a1a; box-shadow:0 40px 90px rgba(0,0,0,.6), inset 0 0 0 2px #2a2a2a; overflow:hidden;">
+              <div style="position:absolute; top:14px; left:50%; transform:translateX(-50%); width:110px; height:28px; background:#000; border-radius:99px; z-index:5;"></div>
+              <div class="mv-scroll" style="position:absolute; inset:0; overflow-y:auto; background:radial-gradient(ellipse at 50% 0%, rgba(230,36,41,.14), transparent 45%), var(--bg);">
+                <div style="padding:52px 18px 14px; display:flex; align-items:center; gap:11px; border-bottom:1px solid var(--line);">
+                  <span style="width:40px; height:40px; border-radius:50%; display:grid; place-items:center; font-family:var(--fd); font-weight:700; font-size:.82rem; color:#fff; background:{{ selfGrad }};">{{ selfInitials }}</span>
+                  <div style="flex:1;"><div style="font-family:var(--fd); font-size:.98rem; font-weight:700;">{{ selfName }}</div><div style="font-family:var(--fm); font-size:.56rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted);">{{ selfRole }}</div></div>
+                </div>
+                <div style="padding:16px 18px 8px; font-family:var(--fm); font-size:.58rem; letter-spacing:.16em; text-transform:uppercase; color:var(--red2);">Up next · live now</div>
+                <sc-for list="{{ mySessions }}" as="s" hint-placeholder-count="1">
+                  <div style="margin:0 14px 14px; border:1px solid rgba(230,36,41,.35); border-radius:18px; background:radial-gradient(circle at 90% 0%, rgba(230,36,41,.16), transparent 60%), var(--surface); padding:16px;">
+                    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+                      <div><div style="font-family:var(--fd); font-size:1.15rem; font-weight:700;">{{ s.category }}</div><div style="font-family:var(--fm); font-size:.6rem; color:var(--muted); margin-top:3px;">{{ s.type }} · {{ s.location }}</div></div>
+                      <div style="text-align:right;"><div style="font-family:var(--fm); font-size:1.1rem; color:#fff;">{{ s.time }}</div><div style="font-family:var(--fm); font-size:.54rem; color:var(--muted);">{{ s.dur }}</div></div>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:14px;"><div style="flex:1; height:7px; border-radius:99px; background:var(--surface3); overflow:hidden;"><i style="display:block; height:100%; width:{{ s.pct }}; background:linear-gradient(90deg,var(--red),var(--red2));"></i></div><span style="font-family:var(--fm); font-size:.66rem; color:var(--success); font-weight:700;">{{ s.present }}/{{ s.total }}</span></div>
+                    <button onClick="{{ s.open }}" style="width:100%; min-height:46px; border-radius:13px; border:0; cursor:pointer; font-family:var(--fb); font-size:.76rem; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:#fff; background:linear-gradient(135deg,var(--red),var(--red2)); box-shadow:0 12px 24px rgba(230,36,41,.3);">✓ Mark attendance</button>
+                  </div>
+                </sc-for>
+                <div style="padding:8px 18px 8px; font-family:var(--fm); font-size:.58rem; letter-spacing:.16em; text-transform:uppercase; color:var(--muted);">Injuries to watch</div>
+                <div style="margin:0 14px 16px; border:1px solid var(--line); border-radius:16px; background:var(--surface); overflow:hidden;">
+                  <sc-for list="{{ myNotes }}" as="n" hint-placeholder-count="2">
+                    <div style="display:flex; align-items:center; gap:10px; padding:12px 14px; border-bottom:1px solid var(--line);">
+                      <span style="width:7px; height:7px; border-radius:50%; background:var(--warn);"></span>
+                      <div style="flex:1;"><div style="font-size:.8rem; font-weight:600;">{{ n.name }}</div><div style="font-family:var(--fm); font-size:.58rem; color:var(--warn);">{{ n.injury }}</div></div>
+                    </div>
+                  </sc-for>
+                </div>
+                <div style="height:14px;"></div>
+              </div>
+              <div style="position:absolute; left:0; right:0; bottom:0; height:64px; display:flex; align-items:center; justify-content:space-around; background:rgba(10,10,10,.94); border-top:1px solid var(--line); backdrop-filter:blur(8px);">
+                <div style="display:grid; justify-items:center; gap:3px; color:var(--red);"><span style="font-size:1.05rem;">◎</span><span style="font-family:var(--fm); font-size:.5rem; letter-spacing:.1em;">TODAY</span></div>
+                <div style="display:grid; justify-items:center; gap:3px; color:var(--muted);"><span style="font-size:1.05rem;">▤</span><span style="font-family:var(--fm); font-size:.5rem; letter-spacing:.1em;">WEEK</span></div>
+                <div style="display:grid; justify-items:center; gap:3px; color:var(--muted);"><span style="font-size:1.05rem;">◉</span><span style="font-family:var(--fm); font-size:.5rem; letter-spacing:.1em;">CLIENTS</span></div>
+              </div>
+            </div>
+          </div>
+          <div style="max-width:320px; padding-top:24px;">
+            <div style="font-family:var(--fm); font-size:.6rem; letter-spacing:.2em; text-transform:uppercase; color:var(--red2); margin-bottom:14px;">Coach on mobile</div>
+            <h2 style="margin:0 0 14px; font-family:var(--fd); font-size:1.6rem; font-weight:700; letter-spacing:-.02em; line-height:1.15;">Everything a coach needs — nothing they don't.</h2>
+            <p style="color:var(--muted2); font-size:.9rem; line-height:1.7;">Coaches open the app on the floor and see only their day: the next session, who's in, and any injury to work around. One tap opens the same fast attendance screen admins use.</p>
+            <ul style="list-style:none; padding:0; margin:20px 0 0; display:grid; gap:12px;">
+              <li style="display:flex; gap:11px; align-items:flex-start; font-size:.84rem; color:var(--muted2);"><span style="color:var(--red);">—</span> Today & this week's schedule</li>
+              <li style="display:flex; gap:11px; align-items:flex-start; font-size:.84rem; color:var(--muted2);"><span style="color:var(--red);">—</span> Groups & private clients</li>
+              <li style="display:flex; gap:11px; align-items:flex-start; font-size:.84rem; color:var(--muted2);"><span style="color:var(--red);">—</span> Injuries surfaced, never buried in notes</li>
+              <li style="display:flex; gap:11px; align-items:flex-start; font-size:.84rem; color:var(--muted2);"><span style="color:var(--red);">—</span> One-tap attendance & schedule changes</li>
+            </ul>
+          </div>
+        </div>
+        </sc-if>
+
+      </div>
+    </main>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:860}}">
+class Component extends DCLogic {
+  state = { role:'admin', view:'today', coachView:'today', selSession:'t4', att:{}, };
+
+  // ---------- static data ----------
+  data(){
+    const grads = {
+      red:'linear-gradient(135deg,#e62429,#ff4f54)', blue:'linear-gradient(135deg,#3b82f6,#8b5cf6)',
+      violet:'linear-gradient(135deg,#8b5cf6,#ec4899)', amber:'linear-gradient(135deg,#f59e0b,#ef4444)',
+      green:'linear-gradient(135deg,#059669,#25d366)', teal:'linear-gradient(135deg,#14b8a6,#3b82f6)',
+      slate:'linear-gradient(135deg,#475569,#64748b)',
+    };
+    const coaches = [
+      {id:'c1', name:'Ahmed Waheed', initials:'AW', role:'Head Coach', cats:'Strength · Athlete', grad:grads.red},
+      {id:'c2', name:'Youssef Abdelatif', initials:'YA', role:'Strength Coach', cats:'Athlete Cond.', grad:grads.blue},
+      {id:'c3', name:'Mariam Soliman', initials:'MS', role:'Ladies & Rehab', cats:'Ladies · Rehab', grad:grads.violet},
+      {id:'c4', name:'Khaled Habib', initials:'KH', role:'Calisthenics', cats:'Calisthenics', grad:grads.amber},
+      {id:'c5', name:'Nour Rashad', initials:'NR', role:'Conditioning', cats:'Burning · Cond.', grad:grads.green},
+      {id:'c6', name:'Hisham Mostafa', initials:'HM', role:'PT & Rehab', cats:'PT · Rehab', grad:grads.teal},
+    ];
+    const g = k => grads[k];
+    // today sessions with rosters
+    const R = (name, injury, trial, meta) => ({ id:name.replace(/\s/g,'').toLowerCase(), name, injury:injury||'', isTrial:!!trial, meta:meta||'' });
+    const todaySessions = [
+      { id:'t1', time:'7:00 AM', dur:'60 MIN', category:'Burning Class', type:'Group', coachId:'c5', location:'Main floor', state:'done',
+        roster:[ R('Kareem Adel','','',"Member · 4th session"), R('Mostafa Nabil','','',"Member"), R('Seif Amr','','',"Member"), R('Amr Gamal','Ankle sprain (healing)','',"Member"), R('Ziad Khaled','','',"Member"), R('Marwan Sherif','','',"Member") ] },
+      { id:'t2', time:'9:00 AM', dur:'60 MIN', category:'Ladies Class', type:'Group', coachId:'c3', location:'Main floor', state:'done',
+        roster:[ R('Nada Sherif','','',"Member"), R('Salma Ayman','Lower back — disc','',"Member"), R('Menna Tarek','','',"Member"), R('Habiba Wael','','',"Member · new"), R('Reem Osama','','',"Member") ] },
+      { id:'t3', time:'11:30 AM', dur:'45 MIN', category:'Rehab', type:'Private', coachId:'c3', location:'Rehab corner', state:'done',
+        roster:[ R('Malak Sameh','Right shoulder impingement','',"Private · knee + shoulder rehab") ] },
+      { id:'t4', time:'5:00 PM', dur:'60 MIN', category:'Strength Class', type:'Group', coachId:'c1', location:'Main floor', state:'live',
+        roster:[ R('Omar Tarek','','',"Member · streak 9"), R('Youssef Sami','','',"Member"), R('Ali Hassan','Left knee — ACL recovery','',"Member · modify squats"), R('Tarek Fouad','','',"Member"), R('Hazem Salah','','',"Member"), R('Mohab Ehab','','',"Member"), R('Fady Nader','','',"Member · new"), R('Kareem Adel','','',"Member") ] },
+      { id:'t5', time:'6:30 PM', dur:'75 MIN', category:'Athlete Conditioning', type:'Group', coachId:'c2', location:'Main floor', state:'upcoming',
+        roster:[ R('Ziad Khaled','','',"Football · U18"), R('Seif Amr','','',"Tennis"), R('Omar Tarek','','',"Football"), R('Marwan Sherif','Hamstring tightness','',"Football"), R('Yassin Adel','','',"Tennis · trial", ) ,R('Nour Adel','','','Tennis') ] },
+      { id:'t6', time:'8:00 PM', dur:'60 MIN', category:'Calisthenics', type:'Group', coachId:'c4', location:'Rig zone', state:'upcoming',
+        roster:[ R('Mohab Ehab','','',"Member"), R('Fady Nader','','',"Member"), R('Hazem Salah','','',"Member"), R('Ali Hassan','Left knee — ACL recovery','',"Member"), R('Tarek Fouad','','',"Member"), R('Youssef Sami','','',"Member"), R('Amr Gamal','','',"Member") ] },
+    ];
+    return { grads, coaches, todaySessions, g };
+  }
+
+  coachById(id){ return this.data().coaches.find(c=>c.id===id) || {name:'—',initials:'?',grad:'#333',role:''}; }
+
+  // default demo attendance for done/live sessions
+  defaultAtt(sid, roster){
+    const st = this.state.att[sid];
+    if(st) return st;
+    return {}; // no marks by default; live/done sessions seeded below
+  }
+
+  seedAtt(){
+    // seed once
+    if(this._seeded) return;
+    this._seeded = true;
+    const { todaySessions } = this.data();
+    const att = {};
+    todaySessions.forEach(s=>{
+      if(s.state==='done'){ att[s.id] = {}; s.roster.forEach((p,i)=>{ att[s.id][p.id] = i===s.roster.length-1 && s.roster.length>4 ? 'absent':'present'; }); }
+      if(s.state==='live'){ att[s.id] = {}; s.roster.forEach((p,i)=>{ if(i<5) att[s.id][p.id] = i===2?'late':'present'; }); }
+    });
+    this.state.att = att;
+  }
+
+  componentDidMount(){ if(!this._seeded){ this.seedAtt(); this.forceUpdate(); } }
+
+  statusOf(sid, pid){ const s = this.state.att[sid]||{}; return s[pid]||'none'; }
+  countState(sid, st){ const roster = this.data().todaySessions.find(x=>x.id===sid)?.roster||[]; const a = this.state.att[sid]||{}; return roster.filter(p=>(a[p.id]||'none')===st).length; }
+  presentCount(sid){ return this.countState(sid,'present')+this.countState(sid,'late'); }
+
+  setAtt(sid, pid, st){
+    this.setState(prev=>{
+      const att = {...prev.att}; const s = {...(att[sid]||{})};
+      s[pid] = (s[pid]===st) ? 'none' : st; att[sid] = s; return { att };
+    });
+  }
+  markAllPresent(sid){
+    this.setState(prev=>{
+      const roster = this.data().todaySessions.find(x=>x.id===sid)?.roster||[];
+      const att = {...prev.att}; const s = {...(att[sid]||{})};
+      roster.forEach(p=>{ if((s[p.id]||'none')==='none' || s[p.id]==='present') s[p.id]='present'; });
+      att[sid]=s; return { att };
+    });
+  }
+
+  navStyle(id){
+    const active = this.state.view===id;
+    return active
+      ? 'border-left-color:var(--red); background:linear-gradient(90deg,rgba(230,36,41,.14),transparent); color:#fff;'
+      : 'color:var(--muted2);';
+  }
+  coachNavStyle(id){
+    const active = this.state.coachView===id;
+    return active ? 'border-left-color:var(--red); background:linear-gradient(90deg,rgba(230,36,41,.14),transparent); color:#fff;' : 'color:var(--muted2);';
+  }
+
+  fmtEGP(n){ return 'EGP ' + n.toLocaleString('en-US'); }
+
+  renderVals(){
+    if(!this._seeded) this.seedAtt();
+    const D = this.data();
+    const view = this.state.view;
+    const isAdmin = this.state.role==='admin';
+    const isCoach = this.state.role==='coach';
+    const self = this.coachById('c1');
+
+    // page title
+    const titles = { today:['Operations','Today'], attendance:['Operations','Attendance'], schedule:['Operations','Schedule'], leads:['People','Leads & Trials'], clients:['People','Clients'], groups:['People','Groups'], coaches:['People','Coaches'], subs:['Money','Subscriptions'] };
+    const coachTitles = { today:['Coach','Today on the floor'], phone:['Coach','On my phone'] };
+    const t = isCoach ? (coachTitles[this.state.coachView]||coachTitles.today) : (titles[view]||titles.today);
+
+    // today sessions view-models
+    const nav = to => () => this.setState({view:to});
+    const tSessions = D.todaySessions.map(s=>{
+      const c = this.coachById(s.coachId);
+      const present = this.presentCount(s.id); const total = s.roster.length;
+      const pct = total? Math.round(present/total*100):0;
+      return { time:s.time, dur:s.dur, category:s.category, type:s.type, coach:c.name, coachInitials:c.initials, coachGrad:c.grad, location:s.location,
+        present, total, pct:pct+'%', isLive:s.state==='live',
+        typeStyle: s.type==='Private' ? 'color:var(--violet); border-color:rgba(139,92,246,.4);' : '',
+        rowStyle: s.state==='live' ? 'background:linear-gradient(90deg,rgba(230,36,41,.06),transparent); border-left:3px solid var(--red); padding-left:19px;' : (s.state==='done'?'opacity:.62;':''),
+        open: () => this.setState({view:'attendance', selSession:s.id}) };
+    });
+    const liveSession = D.todaySessions.find(s=>s.state==='live');
+    const liveCoach = liveSession ? this.coachById(liveSession.coachId) : null;
+
+    // trials
+    const trials = [
+      { name:'Farida Ashraf', initials:'FA', grad:D.g('violet'), time:'12:00', category:'Ladies Class', type:'Group trial', source:'Instagram', sourceStyle:'background:rgba(236,72,153,.12); border:1px solid rgba(236,72,153,.4); color:#ec4899;' },
+      { name:'Yassin Adel', initials:'YA', grad:D.g('blue'), time:'6:30 PM', category:'Athlete Cond.', type:'Group trial', source:'WhatsApp', sourceStyle:'background:rgba(37,211,102,.12); border:1px solid rgba(37,211,102,.4); color:var(--success);' },
+    ];
+
+    // renewals
+    const renewSoon = [
+      { name:'Sara Nabil', initials:'SN', grad:D.g('violet'), plan:'Private Monthly', amount:'EGP 2,800', due:'2 days', dueColor:'var(--danger)' },
+      { name:'Karim Samir', initials:'KS', grad:D.g('blue'), plan:'Group Monthly', amount:'EGP 1,400', due:'3 days', dueColor:'var(--warn)' },
+      { name:'Laila Mansour', initials:'LM', grad:D.g('teal'), plan:'PT · 8 sessions', amount:'EGP 3,600', due:'5 days', dueColor:'var(--warn)' },
+      { name:'Dina Ragab', initials:'DR', grad:D.g('green'), plan:'Group Monthly', amount:'EGP 1,400', due:'6 days', dueColor:'var(--muted2)' },
+    ];
+
+    // coach now
+    const coachStatus = {
+      c1:{now:'Strength Class · until 18:00', status:'On floor', k:'floor'},
+      c2:{now:'Free until 18:30', status:'Free', k:'free'},
+      c3:{now:'Wrapped Rehab · 11:30', status:'Break', k:'break'},
+      c5:{now:'Done at 08:00', status:'Off floor', k:'off'},
+      c4:{now:'Calisthenics at 20:00', status:'Later', k:'later'},
+      c6:{now:'Not in today', status:'Off today', k:'off'},
+    };
+    const stStyle = k => ({
+      floor:'background:rgba(37,211,102,.12); border:1px solid rgba(37,211,102,.35); color:var(--success);',
+      free:'background:rgba(59,130,246,.12); border:1px solid rgba(59,130,246,.35); color:var(--blue);',
+      break:'background:rgba(245,158,11,.12); border:1px solid rgba(245,158,11,.35); color:var(--warn);',
+      later:'background:rgba(255,255,255,.05); border:1px solid var(--line2); color:var(--muted2);',
+      off:'background:rgba(255,255,255,.03); border:1px solid var(--line); color:var(--muted);',
+    }[k]);
+    const coachNow = D.coaches.map(c=>{ const s=coachStatus[c.id]; return { name:c.name, role:c.role, initials:c.initials, grad:c.grad, now:s.now, status:s.status, statusStyle:stStyle(s.k) }; });
+
+    // methods today
+    const methodsToday = [
+      { label:'InstaPay', value:'EGP 4,200', pct:'54%', color:'linear-gradient(90deg,#e62429,#ff4f54)' },
+      { label:'Visa', value:'EGP 2,800', pct:'36%', color:'linear-gradient(90deg,#3b82f6,#8b5cf6)' },
+      { label:'Cash', value:'EGP 800', pct:'10%', color:'linear-gradient(90deg,#25d366,#14b8a6)' },
+    ];
+
+    // ---- attendance selected ----
+    const sel = D.todaySessions.find(s=>s.id===this.state.selSession) || D.todaySessions[0];
+    const selCoach = this.coachById(sel.coachId);
+    const checkVis = st => {
+      if(st==='present') return { glyph:'✓', style:'background:linear-gradient(135deg,#059669,#25d366); color:#04240f; border:1px solid transparent;' };
+      if(st==='late') return { glyph:'L', style:'background:rgba(245,158,11,.18); color:var(--warn); border:1px solid rgba(245,158,11,.5);' };
+      if(st==='absent') return { glyph:'✕', style:'background:rgba(239,68,68,.14); color:var(--danger); border:1px solid rgba(239,68,68,.45);' };
+      if(st==='noshow') return { glyph:'N', style:'background:rgba(239,68,68,.08); color:var(--danger); border:1px solid rgba(239,68,68,.3);' };
+      return { glyph:'', style:'background:var(--surface3); color:var(--muted); border:1px dashed var(--line3);' };
+    };
+    const btnStyle = (active, tone) => {
+      const tones = { absent:'var(--danger)', late:'var(--warn)', noshow:'var(--danger)' };
+      return active ? `background:${tones[tone]}; color:#fff; border:0;` : 'background:transparent; color:var(--muted); border:1px solid var(--line2);';
+    };
+    const stop = e => { e.stopPropagation(); };
+    const selRoster = sel.roster.map(p=>{
+      const st = this.statusOf(sel.id, p.id); const cv = checkVis(st);
+      return { name:p.name, meta:p.meta, hasInjury:!!p.injury, injury:p.injury, isTrial:p.isTrial,
+        checkGlyph:cv.glyph, checkStyle:cv.style,
+        rowStyle: st==='present'||st==='late' ? 'background:rgba(37,211,102,.04);' : (st==='absent'||st==='noshow'?'opacity:.6;':''),
+        absentStyle:btnStyle(st==='absent','absent'), lateStyle:btnStyle(st==='late','late'), noshowStyle:btnStyle(st==='noshow','noshow'),
+        tap: () => this.setAtt(sel.id, p.id, 'present'),
+        setAbsent: (e)=>{ e.stopPropagation(); this.setAtt(sel.id,p.id,'absent'); },
+        setLate: (e)=>{ e.stopPropagation(); this.setAtt(sel.id,p.id,'late'); },
+        setNoshow: (e)=>{ e.stopPropagation(); this.setAtt(sel.id,p.id,'noshow'); },
+        stop };
+    });
+    const sessionChips = D.todaySessions.map(s=>({
+      time:s.time, category:s.category, present:this.presentCount(s.id), total:s.roster.length,
+      chipStyle: s.id===sel.id ? 'background:linear-gradient(135deg,rgba(230,36,41,.16),rgba(230,36,41,.04)); border:1px solid rgba(230,36,41,.5); color:#fff;' : 'background:var(--surface); border:1px solid var(--line); color:var(--muted2);',
+      select: () => this.setState({selSession:s.id}) }));
+
+    // ---- schedule (week grid, Sat start) ----
+    const days = ['Sat','Sun','Mon','Tue','Wed','Thu','Fri'];
+    const schedRows = [
+      { time:'7:00 AM', cells:[ {cat:'Burning',coach:'c5'}, null, {cat:'Burning',coach:'c5'}, null, {cat:'Burning',coach:'c5'}, {cat:'Burning',coach:'c5', today:true}, null ] },
+      { time:'9:00 AM', cells:[ {cat:'Ladies',coach:'c3'}, {cat:'Ladies',coach:'c3'}, null, {cat:'Ladies',coach:'c3'}, null, {cat:'Ladies',coach:'c3', today:true}, {cat:'Ladies',coach:'c3'} ] },
+      { time:'11:30 AM', cells:[ null, {cat:'Rehab',coach:'c3',priv:true}, null, {cat:'Rehab',coach:'c3',priv:true}, null, {cat:'Rehab',coach:'c3',priv:true, today:true}, null ] },
+      { time:'5:00 PM', cells:[ {cat:'Strength',coach:'c1'}, {cat:'Strength',coach:'c1'}, {cat:'Strength',coach:'c1'}, {cat:'Strength',coach:'c1'}, {cat:'Strength',coach:'c1'}, {cat:'Strength',coach:'c1', today:true, live:true}, null ] },
+      { time:'6:30 PM', cells:[ {cat:'Athlete Cond.',coach:'c2'}, null, {cat:'Athlete Cond.',coach:'c2'}, null, {cat:'Athlete Cond.',coach:'c2'}, {cat:'Athlete Cond.',coach:'c2', today:true}, {cat:'Athlete Cond.',coach:'c2'} ] },
+      { time:'8:00 PM', cells:[ {cat:'Calisthenics',coach:'c4'}, {cat:'Calisthenics',coach:'c4'}, null, {cat:'Calisthenics',coach:'c4'}, {cat:'Calisthenics',coach:'c4'}, {cat:'Calisthenics',coach:'c4', today:true}, null ] },
+    ];
+    const catColor = { 'Burning':'#25d366','Ladies':'#8b5cf6','Rehab':'#14b8a6','Strength':'#e62429','Athlete Cond.':'#3b82f6','Calisthenics':'#f59e0b' };
+    const schedGrid = schedRows.map(row=>({
+      time:row.time,
+      cells:row.cells.map((cell,i)=>{
+        if(!cell) return { notEmpty:false, style:'', cat:'', coach:'', isLive:false };
+        const c = this.coachById(cell.coach); const col = catColor[cell.cat]||'#666';
+        return { notEmpty:true, cat:cell.cat, coach:c.name.split(' ')[0], initials:c.initials, coachGrad:c.grad,
+          isLive:!!cell.live, isPriv:!!cell.priv,
+          style:`height:100%; background:${cell.today?'rgba(230,36,41,.07)':'var(--surface2)'}; border-left:3px solid ${col};` };
+      })
+    }));
+    const kindStyle = k => k==='Recurring'
+      ? 'background:rgba(230,36,41,.12); border:1px solid rgba(230,36,41,.4); color:var(--red2);'
+      : 'background:rgba(255,255,255,.05); border:1px solid var(--line2); color:var(--muted2);';
+    const scheduleChanges = [
+      { name:'Ali Hassan', initials:'AH', grad:D.g('teal'), kind:'One session', kindStyle:kindStyle('One session'), detail:'Move Strength Class → tomorrow 5:00 PM', reason:'Work travel' },
+      { name:'Reham Badawy', initials:'RB', grad:D.g('green'), kind:'Recurring', kindStyle:kindStyle('Recurring'), detail:'Ladies Class Sat+Tue → Sun+Wed', reason:'University exams' },
+      { name:'Sara Nabil', initials:'SN', grad:D.g('violet'), kind:'One session', kindStyle:kindStyle('One session'), detail:'Cancel Private · Thu 8:00 PM', reason:'Knee flare-up' },
+    ];
+
+    // ---- coaches availability ----
+    const coachSlots = {
+      c1:{ blocks:[['7a',0],['9a',0],['11a',0],['1p',0],['3p',0],['5p',2],['7p',0]], today:'1 group left', week:14, clients:38, free:'6 slots free' },
+      c2:{ blocks:[['7a',0],['9a',0],['11a',0],['1p',0],['3p',0],['5p',0],['6p',2],['8p',0]], today:'Free until 18:30', week:9, clients:22, free:'9 slots free' },
+      c3:{ blocks:[['7a',0],['9a',2],['11a',1],['1p',0],['3p',0],['5p',0],['7p',0]], today:'Done for today', week:11, clients:19, free:'7 slots free' },
+      c4:{ blocks:[['7a',0],['9a',0],['11a',0],['1p',0],['3p',0],['5p',0],['8p',2]], today:'Calisthenics at 20:00', week:8, clients:24, free:'10 slots free' },
+      c5:{ blocks:[['7a',2],['9a',0],['11a',0],['1p',0],['3p',0],['5p',0],['7p',0]], today:'Done at 08:00', week:6, clients:16, free:'11 slots free' },
+      c6:{ blocks:[], today:'Off today', week:7, clients:14, free:'Off' },
+    };
+    const coachCards = D.coaches.map(c=>{
+      const s = coachSlots[c.id];
+      const load = Math.min(100, Math.round(s.week/16*100));
+      return { name:c.name, role:c.role, initials:c.initials, grad:c.grad, cats:c.cats, today:s.today, week:s.week, clients:s.clients, free:s.free,
+        loadPct:load+'%', loadColor: load>80?'var(--danger)':load>55?'var(--warn)':'var(--success)',
+        timeline: (s.blocks||[]).map(b=>({ h:b[0], busy:b[1]>0, style: b[1]>0 ? 'background:linear-gradient(180deg,var(--red),var(--red-deep));' : 'background:var(--surface3);' })) };
+    });
+
+    // ---- subscriptions ----
+    const methodBadge = m => ({
+      'InstaPay':'background:rgba(230,36,41,.12); border:1px solid rgba(230,36,41,.35); color:var(--red2);',
+      'Visa':'background:rgba(59,130,246,.12); border:1px solid rgba(59,130,246,.35); color:var(--blue);',
+      'Cash':'background:rgba(37,211,102,.12); border:1px solid rgba(37,211,102,.35); color:var(--success);',
+    }[m]);
+    const subStatusPill = s => ({
+      'Active':'background:rgba(37,211,102,.12); border:1px solid rgba(37,211,102,.35); color:var(--success);',
+      'Expiring':'background:rgba(245,158,11,.12); border:1px solid rgba(245,158,11,.35); color:var(--warn);',
+      'Expired':'background:rgba(239,68,68,.12); border:1px solid rgba(239,68,68,.35); color:var(--danger);',
+      'Renewed':'background:rgba(59,130,246,.12); border:1px solid rgba(59,130,246,.35); color:var(--blue);',
+    }[s]);
+    const subsRaw = [
+      ['Sara Nabil','SN','violet','Private Monthly',2800,'InstaPay','Expiring','16 Feb','in 2 days'],
+      ['Karim Samir','KS','blue','Group Monthly',1400,'Visa','Expiring','19 Feb','in 3 days'],
+      ['Laila Mansour','LM','teal','PT · 8 sessions',3600,'Cash','Expiring','21 Feb','in 5 days'],
+      ['Omar Tarek','OT','red','Group Monthly',1400,'InstaPay','Active','04 Mar','in 16 days'],
+      ['Nada Sherif','NS','green','Ladies Monthly',1400,'InstaPay','Active','09 Mar','in 21 days'],
+      ['Reham Badawy','RB','green','Group Monthly',1400,'Visa','Expired','08 Feb','5 days ago'],
+      ['Mostafa Nabil','MN','amber','Group Monthly',1400,'Cash','Expired','06 Feb','7 days ago'],
+      ['Ali Hassan','AH','teal','Private Monthly',2800,'InstaPay','Renewed','12 Mar','renewed'],
+      ['Menna Tarek','MT','violet','Ladies Monthly',1400,'Visa','Renewed','14 Mar','renewed'],
+    ];
+    const subs = subsRaw.map(r=>({ name:r[0], initials:r[1], grad:D.g(r[2]), plan:r[3], amount:this.fmtEGP(r[4]), method:r[5], methodStyle:methodBadge(r[5]), status:r[6], statusStyle:subStatusPill(r[6]), expiry:r[7], due:r[8],
+      dueColor: r[6]==='Expired'?'var(--danger)':(r[6]==='Expiring'?'var(--warn)':'var(--muted2)'),
+      cta: r[6]==='Renewed'?'Receipt':(r[6]==='Expired'?'Reactivate':'Renew') }));
+    const subTiles = [
+      { label:'Active', value: subs.filter(s=>s.status==='Active').length, color:'var(--success)', sub:'On track' },
+      { label:'Expiring (7d)', value: subs.filter(s=>s.status==='Expiring').length, color:'var(--warn)', sub:'Chase renewals' },
+      { label:'Expired', value: subs.filter(s=>s.status==='Expired').length, color:'var(--danger)', sub:'Win back' },
+      { label:'Renewed (Feb)', value: subs.filter(s=>s.status==='Renewed').length, color:'var(--blue)', sub:'This month' },
+    ];
+    const cashRows = [
+      ['in','Sara Nabil — Private renewal','InstaPay','+2,800','17:02'],
+      ['in','Omar Tarek — Group monthly','InstaPay','+1,400','15:40'],
+      ['in','Laila Mansour — PT block','Cash','+800','13:15'],
+      ['in','Nada Sherif — Ladies monthly','Visa','+1,400','11:20'],
+      ['out','Floor towels + supplies','Cash','−650','10:05'],
+      ['out','Coach Khaled — session fees','InstaPay','−500','09:30'],
+    ];
+    const cashLedger = cashRows.map(r=>({ inbound:r[0]==='in', label:r[1], method:r[2], amount:r[3], time:r[4],
+      icon: r[0]==='in'?'↓':'↑',
+      iconStyle: r[0]==='in'?'background:rgba(37,211,102,.14); color:var(--success);':'background:rgba(239,68,68,.14); color:var(--danger);',
+      amountColor: r[0]==='in'?'var(--success)':'var(--danger)' }));
+
+    // ---- leads pipeline ----
+    const srcStyle = s => ({
+      'WhatsApp':'background:rgba(37,211,102,.12); border:1px solid rgba(37,211,102,.4); color:var(--success);',
+      'Call':'background:rgba(59,130,246,.12); border:1px solid rgba(59,130,246,.4); color:var(--blue);',
+      'Instagram':'background:rgba(236,72,153,.12); border:1px solid rgba(236,72,153,.4); color:#ec4899;',
+      'On-ground':'background:rgba(245,158,11,.12); border:1px solid rgba(245,158,11,.4); color:var(--warn);',
+    }[s]);
+    const leadsRaw = [
+      ['New','Hana Mahmoud','HM','violet','WhatsApp','+20 100 442 1180','Ladies Class','Asked about morning slots'],
+      ['New','Tamer Fouad','TF','blue','Call','+20 122 900 3341','Strength','Wants evening group'],
+      ['New','Salma Osman','SO','green','Instagram','+20 111 220 7789','Burning','Saw a reel · fat-loss goal'],
+      ['Trial booked','Farida Ashraf','FA','violet','Instagram','+20 106 771 2093','Ladies Class','Trial today 12:00'],
+      ['Trial booked','Yassin Adel','YA','blue','WhatsApp','+20 100 553 8842','Athlete Cond.','Trial today 18:30 · plays tennis'],
+      ['Trial booked','Mahmoud Refaat','MR','amber','On-ground','+20 109 330 5567','Calisthenics','Walked in · trial Sat'],
+      ['Trial done','Rana Ehab','RE','green','WhatsApp','+20 114 662 9930','Burning','Liked it · deciding on plan'],
+      ['Trial done','Kareem Zaki','KZ','red','Call','+20 120 118 4425','Strength','Wants to compare pricing'],
+      ['Won','Nour Hassan','NH','teal','Instagram','+20 101 334 5512','Group','Subscribed · Group Monthly'],
+      ['Won','Habiba Wael','HW','violet','On-ground','+20 115 447 2201','Ladies','Subscribed · Ladies Monthly'],
+      ['Lost','Sherif Adel','SA','amber','Call','+20 128 990 1123','Strength','Chose gym near home'],
+    ];
+    const injuryByLead = { 'Rana Ehab':'Old ankle sprain', 'Yassin Adel':'Wrist — tapes it' };
+    const stages = ['New','Trial booked','Trial done','Won','Lost'];
+    const stageMeta = { 'New':'var(--muted2)', 'Trial booked':'var(--red2)', 'Trial done':'var(--warn)', 'Won':'var(--success)', 'Lost':'var(--muted)' };
+    const leadCols = stages.map(st=>({
+      stage:st, accent:stageMeta[st],
+      count: leadsRaw.filter(l=>l[0]===st).length,
+      leads: leadsRaw.filter(l=>l[0]===st).map(l=>({ name:l[1], initials:l[2], grad:D.g(l[3]), source:l[4], sourceStyle:srcStyle(l[4]), phone:l[5], interest:l[6], note:l[7],
+        hasInjury:!!injuryByLead[l[1]], injury:injuryByLead[l[1]]||'' }))
+    }));
+    const leadSources = [
+      { label:'WhatsApp', count: leadsRaw.filter(l=>l[4]==='WhatsApp').length, color:'var(--success)' },
+      { label:'Instagram', count: leadsRaw.filter(l=>l[4]==='Instagram').length, color:'#ec4899' },
+      { label:'Call', count: leadsRaw.filter(l=>l[4]==='Call').length, color:'var(--blue)' },
+      { label:'On-ground', count: leadsRaw.filter(l=>l[4]==='On-ground').length, color:'var(--warn)' },
+    ];
+
+    // ---- groups ----
+    const groupsRaw = [
+      ['Strength Class','c1','Sat · Mon · Wed · Thu','5:00 PM','Main floor',16,18],
+      ['Burning Class','c5','Sat · Mon · Wed · Thu','7:00 AM','Main floor',12,16],
+      ['Ladies Class','c3','Sat · Sun · Tue · Thu · Fri','9:00 AM','Main floor',9,14],
+      ['Athlete Conditioning','c2','Sat · Mon · Wed · Thu · Fri','6:30 PM','Main floor',7,12],
+      ['Calisthenics','c4','Sat · Sun · Tue · Wed · Thu','8:00 PM','Rig zone',9,12],
+    ];
+    const groups = groupsRaw.map(gr=>{ const c=this.coachById(gr[1]); const pct=Math.round(gr[5]/gr[6]*100); return {
+      name:gr[0], coach:c.name, initials:c.initials, coachGrad:c.grad, days:gr[2], time:gr[3], location:gr[4], members:gr[5], capacity:gr[6],
+      pct:pct+'%', full: gr[5]>=gr[6], spots: gr[6]-gr[5],
+      barColor: pct>=100?'var(--danger)':(pct>=85?'var(--warn)':'linear-gradient(90deg,var(--red),var(--red2))') }; });
+
+    // ---- clients ----
+    const clStatusPill = s => ({
+      'Active':'background:rgba(37,211,102,.12); border:1px solid rgba(37,211,102,.35); color:var(--success);',
+      'Trial':'background:rgba(230,36,41,.12); border:1px solid rgba(230,36,41,.35); color:var(--red2);',
+      'Paused':'background:rgba(245,158,11,.12); border:1px solid rgba(245,158,11,.35); color:var(--warn);',
+      'Inactive':'background:rgba(255,255,255,.04); border:1px solid var(--line2); color:var(--muted);',
+    }[s]);
+    const clientsRaw = [
+      ['Omar Tarek','OT','red','Strength Class','Group','c1','Active','+20 100 221 3411',''],
+      ['Sara Nabil','SN','violet','PT','Private','c3','Active','+20 109 882 1145','Post-op knee'],
+      ['Ali Hassan','AH','teal','Strength Class','Group','c1','Active','+20 122 734 2210','Left knee — ACL recovery'],
+      ['Nada Sherif','NS','green','Ladies Class','Group','c3','Active','+20 114 522 9087',''],
+      ['Reham Badawy','RB','green','Ladies Class','Group','c3','Paused','+20 111 409 3388',''],
+      ['Malak Sameh','MK','violet','Rehab','Private','c3','Active','+20 120 500 1192','Right shoulder impingement'],
+      ['Ziad Khaled','ZK','blue','Athlete Conditioning','Group','c2','Active','+20 103 847 6690','Football · U18'],
+      ['Yassin Adel','YA','blue','Athlete Conditioning','Group','c2','Trial','+20 100 553 8842','Wrist — tapes it'],
+      ['Mostafa Nabil','MN','amber','Burning Class','Group','c5','Inactive','+20 101 334 5512',''],
+      ['Habiba Wael','HW','violet','Ladies Class','Group','c3','Active','+20 115 662 7740',''],
+    ];
+    const clients = clientsRaw.map(cl=>{ const c=this.coachById(cl[5]); return {
+      name:cl[0], initials:cl[1], grad:D.g(cl[2]), category:cl[3], type:cl[4], coach:c.name, coachInitials:c.initials, coachGrad:c.grad,
+      status:cl[6], statusStyle:clStatusPill(cl[6]), phone:cl[7], injury:cl[8], hasInjury:!!cl[8] }; });
+
+    // ---- coach self view (Ahmed Waheed) ----
+    const myId = 'c1';
+    const mySessions = D.todaySessions.filter(s=>s.coachId===myId).map(s=>{
+      const present=this.presentCount(s.id); const total=s.roster.length;
+      return { time:s.time, dur:s.dur, category:s.category, type:s.type, location:s.location, present, total, isLive:s.state==='live',
+        pct: (total?Math.round(present/total*100):0)+'%',
+        roster: s.roster.map(p=>({ name:p.name, hasInjury:!!p.injury, injury:p.injury, meta:p.meta, chipStyle: p.injury?'border-color:rgba(245,158,11,.4); color:#fff;':'' })),
+        open:()=>this.setState({role:'admin', view:'attendance', selSession:s.id}) };
+    });
+    const myGroups = groups ? null : null;
+    const myGroupsList = [
+      { name:'Strength Class', days:'Sat · Mon · Wed · Thu', time:'5:00 PM', members:16 },
+    ];
+    const myNotes = [];
+    D.todaySessions.filter(s=>s.coachId===myId).forEach(s=> s.roster.forEach(p=>{ if(p.injury) myNotes.push({ name:p.name, injury:p.injury, cat:s.category, grad:D.g('teal') }); }));
+    const myChanges = [ { name:'Ali Hassan', detail:'Wants to move today\u2019s Strength → tomorrow 5:00 PM', kind:'One session', grad:D.g('teal') } ];
+    const nextSession = mySessions.find(s=>s.isLive) || mySessions[0];
+
+    return {
+      // shell
+      isAdmin, isCoach,
+      adminTabStyle: isAdmin ? 'background:var(--red); color:#fff;' : 'background:transparent; color:var(--muted);',
+      coachTabStyle: isCoach ? 'background:var(--red); color:#fff;' : 'background:transparent; color:var(--muted);',
+      toAdmin: () => this.setState({role:'admin'}),
+      toCoach: () => this.setState({role:'coach'}),
+      navToday:this.navStyle('today'), navAttendance:this.navStyle('attendance'), navSchedule:this.navStyle('schedule'),
+      navLeads:this.navStyle('leads'), navClients:this.navStyle('clients'), navGroups:this.navStyle('groups'),
+      navCoaches:this.navStyle('coaches'), navSubs:this.navStyle('subs'),
+      navCoachToday:this.coachNavStyle('today'), navCoachPhone:this.coachNavStyle('phone'),
+      goToday:nav('today'), goAttendance:nav('attendance'), goSchedule:nav('schedule'), goLeads:nav('leads'),
+      goClients:nav('clients'), goGroups:nav('groups'), goCoaches:nav('coaches'), goSubs:nav('subs'),
+      goCoachToday: ()=>this.setState({coachView:'today'}), goCoachPhone: ()=>this.setState({coachView:'phone'}),
+      coachSelfName: self.name,
+      liveCount: liveSession?1:0, changeCount:3, hasScheduleChanges:true, leadCount:11, expiringCount:5, expiringValue:'EGP 11,200',
+      userInitials: isAdmin?'MA':self.initials, userName: isAdmin?'Marvel Admin':self.name, userRole: isAdmin?'Admin · 6th of October':'Head Coach', userGrad: isAdmin?D.g('red'):self.grad,
+      crumb: t[0], pageTitle: t[1], nowLabel:'Thu 16 Jul · 5:24 PM',
+
+      // views flags
+      isTodayView: isAdmin && view==='today',
+      isAttendanceView: isAdmin && view==='attendance',
+
+      // today tiles
+      liveNames: liveSession? (this.coachById(liveSession.coachId).name.split(' ')[0]+' · '+liveSession.category) : 'Nothing live',
+      sessionsToday: D.todaySessions.length, clientsExpected: D.todaySessions.reduce((a,s)=>a+s.roster.length,0),
+      trialCount: trials.length, cashTodayNet:'EGP 7,800', cashTodayCount:6, cashIn:'EGP 7,800', cashOut:'EGP 1,150',
+      dateLong:'Thursday · 16 July 2026',
+      todaySessions:tSessions, trials, renewSoon, coachNow, methodsToday,
+
+      // view flags
+      isScheduleView: isAdmin && view==='schedule',
+      isCoachesView: isAdmin && view==='coaches',
+      isSubsView: isAdmin && view==='subs',
+      isLeadsView: isAdmin && view==='leads',
+      isGroupsView: isAdmin && view==='groups',
+      isClientsView: isAdmin && view==='clients',
+      isCoachTodayView: isCoach && this.state.coachView==='today',
+      isCoachPhoneView: isCoach && this.state.coachView==='phone',
+
+      // schedule
+      weekDays:days, schedGrid, scheduleChanges,
+      changeTagStyle: s => s,
+      // coaches
+      coachCards,
+      // subs
+      subs, subTiles, cashLedger, cashInMonth:'EGP 148,400', cashOutMonth:'EGP 22,900', cashNetMonth:'EGP 125,500',
+      methodSplit: methodsToday,
+      // leads
+      leadCols, leadSources,
+      // groups
+      groups,
+      // clients
+      clients,
+      // coach self
+      mySessions, myGroupsList, myNotes, myChanges, nextSession,
+      myWeekCount:14, myGroupCount:1, myClientCount:38, myNotesCount:myNotes.length,
+      selfName:self.name, selfInitials:self.initials, selfGrad:self.grad, selfRole:self.role,
+
+      // attendance
+      sessionChips, selRoster,
+      selCategory:sel.category, selType:sel.type, selCoach:selCoach.name, selCoachInitials:selCoach.initials, selCoachGrad:selCoach.grad,
+      selTime:sel.time, selLocation:sel.location,
+      selPresent:this.presentCount(sel.id), selTotal:sel.roster.length,
+      selAbsent:this.countState(sel.id,'absent')+this.countState(sel.id,'noshow'), selLate:this.countState(sel.id,'late'),
+      selPending: sel.roster.length - this.presentCount(sel.id) - this.countState(sel.id,'absent') - this.countState(sel.id,'noshow'),
+      markAll: () => this.markAllPresent(sel.id),
+    };
+  }
+}
+</script>
+</body>
+</html>

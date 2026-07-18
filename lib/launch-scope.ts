@@ -7,11 +7,11 @@
 // surfaces are hidden from navigation and unreachable by URL.
 //
 //   - Client portal (self-service client dashboard)
-//   - Notifications (in-app notification centre + reminders)
 //   - Transformation studio (assessments, goals, training programs)
 
 export const LAUNCH_CLIENT_PORTAL_ENABLED = false;
-export const LAUNCH_NOTIFICATIONS_ENABLED = false;
+// The notification centre is now available to the admin dashboard.
+export const LAUNCH_NOTIFICATIONS_ENABLED = true;
 export const LAUNCH_TRANSFORMATION_ENABLED = false;
 
 // A logged-in client landing page for when the client portal is parked. It

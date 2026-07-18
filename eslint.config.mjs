@@ -27,6 +27,7 @@ globalIgnores([
     "test-results/**",
     ".claude/**",
     "coverage/**",
+    "Marvel Fitness Studios operations system/**",
   ]),
 ]);
 

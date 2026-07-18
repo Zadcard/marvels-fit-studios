@@ -1,23 +1,57 @@
 "use client";
 
-import type { ComponentType } from "react";
-import { useState } from "react";
+/* The panel deliberately shares current sidebar state between desktop and Dialog markup. */
+/* eslint-disable react-hooks/static-components */
+
+import Image from "next/image";
 import Link from "next/link";
-import { LoaderCircle, LogOut, X } from "lucide-react";
 import { usePathname } from "next/navigation";
+import { useState, type ComponentType } from "react";
+import { LoaderCircle, LogOut, X } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { Dialog } from "radix-ui";
 
 import type { DashboardAccountSummary } from "@/components/dashboard/dashboard-role-shell";
-import { BrandLockup } from "@/components/ui/brand-lockup";
 import type { DashboardRole } from "@/lib/auth/authorization-policy";
-import { getDashboardNav, getDashboardRoleLabel, isDashboardNavItemActive } from "@/lib/navigation/dashboard-nav";
+import {
+  getDashboardNav,
+  getDashboardRoleLabel,
+  isDashboardNavItemActive,
+} from "@/lib/navigation/dashboard-nav";
+import brandMark from "@/public/img/Logo-3.png";
 
 type DashboardSidebarProps = {
   role: DashboardRole;
   account?: DashboardAccountSummary;
   onClose: () => void;
 };
+
+type NavItem = ReturnType<typeof getDashboardNav>[number];
+
+const adminSections: Array<{ label: string; matches: (item: NavItem) => boolean }> = [
+  {
+    label: "Operations",
+    matches: (item) => ["/admin", "/admin/attendance", "/admin/schedule"].includes(item.href),
+  },
+  {
+    label: "People",
+    matches: (item) => ["/admin/join-requests", "/admin/clients", "/admin/groups", "/admin/coaches"].includes(item.href),
+  },
+  { label: "Money", matches: (item) => ["/admin/subscriptions", "/admin/reports"].includes(item.href) },
+  { label: "Studio", matches: (item) => ["/admin/notifications", "/admin/settings"].includes(item.href) },
+];
+
+function OpsBrand() {
+  return (
+    <Link href="/" className="ops-brand" aria-label="Marvel Fit Studios home">
+      <Image src={brandMark} alt="" width={42} height={42} priority />
+      <span>
+        <strong>Marvel Fit Studios</strong>
+        <small>6th of October · Ops</small>
+      </span>
+    </Link>
+  );
+}
 
 export function DashboardSidebar({ role, account, onClose }: DashboardSidebarProps) {
   const pathname = usePathname();
@@ -34,53 +68,90 @@ export function DashboardSidebar({ role, account, onClose }: DashboardSidebarPro
     }
   }
 
-  function NavLink({ item, expanded = false }: { item: (typeof navItems)[number]; expanded?: boolean }) {
+  function NavLink({ item }: { item: NavItem }) {
     const Icon = item.icon as ComponentType<{ size?: number; strokeWidth?: number }>;
     const active = isDashboardNavItemActive(item, pathname);
     return (
       <Link
         href={item.href}
-        className={expanded ? "redline-drawer-link" : "redline-rail-link"}
+        className="ops-nav-link"
         data-active={active || undefined}
         aria-current={active ? "page" : undefined}
-        aria-label={expanded ? undefined : item.label}
-        title={expanded ? undefined : item.label}
         onClick={onClose}
       >
-        <Icon size={18} strokeWidth={2} />
-        {expanded ? <span><strong>{item.label}</strong><small>{item.description}</small></span> : null}
+        <Icon size={17} strokeWidth={1.8} aria-hidden="true" />
+        <span>
+          <strong>{item.label}</strong>
+          <small>{item.description}</small>
+        </span>
+        {item.badge ? <b>{item.badge}</b> : null}
       </Link>
+    );
+  }
+
+  function SidebarPanel({ mobile = false }: { mobile?: boolean }) {
+    return (
+      <div className="ops-sidebar-panel">
+        <div className="ops-sidebar-head">
+          <OpsBrand />
+          {mobile ? (
+            <Dialog.Close asChild>
+              <button type="button" className="ops-icon-button" aria-label="Close navigation">
+                <X size={18} />
+              </button>
+            </Dialog.Close>
+          ) : null}
+        </div>
+
+        <nav className="ops-nav" aria-label={`${roleLabel} navigation`}>
+          {role === "admin"
+            ? adminSections.map((section) => {
+                const items = navItems.filter(section.matches);
+                if (!items.length) return null;
+                return (
+                  <section key={section.label}>
+                    <h2>{section.label}</h2>
+                    <div>{items.map((item) => <NavLink key={item.href} item={item} />)}</div>
+                  </section>
+                );
+              })
+            : (
+              <section>
+                <h2>{role === "coach" ? `Coach · ${account?.name || "Workspace"}` : "Client"}</h2>
+                <div>{navItems.map((item) => <NavLink key={item.href} item={item} />)}</div>
+              </section>
+            )}
+        </nav>
+
+        <footer className="ops-account-card">
+          <span className="ops-account-avatar">{account?.initials || roleLabel.slice(0, 2).toUpperCase()}</span>
+          <span>
+            <strong>{account?.name || roleLabel}</strong>
+            <small>{account?.subtitle || `${roleLabel} workspace`}</small>
+          </span>
+          <button
+            type="button"
+            onClick={handleSignOut}
+            disabled={isSigningOut}
+            aria-label="Log out"
+            title="Log out"
+          >
+            {isSigningOut ? <LoaderCircle size={15} className="animate-spin-slow" /> : <LogOut size={15} />}
+          </button>
+        </footer>
+      </div>
     );
   }
 
   return (
     <>
-      <aside className="redline-rail" aria-label={`${roleLabel} navigation`}>
-        <span className="redline-rail-label">MFS</span>
-        <nav>{navItems.map((item) => <NavLink key={item.href} item={item} />)}</nav>
-        <button type="button" className="redline-rail-link" onClick={handleSignOut} disabled={isSigningOut} aria-label="Log out">
-          {isSigningOut ? <LoaderCircle size={18} className="animate-spin-slow" /> : <LogOut size={18} />}
-        </button>
-      </aside>
-
+      <aside className="ops-sidebar"><SidebarPanel /></aside>
       <Dialog.Portal>
-        <Dialog.Overlay className="redline-drawer-overlay" />
-        <Dialog.Content className="redline-drawer">
+        <Dialog.Overlay className="ops-drawer-overlay" />
+        <Dialog.Content className="ops-drawer">
           <Dialog.Title className="sr-only">{roleLabel} navigation</Dialog.Title>
-          <Dialog.Description className="sr-only">Navigate the Marvel&apos;s Fit Studios workspace.</Dialog.Description>
-          <div className="redline-drawer-header">
-            <BrandLockup size="compact" />
-            <Dialog.Close asChild>
-              <button type="button" className="redline-utility redline-utility--icon" aria-label="Close navigation"><X size={18} /></button>
-            </Dialog.Close>
-          </div>
-          <nav className="redline-drawer-nav">{navItems.map((item) => <NavLink key={item.href} item={item} expanded />)}</nav>
-          <footer className="redline-drawer-footer">
-            <div><strong>{account?.name || roleLabel}</strong><small>{account?.subtitle || `${roleLabel} workspace`}</small></div>
-            <button type="button" className="mv-btn mv-btn-primary" onClick={handleSignOut} disabled={isSigningOut}>
-              {isSigningOut ? <LoaderCircle size={17} className="animate-spin-slow" /> : <LogOut size={17} />} Log out
-            </button>
-          </footer>
+          <Dialog.Description className="sr-only">Navigate the operations workspace.</Dialog.Description>
+          <SidebarPanel mobile />
         </Dialog.Content>
       </Dialog.Portal>
     </>

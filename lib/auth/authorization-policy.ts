@@ -92,6 +92,9 @@ export function getDashboardRoleForUserRole(
 }
 
 export function getDashboardHomeForUserRole(userRole: UserRole): string {
+  if (userRole === UserRole.CLIENT) {
+    return "/portal-unavailable";
+  }
   return getDashboardHomeForRole(getDashboardRoleForUserRole(userRole));
 }
 

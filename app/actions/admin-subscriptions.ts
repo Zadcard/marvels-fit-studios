@@ -3,7 +3,10 @@
 import { UserRole } from "@/lib/supabase/domain";
 import { revalidatePath } from "next/cache";
 
-import type { AdminPaymentStatus } from "@/lib/mocks/admin-subscriptions";
+import type {
+  AdminPaymentMethod,
+  AdminPaymentStatus,
+} from "@/lib/mocks/admin-subscriptions";
 import { requireRole } from "@/lib/auth/session";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -18,6 +21,17 @@ type SaveAdminSubscriptionInput = {
 };
 
 type SubscriptionMutation = "pause" | "resume" | "cancel" | "renew";
+
+function toStoredPaymentMethod(method: AdminPaymentMethod) {
+  switch (method) {
+    case "InstaPay":
+      return "INSTA_PAY";
+    case "Visa":
+      return "VISA";
+    case "Cash":
+      return "CASH";
+  }
+}
 
 function revalidateSubscriptionViews() {
   revalidatePath("/admin");
@@ -142,6 +156,7 @@ export async function saveAdminSubscription(input: SaveAdminSubscriptionInput) {
 export async function mutateAdminSubscriptionLifecycle(
   subscriptionId: string,
   action: SubscriptionMutation,
+  paymentMethod?: AdminPaymentMethod,
 ) {
   await requireRole(UserRole.ADMIN);
   const supabase = getSupabaseServerClient();
@@ -151,11 +166,22 @@ export async function mutateAdminSubscriptionLifecycle(
     throw new Error("Subscription id is required.");
   }
 
-  const { error } = await supabase.rpc("admin_mutate_subscription", {
+  if (action === "renew" && !paymentMethod) {
+    throw new Error("Choose how the member paid before renewing.");
+  }
+
+  const { data, error } = await supabase.rpc("admin_mutate_subscription", {
     target_action: action,
     target_id: trimmedSubscriptionId,
+    target_payment_method:
+      action === "renew" && paymentMethod
+        ? toStoredPaymentMethod(paymentMethod)
+        : "",
   });
   if (error) throw error;
+  if (!data || typeof data !== "object" || Array.isArray(data)) {
+    throw new Error("Subscription update returned an invalid response.");
+  }
   const result =
     action === "pause"
       ? {
@@ -181,6 +207,9 @@ export async function mutateAdminSubscriptionLifecycle(
 
   return {
     ...result,
-    message: buildMutationSuccessMessage(action),
+    message:
+      action === "renew" && paymentMethod
+        ? `Subscription renewed and recorded as ${paymentMethod}.`
+        : buildMutationSuccessMessage(action),
   };
 }

@@ -1,0 +1,7 @@
+.rosterToolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 20px;border-bottom:1px solid var(--rl-line);background:var(--rl-soft)}
+.rosterToolbar span{color:var(--rl-muted);font-family:var(--font-ops-mono);font-size:.5rem;letter-spacing:.1em;text-transform:uppercase}
+.rosterToolbar button{display:inline-flex;align-items:center;gap:6px;min-height:34px;padding:0 11px;border:0;border-radius:8px;background:var(--rl-red);color:white;font-family:var(--font-ops-mono);font-size:.54rem;font-weight:700;text-transform:uppercase}
+.attendeeRow{cursor:pointer}
+.attendeeRow:hover,.attendeeRow:focus-visible{outline:none;background:var(--rl-soft)}
+.lateState{border-style:solid!important;border-color:rgba(245,158,11,.5)!important;background:var(--rl-warning-soft)!important;color:var(--rl-warning)!important}
+@media(max-width:540px){.rosterToolbar{padding-inline:14px}}

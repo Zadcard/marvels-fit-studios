@@ -86,7 +86,7 @@ export const TrainingCategory = enumValues(
 );
 
 export type LeadStatus = PublicEnums["LeadStatus"];
-export const LeadStatus = enumValues(["NEW", "CONTACTED", "CONVERTED", "CLOSED"] as const);
+export const LeadStatus = enumValues(["NEW", "CONTACTED", "CONVERTED", "CLOSED", "TRIAL_DONE"] as const);
 
 export type SubscriptionStatus = PublicEnums["SubscriptionStatus"];
 export const SubscriptionStatus = enumValues(

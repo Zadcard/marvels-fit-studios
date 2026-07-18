@@ -13,6 +13,8 @@ export type AdminSubscriptionStatus =
   | "Paused"
   | "Trial";
 export type AdminPaymentStatus = "Paid" | "Due soon" | "Overdue" | "Manual review";
+export const adminPaymentMethods = ["InstaPay", "Visa", "Cash"] as const;
+export type AdminPaymentMethod = (typeof adminPaymentMethods)[number];
 export type AdminPlanType =
   | "Group Membership"
   | "Private Coaching"
@@ -44,9 +46,13 @@ export type AdminSubscriptionRecord = {
   amountLabel: string;
   amountValue: string;
   billingCycle: string;
+  sessionsLeft?: number;
+  sessionsTotal?: number;
   note: string;
   paymentHistory: Array<{
     id: string;
+    receiptId?: string;
+    method?: AdminPaymentMethod;
     amountLabel: string;
     dateLabel: string;
     note: string;

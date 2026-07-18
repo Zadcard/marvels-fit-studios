@@ -1,7 +1,5 @@
 import type { InjuryStatusLabel } from "@/lib/dashboard/client-domain-labels";
 
-// The attendance action's raw booking statuses and the human labels the fast
-// roster shows. "Absent" maps to MISSED; the rest map 1:1.
 export type AttendanceActionStatus =
   | "ATTENDED"
   | "MISSED"

@@ -1,47 +1,43 @@
-import { AdminClientsWorkspace } from "@/components/dashboard/admin-clients-workspace";
+import { MarvelOpsAdminView } from "@/components/dashboard/marvel-ops-admin-view";
+import type { MarvelOpsClientPerson } from "@/components/dashboard/marvel-ops-admin-view";
 import { adminClientRepository } from "@/lib/repositories/admin-client-repository";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
 
-export const metadata = {
-  title: "Clients Management",
-};
+export const metadata = { title: "Clients" };
 
-function getSingleValue(
-  value: string | string[] | undefined
-): string | undefined {
-  return Array.isArray(value) ? value[0] : value;
+const tones = ["red", "violet", "teal", "green", "amber", "blue"];
+
+function initials(fullName: string) {
+  return fullName
+    .split(" ")
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 }
 
-export default async function AdminClientsPage(
-  props: PageProps<"/admin/clients">
-) {
-  const searchParams = await props.searchParams;
-  const search = getSingleValue(searchParams.q)?.trim() ?? "";
-  const initial = getSingleValue(searchParams.initial)?.trim().slice(0, 1).toUpperCase() ?? "";
-  const sort = getSingleValue(searchParams.sort) === "desc" ? "desc" : "asc";
-  const page = Math.max(1, Number(getSingleValue(searchParams.page) ?? "1") || 1);
-  const clientDirectory = await adminClientRepository.list({
-    search,
-    initial: initial || null,
-    sort,
-  });
-  const { data: groupOptions, error } = await getSupabaseServerClient()
-    .from("Group")
-    .select("id,name")
-    .order("name");
-  if (error) throw error;
+export default async function AdminClientsPage() {
+  const { records } = await adminClientRepository.list();
+  const initialPeople: MarvelOpsClientPerson[] = records.map((record, index) => ({
+    name: record.fullName,
+    initials: initials(record.fullName),
+    category: record.primaryGroup === "No group" ? record.trainingCategory : record.primaryGroup,
+    type: record.membership === "Private Coaching" ? "Private" : "Group",
+    phone: record.phone,
+    coach: record.assignedCoach,
+    coachInitials: initials(record.assignedCoach),
+    status:
+      record.status === "Active"
+        ? "Active"
+        : record.status === "Paused"
+          ? "Paused"
+          : record.status === "Trial"
+            ? "Trial"
+            : "Inactive",
+    plan: record.membership,
+    sessions: `${record.sessionsLeft} of ${record.sessionsTotal}`,
+    injury: record.hasInjuryAlert ? record.injuryNotes : undefined,
+    tone: tones[index % tones.length],
+  }));
 
-  return (
-    <AdminClientsWorkspace
-      records={clientDirectory.records}
-      searchValue={search}
-      selectedInitial={initial || null}
-      sortOrder={sort}
-      currentPage={page}
-      totalCount={clientDirectory.totalCount}
-      filteredCount={clientDirectory.filteredCount}
-      initialOptions={clientDirectory.initialOptions}
-      groupOptions={groupOptions ?? []}
-    />
-  );
+  return <MarvelOpsAdminView view="clients" initialPeople={initialPeople} />;
 }

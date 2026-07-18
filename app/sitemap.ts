@@ -7,22 +7,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   return [
     {
-      url: absoluteUrl("/"),
-      lastModified,
-      changeFrequency: "weekly",
-      priority: 1,
-    },
-    {
-      url: absoluteUrl("/join"),
-      lastModified,
-      changeFrequency: "monthly",
-      priority: 0.8,
-    },
-    {
       url: absoluteUrl("/login"),
       lastModified,
       changeFrequency: "yearly",
-      priority: 0.3,
+      priority: 0.2,
     },
   ];
 }

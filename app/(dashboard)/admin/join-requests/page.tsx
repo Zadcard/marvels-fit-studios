@@ -1,41 +1,49 @@
-import { AdminLeadsWorkspace } from "@/components/dashboard/admin-leads-workspace";
+import { MarvelOpsAdminView } from "@/components/dashboard/marvel-ops-admin-view";
+import type { MarvelOpsLead } from "@/components/dashboard/marvel-ops-admin-view";
+import { adminGroupRepository } from "@/lib/repositories/admin-group-repository";
 import { adminLeadRepository } from "@/lib/repositories/admin-lead-repository";
 
-export const metadata = {
-  title: "Join Requests",
-};
+export const metadata = { title: "Leads & Trials" };
 
-function getSingleValue(
-  value: string | string[] | undefined
-): string | undefined {
-  return Array.isArray(value) ? value[0] : value;
+const tones = ["red", "green", "violet", "blue", "amber"];
+
+function initials(name: string) {
+  return name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase();
 }
 
-export default async function AdminJoinRequestsPage(
-  props: PageProps<"/admin/join-requests">
-) {
-  const searchParams = await props.searchParams;
-  const search = getSingleValue(searchParams.q)?.trim() ?? "";
-  const initial =
-    getSingleValue(searchParams.initial)?.trim().slice(0, 1).toUpperCase() ?? "";
-  const sort = getSingleValue(searchParams.sort) === "desc" ? "desc" : "asc";
-  const page = Math.max(1, Number(getSingleValue(searchParams.page) ?? "1") || 1);
-  const leadDirectory = await adminLeadRepository.list({
-    search,
-    initial: initial || null,
-    sort,
-  });
+function sourceFor(source: string): MarvelOpsLead["source"] {
+  const value = source.toLowerCase();
+  if (value.includes("instagram")) return "Instagram";
+  if (value.includes("call")) return "Call";
+  if (value.includes("ground") || value.includes("walk")) return "On-ground";
+  return "WhatsApp";
+}
 
-  return (
-    <AdminLeadsWorkspace
-      records={leadDirectory.records}
-      searchValue={search}
-      selectedInitial={initial || null}
-      sortOrder={sort}
-      currentPage={page}
-      totalCount={leadDirectory.totalCount}
-      filteredCount={leadDirectory.filteredCount}
-      initialOptions={leadDirectory.initialOptions}
-    />
-  );
+function stageFor(status: string): MarvelOpsLead["stage"] {
+  if (status === "CONVERTED" || status === "Converted") return "Won";
+  if (status === "CLOSED" || status === "Closed") return "Lost";
+  if (status === "CONTACTED" || status === "Contacted") return "Trial booked";
+  if (status === "TRIAL_DONE" || status === "Trial done") return "Trial done";
+  return "New";
+}
+
+export default async function AdminJoinRequestsPage() {
+  const [{ records }, { records: groups }] = await Promise.all([
+    adminLeadRepository.list(),
+    adminGroupRepository.list(),
+  ]);
+  const initialLeads: MarvelOpsLead[] = records.map((record, index) => ({
+    id: record.id,
+    stage: stageFor(record.status),
+    name: record.fullName,
+    initials: initials(record.fullName),
+    tone: tones[index % tones.length],
+    source: sourceFor(record.source),
+    phone: record.phone,
+    wants: "Trial consultation",
+    note: record.message,
+    assigned: record.trialGroupId ? `Trial: ${groups.find((group) => group.id === record.trialGroupId)?.name ?? "Assigned group"}` : undefined,
+  }));
+
+  return <MarvelOpsAdminView view="leads" initialLeads={initialLeads} trialGroups={groups.filter((group) => group.isActive).map((group) => ({ id: group.id, name: group.name }))} />;
 }

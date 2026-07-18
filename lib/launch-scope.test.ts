@@ -9,9 +9,9 @@ import {
 } from "@/lib/launch-scope";
 
 describe("launch scope", () => {
-  it("keeps admin and coach out-of-scope areas parked for launch", () => {
+  it("keeps the client portal and transformation studio parked for launch", () => {
     expect(LAUNCH_CLIENT_PORTAL_ENABLED).toBe(false);
-    expect(LAUNCH_NOTIFICATIONS_ENABLED).toBe(false);
+    expect(LAUNCH_NOTIFICATIONS_ENABLED).toBe(true);
     expect(LAUNCH_TRANSFORMATION_ENABLED).toBe(false);
   });
 
@@ -26,9 +26,9 @@ describe("launch scope", () => {
     );
   });
 
-  it("sends parked notification and transformation routes to the role home", () => {
-    expect(parkedRouteRedirect("/admin/notifications", "/admin")).toBe("/admin");
-    expect(parkedRouteRedirect("/coach/notifications", "/coach")).toBe("/coach");
+  it("keeps notification routes available and parks transformation routes", () => {
+    expect(parkedRouteRedirect("/admin/notifications", "/admin")).toBeNull();
+    expect(parkedRouteRedirect("/coach/notifications", "/coach")).toBeNull();
     expect(
       parkedRouteRedirect("/coach/clients/abc/transformation", "/coach")
     ).toBe("/coach");

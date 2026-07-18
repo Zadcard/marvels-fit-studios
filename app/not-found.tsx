@@ -1,36 +1,9 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 
-import { BrandLockup } from "@/components/ui/brand-lockup";
-
-export const metadata: Metadata = {
-  title: "Page not found",
-};
+export const metadata: Metadata = { title: "Page not found" };
 
 export default function NotFound() {
-  return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-8 bg-[color:var(--rl-canvas)] px-6 py-16 text-center">
-      <BrandLockup eyebrow="Marvel's Fit Studios" contextLabel="404" priority />
-
-      <div className="grid max-w-md gap-3">
-        <p className="text-xs font-extrabold uppercase tracking-[.14em] text-[color:var(--rl-red)]">Page not found</p>
-        <h1 className="font-[var(--font-display)] text-3xl font-bold tracking-tight text-[color:var(--rl-ink)] sm:text-4xl">
-          This page doesn&apos;t exist.
-        </h1>
-        <p className="text-[color:var(--rl-muted)]">
-          The link may be broken or the page may have moved. Let&apos;s get you
-          back on track.
-        </p>
-      </div>
-
-      <div className="flex flex-wrap items-center justify-center gap-3">
-        <Link href="/" className="mv-btn mv-btn-primary">
-          Back to home
-        </Link>
-        <Link href="/login" className="mv-btn mv-btn-outline">
-          Member sign in
-        </Link>
-      </div>
-    </main>
-  );
+  return <main className="ops-empty-state"><Image src="/img/Logo-3.png" alt="Marvel Fitness Studios" width={54} height={54} priority /><p>Operations system · 404</p><h1>This route is not part of the studio workspace.</h1><Link href="/login" className="mv-btn mv-btn-primary">Open sign in</Link></main>;
 }

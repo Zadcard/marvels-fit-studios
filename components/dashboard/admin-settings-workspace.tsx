@@ -1,22 +1,121 @@
 "use client";
-import { useState, useTransition, type FormEvent } from "react";
-import { Check, Clock3, RefreshCcw, Save, ShieldCheck, SlidersHorizontal } from "lucide-react";
-import { adminStudioSettingOptions, adminStudioSettings, type AdminStudioSettings } from "@/lib/mocks/admin-settings";
+
+import { Check, LoaderCircle, Save } from "lucide-react";
+import { useState, useTransition, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
+
+import { saveAdminSettings } from "@/app/actions/admin-settings";
+import {
+  adminStudioSettingOptions,
+  type AdminStudioSettings,
+} from "@/lib/mocks/admin-settings";
+
 import styles from "./admin-settings-workspace.module.css";
 
-export function AdminSettingsWorkspace({ initialSettings, saveSettingsAction }: { initialSettings?: AdminStudioSettings; saveSettingsAction?: (input: AdminStudioSettings) => Promise<void> }) {
-  const initial = initialSettings ?? adminStudioSettings;
-  const [settings, setSettings] = useState(initial); const [saved, setSaved] = useState(initial); const [message, setMessage] = useState("Live rules loaded."); const [pending, startTransition] = useTransition();
-  const dirty = JSON.stringify(settings) !== JSON.stringify(saved);
-  function update<K extends keyof AdminStudioSettings>(key: K, value: AdminStudioSettings[K]) { setSettings((current) => ({ ...current, [key]: value })); }
-  function submit(event: FormEvent) { event.preventDefault(); setMessage(""); startTransition(async () => { try { await saveSettingsAction?.(settings); setSaved(settings); setMessage("Studio rules saved."); } catch (caught) { setMessage(caught instanceof Error ? caught.message : "Could not save studio settings."); } }); }
-  return <form className={styles.page} onSubmit={submit} aria-busy={pending}>
-    <header className={styles.hero}><div><span className={styles.kicker}>Studio rules</span><h1>Set the operating code.</h1><p>Identity, timing and booking defaults that every connected workflow must follow.</p></div><div><button type="button" className="mv-btn mv-btn-secondary" disabled={!dirty || pending} onClick={() => { setSettings(saved); setMessage("Saved rules restored."); }}><RefreshCcw size={16} /> Reset</button><button type="submit" className="mv-btn mv-btn-primary" disabled={!dirty || pending}><Save size={16} /> {pending ? "Saving…" : "Publish rules"}</button></div></header>
-    <section className={styles.scoreboard}><article><span>Save state</span><strong>{dirty ? "Pending" : "Synced"}</strong><small>{message}</small></article><article><span>Base session</span><strong>{settings.defaultSessionLength}</strong><small>Default program duration</small></article><article><span>Intake lead</span><strong>{settings.intakeLeadTime}</strong><small>Before intake decisions</small></article><article className={styles.blackCard}><span>Waitlist mode</span><strong>{settings.overbookWaitlist ? "On" : "Off"}</strong><small>Managed overflow policy</small></article></section>
-    <section className={styles.console}><div className={styles.forms}>
-      <fieldset><legend><ShieldCheck size={18} /><span><strong>Studio identity</strong><small>Public support and operating identity.</small></span></legend><div className={styles.grid}><label>Studio name<input required value={settings.studioName} onChange={(e) => update("studioName", e.target.value)} /></label><label>Support email<input required type="email" value={settings.supportEmail} onChange={(e) => update("supportEmail", e.target.value)} /></label><label>Support phone<input value={settings.supportPhone} onChange={(e) => update("supportPhone", e.target.value)} /></label><label>Timezone<input required value={settings.timezone} onChange={(e) => update("timezone", e.target.value)} /></label></div></fieldset>
-      <fieldset><legend><Clock3 size={18} /><span><strong>Operating rhythm</strong><small>Timing defaults for sessions and onboarding.</small></span></legend><div className={styles.grid}><label>Default session length<select value={settings.defaultSessionLength} onChange={(e) => update("defaultSessionLength", e.target.value)}>{adminStudioSettingOptions.sessionLengths.map((o) => <option key={o}>{o}</option>)}</select></label><label>Intake lead time<select value={settings.intakeLeadTime} onChange={(e) => update("intakeLeadTime", e.target.value)}>{adminStudioSettingOptions.intakeLeadTimes.map((o) => <option key={o}>{o}</option>)}</select></label><label>Cancellation window<select value={settings.cancellationWindow} onChange={(e) => update("cancellationWindow", e.target.value)}>{adminStudioSettingOptions.cancellationWindows.map((o) => <option key={o}>{o}</option>)}</select></label><label>Private-session buffer<select value={settings.privateSessionBuffer} onChange={(e) => update("privateSessionBuffer", e.target.value)}>{adminStudioSettingOptions.privateSessionBuffers.map((o) => <option key={o}>{o}</option>)}</select></label></div></fieldset>
-      <fieldset><legend><SlidersHorizontal size={18} /><span><strong>Booking controls</strong><small>Rules that shape the calendar experience.</small></span></legend><div className={styles.grid}><label>Schedule starts on<select value={settings.scheduleStartDay} onChange={(e) => update("scheduleStartDay", e.target.value)}>{adminStudioSettingOptions.scheduleStartDays.map((o) => <option key={o}>{o}</option>)}</select></label><label className={styles.switch}><input type="checkbox" checked={settings.overbookWaitlist} onChange={(e) => update("overbookWaitlist", e.target.checked)} /><span><i /><strong>Allow managed waitlist overflow</strong><small>Enable pressure-mode booking beyond available seats.</small></span></label></div></fieldset>
-    </div><aside className={styles.snapshot}><div><Check size={20} /><span><strong>Rules snapshot</strong><small>{dirty ? "Review edits before publishing." : "Database values are active."}</small></span></div><dl><div><dt>Studio</dt><dd>{settings.studioName}</dd></div><div><dt>Timezone</dt><dd>{settings.timezone}</dd></div><div><dt>Session</dt><dd>{settings.defaultSessionLength}</dd></div><div><dt>Cancellation</dt><dd>{settings.cancellationWindow}</dd></div><div><dt>Private buffer</dt><dd>{settings.privateSessionBuffer}</dd></div><div><dt>Week starts</dt><dd>{settings.scheduleStartDay}</dd></div></dl><p>{message}</p></aside></section>
-  </form>;
+export function AdminSettingsWorkspace({
+  settings,
+}: {
+  settings: AdminStudioSettings;
+}) {
+  const router = useRouter();
+  const [form, setForm] = useState(settings);
+  const [pending, startTransition] = useTransition();
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+
+  const update = <Key extends keyof AdminStudioSettings>(
+    key: Key,
+    value: AdminStudioSettings[Key],
+  ) => {
+    setForm((current) => ({ ...current, [key]: value }));
+    setMessage("");
+  };
+
+  const submit = () => {
+    setError("");
+    startTransition(async () => {
+      try {
+        await saveAdminSettings(form);
+        setMessage("Studio settings saved.");
+        router.refresh();
+      } catch (reason) {
+        setError(
+          reason instanceof Error
+            ? reason.message
+            : "Settings could not be saved.",
+        );
+      }
+    });
+  };
+
+  return (
+    <form
+      className={styles.page}
+      onSubmit={(event) => {
+        event.preventDefault();
+        submit();
+      }}
+      aria-busy={pending}
+    >
+      <section className={styles.panel}>
+        <header>
+          <div>
+            <span>Studio</span>
+            <h2>Studio details</h2>
+            <p>Core information used across the operations workspace.</p>
+          </div>
+        </header>
+        <div className={styles.fields}>
+          <Field label="Studio name"><input value={form.studioName} onChange={(event) => update("studioName", event.target.value)} /></Field>
+          <Field label="Timezone"><input value={form.timezone} onChange={(event) => update("timezone", event.target.value)} /></Field>
+          <Field label="Support email"><input type="email" value={form.supportEmail} onChange={(event) => update("supportEmail", event.target.value)} /></Field>
+          <Field label="Support phone"><input type="tel" value={form.supportPhone} onChange={(event) => update("supportPhone", event.target.value)} /></Field>
+        </div>
+      </section>
+
+      <section className={styles.panel}>
+        <header>
+          <div>
+            <span>Operations</span>
+            <h2>Daily rhythm</h2>
+            <p>Defaults for sessions, private coaching, and new intake.</p>
+          </div>
+        </header>
+        <div className={styles.fields}>
+          <Field label="Default session length"><select value={form.defaultSessionLength} onChange={(event) => update("defaultSessionLength", event.target.value)}>{adminStudioSettingOptions.sessionLengths.map((option) => <option key={option}>{option}</option>)}</select></Field>
+          <Field label="Intake lead time"><select value={form.intakeLeadTime} onChange={(event) => update("intakeLeadTime", event.target.value)}>{adminStudioSettingOptions.intakeLeadTimes.map((option) => <option key={option}>{option}</option>)}</select></Field>
+          <Field label="Private session buffer"><select value={form.privateSessionBuffer} onChange={(event) => update("privateSessionBuffer", event.target.value)}>{adminStudioSettingOptions.privateSessionBuffers.map((option) => <option key={option}>{option}</option>)}</select></Field>
+        </div>
+      </section>
+
+      <section className={styles.panel}>
+        <header>
+          <div>
+            <span>Booking</span>
+            <h2>Calendar controls</h2>
+            <p>Keep the weekly schedule and waitlist behavior predictable.</p>
+          </div>
+        </header>
+        <div className={styles.fields}>
+          <Field label="Cancellation window"><select value={form.cancellationWindow} onChange={(event) => update("cancellationWindow", event.target.value)}>{adminStudioSettingOptions.cancellationWindows.map((option) => <option key={option}>{option}</option>)}</select></Field>
+          <Field label="Schedule starts"><select value={form.scheduleStartDay} onChange={(event) => update("scheduleStartDay", event.target.value)}>{adminStudioSettingOptions.scheduleStartDays.map((option) => <option key={option}>{option}</option>)}</select></Field>
+          <label className={styles.switchCard}>
+            <span><b>Overbook waitlist</b><small>Allow a waitlisted client to fill a released place automatically.</small></span>
+            <input type="checkbox" checked={form.overbookWaitlist} onChange={(event) => update("overbookWaitlist", event.target.checked)} />
+            <i aria-hidden="true" />
+          </label>
+        </div>
+      </section>
+
+      {error ? <p className={styles.error} role="alert">{error}</p> : null}
+      <footer className={styles.footer}>
+        <span aria-live="polite">{message ? <><Check size={14} /> {message}</> : "Changes apply to future operations."}</span>
+        <button type="submit" disabled={pending}>{pending ? <><LoaderCircle size={15} className={styles.spinner} /> Saving</> : <><Save size={15} /> Save changes</>}</button>
+      </footer>
+    </form>
+  );
+}
+
+function Field({ label, children }: { label: string; children: ReactNode }) {
+  return <label className={styles.field}><span>{label}</span>{children}</label>;
 }

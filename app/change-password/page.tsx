@@ -6,7 +6,7 @@ import { auth } from "@/auth";
 import { RequiredPasswordChangeForm } from "@/app/change-password/change-password-form";
 import { getDashboardHomeForUserRole } from "@/lib/auth/authorization-policy";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
-import { RedlineAuthShell } from "@/components/auth/redline-auth-shell";
+import { OpsAuthShell } from "@/components/auth/ops-auth-shell";
 
 export const metadata = {
   title: "Change Password",
@@ -30,12 +30,12 @@ export default async function ChangePasswordPage() {
   }
 
   return (
-    <RedlineAuthShell
+    <OpsAuthShell
       eyebrow="Account control"
       title="Make the access yours."
       note="Replace the temporary credential before opening the studio dashboard."
     >
       <RequiredPasswordChangeForm />
-    </RedlineAuthShell>
+    </OpsAuthShell>
   );
 }

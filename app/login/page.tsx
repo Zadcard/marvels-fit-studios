@@ -8,10 +8,9 @@ import {
   type FormEvent,
   type KeyboardEvent,
 } from "react";
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
-import { RedlineAuthShell } from "@/components/auth/redline-auth-shell";
+import { OpsAuthShell } from "@/components/auth/ops-auth-shell";
 
 import "./login.css";
 
@@ -170,7 +169,7 @@ function LoginForm() {
   return (
     <div className="login-form-panel">
       <div className="login-form-header">
-        <div className="auth-kicker">Member access / secure</div>
+        <div className="auth-kicker">Operations access / secure</div>
         <h2 className="login-form-title">Welcome back</h2>
         <p className="login-form-subtitle">
           Sign in to access your dashboard and sessions.
@@ -413,32 +412,17 @@ function LoginForm() {
         </button>
       </form>
 
-      <Link href="/" className="login-back">
-        <svg
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <line x1="19" y1="12" x2="5" y2="12" />
-          <polyline points="12 19 5 12 12 5" />
-        </svg>
-        Back to website
-      </Link>
+      <p className="login-help">Need access? Contact the studio administrator.</p>
     </div>
   );
 }
 
 export default function LoginPage() {
   return (
-    <RedlineAuthShell>
+    <OpsAuthShell>
         <Suspense fallback={<div className="login-loading">Loading secure login...</div>}>
           <LoginForm />
         </Suspense>
-    </RedlineAuthShell>
+    </OpsAuthShell>
   );
 }

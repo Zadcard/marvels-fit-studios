@@ -1,6 +1,7 @@
 import "server-only";
 
 import type {
+  AdminPaymentMethod,
   AdminPaymentStatus,
   AdminPlanType,
   AdminSubscriptionRecord,
@@ -110,6 +111,19 @@ function mapBillingCycleLabel(value: string) {
   return value.charAt(0) + value.slice(1).toLowerCase();
 }
 
+function mapPaymentMethod(value: string | null): AdminPaymentMethod | undefined {
+  switch (value) {
+    case "INSTA_PAY":
+      return "InstaPay";
+    case "VISA":
+      return "Visa";
+    case "CASH":
+      return "Cash";
+    default:
+      return undefined;
+  }
+}
+
 export class AdminSubscriptionRepository {
   async list(): Promise<{
     stats: Array<{
@@ -142,19 +156,20 @@ export class AdminSubscriptionRepository {
           clientsResult,
           plansResult,
           paymentsResult,
+          ledgerEntriesResult,
         ] = await Promise.all([
           supabase
             .from("ClientSubscription")
             .select(
               `
-              id, status, renewsAt, customPrice, startsAt,
+              id, status, renewsAt, customPrice, startsAt, sessionsTotal,
               plan:SubscriptionPlan(id, name, billingCycle, price),
-              client:Client(id, fullName, isPaid,
+              client:Client(id, fullName, isPaid, sessionsLeft,
                 group:Group(coach:Coach(fullName)),
                 bookings:SessionBooking(status,
                   trainingSession:TrainingSession(type, status,
                     coach:Coach(fullName)))),
-              payments:Payment(id, amount, currency, date, note)
+              payments:Payment(id, amount, currency, date, method, note)
             `,
             )
             .order("startsAt", { ascending: false }),
@@ -165,11 +180,22 @@ export class AdminSubscriptionRepository {
             .eq("isActive", true)
             .order("name"),
           supabase.from("Payment").select("amount, date"),
+          supabase
+            .from("BillingLedgerEntry")
+            .select("id,paymentId")
+            .not("paymentId", "is", null),
         ]);
         if (subscriptionsResult.error) throw subscriptionsResult.error;
         if (clientsResult.error) throw clientsResult.error;
         if (plansResult.error) throw plansResult.error;
         if (paymentsResult.error) throw paymentsResult.error;
+        if (ledgerEntriesResult.error) throw ledgerEntriesResult.error;
+
+        const receiptIdByPaymentId = new Map(
+          ledgerEntriesResult.data.flatMap((entry) =>
+            entry.paymentId ? [[entry.paymentId, entry.id] as const] : [],
+          ),
+        );
 
         const clients = clientsResult.data;
         const plans = plansResult.data;
@@ -256,6 +282,8 @@ export class AdminSubscriptionRepository {
             amountLabel: currencyFormatter.format(effectiveAmount),
             amountValue: String(effectiveAmount),
             billingCycle: mapBillingCycleLabel(subscription.plan.billingCycle),
+            sessionsLeft: subscription.client.sessionsLeft,
+            sessionsTotal: subscription.sessionsTotal ?? undefined,
             note:
               paymentStatus === "Paid"
                 ? "Latest payment is recorded."
@@ -264,6 +292,8 @@ export class AdminSubscriptionRepository {
                   : "Payment follow-up is still needed.",
             paymentHistory: subscription.payments.map((payment) => ({
               id: payment.id,
+              receiptId: receiptIdByPaymentId.get(payment.id),
+              method: mapPaymentMethod(payment.method),
               amountLabel: new Intl.NumberFormat("en-US", {
                 style: "currency",
                 currency: payment.currency,

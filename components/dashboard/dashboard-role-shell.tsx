@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Dialog } from "radix-ui";
 
 import { DashboardSidebar } from "@/components/dashboard/dashboard-sidebar";
 import { DashboardTopbar } from "@/components/dashboard/dashboard-topbar";
+import { DashboardCommandPalette } from "@/components/dashboard/dashboard-command-palette";
 import type { DashboardRole } from "@/lib/auth/authorization-policy";
 import "@/app/(dashboard)/redline-shell.css";
 
@@ -22,27 +23,43 @@ type DashboardRoleShellProps = {
 
 export function DashboardRoleShell({ role, account, children }: DashboardRoleShellProps) {
   const [isNavigationOpen, setIsNavigationOpen] = useState(false);
+  const [isCommandOpen, setIsCommandOpen] = useState(false);
+
+  useEffect(() => {
+    function openCommandWithShortcut(event: KeyboardEvent) {
+      const target = event.target;
+      if (target instanceof HTMLElement && (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName))) return;
+      if (event.key === "/" || ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k")) {
+        event.preventDefault();
+        setIsCommandOpen(true);
+      }
+    }
+
+    window.addEventListener("keydown", openCommandWithShortcut);
+    return () => window.removeEventListener("keydown", openCommandWithShortcut);
+  }, []);
 
   return (
     <Dialog.Root open={isNavigationOpen} onOpenChange={setIsNavigationOpen}>
-      <div className="redline-viewport">
-        <div className="redline-frame">
+      <div className="ops-viewport">
+        <DashboardSidebar
+          role={role}
+          account={account}
+          onClose={() => setIsNavigationOpen(false)}
+        />
+        <div className="ops-stage">
           <DashboardTopbar
             role={role}
-            account={account}
             isMenuOpen={isNavigationOpen}
             onOpenMenu={() => setIsNavigationOpen(true)}
+            onOpenCommand={() => setIsCommandOpen(true)}
           />
-          <div className="redline-workspace">
-            <DashboardSidebar
-              role={role}
-              account={account}
-              onClose={() => setIsNavigationOpen(false)}
-            />
-            <main className="redline-content" id="main-content">{children}</main>
-          </div>
+          <main className="ops-content" id="main-content">
+            {children}
+          </main>
         </div>
       </div>
+      <DashboardCommandPalette role={role} open={isCommandOpen} onClose={() => setIsCommandOpen(false)} />
     </Dialog.Root>
   );
 }

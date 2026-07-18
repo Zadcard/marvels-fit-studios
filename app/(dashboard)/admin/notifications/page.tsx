@@ -1,6 +1,10 @@
-import { NotificationWorkspace } from "@/components/dashboard/notification-workspace";
-import { requireRole } from "@/lib/auth/session";
+import { MarvelOpsNotifications } from "@/components/dashboard/marvel-ops-notifications";
+import { requireUser } from "@/lib/auth/session";
 import { listNotifications } from "@/lib/repositories/notification-repository";
-import { UserRole } from "@/lib/supabase/domain";
+
 export const metadata = { title: "Notifications" };
-export default async function Page() { const user = await requireRole(UserRole.ADMIN); return <NotificationWorkspace notifications={await listNotifications(user.id)} />; }
+
+export default async function AdminNotificationsPage() {
+  const user = await requireUser();
+  return <MarvelOpsNotifications items={await listNotifications(user.id)} />;
+}

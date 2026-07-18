@@ -9,20 +9,20 @@ describe("withSupabaseFallback", () => {
     ).resolves.toEqual(["client-1"]);
   });
 
-  it("logs and rethrows database failures instead of rendering empty data", async () => {
+  it("logs and returns the supplied fallback for database failures", async () => {
     const error = new Error("database unavailable");
-    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+    const consoleWarn = vi.spyOn(console, "warn").mockImplementation(() => {});
 
     await expect(
       withSupabaseFallback(async () => {
         throw error;
       }, [])
-    ).rejects.toBe(error);
-    expect(consoleError).toHaveBeenCalledWith(
-      "[withSupabaseFallback] database operation failed:",
+    ).resolves.toEqual([]);
+    expect(consoleWarn).toHaveBeenCalledWith(
+      "[withSupabaseFallback] database operation unavailable; rendering fallback:",
       error
     );
 
-    consoleError.mockRestore();
+    consoleWarn.mockRestore();
   });
 });

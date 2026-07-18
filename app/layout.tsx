@@ -1,7 +1,12 @@
 import type { Metadata, Viewport } from "next";
 
 import { AuthProvider } from "@/components/providers/session-provider";
-import { plusJakartaSans, sora } from "./fonts";
+import {
+  opsBody,
+  opsDisplay,
+  opsImpact,
+  opsMono,
+} from "./fonts";
 
 import "./globals.css";
 
@@ -9,15 +14,15 @@ const appUrl = process.env.APP_URL ?? "http://localhost:3000";
 
 export const metadata: Metadata = {
   title: {
-    default: "Marvel's Fit Studios",
-    template: "%s | Marvel's Fit Studios",
+    default: "Marvel Fitness Studios · Operations",
+    template: "%s | Marvel Fitness Studios",
   },
-  description: "Marvel's Fit Studios website and member portals.",
+  description: "Internal operations workspace for Marvel Fitness Studios admins and coaches.",
   metadataBase: new URL(appUrl),
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0b0b0d",
+  themeColor: "#050505",
 };
 
 export default function RootLayout({
@@ -29,7 +34,7 @@ export default function RootLayout({
     <html
       lang="en"
       data-scroll-behavior="smooth"
-      className={`${plusJakartaSans.variable} ${sora.variable}`}
+      className={`${opsBody.variable} ${opsDisplay.variable} ${opsMono.variable} ${opsImpact.variable}`}
     >
       <body>
         <AuthProvider>{children}</AuthProvider>
