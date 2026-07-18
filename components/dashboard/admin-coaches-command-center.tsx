@@ -1,6 +1,6 @@
 "use client";
 
-import { useDeferredValue, useMemo, useState, useTransition, type FormEvent } from "react";
+import { useDeferredValue, useEffect, useMemo, useState, useTransition, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Dialog } from "radix-ui";
 import { Pencil, Plus, Search, Trash2, X } from "lucide-react";
@@ -27,10 +27,10 @@ function coachState(coach: AdminCoachRecord) {
   return { label: "Available", className: styles.success };
 }
 
-export function AdminCoachesCommandCenter({ records }: { records: AdminCoachRecord[] }) {
+export function AdminCoachesCommandCenter({ records, initialSearch = "" }: { records: AdminCoachRecord[]; initialSearch?: string }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(initialSearch);
   const deferredSearch = useDeferredValue(search);
   const [specialty, setSpecialty] = useState<(typeof specialties)[number]>("All");
   const [sort, setSort] = useState<Sort>("name");
@@ -41,6 +41,8 @@ export function AdminCoachesCommandCenter({ records }: { records: AdminCoachReco
   const [form, setForm] = useState<CoachForm>(emptyForm);
   const [error, setError] = useState("");
   const [credentials, setCredentials] = useState<TemporaryCredentials | null>(null);
+
+  useEffect(() => setSearch(initialSearch), [initialSearch]);
 
   const visible = useMemo(() => {
     const query = deferredSearch.trim().toLowerCase();

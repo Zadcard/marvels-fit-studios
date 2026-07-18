@@ -13,6 +13,7 @@ function initials(name: string) {
 
 function sourceFor(source: string): MarvelOpsLead["source"] {
   const value = source.toLowerCase();
+  if (value.includes("admin")) return "Admin";
   if (value.includes("instagram")) return "Instagram";
   if (value.includes("call")) return "Call";
   if (value.includes("ground") || value.includes("walk")) return "On-ground";

@@ -7,6 +7,7 @@ import { DashboardSidebar } from "@/components/dashboard/dashboard-sidebar";
 import { DashboardTopbar } from "@/components/dashboard/dashboard-topbar";
 import { DashboardCommandPalette } from "@/components/dashboard/dashboard-command-palette";
 import type { DashboardRole } from "@/lib/auth/authorization-policy";
+import type { DashboardCommandItem } from "@/lib/dashboard/dashboard-command-item";
 import "@/app/(dashboard)/redline-shell.css";
 
 export type DashboardAccountSummary = {
@@ -18,10 +19,11 @@ export type DashboardAccountSummary = {
 type DashboardRoleShellProps = {
   role: DashboardRole;
   account?: DashboardAccountSummary;
+  commandItems?: DashboardCommandItem[];
   children: React.ReactNode;
 };
 
-export function DashboardRoleShell({ role, account, children }: DashboardRoleShellProps) {
+export function DashboardRoleShell({ role, account, commandItems = [], children }: DashboardRoleShellProps) {
   const [isNavigationOpen, setIsNavigationOpen] = useState(false);
   const [isCommandOpen, setIsCommandOpen] = useState(false);
 
@@ -59,7 +61,7 @@ export function DashboardRoleShell({ role, account, children }: DashboardRoleShe
           </main>
         </div>
       </div>
-      <DashboardCommandPalette role={role} open={isCommandOpen} onClose={() => setIsCommandOpen(false)} />
+      <DashboardCommandPalette role={role} commandItems={commandItems} open={isCommandOpen} onClose={() => setIsCommandOpen(false)} />
     </Dialog.Root>
   );
 }

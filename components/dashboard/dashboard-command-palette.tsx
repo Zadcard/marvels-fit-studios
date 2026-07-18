@@ -6,16 +6,16 @@ import {
   Flag,
   Search,
   UserRoundPlus,
-  WalletCards,
   type LucideIcon,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import type { DashboardRole } from "@/lib/auth/authorization-policy";
+import type { DashboardCommandItem } from "@/lib/dashboard/dashboard-command-item";
 import { getDashboardNav } from "@/lib/navigation/dashboard-nav";
 import styles from "./dashboard-command-palette.module.css";
 
-type CommandItem = {
+type PaletteCommandItem = {
   label: string;
   detail?: string;
   kind: "Action" | "Page" | "Client" | "Coach";
@@ -24,28 +24,19 @@ type CommandItem = {
   tone?: "red" | "green" | "violet" | "neutral" | "avatar-red" | "avatar-violet" | "avatar-blue";
 };
 
-type CommandGroup = { label: string; items: CommandItem[] };
+type CommandGroup = { label: string; items: PaletteCommandItem[] };
 
-const adminPeople: CommandItem[] = [
-  { label: "Omar Tarek", detail: "Strength Class · Active", kind: "Client", href: "/admin/clients?profile=Omar%20Tarek", icon: "OT", tone: "avatar-red" },
-  { label: "Sara Nabil", detail: "PT · Active", kind: "Client", href: "/admin/clients?profile=Sara%20Nabil", icon: "SN", tone: "avatar-violet" },
-  { label: "Ali Hassan", detail: "Strength Class · Active", kind: "Client", href: "/admin/clients?profile=Ali%20Hassan", icon: "AH", tone: "avatar-blue" },
-  { label: "Nada Sherif", detail: "Ladies Class · Active", kind: "Client", href: "/admin/clients?profile=Nada%20Sherif", icon: "NS", tone: "green" },
-];
-
-const coachPeople: CommandItem[] = [
-  { label: "Omar Tarek", detail: "Strength Class · Member", kind: "Client", href: "/coach/clients", icon: "OT", tone: "avatar-red" },
-  { label: "Sara Nabil", detail: "PT · Member", kind: "Client", href: "/coach/clients", icon: "SN", tone: "avatar-violet" },
-  { label: "Ali Hassan", detail: "Strength Class · Member", kind: "Client", href: "/coach/clients", icon: "AH", tone: "avatar-blue" },
-];
-
-const coaches: CommandItem[] = [
-  { label: "Ahmed Waheed", detail: "Head Coach · Strength", kind: "Coach", href: "/admin/coaches", icon: "AW", tone: "avatar-red" },
-  { label: "Mariam Soliman", detail: "Ladies & Rehab", kind: "Coach", href: "/admin/coaches", icon: "MS", tone: "avatar-violet" },
-  { label: "Youssef Abdelatif", detail: "Athlete Conditioning", kind: "Coach", href: "/admin/coaches", icon: "YA", tone: "avatar-blue" },
-];
-
-export function DashboardCommandPalette({ open, role, onClose }: { open: boolean; role: DashboardRole; onClose: () => void }) {
+export function DashboardCommandPalette({
+  open,
+  role,
+  commandItems,
+  onClose,
+}: {
+  open: boolean;
+  role: DashboardRole;
+  commandItems: DashboardCommandItem[];
+  onClose: () => void;
+}) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
@@ -59,29 +50,34 @@ export function DashboardCommandPalette({ open, role, onClose }: { open: boolean
   }));
 
   const groups = useMemo<CommandGroup[]>(() => {
-    const actions: CommandItem[] = role === "admin"
+    const actions: PaletteCommandItem[] = role === "admin"
       ? [
           { label: "Mark attendance", detail: "Jump to the live session", kind: "Action", href: "/admin/attendance", icon: CheckCircle2, tone: "green" },
-          { label: "Record cash out", kind: "Action", href: "/admin/subscriptions", icon: WalletCards, tone: "red" },
-          { label: "New member", kind: "Action", href: "/admin/clients", icon: UserRoundPlus, tone: "red" },
-          { label: "Add lead", kind: "Action", href: "/admin/join-requests", icon: Flag, tone: "violet" },
+          { label: "New member", kind: "Action", href: "/admin/clients?new=1", icon: UserRoundPlus, tone: "red" },
+          { label: "Add lead", kind: "Action", href: "/admin/join-requests?new=1", icon: Flag, tone: "violet" },
         ]
-      : [{ label: "Mark attendance", detail: "Open today’s session", kind: "Action", href: "/coach", icon: CheckCircle2, tone: "green" }];
+      : [];
+    const people: PaletteCommandItem[] = commandItems
+      .filter((item) => item.kind === "Client")
+      .map((item) => ({ ...item, icon: item.initials }));
+    const coaches: PaletteCommandItem[] = commandItems
+      .filter((item) => item.kind === "Coach")
+      .map((item) => ({ ...item, icon: item.initials }));
     const all: CommandGroup[] = [
       { label: "Actions", items: actions },
       { label: "Go to", items: pages },
-      { label: "People", items: role === "admin" ? adminPeople : coachPeople },
+      { label: "People", items: people },
       ...(role === "admin" ? [{ label: "Coaches", items: coaches }] : []),
-    ];
+    ].filter((group) => group.items.length > 0);
     const value = query.trim().toLowerCase();
-    if (!value) return all.slice(0, 3);
+    if (!value) return all;
     return all
       .map((group) => ({
         ...group,
         items: group.items.filter((item) => `${item.label} ${item.detail ?? ""}`.toLowerCase().includes(value)),
       }))
       .filter((group) => group.items.length);
-  }, [pages, query, role]);
+  }, [commandItems, pages, query, role]);
 
   useEffect(() => {
     if (!open) return;
@@ -124,16 +120,16 @@ export function DashboardCommandPalette({ open, role, onClose }: { open: boolean
             <section className={styles.group} key={group.label} aria-label={group.label}>
               <h2>{group.label}</h2>
               {group.items.map((item) => (
-                  <button type="button" key={`${item.kind}-${item.label}`} onClick={() => navigate(item.href)}>
-                    <span className={`${styles.iconTile} ${styles[item.tone ?? "neutral"]}`} aria-hidden="true">
-                      {typeof item.icon === "string" ? item.icon : <item.icon size={16} />}
-                    </span>
-                    <span className={styles.itemCopy}>
-                      <span>{item.label}</span>
-                      {item.detail ? <small>{item.detail}</small> : null}
-                    </span>
-                    <span className={styles.kind}>{item.kind}</span>
-                  </button>
+                <button type="button" key={`${item.kind}-${item.label}`} onClick={() => navigate(item.href)}>
+                  <span className={`${styles.iconTile} ${styles[item.tone ?? "neutral"]}`} aria-hidden="true">
+                    {typeof item.icon === "string" ? item.icon : <item.icon size={16} />}
+                  </span>
+                  <span className={styles.itemCopy}>
+                    <span>{item.label}</span>
+                    {item.detail ? <small>{item.detail}</small> : null}
+                  </span>
+                  <span className={styles.kind}>{item.kind}</span>
+                </button>
               ))}
             </section>
           ))}

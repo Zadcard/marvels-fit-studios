@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { DashboardRoleShell } from "@/components/dashboard/dashboard-role-shell";
 import { getDashboardHomeForUserRole } from "@/lib/auth/authorization-policy";
 import { requireRole } from "@/lib/auth/session";
+import { dashboardCommandRepository } from "@/lib/repositories/dashboard-command-repository";
 import { UserRole } from "@/lib/supabase/domain";
 import { getInitials } from "@/lib/utils";
 
@@ -30,6 +31,7 @@ export default async function AdminDashboardLayout({
 
   const displayName =
     user.name?.trim() || user.email?.trim() || "Studio admin";
+  const commandItems = await dashboardCommandRepository.listForAdmin();
 
   return (
     <DashboardRoleShell
@@ -39,6 +41,7 @@ export default async function AdminDashboardLayout({
         subtitle: user.email?.trim() || "Studio administration",
         initials: getInitials(displayName),
       }}
+      commandItems={commandItems}
     >
       {children}
     </DashboardRoleShell>

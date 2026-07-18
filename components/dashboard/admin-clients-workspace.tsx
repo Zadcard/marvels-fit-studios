@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition, type FormEvent } from "react";
+import { useEffect, useMemo, useState, useTransition, type FormEvent } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Dialog } from "radix-ui";
 import {
@@ -146,6 +146,21 @@ export function AdminClientsWorkspace({
   const paginated = paginateDashboardItems(filtered, currentPage);
   const detail = records.find((record) => record.id === detailId) ?? null;
   const editing = records.find((record) => record.id === editingId) ?? null;
+
+  useEffect(() => {
+    if (searchParams.get("new") !== "1") return;
+    setEditingId(null);
+    setForm(emptyForm);
+    setError("");
+    setEditorOpen(true);
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("new");
+    window.history.replaceState(
+      null,
+      "",
+      params.size ? `${pathname}?${params.toString()}` : pathname,
+    );
+  }, [pathname, router, searchParams]);
 
   function setQuery(key: string, value?: string) {
     const params = new URLSearchParams(searchParams.toString());

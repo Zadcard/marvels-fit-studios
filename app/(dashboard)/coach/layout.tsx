@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { DashboardRoleShell } from "@/components/dashboard/dashboard-role-shell";
 import { getDashboardHomeForUserRole } from "@/lib/auth/authorization-policy";
 import { requireRole } from "@/lib/auth/session";
+import { dashboardCommandRepository } from "@/lib/repositories/dashboard-command-repository";
 import { UserRole } from "@/lib/supabase/domain";
 import { getInitials } from "@/lib/utils";
 
@@ -29,6 +30,9 @@ export default async function CoachDashboardLayout({
   }
 
   const displayName = user.name?.trim() || user.email?.trim() || "Coach";
+  const commandItems = await dashboardCommandRepository.listForCoachUserId(
+    user.id,
+  );
 
   return (
     <DashboardRoleShell
@@ -38,6 +42,7 @@ export default async function CoachDashboardLayout({
         subtitle: user.email?.trim() || "Coach portal",
         initials: getInitials(displayName),
       }}
+      commandItems={commandItems}
     >
       {children}
     </DashboardRoleShell>

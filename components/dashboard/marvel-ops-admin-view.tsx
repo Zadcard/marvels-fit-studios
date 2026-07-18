@@ -1,7 +1,8 @@
 "use client";
 
 import { AlertTriangle, ChevronRight, LoaderCircle, Plus, X } from "lucide-react";
-import { useState, useTransition, type FormEvent } from "react";
+import { useEffect, useState, useTransition, type FormEvent } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { approveLeadAsClient, assignLeadTrial, completeLeadTrial, createAdminLead } from "@/app/actions/admin-leads";
 import styles from "./marvel-ops-admin-view.module.css";
@@ -9,7 +10,7 @@ import styles from "./marvel-ops-admin-view.module.css";
 type View = "leads";
 const stages = ["New", "Trial booked", "Trial done", "Won", "Lost"] as const;
 type Stage = (typeof stages)[number];
-export type MarvelOpsLead = { id: string; stage: Stage; name: string; initials: string; tone: string; source: "WhatsApp" | "Instagram" | "Call" | "On-ground"; phone: string; wants: string; note: string; injury?: string; assigned?: string };
+export type MarvelOpsLead = { id: string; stage: Stage; name: string; initials: string; tone: string; source: "Admin" | "WhatsApp" | "Instagram" | "Call" | "On-ground"; phone: string; wants: string; note: string; injury?: string; assigned?: string };
 const actions: Record<Stage, string> = { New: "Assign to group", "Trial booked": "Mark trial done", "Trial done": "Subscribe", Won: "", Lost: "" };
 type LeadGroup = { id: string; name: string };
 
@@ -18,6 +19,9 @@ export function MarvelOpsAdminView({ initialLeads = [], trialGroups = [] }: { vi
 }
 
 function LeadsWorkspace({ records, trialGroups }: { records: MarvelOpsLead[]; trialGroups: LeadGroup[] }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [source, setSource] = useState<MarvelOpsLead["source"] | "All">("All");
   const [selected, setSelected] = useState<MarvelOpsLead | null>(null);
   const [leadForGroup, setLeadForGroup] = useState<MarvelOpsLead | null>(null);
@@ -25,6 +29,18 @@ function LeadsWorkspace({ records, trialGroups }: { records: MarvelOpsLead[]; tr
   const [notice, setNotice] = useState("");
   const [pending, startTransition] = useTransition();
   const shown = source === "All" ? records : records.filter((lead) => lead.source === source);
+
+  useEffect(() => {
+    if (searchParams.get("new") !== "1") return;
+    setCreating(true);
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("new");
+    window.history.replaceState(
+      null,
+      "",
+      params.size ? `${pathname}?${params.toString()}` : pathname,
+    );
+  }, [pathname, router, searchParams]);
 
   function progressLead(lead: MarvelOpsLead) {
     setNotice("");
@@ -34,6 +50,7 @@ function LeadsWorkspace({ records, trialGroups }: { records: MarvelOpsLead[]; tr
         if (lead.stage === "Trial booked") {
           await completeLeadTrial(lead.id);
           setNotice(`${lead.name}'s trial is marked complete.`);
+          router.refresh();
         } else if (lead.stage === "Trial done") {
           const summary = await approveLeadAsClient(lead.id);
           const result = summary.results[0];
@@ -43,6 +60,7 @@ function LeadsWorkspace({ records, trialGroups }: { records: MarvelOpsLead[]; tr
               ? `${result.details} Client ID: ${result.clientId}. Temporary password: ${result.temporaryPassword}.`
               : result.details,
           );
+          router.refresh();
         }
       } catch (caught) { setNotice(caught instanceof Error ? caught.message : "The lead could not be updated."); }
     });
@@ -51,7 +69,7 @@ function LeadsWorkspace({ records, trialGroups }: { records: MarvelOpsLead[]; tr
   function assignGroup(groupId: string) {
     if (!leadForGroup) return;
     startTransition(async () => {
-      try { await assignLeadTrial({ leadId: leadForGroup.id, groupId }); setNotice(`${leadForGroup.name} is booked for a trial.`); setLeadForGroup(null); }
+      try { await assignLeadTrial({ leadId: leadForGroup.id, groupId }); setNotice(`${leadForGroup.name} is booked for a trial.`); setLeadForGroup(null); router.refresh(); }
       catch (caught) { setNotice(caught instanceof Error ? caught.message : "The trial could not be booked."); }
     });
   }
@@ -59,13 +77,13 @@ function LeadsWorkspace({ records, trialGroups }: { records: MarvelOpsLead[]; tr
   function addLead(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); const values = new FormData(event.currentTarget); setNotice("");
     startTransition(async () => {
-      try { await createAdminLead({ fullName: String(values.get("fullName") ?? ""), phone: String(values.get("phone") ?? ""), email: String(values.get("email") ?? ""), source: String(values.get("source") ?? "Admin"), message: String(values.get("message") ?? "") }); setCreating(false); setNotice("Lead added to the New column."); }
+      try { await createAdminLead({ fullName: String(values.get("fullName") ?? ""), phone: String(values.get("phone") ?? ""), email: String(values.get("email") ?? ""), source: String(values.get("source") ?? "Admin"), message: String(values.get("message") ?? "") }); setCreating(false); setNotice("Lead added to the New column."); router.refresh(); }
       catch (caught) { setNotice(caught instanceof Error ? caught.message : "The lead could not be added."); }
     });
   }
 
   return <div className={styles.page} aria-busy={pending}>
-    <div className={styles.sources}>{(["All", "WhatsApp", "Instagram", "Call", "On-ground"] as const).map((item) => <button key={item} type="button" data-active={source === item || undefined} onClick={() => setSource(item)}>{item}<b>{item === "All" ? records.length : records.filter((lead) => lead.source === item).length}</b></button>)}<button type="button" onClick={() => setCreating(true)}><Plus size={16} /> Add lead</button></div>
+    <div className={styles.sources}>{(["All", "Admin", "WhatsApp", "Instagram", "Call", "On-ground"] as const).map((item) => <button key={item} type="button" data-active={source === item || undefined} onClick={() => setSource(item)}>{item}<b>{item === "All" ? records.length : records.filter((lead) => lead.source === item).length}</b></button>)}<button type="button" onClick={() => setCreating(true)}><Plus size={16} /> Add lead</button></div>
     {notice ? <p className={styles.notice} role="status">{notice}</p> : null}
     <section className={styles.kanban}>{stages.map((stage) => <div className={styles.lane} key={stage}><header><strong>{stage}</strong><small>{shown.filter((lead) => lead.stage === stage).length}</small></header>{shown.filter((lead) => lead.stage === stage).map((lead) => <article key={lead.id} role="button" tabIndex={0} onClick={() => setSelected(lead)} onKeyDown={(event) => { if (event.key === "Enter") setSelected(lead); }}><div className={styles.leadName}><i data-tone={lead.tone}>{lead.initials}</i><span><strong>{lead.name}</strong><small>{lead.note}</small></span></div><em data-source={lead.source}>{lead.source}</em><p><small>Wants</small><b>{lead.wants}</b></p>{lead.injury ? <p className={styles.leadInjury}><AlertTriangle size={11} /> {lead.injury}</p> : null}{lead.assigned ? <p className={styles.assigned}>{lead.assigned}</p> : null}<p className={styles.phone}>{lead.phone}</p>{actions[stage] ? <button type="button" disabled={pending} onClick={(event) => { event.stopPropagation(); progressLead(lead); }}>{pending ? <LoaderCircle size={14} /> : <>{actions[stage]}<ChevronRight size={14} /></>}</button> : null}</article>)}</div>)}</section>
     {selected ? <LeadDrawer lead={selected} close={() => setSelected(null)} /> : null}
