@@ -36,10 +36,12 @@ import {
   assignClientToSession,
   removeClientFromSession,
 } from "@/app/actions/admin-session-bookings";
+import { AdminRecurringSessionManager } from "@/components/dashboard/admin-recurring-session-manager";
 import type {
   AdminScheduleSessionRecord,
   AdminScheduleStat,
 } from "@/lib/dashboard/admin-schedule-data";
+import type { RecurringSessionTemplateRecord } from "@/lib/dashboard/recurring-session-template";
 import type {
   AdminScheduleClientOption,
   AdminScheduleGroupOption,
@@ -53,6 +55,7 @@ type Props = {
   coachOptions: AdminSessionCoachOption[];
   groupOptions: AdminScheduleGroupOption[];
   clientOptions: AdminScheduleClientOption[];
+  recurringTemplates: RecurringSessionTemplateRecord[];
   weekStartIso: string;
 };
 
@@ -157,6 +160,7 @@ export function AdminScheduleWorkspace({
   coachOptions,
   groupOptions,
   clientOptions,
+  recurringTemplates,
   weekStartIso,
 }: Props) {
   const router = useRouter();
@@ -323,7 +327,7 @@ export function AdminScheduleWorkspace({
         <div className={styles.schedulerTop}>
           <div className={styles.monthNav}><button type="button" aria-label="Previous week" onClick={() => navigateWeek(-1)} disabled={isPending}><ChevronLeft size={18} /></button><div><button type="button" className={styles.todayButton} onClick={navigateToday} disabled={isPending}>Today</button><strong>{monthFormatter.format(weekStart)}</strong></div><button type="button" aria-label="Next week" onClick={() => navigateWeek(1)} disabled={isPending}><ChevronRight size={18} /></button></div>
           <div className={styles.search}><Search size={17} /><label className="sr-only" htmlFor="schedule-search">Search schedule</label><input id="schedule-search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Session, coach, group or room" /></div>
-          <button type="button" className="mv-btn mv-btn-primary" onClick={openCreate}><CalendarPlus2 size={17} /> New session</button>
+          <div className={styles.schedulerActions}><AdminRecurringSessionManager templates={recurringTemplates} coachOptions={coachOptions} groupOptions={groupOptions} /><button type="button" className="mv-btn mv-btn-primary" onClick={openCreate}><CalendarPlus2 size={17} /> New session</button></div>
         </div>
         <div className={styles.filterStrip}>
           <label>Status<select value={status} onChange={(event) => setStatus(event.target.value as typeof status)}><option>All</option><option>Confirmed</option><option>Waitlist</option><option>Attention</option><option>Completed</option></select></label>

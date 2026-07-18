@@ -6,6 +6,7 @@ import { UserRole } from "@/lib/supabase/domain";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import {
   generateRecurringSessionsSchema,
+  recurringSessionTemplateIdSchema,
   recurringSessionTemplateSchema,
   type RecurringSessionTemplateInput,
 } from "@/lib/validators/recurring-session";
@@ -16,17 +17,15 @@ function revalidateRecurringViews() {
   revalidatePath("/coach/schedule");
 }
 
-export async function createRecurringSessionTemplate(
-  input: RecurringSessionTemplateInput,
+export async function saveRecurringSessionTemplate(
+  input: RecurringSessionTemplateInput & { templateId?: string | null },
 ) {
   const user = await requireRole(UserRole.ADMIN);
   const parsed = recurringSessionTemplateSchema.safeParse(input);
   if (!parsed.success) throw new Error(parsed.error.issues[0]?.message ?? "Invalid template.");
 
   const value = parsed.data;
-  const { data, error } = await getSupabaseServerClient()
-    .from("RecurringSessionTemplate")
-    .insert({
+  const record = {
       title: value.title,
       description: value.description || null,
       type: value.type,
@@ -39,8 +38,19 @@ export async function createRecurringSessionTemplate(
       durationMinutes: value.durationMinutes,
       startsOn: value.startsOn,
       endsOn: value.endsOn || null,
-      createdById: user.id,
-    })
+  };
+  const templateId = input.templateId
+    ? recurringSessionTemplateIdSchema.parse(input.templateId)
+    : null;
+  const query = templateId
+    ? getSupabaseServerClient()
+        .from("RecurringSessionTemplate")
+        .update(record)
+        .eq("id", templateId)
+    : getSupabaseServerClient()
+        .from("RecurringSessionTemplate")
+        .insert({ ...record, createdById: user.id });
+  const { data, error } = await query
     .select("id")
     .single();
   if (error) throw error;
@@ -66,10 +76,31 @@ export async function generateRecurringSessions(input: {
 
 export async function setRecurringTemplateActive(templateId: string, active: boolean) {
   await requireRole(UserRole.ADMIN);
+  const parsedId = recurringSessionTemplateIdSchema.safeParse(templateId);
+  if (!parsedId.success) throw new Error("Invalid template id.");
   const { error } = await getSupabaseServerClient()
     .from("RecurringSessionTemplate")
     .update({ active })
-    .eq("id", templateId);
+    .eq("id", parsedId.data);
   if (error) throw error;
+  revalidateRecurringViews();
+}
+
+export async function deleteRecurringSessionTemplate(templateId: string) {
+  await requireRole(UserRole.ADMIN);
+  const parsedId = recurringSessionTemplateIdSchema.safeParse(templateId);
+  if (!parsedId.success) throw new Error("Invalid template id.");
+  const { error } = await getSupabaseServerClient().rpc(
+    "delete_recurring_session_template",
+    { p_template_id: parsedId.data },
+  );
+  if (error) {
+    if (error.message.includes("generated occurrences")) {
+      throw new Error(
+        "This series already has generated occurrences. Pause it instead of deleting it.",
+      );
+    }
+    throw error;
+  }
   revalidateRecurringViews();
 }

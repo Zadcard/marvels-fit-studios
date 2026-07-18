@@ -1,6 +1,7 @@
 import "server-only";
 
 import { getSupabaseServerClient } from "@/lib/supabase/server";
+import type { RecurringSessionTemplateRecord } from "@/lib/dashboard/recurring-session-template";
 
 export class RecurringSessionRepository {
   async list() {
@@ -16,7 +17,28 @@ export class RecurringSessionRepository {
     if (templates.error) throw templates.error;
     if (coaches.error) throw coaches.error;
     if (groups.error) throw groups.error;
-    return { templates: templates.data, coaches: coaches.data, groups: groups.data };
+    const records: RecurringSessionTemplateRecord[] = templates.data.map(
+      (template) => ({
+        id: template.id,
+        title: template.title,
+        description: template.description ?? "",
+        type: template.type,
+        coachId: template.coachId,
+        coachName: template.coach.fullName,
+        groupId: template.groupId,
+        groupName: template.group?.name ?? "No linked group",
+        location: template.location ?? "",
+        capacity: template.capacity ?? 1,
+        weekday: template.weekday,
+        localStartTime: template.localStartTime.slice(0, 5),
+        durationMinutes: template.durationMinutes,
+        startsOn: template.startsOn,
+        endsOn: template.endsOn ?? "",
+        active: template.active,
+        lastGeneratedThrough: template.lastGeneratedThrough,
+      }),
+    );
+    return { templates: records, coaches: coaches.data, groups: groups.data };
   }
 }
 

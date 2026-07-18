@@ -14,6 +14,7 @@
 .inspectorNote select { min-width: 0; min-height: 36px; flex: 1; padding: 0 8px; border: 1px solid var(--rl-line-strong); border-radius: 9px; background: white; }
 .inspectorActions { display: flex; flex-wrap: wrap; }
 .form textarea { width: 100%; min-height: 88px; padding: 10px 11px; border: 1px solid var(--rl-line-strong); border-radius: 11px; background: white; color: var(--rl-ink); font-size: .8rem; resize: vertical; text-transform: none; }
+.schedulerActions { display: flex; align-items: center; gap: 7px; }
 .todayButton { width: fit-content !important; height: auto !important; justify-content: flex-start !important; border: 0 !important; border-radius: 0 !important; color: var(--rl-red-deep); font-size: .65rem; font-weight: 800; text-transform: uppercase; }
 
 .blockFlags { display: block; margin-top: 2px; font-size: .62rem; font-weight: 800; color: var(--rl-danger); }

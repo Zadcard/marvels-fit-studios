@@ -27,4 +27,10 @@ describe("live admin schedule CRUD", () => {
     expect(workspace).not.toContain('<option value="CANCELED">');
     expect(workspace).not.toContain("/admin/schedule/templates");
   });
+
+  it("manages recurring series inline without reviving the removed route", () => {
+    expect(page).toContain("recurringSessionRepository.list()");
+    expect(workspace).toContain("AdminRecurringSessionManager");
+    expect(workspace).not.toContain("/admin/schedule/templates");
+  });
 });

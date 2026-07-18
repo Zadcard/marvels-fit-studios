@@ -1960,6 +1960,10 @@ export type Database = {
       }
       check_auth_throttle: { Args: { p_key_hash: string }; Returns: Json }
       delete_coach: { Args: { p_coach_id: string }; Returns: undefined }
+      delete_recurring_session_template: {
+        Args: { p_template_id: string }
+        Returns: undefined
+      }
       delete_training_session: {
         Args: { p_session_id: string }
         Returns: {

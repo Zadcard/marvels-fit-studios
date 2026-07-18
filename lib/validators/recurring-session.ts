@@ -38,6 +38,8 @@ export const generateRecurringSessionsSchema = z.object({
   throughDate: z.string().date(),
 });
 
+export const recurringSessionTemplateIdSchema = z.string().uuid();
+
 export type RecurringSessionTemplateInput = z.infer<
   typeof recurringSessionTemplateSchema
 >;
