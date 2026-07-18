@@ -2,128 +2,81 @@
 
 This file exists to solve one problem: when you want to change something, you can quickly find the right file without guessing.
 
+> **Status note (2026-07-18):** the app was refocused to an **admin + coach operations tool**
+> (client portal and transformation studio are parked — see `lib/launch-scope.ts`), and the
+> dashboard UI was rebuilt on the "Marvel Ops" components. Some older `*-workspace.tsx`
+> components are being re-wired into the new shell; when a page and this table disagree,
+> trust the imports in the page file. Full known-issue list: `docs/system-audit-2026-07-18.md`.
+
 ## 60-Second Mental Model
 
 Most dashboard features follow this pattern:
 
 1. Route page (entry): `app/(dashboard)/<role>/<feature>/page.tsx`
-2. Workspace UI: `components/dashboard/<role>-<feature>-workspace.tsx`
+2. Workspace UI: `components/dashboard/*.tsx` (Marvel Ops components are `marvel-ops-*.tsx`)
 3. Data fetch: `lib/repositories/*-repository.ts`
-4. Mutations (writes): `app/actions/*.ts`
+4. Mutations (writes): `app/actions/*.ts` (every action must call `requireRole`/`requireUser`)
 5. Rules/business logic: `lib/services/*.ts` + `lib/validators/*.ts`
-6. Database schema: `legacy ORM/schema.legacy ORM` + `legacy ORM/migrations/*`
+6. Database schema: `supabase/migrations/*.sql` (applied to the hosted Supabase project)
 
 If you only remember one thing: start at `app/(dashboard)/**/page.tsx`, then follow imports.
 
-## What To Ignore First
-
-When making product changes, ignore these unless you intentionally need them:
-
-- `.claude/`, `.agents/`, `.continue/` (tooling/assistant metadata)
-- `docs/references/` binary files (PDF/images used for import/reference)
-- `node_modules/`, `.next/`, `tsconfig.tsbuildinfo`
-
 ## Edit Map: Admin
-
-Use this table when you want to change a specific Admin surface.
 
 | What you want to change | Start page | Main workspace | Main repository | Main action(s) |
 |---|---|---|---|---|
-| Admin overview dashboard cards/activity | `app/(dashboard)/admin/page.tsx` | (inline + shared dashboard components) | `lib/repositories/admin-overview-repository.ts` | Usually none (read-focused page) |
-| Clients table/profile/actions | `app/(dashboard)/admin/clients/page.tsx` | `components/dashboard/admin-clients-workspace.tsx` | `lib/repositories/admin-client-repository.ts` | `app/actions/admin-clients.ts`, `app/actions/admin-payments.ts` |
-| Coaches management | `app/(dashboard)/admin/coaches/page.tsx` | `components/dashboard/admin-coaches-command-center.tsx` | `lib/repositories/admin-coach-repository.ts` | `app/actions/admin-coaches.ts` |
-| Join requests / leads approval | `app/(dashboard)/admin/join-requests/page.tsx` | `components/dashboard/admin-leads-workspace.tsx` | `lib/repositories/admin-lead-repository.ts` | `app/actions/admin-leads.ts` |
-| Schedule board | `app/(dashboard)/admin/schedule/page.tsx` | `components/dashboard/admin-schedule-workspace.tsx` | `lib/repositories/admin-schedule-repository.ts` | `app/actions/admin-schedule-blocks.ts`, `app/actions/admin-attendance.ts` |
-| Sessions board | `app/(dashboard)/admin/sessions/page.tsx` | `components/dashboard/admin-sessions-workspace.tsx` | `lib/repositories/admin-session-repository.ts` | `app/actions/admin-sessions.ts`, `app/actions/admin-session-bookings.ts` |
-| Studio settings | `app/(dashboard)/admin/settings/page.tsx` | `components/dashboard/admin-settings-workspace.tsx` | `lib/repositories/admin-settings-repository.ts` | `app/actions/admin-settings.ts` |
-| Profile page | `app/(dashboard)/admin/profile/page.tsx` | `components/dashboard/admin-profile-workspace.tsx` | `lib/repositories/admin-profile-repository.ts` | `app/actions/admin-profile.ts` |
-| Bulk CSV import | `app/(dashboard)/admin/bulk-import/page.tsx` | `components/dashboard/admin-bulk-import-workspace.tsx` | (service-driven) | `app/actions/admin-bulk-import.ts`, `lib/services/bulk-client-import.ts` |
+| Today dashboard | `app/(dashboard)/admin/page.tsx` | `marvel-ops-today.tsx` | `admin-today-operations-repository.ts` | none (read-only) |
+| Attendance / check-ins | `app/(dashboard)/admin/attendance/page.tsx` | `admin-attendance-workspace.tsx` | `admin-attendance-repository.ts` | `admin-attendance.ts` |
+| Schedule week view | `app/(dashboard)/admin/schedule/page.tsx` | `marvel-ops-schedule-workspace.tsx` | `admin-schedule-repository.ts` | (sessions actions exist but are not yet wired) |
+| Leads & trials kanban | `app/(dashboard)/admin/join-requests/page.tsx` | `marvel-ops-admin-view.tsx` (leads view) | `admin-lead-repository.ts` | `admin-leads.ts` |
+| Clients roster/profile | `app/(dashboard)/admin/clients/page.tsx` | `marvel-ops-admin-view.tsx` (clients view) | `admin-client-repository.ts` | `admin-clients.ts` |
+| Groups | `app/(dashboard)/admin/groups/page.tsx` | `marvel-ops-groups-workspace.tsx` | `admin-group-repository.ts` | `admin-groups.ts` (not yet wired) |
+| Coaches | `app/(dashboard)/admin/coaches/page.tsx` | `marvel-ops-admin-view.tsx` (coaches view) | `admin-coach-repository.ts` | `admin-coaches.ts` (not yet wired) |
+| Subscriptions & renewals | `app/(dashboard)/admin/subscriptions/page.tsx` | `marvel-ops-groups-subscriptions.tsx` | `admin-subscription-repository.ts` | `admin-subscriptions.ts` |
+| Reports | `app/(dashboard)/admin/reports/page.tsx` | (inline) | `admin-overview-repository.ts` | none |
+| Notifications | `app/(dashboard)/admin/notifications/page.tsx` | `marvel-ops-notifications.tsx` | `notification-repository.ts` | `notifications.ts` |
+| Studio settings | `app/(dashboard)/admin/settings/page.tsx` | `admin-settings-workspace.tsx` | `admin-settings-repository.ts` | `admin-settings.ts` |
 
-Notes:
+## Edit Map: Coach
 
-- `/admin/blocks` is the dedicated recurring block management surface.
-- `/admin/subscriptions` is currently a redirect page to `/admin/clients`.
+| Surface | Start page | Main workspace |
+|---|---|---|
+| Today | `app/(dashboard)/coach/page.tsx` | `marvel-ops-coach.tsx` (`MarvelOpsCoachToday`) |
+| Schedule | `app/(dashboard)/coach/schedule/page.tsx` | `marvel-ops-coach-data.tsx` |
+| Clients | `app/(dashboard)/coach/clients/page.tsx` | `marvel-ops-coach-data.tsx` |
+| Alerts | `app/(dashboard)/coach/alerts/page.tsx` | `marvel-ops-notifications.tsx` |
+| Phone view | `app/(dashboard)/coach/sessions/page.tsx` | `marvel-ops-coach.tsx` (`MarvelOpsCoachPhone`) |
 
-## Edit Map: Client + Coach
+Coach repositories: `lib/repositories/coach-*-repository.ts`. Coach write actions
+(`coach-session-notes.ts`, `coach-session-bookings.ts`, `coach-client-assets.ts`,
+`coach-settings.ts`) exist and are auth-guarded but are not yet wired into the UI.
 
-| Role surface | Start page | Main workspace | Main repository | Main action(s) |
-|---|---|---|---|---|
-| Client overview/coach/sessions/subscription/settings | `app/(dashboard)/client/*/page.tsx` | `components/dashboard/client-*-workspace.tsx` | `lib/repositories/client-dashboard-repository.ts` | `app/actions/client-settings.ts` |
-| Coach overview/clients/schedule/sessions/settings | `app/(dashboard)/coach/*/page.tsx` | `components/dashboard/coach-*-workspace.tsx` | `lib/repositories/coach-*-repository.ts` | `app/actions/coach-session-bookings.ts`, `app/actions/coach-session-notes.ts`, `app/actions/coach-settings.ts` |
+## Shared shell & auth
+
+- Sidebar/topbar/command palette: `components/dashboard/dashboard-*.tsx`; nav config in `lib/navigation/dashboard-nav.ts`
+- Route protection: `proxy.ts` (middleware) + per-layout guards in `app/(dashboard)/<role>/layout.tsx` + `lib/auth/authorization-policy.ts`
+- Login / change-password: `app/login/`, `app/change-password/`, `components/auth/ops-auth-shell.tsx`, `auth.ts`, `lib/auth/*`
+- Launch scope (parked features): `lib/launch-scope.ts`
+- API routes: `app/api/receipts/[receiptId]`, `app/api/files/[fileId]/download`, `app/api/cron/studio-automation` (+ `app/api/auth`)
 
 ## Common Change Scenarios
 
-### 1) "I need to change text/button/layout on a page"
-
-Start at workspace component:
-
-- `components/dashboard/<role>-<feature>-workspace.tsx`
-- plus shared UI atoms in `components/dashboard/dashboard-*.tsx`
-
-### 2) "I need to change which data appears"
-
-Start at repository:
-
-- `lib/repositories/*-repository.ts`
-- then ensure page passes props correctly from `app/(dashboard)/**/page.tsx`
-
-### 3) "I need to change create/update/delete behavior"
-
-Start at server actions + services:
-
-- `app/actions/*.ts`
-- `lib/services/*.ts`
-- `lib/validators/*.ts` for input schema rules
-
-### 4) "I need database field/schema changes"
-
-Start at:
-
-- `legacy ORM/schema.legacy ORM`
-- create migration under `legacy ORM/migrations/`
-- then update repository/action types and mapping
+1. **Text/button/layout** → the workspace component the page imports (see tables above).
+2. **Which data appears** → `lib/repositories/*-repository.ts`, then the page's prop mapping.
+3. **Create/update/delete behavior** → `app/actions/*.ts` (+ `lib/services`, `lib/validators`); keep `requireRole` and revalidate the live routes that render the data.
+4. **Database schema** → new SQL file in `supabase/migrations/`, then update repository/action types (`lib/supabase/domain.ts`, regenerate `lib/supabase/database.types.ts` via `npm run supabase:types`).
 
 ## Fast Search Commands
-
-Use these to locate ownership quickly from terminal:
 
 ```powershell
 # Find where a route is used
 git grep -n "/admin/schedule"
 
 # Find where an action is imported
-git grep -n "saveAdminSettings"
+git grep -n "saveAdminClient"
 
-# Find all workspace components
-Get-ChildItem components/dashboard -Filter "*workspace.tsx"
-
-# Find all repositories
-Get-ChildItem lib/repositories -Filter "*repository.ts"
-```
-
-## How To Brief Another AI/Teammate
-
-Use this template:
-
-```text
-Goal:
-- I want to change <feature> so that <outcome>.
-
-Current entry file:
-- app/(dashboard)/<role>/<feature>/page.tsx
-
-Likely UI file:
-- components/dashboard/<role>-<feature>-workspace.tsx
-
-Likely backend files:
-- app/actions/<action>.ts
-- lib/repositories/<repo>.ts
-- lib/services/<service>.ts
-
-Constraints:
-- Keep route paths unchanged
-- Keep role checks with requireRole
-- Revalidate affected paths after writes
+# Which component does a page render?
+Get-Content "app/(dashboard)/admin/clients/page.tsx" -TotalCount 5
 ```
 
 If this file becomes stale, update it in the same PR as the feature change.
