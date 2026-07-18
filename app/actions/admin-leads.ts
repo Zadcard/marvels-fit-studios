@@ -14,6 +14,10 @@ export async function approveLeadAsClient(leadId: string) {
     leadIds: [leadId],
   });
 
+  if (summary.examined !== 1) {
+    throw new Error("Only a group-assigned completed trial can be subscribed.");
+  }
+
   revalidatePath("/admin");
   revalidatePath("/admin/join-requests");
   revalidatePath("/admin/clients");
@@ -99,9 +103,10 @@ export async function completeLeadTrial(leadId: string) {
     .update({ status: LeadStatus.TRIAL_DONE })
     .eq("id", leadId)
     .eq("status", LeadStatus.CONTACTED)
+    .not("trialGroupId", "is", null)
     .select("id")
     .maybeSingle();
   if (error) throw error;
-  if (!data) throw new Error("Only a booked trial can be marked complete.");
+  if (!data) throw new Error("Only a group-assigned booked trial can be marked complete.");
   revalidateLeadWorkflow();
 }

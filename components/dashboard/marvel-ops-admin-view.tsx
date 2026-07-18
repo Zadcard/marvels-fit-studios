@@ -5,12 +5,13 @@ import { useEffect, useState, useTransition, type FormEvent } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { approveLeadAsClient, assignLeadTrial, completeLeadTrial, createAdminLead } from "@/app/actions/admin-leads";
+import type { AdminLeadSource } from "@/lib/dashboard/lead-source";
 import styles from "./marvel-ops-admin-view.module.css";
 
 type View = "leads";
 const stages = ["New", "Trial booked", "Trial done", "Won", "Lost"] as const;
 type Stage = (typeof stages)[number];
-export type MarvelOpsLead = { id: string; stage: Stage; name: string; initials: string; tone: string; source: "Admin" | "WhatsApp" | "Instagram" | "Call" | "On-ground"; phone: string; wants: string; note: string; injury?: string; assigned?: string };
+export type MarvelOpsLead = { id: string; stage: Stage; name: string; initials: string; tone: string; source: AdminLeadSource; phone: string; wants: string; note: string; injury?: string; assigned?: string };
 const actions: Record<Stage, string> = { New: "Assign to group", "Trial booked": "Mark trial done", "Trial done": "Subscribe", Won: "", Lost: "" };
 type LeadGroup = { id: string; name: string };
 
@@ -41,6 +42,15 @@ function LeadsWorkspace({ records, trialGroups }: { records: MarvelOpsLead[]; tr
       params.size ? `${pathname}?${params.toString()}` : pathname,
     );
   }, [pathname, router, searchParams]);
+
+  useEffect(() => {
+    setSelected((current) =>
+      current ? records.find((lead) => lead.id === current.id) ?? null : null,
+    );
+    setLeadForGroup((current) =>
+      current ? records.find((lead) => lead.id === current.id) ?? null : null,
+    );
+  }, [records]);
 
   function progressLead(lead: MarvelOpsLead) {
     setNotice("");
@@ -83,7 +93,7 @@ function LeadsWorkspace({ records, trialGroups }: { records: MarvelOpsLead[]; tr
   }
 
   return <div className={styles.page} aria-busy={pending}>
-    <div className={styles.sources}>{(["All", "Admin", "WhatsApp", "Instagram", "Call", "On-ground"] as const).map((item) => <button key={item} type="button" data-active={source === item || undefined} onClick={() => setSource(item)}>{item}<b>{item === "All" ? records.length : records.filter((lead) => lead.source === item).length}</b></button>)}<button type="button" onClick={() => setCreating(true)}><Plus size={16} /> Add lead</button></div>
+    <div className={styles.sources}>{(["All", "Admin", "WhatsApp", "Instagram", "Call", "On-ground", "Other"] as const).map((item) => <button key={item} type="button" data-active={source === item || undefined} onClick={() => setSource(item)}>{item}<b>{item === "All" ? records.length : records.filter((lead) => lead.source === item).length}</b></button>)}<button type="button" onClick={() => setCreating(true)}><Plus size={16} /> Add lead</button></div>
     {notice ? <p className={styles.notice} role="status">{notice}</p> : null}
     <section className={styles.kanban}>{stages.map((stage) => <div className={styles.lane} key={stage}><header><strong>{stage}</strong><small>{shown.filter((lead) => lead.stage === stage).length}</small></header>{shown.filter((lead) => lead.stage === stage).map((lead) => <article key={lead.id} role="button" tabIndex={0} onClick={() => setSelected(lead)} onKeyDown={(event) => { if (event.key === "Enter") setSelected(lead); }}><div className={styles.leadName}><i data-tone={lead.tone}>{lead.initials}</i><span><strong>{lead.name}</strong><small>{lead.note}</small></span></div><em data-source={lead.source}>{lead.source}</em><p><small>Wants</small><b>{lead.wants}</b></p>{lead.injury ? <p className={styles.leadInjury}><AlertTriangle size={11} /> {lead.injury}</p> : null}{lead.assigned ? <p className={styles.assigned}>{lead.assigned}</p> : null}<p className={styles.phone}>{lead.phone}</p>{actions[stage] ? <button type="button" disabled={pending} onClick={(event) => { event.stopPropagation(); progressLead(lead); }}>{pending ? <LoaderCircle size={14} /> : <>{actions[stage]}<ChevronRight size={14} /></>}</button> : null}</article>)}</div>)}</section>
     {selected ? <LeadDrawer lead={selected} close={() => setSelected(null)} /> : null}

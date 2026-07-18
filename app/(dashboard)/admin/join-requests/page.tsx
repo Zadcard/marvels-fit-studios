@@ -2,6 +2,7 @@ import { MarvelOpsAdminView } from "@/components/dashboard/marvel-ops-admin-view
 import type { MarvelOpsLead } from "@/components/dashboard/marvel-ops-admin-view";
 import { adminGroupRepository } from "@/lib/repositories/admin-group-repository";
 import { adminLeadRepository } from "@/lib/repositories/admin-lead-repository";
+import { normalizeLeadSource } from "@/lib/dashboard/lead-source";
 
 export const metadata = { title: "Leads & Trials" };
 
@@ -9,15 +10,6 @@ const tones = ["red", "green", "violet", "blue", "amber"];
 
 function initials(name: string) {
   return name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase();
-}
-
-function sourceFor(source: string): MarvelOpsLead["source"] {
-  const value = source.toLowerCase();
-  if (value.includes("admin")) return "Admin";
-  if (value.includes("instagram")) return "Instagram";
-  if (value.includes("call")) return "Call";
-  if (value.includes("ground") || value.includes("walk")) return "On-ground";
-  return "WhatsApp";
 }
 
 function stageFor(status: string): MarvelOpsLead["stage"] {
@@ -39,7 +31,7 @@ export default async function AdminJoinRequestsPage() {
     name: record.fullName,
     initials: initials(record.fullName),
     tone: tones[index % tones.length],
-    source: sourceFor(record.source),
+    source: normalizeLeadSource(record.source),
     phone: record.phone,
     wants: "Trial consultation",
     note: record.message,

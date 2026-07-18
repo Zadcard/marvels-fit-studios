@@ -40,8 +40,7 @@ export type PromoteLeadsSummary = {
 };
 
 const DEFAULT_INCLUDE_STATUSES: LeadStatus[] = [
-  LeadStatus.NEW,
-  LeadStatus.CONTACTED,
+  LeadStatus.TRIAL_DONE,
 ];
 
 function normalizeEmails(emails?: string[]) {
@@ -57,13 +56,16 @@ export async function promoteLeadsToClients(
   const emails = normalizeEmails(input.emails);
   const includeStatuses = input.includeStatuses ?? DEFAULT_INCLUDE_STATUSES;
 
-  let leadsQuery = supabase.from("Lead").select("*").order("createdAt");
+  let leadsQuery = supabase
+    .from("Lead")
+    .select("*")
+    .in("status", includeStatuses)
+    .not("trialGroupId", "is", null)
+    .order("createdAt");
   if (input.leadIds?.length) {
     leadsQuery = leadsQuery.in("id", input.leadIds);
   } else if (emails?.length) {
     leadsQuery = leadsQuery.in("email", emails);
-  } else {
-    leadsQuery = leadsQuery.in("status", includeStatuses);
   }
   if (input.limit) leadsQuery = leadsQuery.limit(input.limit);
   const { data: leads, error: leadsError } = await leadsQuery;
@@ -115,9 +117,9 @@ export async function promoteLeadsToClients(
       continue;
     }
 
-    const hashedPassword = lead.passwordHash
-      ? lead.passwordHash
-      : await bcryptjs.hash(temporaryPassword, 10);
+    // Promotion always issues a fresh one-time credential. Reusing a landing
+    // form hash would make the clear-text credential shown to the admin false.
+    const hashedPassword = await bcryptjs.hash(temporaryPassword, 12);
 
     const { data: promotion, error: promotionError } = await supabase.rpc(
       "promote_lead_to_client",
