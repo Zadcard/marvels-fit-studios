@@ -13,6 +13,7 @@ const baseSessionSchema = z
     type: z.nativeEnum(TrainingSessionType),
     status: z.nativeEnum(TrainingSessionStatus),
     coachId: z.string().trim().min(1, "Coach is required."),
+    groupId: z.string().trim().nullable().optional(),
     location: z
       .string()
       .trim()

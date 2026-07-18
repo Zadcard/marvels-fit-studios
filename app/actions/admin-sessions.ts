@@ -26,6 +26,7 @@ type SaveAdminSessionInput = {
   type: "GROUP" | "PRIVATE";
   status: "DRAFT" | "SCHEDULED" | "COMPLETED" | "CANCELED";
   coachId: string;
+  groupId?: string | null;
   location?: string;
   startsAt: string;
   endsAt: string;
@@ -52,6 +53,7 @@ export async function saveAdminSession(input: SaveAdminSessionInput) {
       type: input.type,
       status: input.status,
       coachId: input.coachId,
+      groupId: input.groupId,
       location: input.location,
       startsAt: input.startsAt,
       endsAt: input.endsAt,

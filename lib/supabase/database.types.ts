@@ -1,4 +1,4 @@
-﻿export type Json =
+export type Json =
   | string
   | number
   | boolean
@@ -1960,6 +1960,12 @@ export type Database = {
       }
       check_auth_throttle: { Args: { p_key_hash: string }; Returns: Json }
       delete_coach: { Args: { p_coach_id: string }; Returns: undefined }
+      delete_training_session: {
+        Args: { p_session_id: string }
+        Returns: {
+          id: string
+        }[]
+      }
       enqueue_studio_notifications: {
         Args: { p_now?: string }
         Returns: number
@@ -2111,6 +2117,7 @@ export type Database = {
           p_coach_id: string
           p_description: string
           p_ends_at: string
+          p_group_id: string
           p_location: string
           p_session_id: string
           p_starts_at: string

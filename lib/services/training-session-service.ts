@@ -61,6 +61,8 @@ function mapDatabaseError(error: { code?: string; message: string }): never {
   const known = [
     "Coach record not found.", "Session record not found.",
     "Canceled sessions cannot be edited.", "Capacity cannot be lower than the current active roster.",
+    "Group record not found.", "Use the cancellation operation to cancel sessions.",
+    "Only empty draft sessions can be deleted.",
     "Completed sessions cannot be canceled.", "One or more selected sessions were not found.",
     "Selected coach has overlapping sessions in this bulk selection.", "Bulk action is incomplete.",
   ];
@@ -81,6 +83,7 @@ export async function createTrainingSession(input: CreateTrainingSessionInput, c
   const { data, error } = await getSupabaseServerClient().from("TrainingSession").insert({
     title: input.title.trim(), description: optional(input.description) || null,
     type: input.type, status: input.status, coachId: input.coachId,
+    groupId: input.groupId || null,
     location: optional(input.location) || null, startsAt: input.startsAt,
     endsAt: input.endsAt,
     capacity: input.type === TrainingSessionType.PRIVATE ? 1 : input.capacity,
@@ -102,6 +105,7 @@ export async function updateTrainingSession(input: UpdateTrainingSessionInput) {
   const { data, error } = await getSupabaseServerClient().rpc("update_training_session", {
     p_capacity: input.capacity ?? -1,
     p_coach_id: input.coachId, p_description: optional(input.description),
+    p_group_id: input.groupId ?? "",
     p_ends_at: input.endsAt, p_location: optional(input.location),
     p_session_id: input.sessionId, p_starts_at: input.startsAt,
     p_status: input.status, p_title: input.title, p_type: input.type,
@@ -117,11 +121,12 @@ export async function cancelTrainingSession(input: CancelTrainingSessionInput) {
 }
 
 export async function deleteTrainingSession(input: DeleteTrainingSessionInput) {
-  const { data, error } = await getSupabaseServerClient().from("TrainingSession")
-    .delete().eq("id", input.sessionId).select("id").maybeSingle();
-  if (error) throw error;
-  if (!data) throw new Error("Session record not found.");
-  return data;
+  const { data, error } = await getSupabaseServerClient().rpc(
+    "delete_training_session",
+    { p_session_id: input.sessionId },
+  );
+  if (error) mapDatabaseError(error);
+  return data[0];
 }
 
 export async function bulkUpdateTrainingSessions(input: BulkUpdateTrainingSessionsInput) {
