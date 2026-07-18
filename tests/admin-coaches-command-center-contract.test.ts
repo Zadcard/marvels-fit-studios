@@ -9,9 +9,9 @@ const screen = readFileSync(resolve(root, "components/dashboard/admin-coaches-co
 const styles = readFileSync(resolve(root, "components/dashboard/admin-coaches-command-center.module.css"), "utf8");
 
 describe("admin coach management contract", () => {
-  it("renders the current Marvel Ops coaches view from repository records", () => {
+  it("renders the command center from repository records", () => {
     expect(page).toContain("adminCoachRepository.list()");
-    expect(page).toContain('<MarvelOpsAdminView view="coaches"');
+    expect(page).toContain("AdminCoachesCommandCenter");
     expect(page).not.toContain("AdminCoachesWorkspace");
   });
 

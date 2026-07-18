@@ -6,17 +6,15 @@ import { useState, useTransition, type FormEvent } from "react";
 import { approveLeadAsClient, assignLeadTrial, completeLeadTrial, createAdminLead } from "@/app/actions/admin-leads";
 import styles from "./marvel-ops-admin-view.module.css";
 
-type View = "leads" | "coaches";
+type View = "leads";
 const stages = ["New", "Trial booked", "Trial done", "Won", "Lost"] as const;
 type Stage = (typeof stages)[number];
 export type MarvelOpsLead = { id: string; stage: Stage; name: string; initials: string; tone: string; source: "WhatsApp" | "Instagram" | "Call" | "On-ground"; phone: string; wants: string; note: string; injury?: string; assigned?: string };
-export type MarvelOpsCoach = { name: string; initials: string; role: string; free: string; today: string; week: number; clients: number; load: number; tone: string; busy: number[] };
 const actions: Record<Stage, string> = { New: "Assign to group", "Trial booked": "Mark trial done", "Trial done": "Subscribe", Won: "", Lost: "" };
 type LeadGroup = { id: string; name: string };
 
-export function MarvelOpsAdminView({ view, initialLeads = [], initialCoaches = [], trialGroups = [] }: { view: View; initialLeads?: MarvelOpsLead[]; initialCoaches?: MarvelOpsCoach[]; trialGroups?: LeadGroup[] }) {
-  if (view === "leads") return <LeadsWorkspace records={initialLeads} trialGroups={trialGroups} />;
-  return <CoachesWorkspace coaches={initialCoaches} />;
+export function MarvelOpsAdminView({ initialLeads = [], trialGroups = [] }: { view: View; initialLeads?: MarvelOpsLead[]; trialGroups?: LeadGroup[] }) {
+  return <LeadsWorkspace records={initialLeads} trialGroups={trialGroups} />;
 }
 
 function LeadsWorkspace({ records, trialGroups }: { records: MarvelOpsLead[]; trialGroups: LeadGroup[] }) {
@@ -79,10 +77,6 @@ function TrialGroupModal({ lead, groups, pending, close, submit }: { lead: Marve
 
 function CreateLeadModal({ pending, close, submit }: { pending: boolean; close: () => void; submit: (event: FormEvent<HTMLFormElement>) => void }) {
   return <div className={styles.overlay} onClick={close}><form className={styles.modal} onClick={(event) => event.stopPropagation()} onSubmit={submit}><button type="button" className={styles.close} onClick={close} aria-label="Close"><X size={17} /></button><span>New intake</span><h2>Add a lead</h2><label>Full name<input name="fullName" required /></label><label>Phone<input name="phone" required /></label><label>Email<input name="email" type="email" /></label><label>Source<select name="source" defaultValue="Admin"><option>Admin</option><option>WhatsApp</option><option>Instagram</option><option>Call</option><option>On-ground</option></select></label><label>Note<input name="message" /></label><footer><button type="button" onClick={close}>Cancel</button><button className={styles.primary} disabled={pending}>{pending ? "Adding…" : "Add lead"}</button></footer></form></div>;
-}
-
-function CoachesWorkspace({ coaches }: { coaches: MarvelOpsCoach[] }) {
-  return <div className={styles.page}><section className={styles.coachGrid}>{coaches.map((coach) => <article key={coach.name}><header><i data-tone={coach.tone}>{coach.initials}</i><span><strong>{coach.name}</strong><small>{coach.role}</small></span><div><b>{coach.free}</b><small>{coach.today}</small></div></header><div className={styles.timeline}>{["7a", "9a", "11a", "1p", "3p", "5p", "7p", "8p"].map((time, index) => <span key={time} data-busy={coach.busy.includes(index) || undefined}><i /><small>{time}</small></span>)}</div><footer><span><b>{coach.week}</b> sessions/wk</span><span><b>{coach.clients}</b> clients</span><div><small>Weekly load</small><b data-tone={coach.tone}>{coach.load}%</b><i><em data-tone={coach.tone} style={{ width: `${coach.load}%` }} /></i></div></footer></article>)}</section></div>;
 }
 
 function LeadDrawer({ lead, close }: { lead: MarvelOpsLead; close: () => void }) {
