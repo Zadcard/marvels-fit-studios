@@ -250,7 +250,7 @@ export function AdminClientsWorkspace({
           </div>
         ) : <div className={styles.empty}><Search size={30} /><h2>No clients found</h2><p>Change the filters or add the first matching client.</p><button className="mv-btn mv-btn-primary" onClick={openCreate}>Add client</button></div>}
 
-        <footer className={styles.pagination}><span>Showing {paginated.items.length} of {filtered.length}</span><div><button type="button" disabled={paginated.page <= 1} onClick={() => setQuery("page", String(Math.max(1, paginated.page - 1)))}><ChevronLeft size={17} /> Previous</button><strong>{paginated.page} / {paginated.pageCount}</strong><button type="button" disabled={paginated.page >= paginated.pageCount} onClick={() => setQuery("page", String(paginated.page + 1))}>Next <ChevronRight size={17} /></button></div></footer>
+        <footer className={styles.pagination}><span>Showing {paginated.startItem}-{paginated.endItem} of {filtered.length} visible ({filteredCount} matching {totalCount} total)</span><div><button type="button" disabled={paginated.page <= 1} onClick={() => setQuery("page", String(Math.max(1, paginated.page - 1)))}><ChevronLeft size={17} /> Previous</button><strong>{paginated.page} / {paginated.pageCount}</strong><button type="button" disabled={paginated.page >= paginated.pageCount} onClick={() => setQuery("page", String(paginated.page + 1))}>Next <ChevronRight size={17} /></button></div></footer>
       </section>
 
       <Dialog.Root open={!!detail} onOpenChange={(open) => !open && setDetailId(null)}>

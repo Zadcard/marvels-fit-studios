@@ -20,8 +20,16 @@ describe("Marvel Ops canonical workspaces", () => {
     expect(workspace).toContain('status: "Late"');
   });
 
-  it("keeps the client drawer and cash-out modal in the operations design", () => {
-    expect(read("components/dashboard/admin-clients-workspace.tsx")).toContain("<Dialog.Portal>");
+  it("keeps full client management and cash-out in the operations design", () => {
+    const clientPage = read("app/(dashboard)/admin/clients/page.tsx");
+    const clientWorkspace = read("components/dashboard/admin-clients-workspace.tsx");
+    expect(clientPage).toContain("AdminClientsWorkspace");
+    expect(clientWorkspace).toContain("saveAdminClient");
+    expect(clientWorkspace).toContain("deleteAdminClient");
+    expect(clientWorkspace).toContain("<Dialog.Portal>");
+    expect(read("components/dashboard/marvel-ops-admin-view.tsx")).not.toContain(
+      "Client creation will be connected",
+    );
     expect(read("components/dashboard/admin-cash-out-dialog.tsx")).toContain("Record cash out");
   });
 
