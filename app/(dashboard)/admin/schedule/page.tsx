@@ -11,8 +11,22 @@ function initials(name: string) {
   return name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase();
 }
 
-export default async function AdminSchedulePage() {
-  const { records } = await adminScheduleRepository.getSchedule();
+function singleValue(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function parseWeekOffset(value: string | string[] | undefined) {
+  const parsed = Number.parseInt(singleValue(value) ?? "0", 10);
+  return Number.isFinite(parsed) ? Math.max(-52, Math.min(52, parsed)) : 0;
+}
+
+export default async function AdminSchedulePage(
+  props: PageProps<"/admin/schedule">,
+) {
+  const weekOffset = parseWeekOffset((await props.searchParams).week);
+  const weekStart = new Date();
+  weekStart.setDate(weekStart.getDate() + weekOffset * 7);
+  const { records } = await adminScheduleRepository.getSchedule({ weekStart });
   const sessions: MarvelOpsScheduleSession[] = records.flatMap((record, index) => {
     const day = days.indexOf(record.dayKey);
     if (day < 0) return [];
@@ -30,5 +44,10 @@ export default async function AdminSchedulePage() {
       flags: record.injuryAlertCount ? `${record.injuryAlertCount} injury flag${record.injuryAlertCount === 1 ? "" : "s"}` : record.trialCount ? `${record.trialCount} trial` : undefined,
     }];
   });
-  return <MarvelOpsScheduleWorkspace sessions={sessions} requests={[]} />;
+  return (
+    <MarvelOpsScheduleWorkspace
+      sessions={sessions}
+      weekOffset={weekOffset}
+    />
+  );
 }

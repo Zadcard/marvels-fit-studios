@@ -42,6 +42,15 @@ describe("Marvel Ops canonical workspaces", () => {
     expect(groupWorkspace).toContain("setAdminGroupMembership");
   });
 
+  it("keeps schedule navigation server-backed and removes fake requests", () => {
+    const schedulePage = read("app/(dashboard)/admin/schedule/page.tsx");
+    const scheduleWorkspace = read("components/dashboard/marvel-ops-schedule-workspace.tsx");
+    expect(schedulePage).toContain("getSchedule({ weekStart })");
+    expect(scheduleWorkspace).toContain("/admin/schedule?week=");
+    expect(scheduleWorkspace).not.toContain("setResolved");
+    expect(scheduleWorkspace).not.toContain("Approve request");
+  });
+
   it("removes public landing and client portal rendering files", () => {
     expect(existsSync(resolve(root, "app/landing.css"))).toBe(false);
     expect(existsSync(resolve(root, "components/landing/landing-sections.tsx"))).toBe(false);
