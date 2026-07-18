@@ -57,6 +57,17 @@ export type AdminScheduleSessionRecord = {
   recentChanges: Array<{ id: string; label: string; dateLabel: string }>;
 };
 
+export type AdminScheduleChangeRequestRecord = {
+  id: string;
+  clientId: string;
+  clientName: string;
+  reason: string;
+  kind: "CANCEL_OCCURRENCE" | "MOVE_OCCURRENCE" | "RECURRING_WEEKDAYS";
+  kindLabel: "One session" | "Recurring";
+  description: string;
+  createdAt: string;
+};
+
 export const adminScheduleDayFilters = [
   "All days",
   "Sunday",

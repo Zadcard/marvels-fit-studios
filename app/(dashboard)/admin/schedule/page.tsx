@@ -25,9 +25,10 @@ export default async function AdminSchedulePage(
   ]);
   const reference = parseScheduleReference(singleValue(searchParams.week));
   const weekStart = getScheduleWeekStart(reference, settings.scheduleStartDay);
-  const [schedule, recurring] = await Promise.all([
+  const [schedule, recurring, changeRequests] = await Promise.all([
     adminScheduleRepository.getSchedule({ weekStart }),
     recurringSessionRepository.list(),
+    adminScheduleRepository.getPendingChangeRequests(),
   ]);
 
   return (
@@ -40,6 +41,7 @@ export default async function AdminSchedulePage(
         DEFAULT_SESSION_MINUTES
       }
       cancellationWindowMinutes={parseDurationMinutes(settings.cancellationWindow) ?? 0}
+      changeRequests={changeRequests}
     />
   );
 }

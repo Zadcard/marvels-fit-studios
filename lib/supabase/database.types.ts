@@ -1225,6 +1225,106 @@ export type Database = {
           },
         ]
       }
+      ScheduleChangeRequest: {
+        Row: {
+          clientId: string
+          createdAt: string
+          createdById: string
+          decidedAt: string | null
+          decidedById: string | null
+          effectiveFrom: string | null
+          fromWeekdays: number[] | null
+          groupId: string | null
+          id: string
+          kind: string
+          reason: string
+          resultSummary: string | null
+          sourceSessionId: string | null
+          status: string
+          targetSessionId: string | null
+          toWeekdays: number[] | null
+        }
+        Insert: {
+          clientId: string
+          createdAt?: string
+          createdById: string
+          decidedAt?: string | null
+          decidedById?: string | null
+          effectiveFrom?: string | null
+          fromWeekdays?: number[] | null
+          groupId?: string | null
+          id?: string
+          kind: string
+          reason: string
+          resultSummary?: string | null
+          sourceSessionId?: string | null
+          status?: string
+          targetSessionId?: string | null
+          toWeekdays?: number[] | null
+        }
+        Update: {
+          clientId?: string
+          createdAt?: string
+          createdById?: string
+          decidedAt?: string | null
+          decidedById?: string | null
+          effectiveFrom?: string | null
+          fromWeekdays?: number[] | null
+          groupId?: string | null
+          id?: string
+          kind?: string
+          reason?: string
+          resultSummary?: string | null
+          sourceSessionId?: string | null
+          status?: string
+          targetSessionId?: string | null
+          toWeekdays?: number[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ScheduleChangeRequest_clientId_fkey"
+            columns: ["clientId"]
+            isOneToOne: false
+            referencedRelation: "Client"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ScheduleChangeRequest_createdById_fkey"
+            columns: ["createdById"]
+            isOneToOne: false
+            referencedRelation: "User"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ScheduleChangeRequest_decidedById_fkey"
+            columns: ["decidedById"]
+            isOneToOne: false
+            referencedRelation: "User"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ScheduleChangeRequest_groupId_fkey"
+            columns: ["groupId"]
+            isOneToOne: false
+            referencedRelation: "Group"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ScheduleChangeRequest_sourceSessionId_fkey"
+            columns: ["sourceSessionId"]
+            isOneToOne: false
+            referencedRelation: "TrainingSession"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ScheduleChangeRequest_targetSessionId_fkey"
+            columns: ["targetSessionId"]
+            isOneToOne: false
+            referencedRelation: "TrainingSession"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       SecurityEvent: {
         Row: {
           authMethod: string | null
@@ -2095,6 +2195,14 @@ export type Database = {
         Args: { p_password_hash: string; p_token_hash: string }
         Returns: boolean
       }
+      decide_schedule_change_request: {
+        Args: {
+          p_decided_by_id: string
+          p_decision: string
+          p_request_id: string
+        }
+        Returns: string
+      }
       delete_coach: { Args: { p_coach_id: string }; Returns: undefined }
       delete_recurring_session_template: {
         Args: { p_template_id: string }
@@ -2120,6 +2228,21 @@ export type Database = {
           p_expires_at: string
           p_token_hash: string
           p_user_id: string
+        }
+        Returns: string
+      }
+      log_schedule_change_request: {
+        Args: {
+          p_client_id: string
+          p_created_by_id: string
+          p_effective_from?: string
+          p_from_weekdays?: number[]
+          p_group_id?: string
+          p_kind: string
+          p_reason: string
+          p_source_session_id?: string
+          p_target_session_id?: string
+          p_to_weekdays?: number[]
         }
         Returns: string
       }

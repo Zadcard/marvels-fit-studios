@@ -5,6 +5,7 @@ import {
   TrainingSessionType,
 } from "@/lib/supabase/domain";
 import type {
+  AdminScheduleChangeRequestRecord,
   AdminScheduleSessionRecord,
   AdminScheduleSessionStatus,
   AdminScheduleStat,
@@ -68,6 +69,15 @@ function mapScheduleStatus(input: {
 function getTimeRange(startsAt: Date, endsAt: Date) {
   return `${timeFormatter.format(startsAt)} - ${timeFormatter.format(endsAt)}`;
 }
+
+const weekdayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+const requestDateLabelFormatter = new Intl.DateTimeFormat("en-US", {
+  timeZone: STUDIO_TIME_ZONE,
+  weekday: "short",
+  month: "short",
+  day: "numeric",
+});
 
 function mapChangeTypeLabel(changeType: string) {
   switch (changeType) {
@@ -297,6 +307,50 @@ export class AdminScheduleRepository {
         clientOptions: [],
       },
     );
+  }
+  async getPendingChangeRequests(): Promise<AdminScheduleChangeRequestRecord[]> {
+    return withSupabaseFallback(async () => {
+      const supabase = getSupabaseServerClient();
+      const { data, error } = await supabase
+        .from("ScheduleChangeRequest")
+        .select(
+          `
+          id, clientId, kind, reason, createdAt,
+          fromWeekdays, toWeekdays, effectiveFrom,
+          client:Client(fullName),
+          group:Group(name),
+          sourceSession:TrainingSession!ScheduleChangeRequest_sourceSessionId_fkey(title, startsAt),
+          targetSession:TrainingSession!ScheduleChangeRequest_targetSessionId_fkey(title, startsAt)
+        `,
+        )
+        .eq("status", "PENDING")
+        .order("createdAt", { ascending: true });
+      if (error) throw error;
+
+      return data.map((request) => {
+        let description = "";
+        if (request.kind === "CANCEL_OCCURRENCE" && request.sourceSession) {
+          description = `Cancel ${request.sourceSession.title} · ${requestDateLabelFormatter.format(new Date(request.sourceSession.startsAt))}`;
+        } else if (request.kind === "MOVE_OCCURRENCE" && request.sourceSession && request.targetSession) {
+          description = `Move ${request.sourceSession.title} → ${requestDateLabelFormatter.format(new Date(request.targetSession.startsAt))}`;
+        } else if (request.kind === "RECURRING_WEEKDAYS" && request.group) {
+          const fromLabel = (request.fromWeekdays ?? []).map((day) => weekdayNames[day]).join("+");
+          const toLabel = (request.toWeekdays ?? []).map((day) => weekdayNames[day]).join("+");
+          description = `${request.group.name} ${fromLabel} → ${toLabel} from ${request.effectiveFrom}`;
+        }
+
+        return {
+          id: request.id,
+          clientId: request.clientId,
+          clientName: request.client?.fullName ?? "Unknown client",
+          reason: request.reason,
+          kind: request.kind as AdminScheduleChangeRequestRecord["kind"],
+          kindLabel: request.kind === "RECURRING_WEEKDAYS" ? "Recurring" : "One session",
+          description,
+          createdAt: request.createdAt,
+        } satisfies AdminScheduleChangeRequestRecord;
+      });
+    }, []);
   }
 }
 

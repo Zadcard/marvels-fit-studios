@@ -20,3 +20,44 @@
 .blockFlags { display: block; margin-top: 2px; font-size: .62rem; font-weight: 800; color: var(--rl-danger); }
 
 .templateLink { display: inline-flex; margin-top: 8px; color: var(--rl-red-deep); font-size: .78rem; font-weight: 800; }
+
+.reviewLayout { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(300px, .72fr); gap: 10px; align-items: start; }
+.grid { min-width: 900px; display: grid; grid-template-columns: 84px repeat(7, minmax(120px, 1fr)); }
+.gridCorner, .gridDayHeader, .gridTimeLabel, .gridCell { border-right: 1px solid var(--rl-line); border-bottom: 1px solid var(--rl-line); }
+.gridCorner { display: flex; align-items: center; justify-content: center; color: var(--rl-muted); font-size: .62rem; }
+.gridDayHeader { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 8px 0; }
+.gridDayHeader span { color: var(--rl-muted); font-size: .65rem; font-weight: 750; text-transform: uppercase; }
+.gridDayHeader strong { width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; border-radius: 9px; font-family: var(--font-display); font-size: 1rem; }
+.gridDayHeader[data-today] strong { background: var(--rl-red); color: white; }
+.gridTimeLabel { display: flex; align-items: flex-start; justify-content: flex-end; padding: 8px 8px 0 0; color: var(--rl-muted); font-size: .59rem; }
+.gridCell { display: flex; flex-direction: column; gap: 5px; padding: 6px; min-height: 64px; }
+.gridBlock { display: grid; gap: 1px; padding: 6px 8px; border-left: 3px solid var(--rl-red); border-radius: 8px; background: var(--rl-soft); text-align: left; }
+.gridBlock[data-canceled] { opacity: .55; text-decoration: line-through; }
+.gridBlockTitle { overflow: hidden; font-size: .68rem; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
+.gridBlockCoach { overflow: hidden; color: var(--rl-muted); font-size: .6rem; text-overflow: ellipsis; white-space: nowrap; }
+.gridEmpty { padding: 30px; color: var(--rl-muted); text-align: center; }
+
+.requestsCard { border: 1px solid var(--rl-line); border-radius: 20px; background: white; padding: 20px; align-self: start; }
+.requestsCard .sectionHeading small { color: var(--rl-warning); font-weight: 750; text-transform: uppercase; }
+.requestList { display: grid; gap: 14px; }
+.requestItem { padding: 13px; border: 1px solid var(--rl-line); border-radius: 14px; }
+.requestItemHead { display: flex; align-items: start; justify-content: space-between; gap: 8px; }
+.requestItemHead strong { font-size: .8rem; }
+.requestItemHead small { display: block; margin-top: 2px; color: var(--rl-muted); font-size: .65rem; }
+.requestBadge { padding: 3px 8px; border: 1px solid var(--rl-line); border-radius: 99px; color: var(--rl-muted); font-size: .58rem; font-weight: 750; text-transform: uppercase; white-space: nowrap; }
+.requestBadge[data-recurring] { border-color: rgba(189,23,38,.24); background: var(--rl-danger-soft); color: var(--rl-danger); }
+.requestDescription { margin-top: 8px; font-size: .74rem; font-weight: 650; }
+.requestActions { display: flex; gap: 7px; margin-top: 10px; }
+.requestActions button { flex: 1; min-height: 38px; border-radius: 9px; font-size: .68rem; font-weight: 800; text-transform: uppercase; }
+.approveButton { border: 0; background: var(--rl-red); color: white; }
+.declineButton { border: 1px solid var(--rl-line); background: white; color: var(--rl-ink); }
+.noRequests { padding: 20px 0; color: var(--rl-muted); font-size: .75rem; text-align: center; }
+.summaryNotice { margin-top: 10px; padding: 10px 12px; border-radius: 10px; background: var(--rl-warning-soft); color: var(--rl-warning); font-size: .68rem; }
+
+.weekdayPicker { display: flex; flex-wrap: wrap; gap: 6px; }
+.weekdayPicker label { display: inline-flex; width: 42px; height: 34px; align-items: center; justify-content: center; border: 1px solid var(--rl-line-strong); border-radius: 9px; font-size: .62rem; font-weight: 750; text-transform: uppercase; cursor: pointer; }
+.weekdayPicker input { position: absolute; opacity: 0; }
+.weekdayPicker input:checked + span { color: white; }
+.weekdayPicker label:has(input:checked) { border-color: var(--rl-red); background: var(--rl-red); color: white; }
+
+@media (max-width: 1000px) { .reviewLayout { grid-template-columns: 1fr; } }
