@@ -5,9 +5,9 @@ import { ClientPaymentStatus, UserRole } from "@/lib/supabase/domain";
 import { revalidatePath } from "next/cache";
 
 import { requireRole } from "@/lib/auth/session";
+import { generateTemporaryPassword } from "@/lib/auth/temporary-password";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { clientIdGenerator } from "@/lib/services/client-id-generator";
-import { passwordGenerator } from "@/lib/services/password-generator";
 import {
   injuryStatusFromLabel,
   lifecycleStatusFromLabel,
@@ -118,11 +118,11 @@ export async function saveAdminClient(input: SaveAdminClientInput) {
   const generatedClientId = input.clientId
     ? null
     : await generateUniqueClientId();
-  const password = generatedClientId
-    ? await bcrypt.hash(
-        passwordGenerator.generatePassword(generatedClientId),
-        12,
-      )
+  const temporaryPassword = generatedClientId
+    ? generateTemporaryPassword()
+    : null;
+  const password = temporaryPassword
+    ? await bcrypt.hash(temporaryPassword, 12)
     : null;
   const { data: savedClientId, error } = await supabase.rpc(
     "admin_save_client",
@@ -160,6 +160,16 @@ export async function saveAdminClient(input: SaveAdminClientInput) {
   revalidatePath("/admin/schedule");
   revalidatePath("/coach/clients");
   revalidatePath("/coach/sessions");
+
+  return {
+    credentials:
+      generatedClientId && temporaryPassword
+        ? {
+            signInId: generatedClientId,
+            temporaryPassword,
+          }
+        : null,
+  };
 }
 
 export async function deleteAdminClient(input: DeleteAdminClientInput) {

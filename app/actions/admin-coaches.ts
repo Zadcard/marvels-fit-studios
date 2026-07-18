@@ -5,6 +5,7 @@ import { CoachSpecialization, UserRole } from "@/lib/supabase/domain";
 import { revalidatePath } from "next/cache";
 
 import { requireRole } from "@/lib/auth/session";
+import { generateTemporaryPassword } from "@/lib/auth/temporary-password";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 type SaveCoachInput = {
@@ -57,11 +58,6 @@ function toCoachSpecialization(
   }
 }
 
-function buildGeneratedCoachPassword(email: string) {
-  const localPart = email.split("@")[0]?.replace(/[^a-z0-9]/gi, "") || "coach";
-  return `MFS_${localPart.slice(0, 10)}2026`;
-}
-
 export async function saveCoach(input: SaveCoachInput) {
   await requireRole(UserRole.ADMIN);
   const fullName = input.fullName.trim();
@@ -77,9 +73,12 @@ export async function saveCoach(input: SaveCoachInput) {
     throw new Error("Coach email is required.");
   }
 
-  const password = input.coachId
-    ? ""
-    : await bcrypt.hash(buildGeneratedCoachPassword(email), 12);
+  const temporaryPassword = input.coachId
+    ? null
+    : generateTemporaryPassword();
+  const password = temporaryPassword
+    ? await bcrypt.hash(temporaryPassword, 12)
+    : "";
   const { error } = await getSupabaseServerClient().rpc("save_coach", {
     p_coach_id: input.coachId ?? "",
     p_email: email,
@@ -95,6 +94,15 @@ export async function saveCoach(input: SaveCoachInput) {
   revalidatePath("/admin");
   revalidatePath("/admin/coaches");
   revalidatePath("/admin/groups");
+
+  return {
+    credentials: temporaryPassword
+      ? {
+          signInId: email,
+          temporaryPassword,
+        }
+      : null,
+  };
 }
 
 export async function deleteCoach(input: DeleteCoachInput) {

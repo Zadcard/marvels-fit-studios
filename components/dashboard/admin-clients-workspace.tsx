@@ -32,6 +32,10 @@ import {
 } from "@/lib/dashboard/client-domain-labels";
 import { paginateDashboardItems } from "@/lib/dashboard/pagination";
 import { buildWhatsAppHref } from "@/lib/whatsapp";
+import {
+  TemporaryCredentialsDialog,
+  type TemporaryCredentials,
+} from "./temporary-credentials-dialog";
 import styles from "./admin-clients-workspace.module.css";
 
 type Props = {
@@ -131,6 +135,7 @@ export function AdminClientsWorkspace({
   const [deleteText, setDeleteText] = useState("");
   const [form, setForm] = useState<ClientForm>(emptyForm);
   const [error, setError] = useState("");
+  const [credentials, setCredentials] = useState<TemporaryCredentials | null>(null);
 
   const filtered = useMemo(() => records.filter((record) =>
     (filters.status === "All" || record.status === filters.status) &&
@@ -187,8 +192,11 @@ export function AdminClientsWorkspace({
     setError("");
     startTransition(async () => {
       try {
-        await saveAdminClient({ clientId: editingId, ...form });
+        const result = await saveAdminClient({ clientId: editingId, ...form });
         setEditorOpen(false);
+        if (result.credentials) {
+          setCredentials({ accountType: "client", ...result.credentials });
+        }
         router.refresh();
       } catch (caught) {
         setError(caught instanceof Error ? caught.message : "Could not save the member.");
@@ -285,6 +293,7 @@ export function AdminClientsWorkspace({
       </Dialog.Root>
 
       <Dialog.Root open={deleteOpen} onOpenChange={setDeleteOpen}><Dialog.Portal><Dialog.Overlay className={styles.overlay} /><Dialog.Content className={styles.confirm}><Dialog.Title>Delete this member?</Dialog.Title><Dialog.Description>This removes the account and connected operational records. Type Delete to continue.</Dialog.Description><label>Confirmation<input value={deleteText} onChange={(event) => setDeleteText(event.target.value)} placeholder="Delete" /></label>{error ? <p className={styles.error} role="alert">{error}</p> : null}<div><button className="mv-btn mv-btn-secondary" onClick={() => setDeleteOpen(false)}>Cancel</button><button className={styles.deleteButton} disabled={deleteText !== "Delete" || isPending} onClick={confirmDelete}>Delete permanently</button></div></Dialog.Content></Dialog.Portal></Dialog.Root>
+      <TemporaryCredentialsDialog credentials={credentials} onClose={() => setCredentials(null)} />
     </div>
   );
 }

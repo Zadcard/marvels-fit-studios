@@ -2,8 +2,8 @@ import bcryptjs from "bcryptjs";
 import { LeadStatus, UserRole } from "@/lib/supabase/domain";
 
 import { readLeadCredentialClientId } from "@/lib/leads/lead-credential-metadata";
+import { generateTemporaryPassword } from "@/lib/auth/temporary-password";
 import { clientIdGenerator } from "@/lib/services/client-id-generator";
-import { passwordGenerator } from "@/lib/services/password-generator";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 export type PromoteLeadsInput = {
@@ -99,8 +99,7 @@ export async function promoteLeadsToClients(
       reservedClientId ??
       existingUser?.clientId ??
       (await clientIdGenerator.getNextAvailableId());
-    const temporaryPassword =
-      passwordGenerator.generatePassword(generatedClientId);
+    const temporaryPassword = generateTemporaryPassword();
 
     if (input.dryRun) {
       results.push({
