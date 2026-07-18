@@ -58,9 +58,9 @@ export class AdminTodayOperationsRepository {
       }, []),
       withSupabaseFallback(async () => {
         const { data, error } = await supabase
-          .from("Client")
-          .select("id,fullName,phone,trainingCategory,createdAt")
-          .eq("status", "TRIAL")
+          .from("Lead")
+          .select("id,fullName,phone,createdAt,trialGroup:Group(name)")
+          .eq("status", "TRIAL_DONE")
           .order("createdAt", { ascending: false })
           .limit(4);
         if (error) throw error;
@@ -160,7 +160,7 @@ export class AdminTodayOperationsRepository {
         id: trial.id,
         fullName: trial.fullName,
         initials: getInitials(trial.fullName),
-        trainingCategory: trial.trainingCategory.replaceAll("_", " ").toLowerCase(),
+        groupName: trial.trialGroup?.name ?? "Trial group",
         phone: trial.phone ?? "No phone recorded",
       })),
       renewals: renewals.map((renewal) => {

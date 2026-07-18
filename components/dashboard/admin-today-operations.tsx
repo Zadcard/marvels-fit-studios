@@ -59,8 +59,8 @@ export function AdminTodayOperations({ data }: Props) {
           <section className={`${styles.panel} ${styles.trialsPanel}`}>
             <header className={styles.panelHeader}><h2>Trials to close</h2><span>Decide & convert</span></header>
             {data.trials.length ? data.trials.map((trial) => (
-              <article className={styles.compactPerson} key={trial.id}><span className={styles.avatar}>{trial.initials}</span><span><strong>{trial.fullName}</strong><small>{trial.trainingCategory} · {trial.phone}</small></span><Link href="/admin/clients">Open</Link></article>
-            )) : <div className={styles.empty}>No open trial clients.</div>}
+              <article className={styles.compactPerson} key={trial.id}><span className={styles.avatar}>{trial.initials}</span><span><strong>{trial.fullName}</strong><small>{trial.groupName} · {trial.phone}</small></span><Link href="/admin/join-requests">Open</Link></article>
+            )) : <div className={styles.empty}>No completed lead trials.</div>}
           </section>
 
           <section className={styles.panel}>

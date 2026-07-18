@@ -25,7 +25,7 @@ export type AdminTodayTrial = {
   id: string;
   fullName: string;
   initials: string;
-  trainingCategory: string;
+  groupName: string;
   phone: string;
 };
 
