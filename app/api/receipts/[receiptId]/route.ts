@@ -1,5 +1,6 @@
-import { requireUser } from "@/lib/auth/session";
+import { getRouteUserOrNull } from "@/lib/auth/route-user";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { isUuid } from "@/lib/validators/uuid";
 
 function escapeHtml(value: string) {
   return value.replace(/[&<>'"]/g, (character) => ({
@@ -24,15 +25,24 @@ export async function GET(
   _request: Request,
   context: RouteContext<"/api/receipts/[receiptId]">,
 ) {
-  const user = await requireUser();
+  const user = await getRouteUserOrNull();
+  if (!user) {
+    return new Response("Unauthorized.", {
+      status: 401,
+      headers: { "cache-control": "private, no-store" },
+    });
+  }
   const { receiptId } = await context.params;
+  if (!isUuid(receiptId)) {
+    return new Response("Receipt not found.", { status: 404 });
+  }
   const { data, error } = await getSupabaseServerClient()
     .from("BillingLedgerEntry")
     .select("id, receiptNumber, type, status, amount, currency, description, occurredAt, payment:Payment(method), client:Client(fullName,userId), subscription:ClientSubscription(plan:SubscriptionPlan(name))")
     .eq("id", receiptId)
     .maybeSingle();
   if (error) throw error;
-  if (!data || (user.role !== "ADMIN" && data.client.userId !== user.id)) {
+  if (!data?.client || (user.role !== "ADMIN" && data.client.userId !== user.id)) {
     return new Response("Receipt not found.", { status: 404 });
   }
 

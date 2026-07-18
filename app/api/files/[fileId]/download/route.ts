@@ -1,16 +1,27 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { UserRole } from "@/lib/supabase/domain";
 
-import { requireUser } from "@/lib/auth/session";
+import { getRouteUserOrNull } from "@/lib/auth/route-user";
+import { attachmentContentDisposition } from "@/lib/http/content-disposition";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { COACH_FILES_BUCKET } from "@/lib/storage/coach-files";
+import { isUuid } from "@/lib/validators/uuid";
 
 export async function GET(
   _request: NextRequest,
   context: RouteContext<"/api/files/[fileId]/download">
 ) {
-  const user = await requireUser();
+  const user = await getRouteUserOrNull();
+  if (!user) {
+    return NextResponse.json(
+      { error: "Unauthorized." },
+      { status: 401, headers: { "cache-control": "private, no-store" } },
+    );
+  }
   const { fileId } = await context.params;
+  if (!isUuid(fileId)) {
+    return NextResponse.json({ error: "File not found." }, { status: 404 });
+  }
   const supabase = getSupabaseServerClient();
 
   const { data: file, error } = await supabase
@@ -60,7 +71,7 @@ export async function GET(
   return new Response(storedFile, {
     headers: {
       "Content-Type": file.mimeType ?? "application/octet-stream",
-      "Content-Disposition": `attachment; filename="${encodeURIComponent(file.name)}"`,
+      "Content-Disposition": attachmentContentDisposition(file.name),
       "Cache-Control": "private, no-store",
     },
   });
