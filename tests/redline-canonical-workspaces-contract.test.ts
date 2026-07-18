@@ -47,9 +47,9 @@ describe("Marvel Ops canonical workspaces", () => {
 
   it("keeps schedule navigation server-backed and removes fake requests", () => {
     const schedulePage = read("app/(dashboard)/admin/schedule/page.tsx");
-    const scheduleWorkspace = read("components/dashboard/marvel-ops-schedule-workspace.tsx");
+    const scheduleWorkspace = read("components/dashboard/admin-schedule-workspace.tsx");
     expect(schedulePage).toContain("getSchedule({ weekStart })");
-    expect(scheduleWorkspace).toContain("/admin/schedule?week=");
+    expect(scheduleWorkspace).toContain('params.set("week"');
     expect(scheduleWorkspace).not.toContain("setResolved");
     expect(scheduleWorkspace).not.toContain("Approve request");
   });
