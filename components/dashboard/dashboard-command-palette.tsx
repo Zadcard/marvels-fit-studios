@@ -9,6 +9,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { Dialog } from "radix-ui";
 
 import type { DashboardRole } from "@/lib/auth/authorization-policy";
 import type { DashboardCommandItem } from "@/lib/dashboard/dashboard-command-item";
@@ -82,18 +83,7 @@ export function DashboardCommandPalette({
   useEffect(() => {
     if (!open) return;
     setQuery("");
-    const timer = window.setTimeout(() => inputRef.current?.focus(), 0);
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => {
-      window.clearTimeout(timer);
-      window.removeEventListener("keydown", onKeyDown);
-    };
-  }, [onClose, open]);
-
-  if (!open) return null;
+  }, [open]);
 
   function navigate(href: string) {
     onClose();
@@ -101,40 +91,53 @@ export function DashboardCommandPalette({
   }
 
   return (
-    <div className={styles.overlay} role="presentation" onMouseDown={onClose}>
-      <section className={styles.palette} role="dialog" aria-modal="true" aria-label="Search or jump to" onMouseDown={(event) => event.stopPropagation()}>
-        <header className={styles.searchRow}>
-          <Search size={18} aria-hidden="true" />
-          <label className="sr-only" htmlFor="command-query">Search or jump to</label>
-          <input ref={inputRef} id="command-query" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search or jump to…" />
-          <kbd>ESC</kbd>
-        </header>
-        <div className={styles.results}>
-          {groups.length === 0 ? (
-            <div className={styles.empty}>
-              <Search size={26} aria-hidden="true" />
-              <strong>No matches for “{query}”</strong>
-              <span>Try a client, coach, or page name.</span>
-            </div>
-          ) : groups.map((group) => (
-            <section className={styles.group} key={group.label} aria-label={group.label}>
-              <h2>{group.label}</h2>
-              {group.items.map((item) => (
-                <button type="button" key={`${item.kind}-${item.label}`} onClick={() => navigate(item.href)}>
-                  <span className={`${styles.iconTile} ${styles[item.tone ?? "neutral"]}`} aria-hidden="true">
-                    {typeof item.icon === "string" ? item.icon : <item.icon size={16} />}
-                  </span>
-                  <span className={styles.itemCopy}>
-                    <span>{item.label}</span>
-                    {item.detail ? <small>{item.detail}</small> : null}
-                  </span>
-                  <span className={styles.kind}>{item.kind}</span>
-                </button>
-              ))}
-            </section>
-          ))}
-        </div>
-      </section>
-    </div>
+    <Dialog.Root open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
+      <Dialog.Portal>
+        <Dialog.Overlay className={styles.overlay} />
+        <Dialog.Content
+          className={styles.palette}
+          onOpenAutoFocus={(event) => {
+            event.preventDefault();
+            inputRef.current?.focus();
+          }}
+        >
+          <Dialog.Title className="sr-only">Search or jump to</Dialog.Title>
+          <Dialog.Description className="sr-only">
+            Search clients, coaches, pages, and quick actions.
+          </Dialog.Description>
+          <header className={styles.searchRow}>
+            <Search size={18} aria-hidden="true" />
+            <label className="sr-only" htmlFor="command-query">Search or jump to</label>
+            <input ref={inputRef} id="command-query" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search or jump to…" />
+            <kbd>ESC</kbd>
+          </header>
+          <div className={styles.results}>
+            {groups.length === 0 ? (
+              <div className={styles.empty}>
+                <Search size={26} aria-hidden="true" />
+                <strong>No matches for “{query}”</strong>
+                <span>Try a client, coach, or page name.</span>
+              </div>
+            ) : groups.map((group) => (
+              <section className={styles.group} key={group.label} aria-label={group.label}>
+                <h2>{group.label}</h2>
+                {group.items.map((item) => (
+                  <button type="button" key={`${item.kind}-${item.label}`} onClick={() => navigate(item.href)}>
+                    <span className={`${styles.iconTile} ${styles[item.tone ?? "neutral"]}`} aria-hidden="true">
+                      {typeof item.icon === "string" ? item.icon : <item.icon size={16} />}
+                    </span>
+                    <span className={styles.itemCopy}>
+                      <span>{item.label}</span>
+                      {item.detail ? <small>{item.detail}</small> : null}
+                    </span>
+                    <span className={styles.kind}>{item.kind}</span>
+                  </button>
+                ))}
+              </section>
+            ))}
+          </div>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
   );
 }

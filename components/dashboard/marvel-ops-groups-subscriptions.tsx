@@ -3,6 +3,7 @@
 import { LoaderCircle, ReceiptText, X } from "lucide-react";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { Dialog } from "radix-ui";
 
 import { mutateAdminSubscriptionLifecycle } from "@/app/actions/admin-subscriptions";
 import {
@@ -256,77 +257,77 @@ function SubscriptionDialog({
   const action = subscriptionLabel(record) === "Expired" ? "Reactivate" : "Renew";
 
   return (
-    <div className={styles.overlay} onMouseDown={() => !pending && close()}>
-      <section
-        className={styles.modal}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="subscription-dialog-title"
-        onMouseDown={(event) => event.stopPropagation()}
-      >
-        <button
-          className={styles.close}
-          type="button"
-          onClick={close}
-          disabled={pending}
-          aria-label="Close"
-        >
-          <X size={16} />
-        </button>
-        <span>Membership</span>
-        <h2 id="subscription-dialog-title">{action} membership</h2>
-        <p>
-          {record.memberName} · {record.amountLabel} · {record.planName}
-        </p>
-        <p>
-          {action === "Renew"
-            ? "Record the payment method, close the current period, and create a new active period."
-            : "This reactivates the existing membership and sets its next renewal date."}
-        </p>
-        {action === "Renew" ? (
-          <fieldset className={styles.paymentChoices} disabled={pending}>
-            <legend>Paid with</legend>
-            <div className={styles.chips}>
-              {adminPaymentMethods.map((method) => (
-                <button
-                  key={method}
-                  type="button"
-                  data-active={paymentMethod === method || undefined}
-                  aria-pressed={paymentMethod === method}
-                  onClick={() => onPaymentMethodChange(method)}
-                >
-                  {method}
-                </button>
-              ))}
-            </div>
-          </fieldset>
-        ) : null}
-        {error ? (
-          <p className={styles.error} role="alert">
-            {error}
-          </p>
-        ) : null}
-        <footer>
-          <button type="button" onClick={close} disabled={pending}>
-            Cancel
-          </button>
-          <button
-            className={styles.submit}
-            type="button"
-            onClick={confirm}
+    <Dialog.Root
+      open
+      onOpenChange={(open) => !open && !pending && close()}
+    >
+      <Dialog.Portal>
+        <Dialog.Overlay className={styles.overlay} />
+        <Dialog.Content className={styles.modal}>
+          <Dialog.Close
+            className={styles.close}
             disabled={pending}
+            aria-label="Close"
           >
-            {pending ? (
-              <>
-                <LoaderCircle size={14} className={styles.spinner} /> Saving
-              </>
-            ) : (
-              action
-            )}
-          </button>
-        </footer>
-      </section>
-    </div>
+            <X size={16} />
+          </Dialog.Close>
+          <span>Membership</span>
+          <Dialog.Title asChild>
+            <h2>{action} membership</h2>
+          </Dialog.Title>
+          <Dialog.Description>
+            {record.memberName} · {record.amountLabel} · {record.planName}
+          </Dialog.Description>
+          <p>
+            {action === "Renew"
+              ? "Record the payment method, close the current period, and create a new active period."
+              : "This reactivates the existing membership and sets its next renewal date."}
+          </p>
+          {action === "Renew" ? (
+            <fieldset className={styles.paymentChoices} disabled={pending}>
+              <legend>Paid with</legend>
+              <div className={styles.chips}>
+                {adminPaymentMethods.map((method) => (
+                  <button
+                    key={method}
+                    type="button"
+                    data-active={paymentMethod === method || undefined}
+                    aria-pressed={paymentMethod === method}
+                    onClick={() => onPaymentMethodChange(method)}
+                  >
+                    {method}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+          ) : null}
+          {error ? (
+            <p className={styles.error} role="alert">
+              {error}
+            </p>
+          ) : null}
+          <footer>
+            <button type="button" onClick={close} disabled={pending}>
+              Cancel
+            </button>
+            <button
+              className={styles.submit}
+              type="button"
+              onClick={confirm}
+              disabled={pending}
+            >
+              {pending ? (
+                <>
+                  <LoaderCircle size={14} className={styles.spinner} /> Saving
+                </>
+              ) : (
+                action
+              )}
+            </button>
+          </footer>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
   );
 }
 
