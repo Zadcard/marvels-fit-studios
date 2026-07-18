@@ -1942,6 +1942,10 @@ export type Database = {
       }
       admin_save_client: { Args: { payload: Json }; Returns: string }
       admin_save_subscription: { Args: { payload: Json }; Returns: Json }
+      book_client_into_session: {
+        Args: { p_client_id: string; p_session_id: string }
+        Returns: Json
+      }
       bulk_update_training_sessions: {
         Args: {
           p_action: string
@@ -2052,6 +2056,19 @@ export type Database = {
           userId: string
         }[]
       }
+      save_admin_group: {
+        Args: {
+          p_capacity: number
+          p_coach_id: string
+          p_group_id: string
+          p_is_active: boolean
+          p_name: string
+          p_notes: string
+          p_training_category: Database["public"]["Enums"]["TrainingCategory"]
+          p_type: Database["public"]["Enums"]["GroupType"]
+        }
+        Returns: string
+      }
       save_client_settings: {
         Args: {
           p_email: string
@@ -2096,6 +2113,10 @@ export type Database = {
           p_status: Database["public"]["Enums"]["ProgramStatus"]
         }
         Returns: string
+      }
+      set_admin_group_membership: {
+        Args: { p_action: string; p_client_id: string; p_group_id: string }
+        Returns: undefined
       }
       set_client_payment_status: {
         Args: {

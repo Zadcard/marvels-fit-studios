@@ -63,26 +63,25 @@ export async function saveAdminGroup(input: SaveAdminGroupInput) {
   if (!coachId) {
     throw new Error("Assign a coach to the group.");
   }
+  if (capacity === null) {
+    throw new Error("Group capacity is required.");
+  }
 
-  const payload = {
-    name,
-    type,
-    trainingCategory,
-    coachId,
-    capacity,
-    isActive: input.isActive,
-    notes,
-  };
-
-  if (input.groupId) {
-    const { error } = await supabase
-      .from("Group")
-      .update(payload)
-      .eq("id", input.groupId);
-    if (error) throw error;
-  } else {
-    const { error } = await supabase.from("Group").insert(payload);
-    if (error) throw error;
+  const { error } = await supabase.rpc("save_admin_group", {
+    p_group_id: input.groupId ?? "",
+    p_name: name,
+    p_type: type,
+    p_training_category: trainingCategory,
+    p_coach_id: coachId,
+    p_capacity: capacity,
+    p_is_active: input.isActive,
+    p_notes: notes ?? "",
+  });
+  if (error) {
+    if (error.message.includes("lower than current membership")) {
+      throw new Error("Group capacity cannot be lower than current membership.");
+    }
+    throw error;
   }
 
   revalidateGroupViews();
@@ -108,7 +107,6 @@ export async function deleteAdminGroup(input: DeleteAdminGroupInput) {
 
 export async function setAdminGroupMembership(input: GroupMembershipInput) {
   await requireRole(UserRole.ADMIN);
-  const supabase = getSupabaseServerClient();
   const groupId = input.groupId.trim();
   const clientId = input.clientId.trim();
 
@@ -116,20 +114,19 @@ export async function setAdminGroupMembership(input: GroupMembershipInput) {
     throw new Error("Group and client are required.");
   }
 
-  if (input.action === "add") {
-    const { error } = await supabase
-      .from("Client")
-      .update({ groupId })
-      .eq("id", clientId);
-    if (error) throw error;
-  } else {
-    // Only clear membership if the client currently belongs to this group.
-    const { error } = await supabase
-      .from("Client")
-      .update({ groupId: null })
-      .eq("id", clientId)
-      .eq("groupId", groupId);
-    if (error) throw error;
+  const { error } = await getSupabaseServerClient().rpc(
+    "set_admin_group_membership",
+    {
+      p_group_id: groupId,
+      p_client_id: clientId,
+      p_action: input.action,
+    },
+  );
+  if (error) {
+    if (error.message.includes("already at capacity")) {
+      throw new Error("Group is already at capacity.");
+    }
+    throw error;
   }
 
   revalidateGroupViews();
