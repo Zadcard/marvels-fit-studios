@@ -4,6 +4,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({
   usePathname: () => "/admin",
+  useRouter: () => ({
+    push: vi.fn(),
+    refresh: vi.fn(),
+  }),
 }));
 
 vi.mock("next-auth/react", () => ({

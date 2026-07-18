@@ -17,7 +17,7 @@ describe("Marvel Ops foundation", () => {
   });
 
   it("uses the operations-only entry and auth shell", () => {
-    expect(read("app/page.tsx")).toContain('redirect(session?.user?.role');
+    expect(read("app/page.tsx")).toContain('redirect("/login")');
     expect(read("components/auth/ops-auth-shell.tsx")).toContain("Admin & coach workspace");
     expect(read("app/login/login.css")).toContain("#e62429");
   });

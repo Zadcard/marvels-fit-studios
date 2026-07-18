@@ -8,29 +8,29 @@ const page = readFileSync(resolve(root, "app/(dashboard)/admin/coaches/page.tsx"
 const screen = readFileSync(resolve(root, "components/dashboard/admin-coaches-command-center.tsx"), "utf8");
 const styles = readFileSync(resolve(root, "components/dashboard/admin-coaches-command-center.module.css"), "utf8");
 
-describe("admin coach command center redesign", () => {
-  it("replaces the old management workspace at the route boundary", () => {
-    expect(page).toContain("AdminCoachesCommandCenter");
+describe("admin coach management contract", () => {
+  it("renders the current Marvel Ops coaches view from repository records", () => {
+    expect(page).toContain("adminCoachRepository.list()");
+    expect(page).toContain('<MarvelOpsAdminView view="coaches"');
     expect(page).not.toContain("AdminCoachesWorkspace");
   });
 
-  it("keeps real mutations while introducing new screen composition", () => {
+  it("keeps the reusable management surface wired to real mutations", () => {
     expect(screen).toContain("saveCoach");
     expect(screen).toContain("deleteCoach");
-    expect(screen).toContain("Deploy the team");
-    expect(screen).toContain("7-day deployment");
-    expect(screen).toContain("focusNumbers");
+    expect(screen).toContain("New coach");
+    expect(screen).toContain("Save coach");
+    expect(screen).toContain("Delete permanently");
     expect(screen).toContain("<Dialog.Content");
-    expect(screen).not.toContain("DashboardManagementToolbar");
-    expect(screen).not.toContain("dashboard-table");
-    expect(screen).not.toContain("DashboardModal");
+    expect(screen).toContain("Close coach editor");
   });
 
-  it("uses a dedicated responsive screen design without viewport scaling", () => {
-    expect(styles).toContain(".rosterList");
-    expect(styles).toContain(".loadBars");
-    expect(styles).toContain("@media(max-width:700px)");
-    expect(styles).toContain("@media(prefers-reduced-motion:reduce)");
+  it("uses the current responsive REDLINE styling", () => {
+    expect(styles).toContain(".coachGrid");
+    expect(styles).toContain(".timeline");
+    expect(styles).toContain(".editor");
+    expect(styles).toContain("@media(max-width:960px)");
+    expect(styles).toContain("@media(max-width:620px)");
     expect(styles).toContain("var(--rl-red)");
     expect(styles).not.toContain("var(--mv-");
     expect(styles).not.toContain("scale(");
