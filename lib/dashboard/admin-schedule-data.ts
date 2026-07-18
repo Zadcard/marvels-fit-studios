@@ -22,6 +22,7 @@ export type AdminScheduleStat = {
 export type AdminScheduleSessionRecord = {
   id: string;
   title: string;
+  rawStatus: "DRAFT" | "SCHEDULED" | "COMPLETED" | "CANCELED";
   sessionType: AdminScheduleSessionType;
   status: AdminScheduleSessionStatus;
   groupName: string;
@@ -30,6 +31,7 @@ export type AdminScheduleSessionRecord = {
   dateLabel: string;
   timeRange: string;
   coachId: string;
+  groupId: string | null;
   coachName: string;
   trainingCategory: TrainingCategoryLabel | null;
   injuryAlertCount: number;
@@ -46,6 +48,11 @@ export type AdminScheduleSessionRecord = {
   endsAt: string;
   capacity: number | null;
   sourceTemplateId: string | null;
+  bookedClients: Array<{
+    id: string;
+    fullName: string;
+    status: "BOOKED" | "ATTENDED" | "MISSED" | "WAITLIST";
+  }>;
   recentChanges: Array<{ id: string; label: string; dateLabel: string }>;
 };
 

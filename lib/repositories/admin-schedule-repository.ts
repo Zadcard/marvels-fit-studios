@@ -76,12 +76,18 @@ export type AdminScheduleGroupOption = {
   name: string;
 };
 
+export type AdminScheduleClientOption = {
+  id: string;
+  fullName: string;
+};
+
 export class AdminScheduleRepository {
   async getSchedule(input?: { weekStart?: Date }): Promise<{
     stats: AdminScheduleStat[];
     records: AdminScheduleSessionRecord[];
     coachOptions: AdminSessionCoachOption[];
     groupOptions: AdminScheduleGroupOption[];
+    clientOptions: AdminScheduleClientOption[];
   }> {
     return withSupabaseFallback(
       async () => {
@@ -97,10 +103,10 @@ export class AdminScheduleRepository {
           .select(
             `
           id, title, description, type, status, startsAt, endsAt, location,
-          capacity, coachId, sourceTemplateId,
+          capacity, coachId, groupId, sourceTemplateId,
           coach:Coach(fullName),
           group:Group(name, trainingCategory, clients:Client(id)),
-          bookings:SessionBooking(id, status, client:Client(status, injuryStatus)),
+          bookings:SessionBooking(id, status, client:Client(id, fullName, status, injuryStatus)),
           changes:ScheduleChangeLog(id, changeType, createdAt)
         `,
           )
@@ -108,16 +114,18 @@ export class AdminScheduleRepository {
           .lte("startsAt", scheduleWindowEnd.toISOString())
           .order("startsAt", { ascending: true });
 
-        const [sessionsResult, coachesResult, groupsResult] = await Promise.all(
+        const [sessionsResult, coachesResult, groupsResult, clientsResult] = await Promise.all(
           [
             sessionsPromise,
             supabase.from("Coach").select("id, fullName").order("fullName"),
             supabase.from("Group").select("id, name").order("name"),
+            supabase.from("Client").select("id, fullName").order("fullName"),
           ],
         );
         if (sessionsResult.error) throw sessionsResult.error;
         if (coachesResult.error) throw coachesResult.error;
         if (groupsResult.error) throw groupsResult.error;
+        if (clientsResult.error) throw clientsResult.error;
 
         const sessions = sessionsResult.data;
         const coaches = coachesResult.data;
@@ -149,6 +157,7 @@ export class AdminScheduleRepository {
           return {
             id: session.id,
             title: session.title,
+            rawStatus: session.status,
             sessionType:
               session.type === TrainingSessionType.PRIVATE
                 ? ("Private" as const)
@@ -160,6 +169,7 @@ export class AdminScheduleRepository {
             dateLabel: dateLabelFormatter.format(startsAt),
             timeRange: getTimeRange(startsAt, endsAt),
             coachId: session.coachId,
+            groupId: session.groupId,
             coachName: session.coach.fullName,
             trainingCategory: session.group?.trainingCategory
               ? trainingCategoryLabelFor(session.group.trainingCategory)
@@ -198,6 +208,15 @@ export class AdminScheduleRepository {
                 ? 1
                 : session.capacity,
             sourceTemplateId: session.sourceTemplateId,
+            bookedClients: activeBookings.flatMap((booking) =>
+              booking.client
+                ? [{
+                    id: booking.client.id,
+                    fullName: booking.client.fullName,
+                    status: booking.status as "BOOKED" | "ATTENDED" | "MISSED" | "WAITLIST",
+                  }]
+                : [],
+            ),
             recentChanges: [...session.changes]
               .sort((left, right) => right.createdAt.localeCompare(left.createdAt))
               .slice(0, 3)
@@ -258,6 +277,7 @@ export class AdminScheduleRepository {
           records,
           coachOptions: coaches,
           groupOptions: groups,
+          clientOptions: clientsResult.data,
         };
       },
       {
@@ -265,6 +285,7 @@ export class AdminScheduleRepository {
         records: [],
         coachOptions: [],
         groupOptions: [],
+        clientOptions: [],
       },
     );
   }
