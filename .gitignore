@@ -37,3 +37,6 @@ Thumbs.db
 # Tooling
 .claude/worktrees/
 .vercel
+
+# Local no-docker database stack
+.localdb/

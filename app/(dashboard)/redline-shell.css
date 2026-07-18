@@ -464,7 +464,7 @@ body:has(.ops-viewport) [role="dialog"] :focus-visible {
 }
 
 .ops-content > * {
-  width: min(1180px, 100%);
+  width: min(1680px, 100%);
   margin-inline: auto;
 }
 

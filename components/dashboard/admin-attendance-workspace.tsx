@@ -194,7 +194,7 @@ export function AdminAttendanceWorkspace({ sessions, dataSource }: Props) {
       </header>
 
       <div className={styles.hint}>Tap a row to check in &middot; use the flags for exceptions{dataSource === "demo" ? " · Demo roster" : ""}</div>
-      {saveMessage ? <p className={styles.hint} role="status">{saveMessage}</p> : null}
+      <p className={styles.saveStatus} role="status">{saveMessage}</p>
 
       <div className={styles.rows}>{selected?.attendees.map((attendee) => {
         const currentLabel = statusFor(selected.id, attendee.clientId, attendee.status);
