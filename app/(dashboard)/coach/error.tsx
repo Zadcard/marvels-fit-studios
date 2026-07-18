@@ -12,8 +12,8 @@ export default function CoachDashboardError({
   return (
     <DashboardRouteError
       eyebrow="Coach portal"
-      title="This coach view did not load correctly."
-      description="Retry the page. If it keeps failing, sign in again."
+      title="Live coaching data is unavailable."
+      description="No empty roster or session state is being shown. Retry before recording attendance or client notes."
       onRetry={reset}
     />
   );

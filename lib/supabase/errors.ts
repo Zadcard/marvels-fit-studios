@@ -10,9 +10,19 @@ export class DatabaseOperationError extends Error {
   }
 }
 
+export class OperationalDataUnavailableError extends Error {
+  constructor(options?: ErrorOptions) {
+    super(
+      "Live studio data is temporarily unavailable. No empty totals are being shown. Retry before making operational decisions.",
+      options,
+    );
+    this.name = "OperationalDataUnavailableError";
+  }
+}
+
 export function throwIfSupabaseError(
   operation: string,
-  error: PostgrestError | null
+  error: PostgrestError | null,
 ) {
   if (error) {
     throw new DatabaseOperationError(operation, error);
@@ -21,18 +31,15 @@ export function throwIfSupabaseError(
 
 export async function withSupabaseFallback<T>(
   operation: () => Promise<T>,
-  fallback: T
+  _legacyFallback: T,
 ): Promise<T> {
+  void _legacyFallback;
   try {
     return await operation();
   } catch (error) {
-    // Dashboard reads deliberately supply a render-safe value so an empty or
-    // temporarily unavailable database does not turn the whole route into a
-    // runtime error. Writes do not use this helper.
-    console.warn(
-      "[withSupabaseFallback] database operation unavailable; rendering fallback:",
-      error
-    );
-    return fallback;
+    // Keep the cause in server logs, but never turn an outage into believable
+    // empty business data. Dashboard error boundaries render the safe message.
+    console.error("[withSupabaseFallback] database operation unavailable:", error);
+    throw new OperationalDataUnavailableError({ cause: error });
   }
 }
