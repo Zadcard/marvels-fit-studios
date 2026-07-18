@@ -33,6 +33,15 @@ describe("Marvel Ops canonical workspaces", () => {
     expect(read("components/dashboard/admin-cash-out-dialog.tsx")).toContain("Record cash out");
   });
 
+  it("keeps full group management in the live operations route", () => {
+    const groupPage = read("app/(dashboard)/admin/groups/page.tsx");
+    const groupWorkspace = read("components/dashboard/admin-groups-workspace.tsx");
+    expect(groupPage).toContain("AdminGroupsWorkspace");
+    expect(groupWorkspace).toContain("saveAdminGroup");
+    expect(groupWorkspace).toContain("deleteAdminGroup");
+    expect(groupWorkspace).toContain("setAdminGroupMembership");
+  });
+
   it("removes public landing and client portal rendering files", () => {
     expect(existsSync(resolve(root, "app/landing.css"))).toBe(false);
     expect(existsSync(resolve(root, "components/landing/landing-sections.tsx"))).toBe(false);
