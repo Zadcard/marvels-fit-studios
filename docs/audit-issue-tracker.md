@@ -34,3 +34,18 @@ Derived from `docs/system-audit-2026-07-18.md`. That document is prose; this is 
 Rows marked "✅ Resolved (verified)" and "❌ Still open (verified)" were checked by reading the actual current files, not by trusting the audit's prose. Everything marked "⚠️" is carried over from the audit unchanged and should be re-checked before you act on it — this session had no shell access, so nothing requiring `npm run`, a live browser, or a database query could be independently confirmed.
 
 Given that 1.1 and 1.2 were already fixed within the same day the audit was written, treat this whole list as a fast-moving target, not a snapshot to work from a week from now without re-checking.
+
+## Pass 1 verification addendum (2026-07-18, post-merge)
+
+Independently re-verified in the browser + database after the 9 pass-1 commits landed
+(c3070e21..b16cf01b). Statuses below **override** the table above where they differ:
+
+- **1.2 / 2.5 / 2.6 Clients CRUD — resolved & verified end-to-end**: created a test client via the UI (row confirmed in DB), found it via search, deleted it via the type-to-confirm dialog (DB row gone). Search/filter/sort/pagination live.
+- **1.3 / 1.4 Schedule — resolved as scoped**: fake change-request panel removed; week arrows now drive `?week=N` and the server refetches (this week: 18 sessions, next week: 0 — future weeks are empty because the cron that materializes sessions has never run, see 5.2).
+- **2.2 Coaches — resolved**: `admin-coaches-command-center.tsx` is live again; "New coach" dialog opens; placeholder "Coach User" excluded from the grid.
+- **2.3 Groups — resolved**: "New group" + per-group Edit present.
+- **1.1 Settings — re-verified fixed**: changed a value, saved, hard-reloaded — value persists in DB and UI.
+- **3.5 / 7.1 — verified**: revalidation allowlist test present; no "1 clients"/"1 days" strings found on coaches or subscriptions pages.
+- **4.1 Security — HALF DONE**: the revoke migration exists locally (`supabase/migrations/20260718130000_restrict_trigger_function_execute.sql`) but is **NOT applied to the hosted DB** — live check shows `anon` can still EXECUTE both functions. Run `supabase db push` (or apply via dashboard) to close it.
+- **7.5 Settings duplicate form — still open**: the DOM still contains two identical settings forms (one visible, one hidden). Codex's report claimed one form; a fresh load shows 2.
+- **1.6 Groups intermittent error — inconclusive**: one occurrence during the audit, none since; the similar error seen during verification was caused by running `next build` while the dev server was up (self-inflicted).
