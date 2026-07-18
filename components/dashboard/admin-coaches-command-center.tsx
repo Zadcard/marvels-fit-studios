@@ -78,9 +78,9 @@ export function AdminCoachesCommandCenter({ records }: { records: AdminCoachReco
         </header>
 
         {visible.length ? <div className={styles.coachGrid}>{visible.map((coach) => { const state=coachState(coach); const load=Math.min(100,Math.round(coach.sessionsThisWeek/12*100)); return <article className={styles.coachCard} key={coach.id}>
-          <header><span className={styles.avatar}>{getInitials(coach.fullName)}</span><div><h2>{coach.fullName}</h2><small>{coach.specialization} · {coach.email}</small></div><span className={`${styles.state} ${state.className}`}>{coach.openSlots ? `${coach.openSlots} free slots` : state.label}</span><button type="button" onClick={()=>openEdit(coach)} aria-label={`Edit ${coach.fullName}`}><Pencil size={15}/></button></header>
+          <header><span className={styles.avatar}>{getInitials(coach.fullName)}</span><div><h2>{coach.fullName}</h2><small>{coach.specialization} · {coach.email}</small></div><span className={`${styles.state} ${state.className}`}>{coach.openSlots ? `${coach.openSlots} free ${coach.openSlots === 1 ? "slot" : "slots"}` : state.label}</span><button type="button" onClick={()=>openEdit(coach)} aria-label={`Edit ${coach.fullName}`}><Pencil size={15}/></button></header>
           <div className={styles.timeline}>{coach.weeklyLoad.map((day)=><span key={day.day}><i data-active={day.sessions>0||undefined} style={{opacity:day.sessions ? Math.min(1,.28+day.sessions*.23) : .15}}/><small>{day.day.slice(0,1)}</small></span>)}</div>
-          <footer><div><strong>{coach.sessionsThisWeek}</strong><small>Sessions/wk</small></div><div><strong>{coach.activeClients}</strong><small>Clients</small></div><div className={styles.loadLine}><span>Weekly load <b>{load}%</b></span><i><b style={{width:`${load}%`}}/></i></div></footer>
+          <footer><div><strong>{coach.sessionsThisWeek}</strong><small>{coach.sessionsThisWeek === 1 ? "Session/wk" : "Sessions/wk"}</small></div><div><strong>{coach.activeClients}</strong><small>{coach.activeClients === 1 ? "Client" : "Clients"}</small></div><div className={styles.loadLine}><span>Weekly load <b>{load}%</b></span><i><b style={{width:`${load}%`}}/></i></div></footer>
         </article>})}</div> : <div className={styles.empty}><Search size={24}/><strong>No coaches match</strong><span>Change the search or specialty filter.</span></div>}
       </section>
 

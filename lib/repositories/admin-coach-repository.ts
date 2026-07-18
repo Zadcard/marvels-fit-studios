@@ -49,7 +49,11 @@ export class AdminCoachRepository {
         .order("fullName");
       if (error) throw error;
 
-      return coaches.map((coach) => {
+      return coaches
+        .filter(
+          (coach) => coach.user?.email?.toLowerCase() !== "coach@test.com",
+        )
+        .map((coach) => {
           const activeClients = coach.groups.reduce(
             (total, group) => total + group.clients.length,
             0
@@ -101,7 +105,7 @@ export class AdminCoachRepository {
                 ? `${coach.fullName} is currently supporting ${activeClients} client${activeClients === 1 ? "" : "s"}.`
                 : `${coach.fullName} has no assigned clients yet.`,
           };
-      });
+        });
     }, []);
   }
 }

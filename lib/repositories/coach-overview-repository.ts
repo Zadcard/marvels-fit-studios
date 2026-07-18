@@ -163,7 +163,7 @@ export class CoachOverviewRepository {
           id: "consistency",
           label: "Roster pace",
           value: attentionClients.length > 0 ? "Watch" : "Steady",
-          change: `${readySessions.length} active sessions`,
+          change: `${readySessions.length} active ${readySessions.length === 1 ? "session" : "sessions"}`,
           detail: "Quick coaching signal based on ready sessions and clients needing attention.",
           note: "Database-backed",
           icon: "target",

@@ -7,6 +7,7 @@ const root = process.cwd();
 const page = readFileSync(resolve(root, "app/(dashboard)/admin/coaches/page.tsx"), "utf8");
 const screen = readFileSync(resolve(root, "components/dashboard/admin-coaches-command-center.tsx"), "utf8");
 const styles = readFileSync(resolve(root, "components/dashboard/admin-coaches-command-center.module.css"), "utf8");
+const repository = readFileSync(resolve(root, "lib/repositories/admin-coach-repository.ts"), "utf8");
 
 describe("admin coach management contract", () => {
   it("renders the command center from repository records", () => {
@@ -23,6 +24,12 @@ describe("admin coach management contract", () => {
     expect(screen).toContain("Delete permanently");
     expect(screen).toContain("<Dialog.Content");
     expect(screen).toContain("Close coach editor");
+  });
+
+  it("hides the placeholder coach and formats singular workloads", () => {
+    expect(repository).toContain('!== "coach@test.com"');
+    expect(screen).toContain('coach.sessionsThisWeek === 1 ? "Session/wk"');
+    expect(screen).toContain('coach.activeClients === 1 ? "Client"');
   });
 
   it("uses the current responsive REDLINE styling", () => {

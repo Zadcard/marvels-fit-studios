@@ -349,7 +349,10 @@ function renewalLabel(record: AdminSubscriptionRecord) {
     (new Date(`${record.renewalDateValue}T12:00:00`).getTime() - Date.now()) /
       day,
   );
-  if (difference < 0) return `${Math.abs(difference)} days ago`;
+  if (difference < 0) {
+    const elapsed = Math.abs(difference);
+    return `${elapsed} ${elapsed === 1 ? "day" : "days"} ago`;
+  }
   if (difference === 0) return "today";
-  return `in ${difference} days`;
+  return `in ${difference} ${difference === 1 ? "day" : "days"}`;
 }

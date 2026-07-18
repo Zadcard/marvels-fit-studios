@@ -51,6 +51,24 @@ describe("Marvel Ops canonical workspaces", () => {
     expect(scheduleWorkspace).not.toContain("Approve request");
   });
 
+  it("renders one canonical settings form", () => {
+    const settingsPage = read("app/(dashboard)/admin/settings/page.tsx");
+    const settingsWorkspace = read("components/dashboard/admin-settings-workspace.tsx");
+    expect(settingsPage).toContain("AdminSettingsWorkspace");
+    expect(settingsPage).not.toContain("MarvelOpsSettings");
+    expect(settingsWorkspace.match(/<form\b/g)).toHaveLength(1);
+  });
+
+  it("uses singular renewal copy for a one-day interval", () => {
+    const subscriptions = read(
+      "components/dashboard/marvel-ops-groups-subscriptions.tsx",
+    );
+    expect(subscriptions).toContain(
+      'difference === 1 ? "day" : "days"',
+    );
+    expect(subscriptions).not.toContain('`in ${difference} days`');
+  });
+
   it("removes public landing and client portal rendering files", () => {
     expect(existsSync(resolve(root, "app/landing.css"))).toBe(false);
     expect(existsSync(resolve(root, "components/landing/landing-sections.tsx"))).toBe(false);
