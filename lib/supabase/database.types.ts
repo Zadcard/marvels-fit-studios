@@ -1946,6 +1946,14 @@ export type Database = {
         Args: { p_client_id: string; p_session_id: string }
         Returns: Json
       }
+      bulk_update_session_attendance: {
+        Args: {
+          p_client_ids: string[]
+          p_status: Database["public"]["Enums"]["BookingStatus"]
+          p_training_session_id: string
+        }
+        Returns: number
+      }
       bulk_update_training_sessions: {
         Args: {
           p_action: string

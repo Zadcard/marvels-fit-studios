@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   createSessionBookingSchema,
   cancelSessionBookingSchema,
+  bulkUpdateSessionAttendanceSchema,
   updateSessionAttendanceSchema,
 } from './session-booking';
 
@@ -224,6 +225,21 @@ describe('Session Booking Validators', () => {
         expect(result.data.trainingSessionId).toBe('session-123');
         expect(result.data.clientId).toBe('client-456');
       }
+    });
+  });
+
+  describe('bulkUpdateSessionAttendanceSchema', () => {
+    it('requires at least one client and accepts a valid batch', () => {
+      expect(bulkUpdateSessionAttendanceSchema.safeParse({
+        trainingSessionId: 'session-123',
+        clientIds: ['client-1', 'client-2'],
+        status: 'ATTENDED',
+      }).success).toBe(true);
+      expect(bulkUpdateSessionAttendanceSchema.safeParse({
+        trainingSessionId: 'session-123',
+        clientIds: [],
+        status: 'ATTENDED',
+      }).success).toBe(false);
     });
   });
 });

@@ -8,7 +8,10 @@ import type {
   AdminAttendanceSession,
   AttendanceLabel,
 } from "@/lib/dashboard/admin-attendance-record";
-import { markAttendance } from "@/app/actions/admin-attendance";
+import {
+  markAllAttendance,
+  markAttendance,
+} from "@/app/actions/admin-attendance";
 import styles from "./admin-attendance-workspace.module.css";
 
 type Props = {
@@ -109,32 +112,48 @@ export function AdminAttendanceWorkspace({ sessions, dataSource }: Props) {
   function markAllIn() {
     if (!selected) return;
     setSaveMessage("");
+    const pending = selected.attendees.filter(
+      (attendee) => statusFor(selected.id, attendee.clientId, attendee.status) === "Booked",
+    );
+    if (!pending.length) return;
+    const previousOverrides = new Map(
+      pending.map((attendee) => {
+        const key = `${selected.id}:${attendee.clientId}`;
+        return [key, overrides[key]] as const;
+      }),
+    );
     setOverrides((current) => {
       const next = { ...current };
-      for (const attendee of selected.attendees) {
+      for (const attendee of pending) {
         const key = `${selected.id}:${attendee.clientId}`;
-        if ((next[key] ?? attendee.status) === "Booked") next[key] = "Attended";
+        next[key] = "Attended";
       }
       return next;
     });
 
     if (dataSource !== "live") return;
 
-    const pending = selected.attendees.filter(
-      (attendee) => statusFor(selected.id, attendee.clientId, attendee.status) === "Booked",
-    );
-    if (!pending.length) return;
-
     startTransition(async () => {
       try {
-        await Promise.all(
-          pending.map((attendee) =>
-            markAttendance(selected.id, attendee.clientId, "ATTENDED"),
-          ),
+        await markAllAttendance(
+          selected.id,
+          pending.map((attendee) => attendee.clientId),
+          "ATTENDED",
         );
         setSaveMessage("All pending attendees were checked in.");
+        router.refresh();
       } catch {
-        setSaveMessage("Some check-ins could not be saved. Refresh to reconcile the roster.");
+        setOverrides((current) => {
+          const next = { ...current };
+          for (const attendee of pending) {
+            const key = `${selected.id}:${attendee.clientId}`;
+            const previous = previousOverrides.get(key);
+            if (previous) next[key] = previous;
+            else delete next[key];
+          }
+          return next;
+        });
+        setSaveMessage("Could not save check-ins. The previous roster was restored.");
       }
     });
   }

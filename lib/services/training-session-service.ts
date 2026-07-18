@@ -38,10 +38,10 @@ async function assertNoCoachConflict(
     .from("TrainingSession")
     .select("id,title,startsAt,endsAt")
     .eq("coachId", coachId)
-    .neq("status", "CANCELED")
+    .in("status", ["DRAFT", "SCHEDULED"])
     .lt("startsAt", endsAt)
     .gt("endsAt", startsAt);
-  if (error) throw error;
+  if (error) mapDatabaseError(error);
 
   const conflicts = findCoachConflicts(
     { startsAt, endsAt },
@@ -58,13 +58,19 @@ async function assertNoCoachConflict(
 }
 
 function mapDatabaseError(error: { code?: string; message: string }): never {
+  if (
+    error.code === "23P01" ||
+    error.message.includes("TrainingSession_coach_active_time_excl")
+  ) {
+    throw new Error("This coach already has an overlapping active session.");
+  }
   const known = [
     "Coach record not found.", "Session record not found.",
     "Canceled sessions cannot be edited.", "Capacity cannot be lower than the current active roster.",
     "Group record not found.", "Use the cancellation operation to cancel sessions.",
     "Only empty draft sessions can be deleted.",
     "Completed sessions cannot be canceled.", "One or more selected sessions were not found.",
-    "Selected coach has overlapping sessions in this bulk selection.", "Bulk action is incomplete.",
+    "Selected sessions overlap each other.", "Bulk action is incomplete.",
   ];
   const message = known.find((value) => error.message.includes(value));
   throw new Error(message ?? "Training session operation failed.");
@@ -73,7 +79,7 @@ function mapDatabaseError(error: { code?: string; message: string }): never {
 async function ensureCoach(coachId: string) {
   const { data, error } = await getSupabaseServerClient()
     .from("Coach").select("id").eq("id", coachId).maybeSingle();
-  if (error) throw error;
+  if (error) mapDatabaseError(error);
   if (!data) throw new Error("Coach record not found.");
 }
 
@@ -89,7 +95,7 @@ export async function createTrainingSession(input: CreateTrainingSessionInput, c
     capacity: input.type === TrainingSessionType.PRIVATE ? 1 : input.capacity,
     createdById,
   }).select("id").single();
-  if (error) throw error;
+  if (error) mapDatabaseError(error);
   return data;
 }
 

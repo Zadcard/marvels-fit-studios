@@ -6,8 +6,14 @@ import {
   TrainingSessionType,
 } from "@/lib/supabase/domain";
 
-import { runAttendanceTransaction } from "@/lib/services/attendance-store";
-import type { UpdateSessionAttendanceInput } from "@/lib/validators/session-booking";
+import {
+  runAttendanceTransaction,
+  runBulkAttendanceTransaction,
+} from "@/lib/services/attendance-store";
+import type {
+  BulkUpdateSessionAttendanceInput,
+  UpdateSessionAttendanceInput,
+} from "@/lib/validators/session-booking";
 
 function getSubscriptionWindowEnd(subscription: {
   renewsAt: Date | null;
@@ -137,4 +143,10 @@ export async function updateSessionAttendance(input: UpdateSessionAttendanceInpu
 
     return updatedBooking;
   });
+}
+
+export async function bulkUpdateSessionAttendance(
+  input: BulkUpdateSessionAttendanceInput,
+) {
+  return runBulkAttendanceTransaction(input);
 }

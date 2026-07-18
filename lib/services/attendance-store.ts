@@ -1,6 +1,9 @@
 import "server-only";
 
-import type { UpdateSessionAttendanceInput } from "@/lib/validators/session-booking";
+import type {
+  BulkUpdateSessionAttendanceInput,
+  UpdateSessionAttendanceInput,
+} from "@/lib/validators/session-booking";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import type { BookingStatus, TrainingSessionStatus, TrainingSessionType } from "@/lib/supabase/domain";
 
@@ -48,4 +51,19 @@ export async function runAttendanceTransaction<T>(
   const result = data[0];
   if (!result) throw new Error("Attendance update returned no record.");
   return result as T;
+}
+
+export async function runBulkAttendanceTransaction(
+  input: BulkUpdateSessionAttendanceInput,
+) {
+  const { data, error } = await getSupabaseServerClient().rpc(
+    "bulk_update_session_attendance",
+    {
+      p_client_ids: input.clientIds,
+      p_status: input.status,
+      p_training_session_id: input.trainingSessionId,
+    },
+  );
+  if (error) throw new Error("The attendance batch could not be saved.");
+  return { count: data };
 }

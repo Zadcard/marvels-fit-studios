@@ -3,12 +3,14 @@ import { createRoot } from "react-dom/client";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
+  markAllAttendance: vi.fn(async () => undefined),
   markAttendance: vi.fn(async () => undefined),
   refresh: vi.fn(),
   replace: vi.fn(),
 }));
 
 vi.mock("@/app/actions/admin-attendance", () => ({
+  markAllAttendance: mocks.markAllAttendance,
   markAttendance: mocks.markAttendance,
 }));
 
@@ -73,6 +75,56 @@ describe("admin attendance interactions", () => {
       "client-1",
       "BOOKED",
     );
+    expect(mocks.refresh).toHaveBeenCalledOnce();
+
+    await act(async () => root.unmount());
+  });
+
+  it("checks in the pending roster with one atomic action", async () => {
+    const host = document.createElement("div");
+    document.body.append(host);
+    const root = createRoot(host);
+
+    await act(async () => {
+      root.render(
+        <AdminAttendanceWorkspace
+          dataSource="live"
+          sessions={[
+            {
+              id: "session-1",
+              title: "Strength",
+              timeLabel: "10:00 AM",
+              coachName: "Coach One",
+              sessionType: "Group",
+              trainingCategory: "STRENGTH",
+              location: "Studio",
+              attendees: ["client-1", "client-2"].map((clientId, index) => ({
+                clientId,
+                fullName: `Member ${index + 1}`,
+                status: "Booked" as const,
+                isTrial: false,
+                hasInjuryAlert: false,
+                injuryStatus: "None",
+                injuryNotes: "",
+              })),
+            },
+          ]}
+        />,
+      );
+    });
+
+    const button = Array.from(document.querySelectorAll("button")).find(
+      (candidate) => candidate.textContent?.includes("Mark all in"),
+    );
+    await act(async () => button?.click());
+
+    expect(mocks.markAllAttendance).toHaveBeenCalledOnce();
+    expect(mocks.markAllAttendance).toHaveBeenCalledWith(
+      "session-1",
+      ["client-1", "client-2"],
+      "ATTENDED",
+    );
+    expect(mocks.markAttendance).not.toHaveBeenCalled();
     expect(mocks.refresh).toHaveBeenCalledOnce();
 
     await act(async () => root.unmount());

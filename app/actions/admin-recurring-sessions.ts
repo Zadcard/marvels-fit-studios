@@ -69,7 +69,14 @@ export async function generateRecurringSessions(input: {
     "generate_recurring_sessions",
     { p_template_id: parsed.data.templateId, p_through_date: parsed.data.throughDate },
   );
-  if (error) throw error;
+  if (error) {
+    if (error.code === "23P01") {
+      throw new Error(
+        "One or more generated sessions overlap another active session for this coach.",
+      );
+    }
+    throw new Error("Recurring sessions could not be generated.");
+  }
   revalidateRecurringViews();
   return { generated: data };
 }
@@ -82,7 +89,7 @@ export async function setRecurringTemplateActive(templateId: string, active: boo
     .from("RecurringSessionTemplate")
     .update({ active })
     .eq("id", parsedId.data);
-  if (error) throw error;
+  if (error) throw new Error("The recurring series could not be updated.");
   revalidateRecurringViews();
 }
 
