@@ -85,11 +85,7 @@ export async function promoteLeadsToClients(
     if (existingUserResult.error) throw existingUserResult.error;
     const existingUser = existingUserResult.data;
 
-    if (
-      existingUser &&
-      existingUser.role !== UserRole.CLIENT &&
-      existingUser.clientProfile.length === 0
-    ) {
+    if (existingUser && existingUser.role !== UserRole.CLIENT) {
       results.push({
         leadId: lead.id,
         email: normalizedEmail,
@@ -133,30 +129,41 @@ export async function promoteLeadsToClients(
       },
     );
     if (promotionError) throw promotionError;
-    if (
-      promotion &&
-      typeof promotion === "object" &&
-      !Array.isArray(promotion) &&
-      promotion.outcome === "skipped"
-    ) {
+    const promotionResult =
+      promotion && typeof promotion === "object" && !Array.isArray(promotion)
+        ? promotion
+        : null;
+
+    if (promotionResult?.outcome === "skipped") {
       results.push({
         leadId: lead.id,
         email: normalizedEmail,
         outcome: "skipped",
-        details: "Existing non-client account was preserved.",
+        details:
+          promotionResult.reason === "already_converted"
+            ? "This lead was already converted. No credentials were changed."
+            : "Existing non-client account was preserved.",
       });
       continue;
     }
+
+    const credentialsIssued = promotionResult?.credentialsIssued !== false;
+    const promotedClientId =
+      typeof promotionResult?.clientId === "string"
+        ? promotionResult.clientId
+        : generatedClientId;
 
     results.push({
       leadId: lead.id,
       email: normalizedEmail,
       outcome: "promoted",
-      details: existingUser
-        ? "Issued fresh credentials, confirmed the client profile, and marked the lead as converted."
-        : "Created a new client account, generated credentials, and marked the lead as converted.",
-      clientId: generatedClientId,
-      temporaryPassword,
+      details: credentialsIssued
+        ? existingUser
+          ? "Issued temporary credentials, created the missing client profile, and marked the lead as converted."
+          : "Created a new client account, generated credentials, and marked the lead as converted."
+        : "Linked the lead to the existing client account without changing its credentials.",
+      clientId: promotedClientId,
+      temporaryPassword: credentialsIssued ? temporaryPassword : undefined,
     });
   }
 
