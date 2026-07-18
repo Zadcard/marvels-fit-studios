@@ -1,17 +1,39 @@
+import { timingSafeEqual } from "node:crypto";
+
 import { runStudioAutomation } from "@/lib/automation/studio-automation";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+function isAuthorized(request: Request) {
+  const secret = process.env.CRON_SECRET;
+  const provided = request.headers.get("authorization") ?? "";
+  if (!secret) return false;
+
+  const expectedBuffer = Buffer.from(`Bearer ${secret}`);
+  const providedBuffer = Buffer.from(provided);
+  return (
+    expectedBuffer.length === providedBuffer.length &&
+    timingSafeEqual(expectedBuffer, providedBuffer)
+  );
+}
+
+function jsonResponse(body: object, status = 200) {
+  return Response.json(body, {
+    status,
+    headers: { "Cache-Control": "no-store, max-age=0" },
+  });
+}
 
 export async function GET(request: Request) {
-  const secret = process.env.CRON_SECRET;
-  if (!secret || request.headers.get("authorization") !== `Bearer ${secret}`) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  if (!isAuthorized(request)) {
+    return jsonResponse({ error: "Unauthorized" }, 401);
   }
 
   try {
-    return Response.json({ success: true, ...(await runStudioAutomation()) });
+    return jsonResponse({ success: true, ...(await runStudioAutomation()) });
   } catch (error) {
     console.error("Studio automation failed", error);
-    return Response.json({ error: "Automation failed" }, { status: 500 });
+    return jsonResponse({ error: "Automation failed" }, 500);
   }
 }

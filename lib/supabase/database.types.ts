@@ -2207,6 +2207,10 @@ export type Database = {
           userId: string
         }[]
       }
+      run_studio_notification_automation: {
+        Args: { p_now?: string }
+        Returns: Json
+      }
       save_admin_group: {
         Args: {
           p_capacity: number
