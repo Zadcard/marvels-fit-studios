@@ -31,7 +31,7 @@ export default async function AdminSchedulePage(
     <AdminScheduleWorkspace
       {...schedule}
       recurringTemplates={recurring.templates}
-      weekStartIso={weekStart.toISOString()}
+      weekStartDate={weekStart}
     />
   );
 }

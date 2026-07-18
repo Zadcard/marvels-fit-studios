@@ -7,11 +7,16 @@ import type {
 import { withSupabaseFallback } from "@/lib/supabase/errors";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { getInitials } from "@/lib/utils";
+import {
+  getStudioDateKey,
+  getStudioDayRange,
+  STUDIO_TIME_ZONE,
+} from "@/lib/time/studio-time";
 
 const timeFormatter = new Intl.DateTimeFormat("en-US", {
   hour: "numeric",
   minute: "2-digit",
-  timeZone: "Africa/Cairo",
+  timeZone: STUDIO_TIME_ZONE,
 });
 
 const currencyFormatter = new Intl.NumberFormat("en-US", {
@@ -19,14 +24,6 @@ const currencyFormatter = new Intl.NumberFormat("en-US", {
   currency: "EGP",
   maximumFractionDigits: 0,
 });
-
-function getDayBounds(now: Date) {
-  const start = new Date(now);
-  start.setHours(0, 0, 0, 0);
-  const end = new Date(start);
-  end.setDate(end.getDate() + 1);
-  return { start, end };
-}
 
 function dueLabel(value: Date, now: Date) {
   const days = Math.max(0, Math.ceil((value.getTime() - now.getTime()) / 86_400_000));
@@ -39,7 +36,7 @@ export class AdminTodayOperationsRepository {
   async getToday(): Promise<AdminTodayOperations> {
     const supabase = getSupabaseServerClient();
     const now = new Date();
-    const { start, end } = getDayBounds(now);
+    const { start, endExclusive } = getStudioDayRange(getStudioDateKey(now));
     const inSevenDays = new Date(now.getTime() + 7 * 86_400_000);
 
     const [sessions, trials, renewals, payments] = await Promise.all([
@@ -50,8 +47,8 @@ export class AdminTodayOperationsRepository {
             "id,title,startsAt,endsAt,type,status,location,capacity,coach:Coach(id,fullName,specialization),bookings:SessionBooking(id,status)",
           )
           .neq("status", "CANCELED")
-          .gte("startsAt", start.toISOString())
-          .lt("startsAt", end.toISOString())
+          .gte("startsAt", start)
+          .lt("startsAt", endExclusive)
           .order("startsAt");
         if (error) throw error;
         return data;
@@ -84,8 +81,8 @@ export class AdminTodayOperationsRepository {
         const { data, error } = await supabase
           .from("Payment")
           .select("id,amount,currency,date,note,client:Client(fullName)")
-          .gte("date", start.toISOString())
-          .lt("date", end.toISOString())
+          .gte("date", start)
+          .lt("date", endExclusive)
           .order("date", { ascending: false });
         if (error) throw error;
         return data;

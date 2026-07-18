@@ -16,13 +16,24 @@ import {
 } from "@/lib/dashboard/client-domain-labels";
 import { withSupabaseFallback } from "@/lib/supabase/errors";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
+import {
+  addStudioDays,
+  getStudioDateKey,
+  getStudioDayRange,
+  STUDIO_TIME_ZONE,
+} from "@/lib/time/studio-time";
 
-const dayLabelFormatter = new Intl.DateTimeFormat("en-US", { weekday: "long" });
+const dayLabelFormatter = new Intl.DateTimeFormat("en-US", {
+  timeZone: STUDIO_TIME_ZONE,
+  weekday: "long",
+});
 const dateLabelFormatter = new Intl.DateTimeFormat("en-US", {
+  timeZone: STUDIO_TIME_ZONE,
   month: "short",
   day: "numeric",
 });
 const timeFormatter = new Intl.DateTimeFormat("en-US", {
+  timeZone: STUDIO_TIME_ZONE,
   hour: "numeric",
   minute: "2-digit",
 });
@@ -82,7 +93,7 @@ export type AdminScheduleClientOption = {
 };
 
 export class AdminScheduleRepository {
-  async getSchedule(input?: { weekStart?: Date }): Promise<{
+  async getSchedule(input?: { weekStart?: string }): Promise<{
     stats: AdminScheduleStat[];
     records: AdminScheduleSessionRecord[];
     coachOptions: AdminSessionCoachOption[];
@@ -92,26 +103,23 @@ export class AdminScheduleRepository {
     return withSupabaseFallback(
       async () => {
         const supabase = getSupabaseServerClient();
-        const now = new Date();
-        const scheduleWindowStart = new Date(input?.weekStart ?? now);
-        scheduleWindowStart.setHours(0, 0, 0, 0);
-        const scheduleWindowEnd = new Date(scheduleWindowStart);
-        scheduleWindowEnd.setDate(scheduleWindowEnd.getDate() + 6);
-        scheduleWindowEnd.setHours(23, 59, 59, 999);
+        const weekStart = input?.weekStart ?? getStudioDateKey();
+        const scheduleWindow = getStudioDayRange(weekStart);
+        const scheduleWindowEnd = getStudioDayRange(addStudioDays(weekStart, 7));
         const sessionsPromise = supabase
           .from("TrainingSession")
           .select(
             `
           id, title, description, type, status, startsAt, endsAt, location,
-          capacity, coachId, groupId, sourceTemplateId,
+          capacity, coachId, groupId, sourceTemplateId, isTemplateException,
           coach:Coach(fullName),
           group:Group(name, trainingCategory, clients:Client(id)),
           bookings:SessionBooking(id, status, client:Client(id, fullName, status, injuryStatus)),
           changes:ScheduleChangeLog(id, changeType, createdAt)
         `,
           )
-          .gte("startsAt", scheduleWindowStart.toISOString())
-          .lte("startsAt", scheduleWindowEnd.toISOString())
+          .gte("startsAt", scheduleWindow.start)
+          .lt("startsAt", scheduleWindowEnd.start)
           .order("startsAt", { ascending: true });
 
         const [sessionsResult, coachesResult, groupsResult, clientsResult] = await Promise.all(
@@ -164,7 +172,7 @@ export class AdminScheduleRepository {
                 : ("Group" as const),
             status: scheduleStatus,
             groupName: session.group?.name ?? "No linked group",
-            dayKey: dayLabelFormatter.format(startsAt),
+            dayKey: getStudioDateKey(startsAt),
             dayLabel: dayLabelFormatter.format(startsAt),
             dateLabel: dateLabelFormatter.format(startsAt),
             timeRange: getTimeRange(startsAt, endsAt),
@@ -208,6 +216,7 @@ export class AdminScheduleRepository {
                 ? 1
                 : session.capacity,
             sourceTemplateId: session.sourceTemplateId,
+            isTemplateException: session.isTemplateException,
             bookedClients: activeBookings.flatMap((booking) =>
               booking.client
                 ? [{

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowRight, CircleDollarSign } from "lucide-react";
 
 import type { AdminTodayOperations } from "@/lib/dashboard/admin-today-operations";
+import { STUDIO_TIME_ZONE } from "@/lib/time/studio-time";
 import { AdminCashOutDialog } from "./admin-cash-out-dialog";
 import styles from "./admin-today-operations.module.css";
 
@@ -28,7 +29,7 @@ export function AdminTodayOperations({ data }: Props) {
         <div className={styles.primaryColumn}>
           <section className={styles.panel}>
             <header className={styles.panelHeader}>
-              <div><h2>Today&apos;s floor</h2><p>{new Intl.DateTimeFormat("en-US", { weekday: "long", day: "2-digit", month: "long", year: "numeric" }).format(new Date())}</p></div>
+              <div><h2>Today&apos;s floor</h2><p>{new Intl.DateTimeFormat("en-US", { timeZone: STUDIO_TIME_ZONE, weekday: "long", day: "2-digit", month: "long", year: "numeric" }).format(new Date())}</p></div>
               <Link href="/admin/schedule" className={styles.textButton}>Full schedule <ArrowRight size={14} /></Link>
             </header>
             {data.sessions.length ? <div className={styles.sessionList}>{data.sessions.map((session) => (

@@ -4,6 +4,7 @@ import { ArrowRight, CircleDollarSign, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import type { AdminTodayOperations } from "@/lib/dashboard/admin-today-operations";
+import { STUDIO_TIME_ZONE } from "@/lib/time/studio-time";
 import { AdminCashOutDialog } from "./admin-cash-out-dialog";
 import styles from "./marvel-ops-today.module.css";
 
@@ -14,6 +15,7 @@ export function MarvelOpsToday({ data }: { data: AdminTodayOperations }) {
   const openAttendance = (id: string) =>
     router.push(`/admin/attendance?session=${encodeURIComponent(id)}`);
   const dateLabel = new Intl.DateTimeFormat("en-US", {
+    timeZone: STUDIO_TIME_ZONE,
     weekday: "long",
     month: "long",
     day: "numeric",

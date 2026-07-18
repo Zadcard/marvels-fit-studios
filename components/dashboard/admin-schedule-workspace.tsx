@@ -47,6 +47,14 @@ import type {
   AdminScheduleGroupOption,
 } from "@/lib/repositories/admin-schedule-repository";
 import type { AdminSessionCoachOption } from "@/lib/repositories/admin-session-repository";
+import {
+  addStudioDays,
+  getStudioDateKey,
+  instantToStudioDateTimeLocal,
+  STUDIO_TIME_ZONE,
+  studioDateKeyAnchor,
+  studioDateTimeLocalToIso,
+} from "@/lib/time/studio-time";
 import styles from "./admin-schedule-workspace.module.css";
 
 type Props = {
@@ -56,7 +64,7 @@ type Props = {
   groupOptions: AdminScheduleGroupOption[];
   clientOptions: AdminScheduleClientOption[];
   recurringTemplates: RecurringSessionTemplateRecord[];
-  weekStartIso: string;
+  weekStartDate: string;
 };
 
 type SessionForm = {
@@ -76,33 +84,25 @@ type Confirmation =
   | { kind: "cancel" | "delete"; sessionId: string; label: string }
   | { kind: "remove-booking"; sessionId: string; clientId: string; label: string };
 
-const dayKeyFormatter = new Intl.DateTimeFormat("en-CA", {
-  timeZone: "Africa/Cairo",
-  year: "numeric",
-  month: "2-digit",
-  day: "2-digit",
-});
 const dayHeaderFormatter = new Intl.DateTimeFormat("en-US", {
-  timeZone: "Africa/Cairo",
+  timeZone: STUDIO_TIME_ZONE,
   weekday: "short",
   month: "short",
   day: "numeric",
 });
 const monthFormatter = new Intl.DateTimeFormat("en-US", {
-  timeZone: "Africa/Cairo",
+  timeZone: STUDIO_TIME_ZONE,
   month: "long",
   year: "numeric",
 });
 const timeFormatter = new Intl.DateTimeFormat("en-US", {
-  timeZone: "Africa/Cairo",
+  timeZone: STUDIO_TIME_ZONE,
   hour: "numeric",
   minute: "2-digit",
 });
 
 function toDateTimeLocal(value: string) {
-  const date = new Date(value);
-  const offset = date.getTimezoneOffset();
-  return new Date(date.getTime() - offset * 60_000).toISOString().slice(0, 16);
+  return instantToStudioDateTimeLocal(value);
 }
 
 function createEmptyForm(coachId = ""): SessionForm {
@@ -118,8 +118,8 @@ function createEmptyForm(coachId = ""): SessionForm {
     coachId,
     groupId: "",
     location: "",
-    startsAt: toDateTimeLocal(starts.toISOString()),
-    endsAt: toDateTimeLocal(ends.toISOString()),
+    startsAt: instantToStudioDateTimeLocal(starts),
+    endsAt: instantToStudioDateTimeLocal(ends),
     capacity: "12",
   };
 }
@@ -133,7 +133,7 @@ function statusClass(status: AdminScheduleSessionRecord["status"]) {
 
 function getCairoMinutes(value: string) {
   const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone: "Africa/Cairo",
+    timeZone: STUDIO_TIME_ZONE,
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
@@ -161,7 +161,7 @@ export function AdminScheduleWorkspace({
   groupOptions,
   clientOptions,
   recurringTemplates,
-  weekStartIso,
+  weekStartDate,
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
@@ -195,22 +195,17 @@ export function AdminScheduleWorkspace({
   const availableClients = selected
     ? clientOptions.filter((client) => !selected.bookedClients.some((booked) => booked.id === client.id))
     : [];
-  const weekStart = new Date(weekStartIso);
-  weekStart.setHours(12, 0, 0, 0);
-  const weekDays = Array.from({ length: 7 }, (_, index) => {
-    const date = new Date(weekStart);
-    date.setDate(weekStart.getDate() + index);
-    return date;
-  });
+  const weekStart = studioDateKeyAnchor(weekStartDate);
+  const weekDays = Array.from({ length: 7 }, (_, index) =>
+    addStudioDays(weekStartDate, index),
+  );
   const hours = Array.from({ length: 16 }, (_, index) => index + 7);
   const weekCapacity = records.reduce((sum, item) => sum + (item.capacity ?? 1), 0);
   const weekBooked = records.reduce((sum, item) => sum + item.bookedCount, 0);
 
   function navigateWeek(offset: number) {
-    const target = new Date(weekStart);
-    target.setDate(target.getDate() + offset * 7);
     const params = new URLSearchParams(searchParams.toString());
-    params.set("week", dayKeyFormatter.format(target));
+    params.set("week", addStudioDays(weekStartDate, offset * 7));
     startTransition(() => router.push(`${pathname}?${params.toString()}`));
   }
 
@@ -261,8 +256,8 @@ export function AdminScheduleWorkspace({
           coachId: form.coachId,
           groupId: form.groupId || null,
           location: form.location,
-          startsAt: new Date(form.startsAt).toISOString(),
-          endsAt: new Date(form.endsAt).toISOString(),
+          startsAt: studioDateTimeLocalToIso(form.startsAt),
+          endsAt: studioDateTimeLocalToIso(form.endsAt),
           capacity: form.type === "PRIVATE" ? 1 : Number(form.capacity) || null,
         });
         setEditorOpen(false);
@@ -341,11 +336,13 @@ export function AdminScheduleWorkspace({
         <div className={styles.weekScroll}>
           <div className={styles.calendar}>
             <div className={styles.corner}>Cairo</div>
-            {weekDays.map((day) => <div className={styles.dayHeader} key={day.toISOString()} data-today={dayKeyFormatter.format(day) === dayKeyFormatter.format(new Date()) || undefined}><span>{dayHeaderFormatter.format(day).split(",")[0]}</span><strong>{day.getDate()}</strong></div>)}
+            {weekDays.map((dayKey) => {
+              const day = studioDateKeyAnchor(dayKey);
+              return <div className={styles.dayHeader} key={dayKey} data-today={dayKey === getStudioDateKey() || undefined}><span>{dayHeaderFormatter.format(day).split(",")[0]}</span><strong>{day.getUTCDate()}</strong></div>;
+            })}
             <div className={styles.timeRail}>{hours.map((hour) => <span key={hour}>{hour > 12 ? hour - 12 : hour} {hour >= 12 ? "PM" : "AM"}</span>)}</div>
-            {weekDays.map((day) => {
-              const dayKey = dayKeyFormatter.format(day);
-              const dayRecords = filtered.filter((record) => dayKeyFormatter.format(new Date(record.startsAt)) === dayKey);
+            {weekDays.map((dayKey) => {
+              const dayRecords = filtered.filter((record) => record.dayKey === dayKey);
               return <div className={styles.dayColumn} key={dayKey}>{hours.map((hour) => <i key={hour} />)}{dayRecords.map((record) => <article key={record.id} className={`${styles.sessionBlock} ${statusClass(record.status)}`} style={sessionPosition(record)} data-selected={selected?.id === record.id || undefined}><button type="button" onClick={() => setSelectedId(record.id)}><span>{record.title}</span><small>{timeFormatter.format(new Date(record.startsAt))}</small><em>{record.coachName}</em></button></article>)}</div>;
             })}
           </div>
@@ -365,7 +362,7 @@ export function AdminScheduleWorkspace({
             <dl><div><dt><Clock3 size={15} /> Time</dt><dd>{selected.dayLabel}, {selected.dateLabel}<br />{selected.timeRange}</dd></div><div><dt><ShieldUser size={15} /> Coach</dt><dd>{selected.coachName}</dd></div><div><dt><MapPin size={15} /> Location</dt><dd>{selected.location}</dd></div><div><dt><Users size={15} /> Capacity</dt><dd>{selected.occupancyLabel}<br />{selected.waitlistCount} waitlisted</dd></div><div><dt><Dumbbell size={15} /> Group</dt><dd>{selected.groupName}</dd></div></dl>
             <div className={styles.inspectorNote}><strong>Roster</strong>{selected.bookedClients.length ? <ul>{selected.bookedClients.map((client) => <li key={client.id}><span>{client.fullName} · {client.status}</span>{selected.rawStatus === "SCHEDULED" || selected.rawStatus === "DRAFT" ? <button type="button" disabled={isPending} onClick={() => setConfirmation({ kind: "remove-booking", sessionId: selected.id, clientId: client.id, label: client.fullName })}>Remove</button> : null}</li>)}</ul> : <p>No clients booked.</p>}{selected.rawStatus === "SCHEDULED" || selected.rawStatus === "DRAFT" ? <div><select aria-label="Client to add" value={bookingClientId} onChange={(event) => setBookingClientId(event.target.value)}><option value="">Select client</option>{availableClients.map((client) => <option key={client.id} value={client.id}>{client.fullName}</option>)}</select><button type="button" disabled={!bookingClientId || isPending} onClick={addBooking}><UserPlus size={14} /> Add</button></div> : null}</div>
             <div className={styles.inspectorNote}><strong>Training focus</strong><p>{selected.focus}</p></div>
-            {selected.sourceTemplateId ? <div className={styles.inspectorNote}><strong><Repeat2 size={14} /> Recurring occurrence</strong><p>Editing or cancelling here changes this occurrence only.</p></div> : null}
+            {selected.sourceTemplateId ? <div className={styles.inspectorNote}><strong><Repeat2 size={14} /> {selected.isTemplateException ? "Recurring exception" : "Recurring occurrence"}</strong><p>{selected.isTemplateException ? "This occurrence has an intentional day or time override." : "Editing or cancelling here changes this occurrence only."}</p></div> : null}
             <div className={styles.inspectorActions}>
               {selected.rawStatus !== "CANCELED" ? <button type="button" className="mv-btn mv-btn-primary" onClick={() => openEdit(selected)}>Edit session</button> : null}
               {selected.rawStatus === "DRAFT" || selected.rawStatus === "SCHEDULED" ? <button type="button" className={styles.cancelButton} onClick={() => setConfirmation({ kind: "cancel", sessionId: selected.id, label: selected.title })} disabled={isPending}><XCircle size={16} /> Cancel session</button> : null}

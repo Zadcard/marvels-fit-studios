@@ -16,6 +16,7 @@ import type {
   AdminScheduleGroupOption,
 } from "@/lib/repositories/admin-schedule-repository";
 import type { AdminSessionCoachOption } from "@/lib/repositories/admin-session-repository";
+import { addStudioDays, getStudioDateKey } from "@/lib/time/studio-time";
 import styles from "./admin-recurring-session-manager.module.css";
 
 type FormState = {
@@ -35,10 +36,6 @@ type FormState = {
 
 const weekdays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
-function dateKey(date: Date) {
-  return date.toISOString().slice(0, 10);
-}
-
 function emptyForm(coachId = ""): FormState {
   return {
     title: "",
@@ -51,7 +48,7 @@ function emptyForm(coachId = ""): FormState {
     weekday: "1",
     localStartTime: "18:00",
     durationMinutes: "60",
-    startsOn: dateKey(new Date()),
+    startsOn: getStudioDateKey(),
     endsOn: "",
   };
 }
@@ -74,9 +71,7 @@ function formFor(template: RecurringSessionTemplateRecord): FormState {
 }
 
 function defaultThroughDate() {
-  const date = new Date();
-  date.setDate(date.getDate() + 28);
-  return dateKey(date);
+  return addStudioDays(getStudioDateKey(), 28);
 }
 
 export function AdminRecurringSessionManager({

@@ -1659,6 +1659,7 @@ export type Database = {
           endsAt: string
           groupId: string | null
           id: string
+          isTemplateException: boolean
           location: string | null
           sourceTemplateId: string | null
           startsAt: string
@@ -1676,6 +1677,7 @@ export type Database = {
           endsAt: string
           groupId?: string | null
           id?: string
+          isTemplateException?: boolean
           location?: string | null
           sourceTemplateId?: string | null
           startsAt: string
@@ -1693,6 +1695,7 @@ export type Database = {
           endsAt?: string
           groupId?: string | null
           id?: string
+          isTemplateException?: boolean
           location?: string | null
           sourceTemplateId?: string | null
           startsAt?: string
@@ -2127,6 +2130,10 @@ export type Database = {
           target_lead_id: string
         }
         Returns: Json
+      }
+      reconcile_client_subscription_lifecycle: {
+        Args: { target_client_id: string }
+        Returns: undefined
       }
       record_auth_attempt: {
         Args: {

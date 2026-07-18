@@ -1,3 +1,9 @@
+import {
+  addStudioDays,
+  normalizeStudioDateKey,
+  studioDateKeyAnchor,
+} from "@/lib/time/studio-time";
+
 const weekDayIndex: Record<string, number> = {
   Sunday: 0,
   Monday: 1,
@@ -9,16 +15,12 @@ const weekDayIndex: Record<string, number> = {
 };
 
 export function parseScheduleReference(value: string | undefined, now = new Date()) {
-  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return new Date(now);
-  const parsed = new Date(`${value}T12:00:00`);
-  return Number.isNaN(parsed.getTime()) ? new Date(now) : parsed;
+  return normalizeStudioDateKey(value, now);
 }
 
-export function getScheduleWeekStart(reference: Date, startDay: string) {
-  const result = new Date(reference);
-  result.setHours(0, 0, 0, 0);
+export function getScheduleWeekStart(reference: string, startDay: string) {
+  const result = studioDateKeyAnchor(reference);
   const desiredDay = weekDayIndex[startDay] ?? weekDayIndex.Monday;
-  const daysSinceStart = (result.getDay() - desiredDay + 7) % 7;
-  result.setDate(result.getDate() - daysSinceStart);
-  return result;
+  const daysSinceStart = (result.getUTCDay() - desiredDay + 7) % 7;
+  return addStudioDays(reference, -daysSinceStart);
 }

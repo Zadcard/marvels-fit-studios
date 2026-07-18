@@ -48,6 +48,7 @@ export type AdminScheduleSessionRecord = {
   endsAt: string;
   capacity: number | null;
   sourceTemplateId: string | null;
+  isTemplateException: boolean;
   bookedClients: Array<{
     id: string;
     fullName: string;
