@@ -155,8 +155,11 @@ export async function saveAdminClient(input: SaveAdminClientInput) {
 
   revalidatePath("/admin");
   revalidatePath("/admin/clients");
+  revalidatePath("/admin/groups");
   revalidatePath("/admin/subscriptions");
   revalidatePath("/admin/schedule");
+  revalidatePath("/coach/clients");
+  revalidatePath("/coach/sessions");
 }
 
 export async function deleteAdminClient(input: DeleteAdminClientInput) {
@@ -173,10 +176,9 @@ export async function deleteAdminClient(input: DeleteAdminClientInput) {
 
   revalidatePath("/admin");
   revalidatePath("/admin/clients");
+  revalidatePath("/admin/groups");
   revalidatePath("/admin/subscriptions");
   revalidatePath("/admin/schedule");
   revalidatePath("/coach/clients");
   revalidatePath("/coach/sessions");
-  revalidatePath("/client");
-  revalidatePath("/client/sessions");
 }

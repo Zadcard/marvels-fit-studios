@@ -35,8 +35,6 @@ export async function submitClientCheckIn(input: unknown) {
   });
   if (error) throw error;
 
-  revalidatePath("/client");
-  revalidatePath("/client/progress");
   revalidatePath("/coach");
   revalidatePath("/coach/clients");
 }

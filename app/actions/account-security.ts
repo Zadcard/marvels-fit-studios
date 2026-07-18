@@ -28,8 +28,5 @@ export async function changeOwnPassword(input: ChangeOwnPasswordInput) {
     parsed.data.newPassword
   );
 
-  revalidatePath("/admin/profile");
-  revalidatePath("/coach/settings");
-  revalidatePath("/client/settings");
   revalidatePath("/change-password");
 }

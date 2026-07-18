@@ -11,10 +11,9 @@ import {
 } from "@/lib/validators/recurring-session";
 
 function revalidateRecurringViews() {
+  revalidatePath("/admin/groups");
   revalidatePath("/admin/schedule");
-  revalidatePath("/admin/schedule/templates");
   revalidatePath("/coach/schedule");
-  revalidatePath("/client/sessions");
 }
 
 export async function createRecurringSessionTemplate(

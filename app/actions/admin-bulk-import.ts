@@ -25,8 +25,9 @@ export async function importClientCSV(
   const stats = await bulkClientImportService.importClientsFromCSV(csvContent);
   const report = bulkClientImportService.generateImportReport(stats);
 
+  revalidatePath("/admin");
   revalidatePath("/admin/clients");
-  revalidatePath("/admin/bulk-import");
+  revalidatePath("/admin/groups");
 
   return report;
 }

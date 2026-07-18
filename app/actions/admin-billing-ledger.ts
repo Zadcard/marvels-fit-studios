@@ -24,6 +24,6 @@ export async function recordBillingAdjustment(input: z.input<typeof adjustmentSc
   });
   if (error) throw error;
   revalidatePath("/admin/clients");
-  revalidatePath("/client/subscription");
+  revalidatePath("/admin/subscriptions");
   return { id: data };
 }

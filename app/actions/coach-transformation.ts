@@ -18,11 +18,9 @@ import {
   workoutPerformanceInputSchema,
 } from "@/lib/validators/transformation";
 
-function revalidateTransformation(clientId: string) {
+function revalidateTransformation() {
   revalidatePath("/coach");
   revalidatePath("/coach/clients");
-  revalidatePath(`/coach/clients/${clientId}/transformation`);
-  revalidatePath("/client");
 }
 
 function firstIssue(error: { issues: Array<{ message: string }> }) {
@@ -66,7 +64,7 @@ export async function saveClientAssessment(
 
   if (result.error) throw result.error;
   if (!result.data) throw new Error("Assessment not found.");
-  revalidateTransformation(parsed.data.clientId);
+  revalidateTransformation();
   return result.data.id;
 }
 
@@ -107,7 +105,7 @@ export async function saveClientGoal(
 
   if (result.error) throw result.error;
   if (!result.data) throw new Error("Goal not found.");
-  revalidateTransformation(parsed.data.clientId);
+  revalidateTransformation();
   return result.data.id;
 }
 
@@ -134,7 +132,7 @@ export async function saveTrainingProgram(
   );
 
   if (error) throw error;
-  revalidateTransformation(parsed.data.clientId);
+  revalidateTransformation();
   return data;
 }
 
@@ -168,7 +166,7 @@ export async function addProgramWorkout(
     .select("id")
     .single();
   if (error) throw error;
-  revalidateTransformation(parsed.data.clientId);
+  revalidateTransformation();
   return data.id;
 }
 
@@ -231,7 +229,7 @@ export async function addWorkoutExercise(
     notes: parsed.data.notes || null,
   });
   if (error) throw error;
-  revalidateTransformation(parsed.data.clientId);
+  revalidateTransformation();
 }
 
 export async function addProgressMetric(
@@ -254,7 +252,7 @@ export async function addProgressMetric(
       note: parsed.data.note || null,
     });
   if (error) throw error;
-  revalidateTransformation(parsed.data.clientId);
+  revalidateTransformation();
 }
 
 export async function recordWorkoutPerformance(
@@ -290,7 +288,7 @@ export async function recordWorkoutPerformance(
     p_notes: parsed.data.notes,
   });
   if (error) throw error;
-  revalidateTransformation(parsed.data.clientId);
+  revalidateTransformation();
   return data;
 }
 
@@ -315,5 +313,5 @@ export async function respondToClientCheckIn(
     .maybeSingle();
   if (error) throw error;
   if (!data) throw new Error("Check-in not found.");
-  revalidateTransformation(parsed.data.clientId);
+  revalidateTransformation();
 }

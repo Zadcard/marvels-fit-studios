@@ -33,12 +33,9 @@ function revalidateCoachBookingViews() {
   revalidatePath("/coach/clients");
   revalidatePath("/coach/sessions");
   revalidatePath("/coach/schedule");
-  revalidatePath("/client");
-  revalidatePath("/client/coach");
-  revalidatePath("/client/sessions");
   revalidatePath("/admin");
+  revalidatePath("/admin/attendance");
   revalidatePath("/admin/clients");
-  revalidatePath("/admin/sessions");
   revalidatePath("/admin/schedule");
 }
 

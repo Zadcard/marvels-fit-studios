@@ -21,7 +21,6 @@ function revalidateSessionNoteViews() {
   revalidatePath("/coach/sessions");
   revalidatePath("/coach/schedule");
   revalidatePath("/admin");
-  revalidatePath("/admin/sessions");
   revalidatePath("/admin/schedule");
 }
 

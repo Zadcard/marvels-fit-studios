@@ -34,13 +34,11 @@ type SaveAdminSessionInput = {
 
 function revalidateSessionViews() {
   revalidatePath("/admin");
-  revalidatePath("/admin/sessions");
+  revalidatePath("/admin/attendance");
   revalidatePath("/admin/schedule");
   revalidatePath("/coach");
   revalidatePath("/coach/sessions");
   revalidatePath("/coach/schedule");
-  revalidatePath("/client");
-  revalidatePath("/client/sessions");
 }
 
 export async function saveAdminSession(input: SaveAdminSessionInput) {

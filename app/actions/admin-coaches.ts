@@ -94,6 +94,7 @@ export async function saveCoach(input: SaveCoachInput) {
 
   revalidatePath("/admin");
   revalidatePath("/admin/coaches");
+  revalidatePath("/admin/groups");
 }
 
 export async function deleteCoach(input: DeleteCoachInput) {
@@ -114,6 +115,6 @@ export async function deleteCoach(input: DeleteCoachInput) {
 
   revalidatePath("/admin");
   revalidatePath("/admin/coaches");
-  revalidatePath("/admin/sessions");
+  revalidatePath("/admin/groups");
   revalidatePath("/admin/schedule");
 }

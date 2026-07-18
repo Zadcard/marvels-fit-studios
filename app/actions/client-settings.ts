@@ -1,7 +1,6 @@
 "use server";
 
 import { UserRole } from "@/lib/supabase/domain";
-import { revalidatePath } from "next/cache";
 
 import { requireRole } from "@/lib/auth/session";
 import type { ClientSettingsRecord } from "@/lib/dashboard/client-dashboard-data";
@@ -41,8 +40,4 @@ export async function saveClientSettings(input: ClientSettingsRecord) {
   if (error?.code === "P0002") throw new Error("Client profile not found.");
   if (error) throw error;
 
-  revalidatePath("/client");
-  revalidatePath("/client/settings");
-  revalidatePath("/client/sessions");
-  revalidatePath("/client/coach");
 }

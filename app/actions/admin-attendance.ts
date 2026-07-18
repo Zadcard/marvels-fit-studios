@@ -9,15 +9,13 @@ import { updateSessionAttendanceSchema } from "@/lib/validators/session-booking"
 
 function revalidateAttendanceViews() {
   revalidatePath("/admin");
+  revalidatePath("/admin/attendance");
   revalidatePath("/admin/clients");
-  revalidatePath("/admin/sessions");
   revalidatePath("/admin/schedule");
   revalidatePath("/coach");
   revalidatePath("/coach/clients");
   revalidatePath("/coach/sessions");
   revalidatePath("/coach/schedule");
-  revalidatePath("/client");
-  revalidatePath("/client/sessions");
 }
 
 export async function markAttendance(

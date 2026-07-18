@@ -14,7 +14,7 @@ export async function approveLeadAsClient(leadId: string) {
     leadIds: [leadId],
   });
 
-  revalidatePath("/admin/leads");
+  revalidatePath("/admin");
   revalidatePath("/admin/join-requests");
   revalidatePath("/admin/clients");
 
@@ -30,12 +30,12 @@ export async function deleteLead(leadId: string) {
     .eq("id", leadId);
   if (error) throw error;
 
-  revalidatePath("/admin/leads");
+  revalidatePath("/admin");
   revalidatePath("/admin/join-requests");
 }
 
 function revalidateLeadWorkflow() {
-  revalidatePath("/admin/leads");
+  revalidatePath("/admin");
   revalidatePath("/admin/join-requests");
   revalidatePath("/admin/clients");
 }

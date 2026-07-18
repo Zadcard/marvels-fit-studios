@@ -1,7 +1,6 @@
 "use server";
 
 import { UserRole } from "@/lib/supabase/domain";
-import { revalidatePath } from "next/cache";
 
 import { requireRole } from "@/lib/auth/session";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
@@ -66,5 +65,4 @@ export async function saveClientPrivateNote(input: {
     if (error) throw error;
   }
 
-  revalidatePath("/client");
 }

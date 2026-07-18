@@ -59,9 +59,7 @@ export async function saveCoachSettings(input: SaveCoachSettingsInput) {
   if (error) throw error;
 
   revalidatePath("/coach");
-  revalidatePath("/coach/settings");
   revalidatePath("/coach/sessions");
   revalidatePath("/coach/schedule");
   revalidatePath("/admin/coaches");
-  revalidatePath("/admin/sessions");
 }

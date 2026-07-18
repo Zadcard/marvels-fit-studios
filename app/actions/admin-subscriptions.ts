@@ -38,8 +38,6 @@ function revalidateSubscriptionViews() {
   revalidatePath("/admin/clients");
   revalidatePath("/admin/subscriptions");
   revalidatePath("/admin/schedule");
-  revalidatePath("/client");
-  revalidatePath("/client/subscription");
 }
 
 function toSubscriptionStatus(

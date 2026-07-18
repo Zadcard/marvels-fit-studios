@@ -43,5 +43,4 @@ export async function saveAdminProfile(input: SaveAdminProfileInput) {
   if (error) throw error;
 
   revalidatePath("/admin");
-  revalidatePath("/admin/profile");
 }

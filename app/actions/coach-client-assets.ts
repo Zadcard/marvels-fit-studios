@@ -28,7 +28,6 @@ async function assertCoachCanAccessGroup(userId: string, groupId: string) {
 
 function revalidateClientAssetViews() {
   revalidatePath("/coach/clients");
-  revalidatePath("/client");
 }
 
 export async function savePrivateClientNote(input: {

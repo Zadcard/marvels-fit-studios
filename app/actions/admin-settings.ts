@@ -47,6 +47,5 @@ export async function saveAdminSettings(input: AdminStudioSettings) {
 
   revalidatePath("/admin");
   revalidatePath("/admin/settings");
-  revalidatePath("/admin/sessions");
   revalidatePath("/admin/schedule");
 }
