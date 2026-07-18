@@ -13,6 +13,8 @@ import {
   findCoachConflicts,
   type ConflictSession,
 } from "@/lib/services/schedule-conflicts";
+import { parseDurationMinutes } from "@/lib/dashboard/duration-label";
+import { adminSettingsRepository } from "@/lib/repositories/admin-settings-repository";
 
 function optional(value: string | undefined) {
   return value?.trim() ?? "";
@@ -25,28 +27,41 @@ const conflictTimeFormatter = new Intl.DateTimeFormat("en-US", {
   minute: "2-digit",
 });
 
+async function getPrivateSessionBufferMinutes() {
+  const settings = await adminSettingsRepository.get();
+  return parseDurationMinutes(settings.privateSessionBuffer) ?? 0;
+}
+
 async function assertNoCoachConflict(
   coachId: string,
   startsAt: string,
   endsAt: string,
+  type: TrainingSessionType,
   ignoreSessionId?: string,
 ) {
-  // Fetch the coach's non-canceled sessions that could overlap the window, then
-  // confirm with the pure overlap check. A coach in two places at once is a hard
-  // conflict (studio-space clashes, by contrast, are allowed).
+  // Fetch the coach's non-canceled sessions that could overlap the window
+  // (widened by the configured private-session buffer so near-misses are
+  // caught too), then confirm with the pure overlap check. A coach in two
+  // places at once is a hard conflict (studio-space clashes, by contrast,
+  // are allowed).
+  const bufferMinutes = await getPrivateSessionBufferMinutes();
+  const bufferMs = bufferMinutes * 60_000;
+  const windowStart = new Date(Date.parse(startsAt) - bufferMs).toISOString();
+  const windowEnd = new Date(Date.parse(endsAt) + bufferMs).toISOString();
   const { data, error } = await getSupabaseServerClient()
     .from("TrainingSession")
-    .select("id,title,startsAt,endsAt")
+    .select("id,title,startsAt,endsAt,type")
     .eq("coachId", coachId)
     .in("status", ["DRAFT", "SCHEDULED"])
-    .lt("startsAt", endsAt)
-    .gt("endsAt", startsAt);
+    .lt("startsAt", windowEnd)
+    .gt("endsAt", windowStart);
   if (error) mapDatabaseError(error);
 
   const conflicts = findCoachConflicts(
-    { startsAt, endsAt },
+    { startsAt, endsAt, type },
     (data ?? []) as ConflictSession[],
     ignoreSessionId,
+    bufferMinutes,
   );
 
   if (conflicts.length) {
@@ -85,7 +100,7 @@ async function ensureCoach(coachId: string) {
 
 export async function createTrainingSession(input: CreateTrainingSessionInput, createdById: string) {
   await ensureCoach(input.coachId);
-  await assertNoCoachConflict(input.coachId, input.startsAt, input.endsAt);
+  await assertNoCoachConflict(input.coachId, input.startsAt, input.endsAt, input.type);
   const { data, error } = await getSupabaseServerClient().from("TrainingSession").insert({
     title: input.title.trim(), description: optional(input.description) || null,
     type: input.type, status: input.status, coachId: input.coachId,
@@ -106,6 +121,7 @@ export async function updateTrainingSession(input: UpdateTrainingSessionInput) {
     input.coachId,
     input.startsAt,
     input.endsAt,
+    input.type,
     input.sessionId,
   );
   const { data, error } = await getSupabaseServerClient().rpc("update_training_session", {

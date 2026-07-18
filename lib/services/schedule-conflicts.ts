@@ -8,6 +8,7 @@ export type ConflictSession = {
   title: string;
   startsAt: string;
   endsAt: string;
+  type?: "GROUP" | "PRIVATE";
 };
 
 /** Half-open overlap: [aStart, aEnd) intersects [bStart, bEnd). Millisecond inputs. */
@@ -21,14 +22,17 @@ export function rangesOverlap(
 }
 
 /**
- * Returns the coach's existing sessions that overlap the proposed time window.
+ * Returns the coach's existing sessions that overlap the proposed time window,
+ * or fall inside the required buffer gap when either session is a private
+ * booking (private sessions need travel/prep time either side).
  * `ignoreSessionId` skips the session being edited so it never conflicts with
  * itself. Invalid/unparseable dates are treated as non-overlapping.
  */
 export function findCoachConflicts(
-  proposed: { startsAt: string; endsAt: string },
+  proposed: { startsAt: string; endsAt: string; type?: "GROUP" | "PRIVATE" },
   existing: ConflictSession[],
   ignoreSessionId?: string,
+  privateBufferMinutes = 0,
 ): ConflictSession[] {
   const proposedStart = Date.parse(proposed.startsAt);
   const proposedEnd = Date.parse(proposed.endsAt);
@@ -46,6 +50,15 @@ export function findCoachConflicts(
     if (Number.isNaN(start) || Number.isNaN(end)) {
       return false;
     }
-    return rangesOverlap(proposedStart, proposedEnd, start, end);
+    const needsBuffer =
+      privateBufferMinutes > 0 &&
+      (proposed.type === "PRIVATE" || session.type === "PRIVATE");
+    const bufferMs = needsBuffer ? privateBufferMinutes * 60_000 : 0;
+    return rangesOverlap(
+      proposedStart,
+      proposedEnd,
+      start - bufferMs,
+      end + bufferMs,
+    );
   });
 }

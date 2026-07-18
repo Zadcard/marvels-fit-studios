@@ -61,4 +61,46 @@ describe("findCoachConflicts", () => {
     );
     expect(conflicts).toEqual([]);
   });
+
+  it("blocks a back-to-back private session inside the configured buffer", () => {
+    const conflicts = findCoachConflicts(
+      {
+        startsAt: "2026-07-16T19:00:00.000Z",
+        endsAt: "2026-07-16T20:00:00.000Z",
+        type: "PRIVATE",
+      },
+      existing,
+      undefined,
+      15,
+    );
+    expect(conflicts.map((session) => session.id)).toEqual(["b"]);
+  });
+
+  it("does not apply the buffer between two group sessions", () => {
+    const conflicts = findCoachConflicts(
+      {
+        startsAt: "2026-07-16T09:00:00.000Z",
+        endsAt: "2026-07-16T10:00:00.000Z",
+        type: "GROUP",
+      },
+      existing,
+      undefined,
+      15,
+    );
+    expect(conflicts).toEqual([]);
+  });
+
+  it("allows a private session once it clears the buffer gap", () => {
+    const conflicts = findCoachConflicts(
+      {
+        startsAt: "2026-07-16T19:15:00.000Z",
+        endsAt: "2026-07-16T20:15:00.000Z",
+        type: "PRIVATE",
+      },
+      existing,
+      undefined,
+      15,
+    );
+    expect(conflicts).toEqual([]);
+  });
 });

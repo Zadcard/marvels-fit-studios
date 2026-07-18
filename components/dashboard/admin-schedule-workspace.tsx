@@ -65,6 +65,8 @@ type Props = {
   clientOptions: AdminScheduleClientOption[];
   recurringTemplates: RecurringSessionTemplateRecord[];
   weekStartDate: string;
+  defaultDurationMinutes: number;
+  cancellationWindowMinutes: number;
 };
 
 type SessionForm = {
@@ -81,7 +83,8 @@ type SessionForm = {
 };
 
 type Confirmation =
-  | { kind: "cancel" | "delete"; sessionId: string; label: string }
+  | { kind: "cancel"; sessionId: string; label: string; withinCancellationWindow: boolean }
+  | { kind: "delete"; sessionId: string; label: string }
   | { kind: "remove-booking"; sessionId: string; clientId: string; label: string };
 
 const dayHeaderFormatter = new Intl.DateTimeFormat("en-US", {
@@ -105,11 +108,11 @@ function toDateTimeLocal(value: string) {
   return instantToStudioDateTimeLocal(value);
 }
 
-function createEmptyForm(coachId = ""): SessionForm {
+function createEmptyForm(coachId = "", durationMinutes = 60): SessionForm {
   const starts = new Date();
   starts.setMinutes(0, 0, 0);
   starts.setHours(starts.getHours() + 1);
-  const ends = new Date(starts.getTime() + 60 * 60 * 1000);
+  const ends = new Date(starts.getTime() + durationMinutes * 60 * 1000);
   return {
     title: "",
     description: "",
@@ -162,6 +165,8 @@ export function AdminScheduleWorkspace({
   clientOptions,
   recurringTemplates,
   weekStartDate,
+  defaultDurationMinutes,
+  cancellationWindowMinutes,
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
@@ -176,7 +181,9 @@ export function AdminScheduleWorkspace({
   const [selectedId, setSelectedId] = useState(records[0]?.id ?? "");
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState<SessionForm>(() => createEmptyForm(coachOptions[0]?.id));
+  const [form, setForm] = useState<SessionForm>(() =>
+    createEmptyForm(coachOptions[0]?.id, defaultDurationMinutes),
+  );
   const [bookingClientId, setBookingClientId] = useState("");
   const [confirmation, setConfirmation] = useState<Confirmation | null>(null);
   const [error, setError] = useState("");
@@ -218,7 +225,7 @@ export function AdminScheduleWorkspace({
 
   function openCreate() {
     setEditingId(null);
-    setForm(createEmptyForm(coachOptions[0]?.id));
+    setForm(createEmptyForm(coachOptions[0]?.id, defaultDurationMinutes));
     setError("");
     setEditorOpen(true);
   }
@@ -322,7 +329,7 @@ export function AdminScheduleWorkspace({
         <div className={styles.schedulerTop}>
           <div className={styles.monthNav}><button type="button" aria-label="Previous week" onClick={() => navigateWeek(-1)} disabled={isPending}><ChevronLeft size={18} /></button><div><button type="button" className={styles.todayButton} onClick={navigateToday} disabled={isPending}>Today</button><strong>{monthFormatter.format(weekStart)}</strong></div><button type="button" aria-label="Next week" onClick={() => navigateWeek(1)} disabled={isPending}><ChevronRight size={18} /></button></div>
           <div className={styles.search}><Search size={17} /><label className="sr-only" htmlFor="schedule-search">Search schedule</label><input id="schedule-search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Session, coach, group or room" /></div>
-          <div className={styles.schedulerActions}><AdminRecurringSessionManager templates={recurringTemplates} coachOptions={coachOptions} groupOptions={groupOptions} /><button type="button" className="mv-btn mv-btn-primary" onClick={openCreate}><CalendarPlus2 size={17} /> New session</button></div>
+          <div className={styles.schedulerActions}><AdminRecurringSessionManager templates={recurringTemplates} coachOptions={coachOptions} groupOptions={groupOptions} defaultDurationMinutes={defaultDurationMinutes} /><button type="button" className="mv-btn mv-btn-primary" onClick={openCreate}><CalendarPlus2 size={17} /> New session</button></div>
         </div>
         <div className={styles.filterStrip}>
           <label>Status<select value={status} onChange={(event) => setStatus(event.target.value as typeof status)}><option>All</option><option>Confirmed</option><option>Waitlist</option><option>Attention</option><option>Completed</option></select></label>
@@ -365,7 +372,7 @@ export function AdminScheduleWorkspace({
             {selected.sourceTemplateId ? <div className={styles.inspectorNote}><strong><Repeat2 size={14} /> {selected.isTemplateException ? "Recurring exception" : "Recurring occurrence"}</strong><p>{selected.isTemplateException ? "This occurrence has an intentional day or time override." : "Editing or cancelling here changes this occurrence only."}</p></div> : null}
             <div className={styles.inspectorActions}>
               {selected.rawStatus !== "CANCELED" ? <button type="button" className="mv-btn mv-btn-primary" onClick={() => openEdit(selected)}>Edit session</button> : null}
-              {selected.rawStatus === "DRAFT" || selected.rawStatus === "SCHEDULED" ? <button type="button" className={styles.cancelButton} onClick={() => setConfirmation({ kind: "cancel", sessionId: selected.id, label: selected.title })} disabled={isPending}><XCircle size={16} /> Cancel session</button> : null}
+              {selected.rawStatus === "DRAFT" || selected.rawStatus === "SCHEDULED" ? <button type="button" className={styles.cancelButton} onClick={() => setConfirmation({ kind: "cancel", sessionId: selected.id, label: selected.title, withinCancellationWindow: cancellationWindowMinutes > 0 && Date.parse(selected.startsAt) - Date.now() < cancellationWindowMinutes * 60_000 })} disabled={isPending}><XCircle size={16} /> Cancel session</button> : null}
               {selected.rawStatus === "DRAFT" && selected.bookedClients.length === 0 ? <button type="button" className={styles.cancelButton} onClick={() => setConfirmation({ kind: "delete", sessionId: selected.id, label: selected.title })} disabled={isPending}><Trash2 size={16} /> Delete draft</button> : null}
             </div>
           </> : <p className={styles.noSelection}>Choose a session from the calendar.</p>}
@@ -387,7 +394,7 @@ export function AdminScheduleWorkspace({
         <div className={`${styles.formActions} ${styles.full}`}><button type="button" className="mv-btn mv-btn-secondary" onClick={() => setEditorOpen(false)}>Close</button><button type="submit" className="mv-btn mv-btn-primary" disabled={isPending}>{isPending ? "Saving…" : "Save session"}</button></div>
       </form></Dialog.Content></Dialog.Portal></Dialog.Root>
 
-      <Dialog.Root open={!!confirmation} onOpenChange={(open) => !open && setConfirmation(null)}><Dialog.Portal><Dialog.Overlay className={styles.overlay} /><Dialog.Content className={styles.editor}><Dialog.Title>{confirmation?.kind === "remove-booking" ? "Remove this booking?" : confirmation?.kind === "delete" ? "Delete this draft?" : "Cancel this session?"}</Dialog.Title><Dialog.Description>{confirmation?.kind === "cancel" ? "Active bookings will be canceled with the session." : confirmation?.kind === "delete" ? "Only an empty draft can be permanently deleted." : `${confirmation?.label ?? "This client"} will be removed from the session roster.`}</Dialog.Description><div className={styles.formActions}><button type="button" className="mv-btn mv-btn-secondary" onClick={() => setConfirmation(null)}>Keep it</button><button type="button" className={styles.cancelButton} onClick={confirmMutation} disabled={isPending}>Confirm</button></div></Dialog.Content></Dialog.Portal></Dialog.Root>
+      <Dialog.Root open={!!confirmation} onOpenChange={(open) => !open && setConfirmation(null)}><Dialog.Portal><Dialog.Overlay className={styles.overlay} /><Dialog.Content className={styles.editor}><Dialog.Title>{confirmation?.kind === "remove-booking" ? "Remove this booking?" : confirmation?.kind === "delete" ? "Delete this draft?" : "Cancel this session?"}</Dialog.Title><Dialog.Description>{confirmation?.kind === "cancel" ? "Active bookings will be canceled with the session." : confirmation?.kind === "delete" ? "Only an empty draft can be permanently deleted." : `${confirmation?.label ?? "This client"} will be removed from the session roster.`}</Dialog.Description>{confirmation?.kind === "cancel" && confirmation.withinCancellationWindow ? <p className={styles.error}>This session starts within the studio&apos;s {cancellationWindowMinutes >= 60 ? `${cancellationWindowMinutes / 60}-hour` : `${cancellationWindowMinutes}-minute`} cancellation window. Clients may not have been notified in time.</p> : null}<div className={styles.formActions}><button type="button" className="mv-btn mv-btn-secondary" onClick={() => setConfirmation(null)}>Keep it</button><button type="button" className={styles.cancelButton} onClick={confirmMutation} disabled={isPending}>Confirm</button></div></Dialog.Content></Dialog.Portal></Dialog.Root>
     </div>
   );
 }

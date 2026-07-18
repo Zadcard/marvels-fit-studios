@@ -36,7 +36,7 @@ type FormState = {
 
 const weekdays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
-function emptyForm(coachId = ""): FormState {
+function emptyForm(coachId = "", defaultDurationMinutes = 60): FormState {
   return {
     title: "",
     description: "",
@@ -47,7 +47,7 @@ function emptyForm(coachId = ""): FormState {
     capacity: "12",
     weekday: "1",
     localStartTime: "18:00",
-    durationMinutes: "60",
+    durationMinutes: String(defaultDurationMinutes),
     startsOn: getStudioDateKey(),
     endsOn: "",
   };
@@ -78,16 +78,20 @@ export function AdminRecurringSessionManager({
   templates,
   coachOptions,
   groupOptions,
+  defaultDurationMinutes = 60,
 }: {
   templates: RecurringSessionTemplateRecord[];
   coachOptions: AdminSessionCoachOption[];
   groupOptions: AdminScheduleGroupOption[];
+  defaultDurationMinutes?: number;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(templates[0]?.id ?? null);
   const selected = templates.find((template) => template.id === selectedId) ?? null;
-  const [form, setForm] = useState<FormState>(() => selected ? formFor(selected) : emptyForm(coachOptions[0]?.id));
+  const [form, setForm] = useState<FormState>(() =>
+    selected ? formFor(selected) : emptyForm(coachOptions[0]?.id, defaultDurationMinutes),
+  );
   const [throughDate, setThroughDate] = useState(defaultThroughDate);
   const [message, setMessage] = useState("");
   const [pending, startTransition] = useTransition();
@@ -100,7 +104,7 @@ export function AdminRecurringSessionManager({
 
   function createNew() {
     setSelectedId(null);
-    setForm(emptyForm(coachOptions[0]?.id));
+    setForm(emptyForm(coachOptions[0]?.id, defaultDurationMinutes));
     setMessage("");
   }
 
@@ -168,7 +172,7 @@ export function AdminRecurringSessionManager({
       try {
         await deleteRecurringSessionTemplate(selected.id);
         setSelectedId(null);
-        setForm(emptyForm(coachOptions[0]?.id));
+        setForm(emptyForm(coachOptions[0]?.id, defaultDurationMinutes));
         setMessage("Recurring series deleted.");
         router.refresh();
       } catch (caught) {
