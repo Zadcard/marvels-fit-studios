@@ -1388,6 +1388,75 @@ export type Database = {
           },
         ]
       }
+      StudioExpense: {
+        Row: {
+          amount: number
+          category: Database["public"]["Enums"]["StudioExpenseCategory"]
+          createdAt: string
+          createdById: string
+          currency: string
+          description: string
+          expenseNumber: string
+          id: string
+          occurredAt: string
+          paymentMethod: Database["public"]["Enums"]["StudioExpenseMethod"]
+          reference: string | null
+          status: Database["public"]["Enums"]["StudioExpenseStatus"]
+          voidedAt: string | null
+          voidedById: string | null
+          voidReason: string | null
+        }
+        Insert: {
+          amount: number
+          category: Database["public"]["Enums"]["StudioExpenseCategory"]
+          createdAt?: string
+          createdById: string
+          currency?: string
+          description: string
+          expenseNumber: string
+          id?: string
+          occurredAt: string
+          paymentMethod: Database["public"]["Enums"]["StudioExpenseMethod"]
+          reference?: string | null
+          status?: Database["public"]["Enums"]["StudioExpenseStatus"]
+          voidedAt?: string | null
+          voidedById?: string | null
+          voidReason?: string | null
+        }
+        Update: {
+          amount?: number
+          category?: Database["public"]["Enums"]["StudioExpenseCategory"]
+          createdAt?: string
+          createdById?: string
+          currency?: string
+          description?: string
+          expenseNumber?: string
+          id?: string
+          occurredAt?: string
+          paymentMethod?: Database["public"]["Enums"]["StudioExpenseMethod"]
+          reference?: string | null
+          status?: Database["public"]["Enums"]["StudioExpenseStatus"]
+          voidedAt?: string | null
+          voidedById?: string | null
+          voidReason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "StudioExpense_createdById_fkey"
+            columns: ["createdById"]
+            isOneToOne: false
+            referencedRelation: "User"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "StudioExpense_voidedById_fkey"
+            columns: ["voidedById"]
+            isOneToOne: false
+            referencedRelation: "User"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       StudioSettings: {
         Row: {
           cancellationWindow: string
@@ -2033,6 +2102,19 @@ export type Database = {
         }
         Returns: string
       }
+      record_studio_expense: {
+        Args: {
+          p_amount: number
+          p_category: Database["public"]["Enums"]["StudioExpenseCategory"]
+          p_created_by_id: string
+          p_currency: string
+          p_description: string
+          p_occurred_at: string
+          p_payment_method: Database["public"]["Enums"]["StudioExpenseMethod"]
+          p_reference: string
+        }
+        Returns: string
+      }
       record_workout_performance: {
         Args: {
           p_client_id: string
@@ -2162,6 +2244,10 @@ export type Database = {
           id: string
         }[]
       }
+      void_studio_expense: {
+        Args: { p_expense_id: string; p_reason: string; p_voided_by_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       AssessmentStatus: "DRAFT" | "COMPLETE"
@@ -2203,6 +2289,15 @@ export type Database = {
       NotificationKind: "SESSION_REMINDER" | "RENEWAL_REMINDER" | "SYSTEM"
       NotificationStatus: "SENT" | "READ" | "FAILED"
       ProgramStatus: "DRAFT" | "ACTIVE" | "COMPLETED" | "ARCHIVED"
+      StudioExpenseCategory:
+        | "SUPPLIES"
+        | "MAINTENANCE"
+        | "COACH_PAYMENT"
+        | "RENT_UTILITIES"
+        | "MARKETING"
+        | "OTHER"
+      StudioExpenseMethod: "CASH" | "CARD" | "BANK_TRANSFER" | "INSTAPAY"
+      StudioExpenseStatus: "POSTED" | "VOID"
       SubscriptionStatus: "ACTIVE" | "TRIAL" | "PAUSED" | "EXPIRED" | "CANCELED"
       TrainingCategory:
         | "FOOTBALL"
@@ -2392,6 +2487,16 @@ export const Constants = {
       NotificationKind: ["SESSION_REMINDER", "RENEWAL_REMINDER", "SYSTEM"],
       NotificationStatus: ["SENT", "READ", "FAILED"],
       ProgramStatus: ["DRAFT", "ACTIVE", "COMPLETED", "ARCHIVED"],
+      StudioExpenseCategory: [
+        "SUPPLIES",
+        "MAINTENANCE",
+        "COACH_PAYMENT",
+        "RENT_UTILITIES",
+        "MARKETING",
+        "OTHER",
+      ],
+      StudioExpenseMethod: ["CASH", "CARD", "BANK_TRANSFER", "INSTAPAY"],
+      StudioExpenseStatus: ["POSTED", "VOID"],
       SubscriptionStatus: ["ACTIVE", "TRIAL", "PAUSED", "EXPIRED", "CANCELED"],
       TrainingCategory: [
         "FOOTBALL",
