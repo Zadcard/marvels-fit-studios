@@ -2,13 +2,15 @@
 
 import { AlertTriangle, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { CoachClientRecord } from "@/lib/dashboard/coach-client-record";
 import type { CoachSessionRecord } from "@/lib/dashboard/coach-session-data";
 
 import styles from "./marvel-ops-expansion.module.css";
 
 export function MarvelOpsCoachSchedule({ coachName, sessions }: { coachName: string; sessions: CoachSessionRecord[] }) {
-  return <div className={styles.page}><section className={styles.coachHero}><span>{coachName.split(" ").map((part) => part[0]).join("").slice(0, 2)}</span><div><h2>My weekly schedule</h2><p>{coachName} · database sessions</p></div><b>{sessions.length} sessions</b></section><section className={styles.scheduleBoard}><header><div><h2>Scheduled sessions</h2><p>Upcoming and recent sessions assigned to you</p></div></header><div className={styles.coachScheduleList}>{sessions.map((session) => <article key={session.id}><time>{session.timeLabel}</time><span className={styles.sessionTone} data-tone={session.sessionType === "Private" ? "violet" : "red"} /><div><strong>{session.title}</strong><small>{session.dayLabel} · {session.location}</small></div><b>{session.rosterLabel}</b><button type="button" disabled>Open session <ChevronRight size={14} /></button></article>)}</div></section></div>;
+  const router = useRouter();
+  return <div className={styles.page}><section className={styles.coachHero}><span>{coachName.split(" ").map((part) => part[0]).join("").slice(0, 2)}</span><div><h2>My weekly schedule</h2><p>{coachName} · database sessions</p></div><b>{sessions.length} sessions</b></section><section className={styles.scheduleBoard}><header><div><h2>Scheduled sessions</h2><p>Upcoming and recent sessions assigned to you</p></div></header><div className={styles.coachScheduleList}>{sessions.map((session) => <article key={session.id}><time>{session.timeLabel}</time><span className={styles.sessionTone} data-tone={session.sessionType === "Private" ? "violet" : "red"} /><div><strong>{session.title}</strong><small>{session.dayLabel} · {session.location}</small></div><b>{session.rosterLabel}</b><button type="button" onClick={() => router.push(`/coach/sessions?session=${encodeURIComponent(session.id)}`)}>Open session <ChevronRight size={14} /></button></article>)}</div></section></div>;
 }
 
 export function MarvelOpsCoachClients({ clients, initialClientId = null }: { clients: CoachClientRecord[]; initialClientId?: string | null }) {

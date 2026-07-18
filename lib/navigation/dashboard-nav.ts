@@ -39,7 +39,7 @@ const dashboardNavConfig: Record<OpsRole, DashboardNavItem[]> = {
     { label: "Schedule", href: "/coach/schedule", icon: CalendarDays, description: "My week", section: "primary", available: true },
     { label: "Clients", href: "/coach/clients", icon: Users, description: "My roster", section: "primary", available: true },
     { label: "Alerts", href: "/coach/alerts", icon: ShieldAlert, description: "Injuries & changes", section: "primary", available: true },
-    { label: "On my phone", href: "/coach/sessions", icon: CalendarClock, description: "Coach mobile view", section: "primary", available: true },
+    { label: "Sessions", href: "/coach/sessions", icon: CalendarClock, description: "Notes, roster & attendance", section: "primary", available: true },
   ],
 };
 
