@@ -17,7 +17,7 @@ const eslintConfig = defineConfig([
       "@typescript-eslint/no-explicit-any": "off",
     },
   },
-globalIgnores([
+  globalIgnores([
     ".next/**",
     "out/**",
     "build/**",
@@ -28,6 +28,7 @@ globalIgnores([
     ".claude/**",
     "coverage/**",
     "Marvel Fitness Studios operations system/**",
+    "docs/archived/design-handoff/**",
   ]),
 ]);
 
