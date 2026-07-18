@@ -1,15 +1,10 @@
 import type { NextAuthConfig } from "next-auth";
 import { UserRole } from "@/lib/supabase/domain";
-
-const isProduction = process.env.NODE_ENV === "production";
-const authSecret =
-  process.env.AUTH_SECRET ??
-  process.env.NEXTAUTH_SECRET ??
-  (isProduction ? undefined : "dev-only-auth-secret-change-me");
+import { resolveAuthSecret } from "@/lib/auth/auth-secret";
 
 export default {
   session: { strategy: "jwt" },
-  secret: authSecret,
+  secret: resolveAuthSecret(),
   trustHost: true,
   providers: [],
   callbacks: {

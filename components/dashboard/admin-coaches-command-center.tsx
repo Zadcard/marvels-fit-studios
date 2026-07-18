@@ -3,8 +3,9 @@
 import { useDeferredValue, useEffect, useMemo, useState, useTransition, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Dialog } from "radix-ui";
-import { Pencil, Plus, Search, Trash2, X } from "lucide-react";
+import { KeyRound, Pencil, Plus, Search, Trash2, X } from "lucide-react";
 
+import { issueAccountPasswordResetLink } from "@/app/actions/account-security";
 import { deleteCoach, saveCoach } from "@/app/actions/admin-coaches";
 import type { AdminCoachRecord, AdminCoachSpecialization } from "@/lib/mocks/admin-coaches";
 import { getInitials } from "@/lib/utils";
@@ -12,6 +13,10 @@ import {
   TemporaryCredentialsDialog,
   type TemporaryCredentials,
 } from "./temporary-credentials-dialog";
+import {
+  PasswordResetLinkDialog,
+  type PasswordResetLink,
+} from "./password-reset-link-dialog";
 import styles from "./admin-coaches-command-center.module.css";
 
 type CoachForm = { fullName: string; email: string; phone: string; specialization: AdminCoachSpecialization };
@@ -41,6 +46,7 @@ export function AdminCoachesCommandCenter({ records, initialSearch = "" }: { rec
   const [form, setForm] = useState<CoachForm>(emptyForm);
   const [error, setError] = useState("");
   const [credentials, setCredentials] = useState<TemporaryCredentials | null>(null);
+  const [resetLink, setResetLink] = useState<PasswordResetLink | null>(null);
 
   useEffect(() => setSearch(initialSearch), [initialSearch]);
 
@@ -73,6 +79,24 @@ export function AdminCoachesCommandCenter({ records, initialSearch = "" }: { rec
       catch (caught) { setError(caught instanceof Error ? caught.message : "Could not delete coach."); }
     });
   }
+  function issueResetLink() {
+    if (!editingId) return;
+    setError("");
+    startTransition(async () => {
+      try {
+        const result = await issueAccountPasswordResetLink({ profileId: editingId, profileType: "coach" });
+        setEditorOpen(false);
+        setResetLink({
+          accountName: form.fullName,
+          accountType: "coach",
+          expiresAt: result.expiresAt,
+          url: new URL(result.path, window.location.origin).toString(),
+        });
+      } catch (caught) {
+        setError(caught instanceof Error ? caught.message : "Could not issue a reset link.");
+      }
+    });
+  }
 
   return (
     <div className={styles.page} aria-busy={pending}>
@@ -92,9 +116,10 @@ export function AdminCoachesCommandCenter({ records, initialSearch = "" }: { rec
       </section>
 
       <Dialog.Root open={editorOpen} onOpenChange={setEditorOpen}><Dialog.Portal><Dialog.Overlay className={styles.overlay} /><Dialog.Content className={styles.editor}><Dialog.Title>{editingId ? "Manage coach" : "Add a coach"}</Dialog.Title><Dialog.Description>Maintain the coach account and core training specialty.</Dialog.Description><Dialog.Close className={styles.close} aria-label="Close coach editor"><X size={18} /></Dialog.Close>
-        {!deleteMode ? <form onSubmit={submit} className={styles.form}><label className={styles.full}>Full name<input required value={form.fullName} onChange={(event) => setForm((value) => ({ ...value, fullName: event.target.value }))} /></label><label>Email<input required type="email" value={form.email} onChange={(event) => setForm((value) => ({ ...value, email: event.target.value }))} /></label><label>Phone<input type="tel" value={form.phone} onChange={(event) => setForm((value) => ({ ...value, phone: event.target.value }))} /></label><label className={styles.full}>Specialty<select value={form.specialization} onChange={(event) => setForm((value) => ({ ...value, specialization: event.target.value as AdminCoachSpecialization }))}>{specialties.filter((item) => item !== "All").map((item) => <option key={item}>{item}</option>)}</select></label>{error ? <p className={`${styles.error} ${styles.full}`} role="alert">{error}</p> : null}<div className={`${styles.formActions} ${styles.full}`}>{editingId ? <button type="button" className={styles.deleteButton} onClick={() => setDeleteMode(true)}><Trash2 size={16} /> Delete</button> : <span />}<button type="button" className="mv-btn mv-btn-secondary" onClick={() => setEditorOpen(false)}>Cancel</button><button type="submit" className="mv-btn mv-btn-primary" disabled={pending}>{pending ? "Saving…" : "Save coach"}</button></div></form> : <div className={styles.deletePanel}><Trash2 size={25} /><h3>Delete this coach?</h3><p>Assigned groups or sessions must be moved first. Type Delete to confirm.</p><label>Confirmation<input value={confirmation} onChange={(event) => setConfirmation(event.target.value)} placeholder="Delete" /></label>{error ? <p className={styles.error} role="alert">{error}</p> : null}<div><button className="mv-btn mv-btn-secondary" onClick={() => setDeleteMode(false)}>Back</button><button className={styles.deleteButton} onClick={removeCoach} disabled={confirmation !== "Delete" || pending}>Delete permanently</button></div></div>}
+        {!deleteMode ? <form onSubmit={submit} className={styles.form}><label className={styles.full}>Full name<input required value={form.fullName} onChange={(event) => setForm((value) => ({ ...value, fullName: event.target.value }))} /></label><label>Email<input required type="email" value={form.email} onChange={(event) => setForm((value) => ({ ...value, email: event.target.value }))} /></label><label>Phone<input type="tel" value={form.phone} onChange={(event) => setForm((value) => ({ ...value, phone: event.target.value }))} /></label><label className={styles.full}>Specialty<select value={form.specialization} onChange={(event) => setForm((value) => ({ ...value, specialization: event.target.value as AdminCoachSpecialization }))}>{specialties.filter((item) => item !== "All").map((item) => <option key={item}>{item}</option>)}</select></label>{error ? <p className={`${styles.error} ${styles.full}`} role="alert">{error}</p> : null}<div className={`${styles.formActions} ${styles.full}`}>{editingId ? <><button type="button" className={styles.deleteButton} onClick={() => setDeleteMode(true)}><Trash2 size={16} /> Delete</button><button type="button" className="mv-btn mv-btn-secondary" onClick={issueResetLink} disabled={pending}><KeyRound size={16} /> Reset access</button></> : <span />}<button type="button" className="mv-btn mv-btn-secondary" onClick={() => setEditorOpen(false)}>Cancel</button><button type="submit" className="mv-btn mv-btn-primary" disabled={pending}>{pending ? "Saving…" : "Save coach"}</button></div></form> : <div className={styles.deletePanel}><Trash2 size={25} /><h3>Delete this coach?</h3><p>Assigned groups or sessions must be moved first. Type Delete to confirm.</p><label>Confirmation<input value={confirmation} onChange={(event) => setConfirmation(event.target.value)} placeholder="Delete" /></label>{error ? <p className={styles.error} role="alert">{error}</p> : null}<div><button className="mv-btn mv-btn-secondary" onClick={() => setDeleteMode(false)}>Back</button><button className={styles.deleteButton} onClick={removeCoach} disabled={confirmation !== "Delete" || pending}>Delete permanently</button></div></div>}
       </Dialog.Content></Dialog.Portal></Dialog.Root>
       <TemporaryCredentialsDialog credentials={credentials} onClose={() => setCredentials(null)} />
+      <PasswordResetLinkDialog resetLink={resetLink} onClose={() => setResetLink(null)} />
     </div>
   );
 }

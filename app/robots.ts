@@ -9,7 +9,15 @@ export default function robots(): MetadataRoute.Robots {
         userAgent: "*",
         allow: "/",
         // Authenticated / utility surfaces should not be indexed.
-        disallow: ["/admin", "/coach", "/client", "/api", "/change-password", "/auth"],
+        disallow: [
+          "/admin",
+          "/coach",
+          "/client",
+          "/api",
+          "/change-password",
+          "/reset-password",
+          "/auth",
+        ],
       },
     ],
     sitemap: absoluteUrl("/sitemap.xml"),

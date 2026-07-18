@@ -2,6 +2,7 @@ import "server-only";
 
 import { createHmac } from "node:crypto";
 
+import { requireAuthSecret } from "@/lib/auth/auth-secret";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 export type AuthMethod = "client_id" | "email";
@@ -25,22 +26,8 @@ type ThrottleResult = {
   retryAfterSeconds: number;
 };
 
-function getHashSecret() {
-  const secret = process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET;
-
-  if (secret) {
-    return secret;
-  }
-
-  if (process.env.NODE_ENV !== "production") {
-    return "dev-only-auth-secret-change-me";
-  }
-
-  throw new Error("Missing AUTH_SECRET for authentication security hashing.");
-}
-
 function hashSecurityValue(value: string) {
-  return createHmac("sha256", getHashSecret()).update(value).digest("hex");
+  return createHmac("sha256", requireAuthSecret()).update(value).digest("hex");
 }
 
 function getRequestIp(request: Request) {

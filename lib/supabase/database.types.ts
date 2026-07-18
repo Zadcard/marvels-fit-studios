@@ -883,6 +883,54 @@ export type Database = {
           },
         ]
       }
+      PasswordResetGrant: {
+        Row: {
+          createdAt: string
+          createdById: string
+          expiresAt: string
+          id: string
+          revokedAt: string | null
+          tokenHash: string
+          usedAt: string | null
+          userId: string
+        }
+        Insert: {
+          createdAt?: string
+          createdById: string
+          expiresAt: string
+          id?: string
+          revokedAt?: string | null
+          tokenHash: string
+          usedAt?: string | null
+          userId: string
+        }
+        Update: {
+          createdAt?: string
+          createdById?: string
+          expiresAt?: string
+          id?: string
+          revokedAt?: string | null
+          tokenHash?: string
+          usedAt?: string | null
+          userId?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "PasswordResetGrant_createdById_fkey"
+            columns: ["createdById"]
+            isOneToOne: false
+            referencedRelation: "User"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "PasswordResetGrant_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "User"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       Payment: {
         Row: {
           amount: number
@@ -2040,6 +2088,10 @@ export type Database = {
         }[]
       }
       check_auth_throttle: { Args: { p_key_hash: string }; Returns: Json }
+      consume_password_reset_grant: {
+        Args: { p_password_hash: string; p_token_hash: string }
+        Returns: boolean
+      }
       delete_coach: { Args: { p_coach_id: string }; Returns: undefined }
       delete_recurring_session_template: {
         Args: { p_template_id: string }
@@ -2058,6 +2110,15 @@ export type Database = {
       generate_recurring_sessions: {
         Args: { p_template_id: string; p_through_date: string }
         Returns: number
+      }
+      issue_password_reset_grant: {
+        Args: {
+          p_created_by_id: string
+          p_expires_at: string
+          p_token_hash: string
+          p_user_id: string
+        }
+        Returns: string
       }
       promote_lead_to_client: {
         Args: {

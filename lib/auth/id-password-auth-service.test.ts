@@ -37,15 +37,8 @@ describe("IdPasswordAuthService", () => {
         });
         return result?.user ?? null;
       },
-      findResetToken: (token, now) =>
-        mockDataStore.user.findFirst({
-          where: { passwordResetToken: token, passwordResetExpires: { gt: now } },
-          select: { id: true },
-        }),
       findPassword: (userId) =>
         mockDataStore.user.findUnique({ where: { id: userId }, select: { password: true } }),
-      findIdByClientId: (clientId) =>
-        mockDataStore.user.findUnique({ where: { clientId }, select: { id: true } }),
       updateUser: (userId, data) =>
         mockDataStore.user.update({ where: { id: userId }, data }),
     });
@@ -251,145 +244,6 @@ describe("IdPasswordAuthService", () => {
     });
   });
 
-  describe("requestPasswordReset", () => {
-    it("should create reset token for valid user", async () => {
-      mockDataStore.user.findUnique.mockResolvedValue({
-        id: "user-123",
-      });
-
-      await service.requestPasswordReset("2605020");
-
-      const updateCall = mockDataStore.user.update.mock.calls[0][0];
-      expect(updateCall.data).toHaveProperty("passwordResetToken");
-      expect(updateCall.data).toHaveProperty("passwordResetExpires");
-    });
-
-    it("should set reset token expiry to 24 hours", async () => {
-      mockDataStore.user.findUnique.mockResolvedValue({
-        id: "user-123",
-      });
-
-      const before = Date.now();
-      await service.requestPasswordReset("2605020");
-      const after = Date.now();
-
-      const updateCall = mockDataStore.user.update.mock.calls[0][0];
-      const expiresTime = updateCall.data.passwordResetExpires.getTime();
-
-      expect(expiresTime).toBeGreaterThanOrEqual(before + 24 * 60 * 60 * 1000);
-      expect(expiresTime).toBeLessThanOrEqual(after + 24 * 60 * 60 * 1000 + 1000);
-    });
-
-    it("should generate 64-character hex token", async () => {
-      mockDataStore.user.findUnique.mockResolvedValue({
-        id: "user-123",
-      });
-
-      await service.requestPasswordReset("2605020");
-
-      const updateCall = mockDataStore.user.update.mock.calls[0][0];
-      const token = updateCall.data.passwordResetToken;
-
-      expect(token).toMatch(/^[a-f0-9]{64}$/);
-    });
-
-    it("should not throw error if user not found", async () => {
-      mockDataStore.user.findUnique.mockResolvedValue(null);
-
-      await expect(
-        service.requestPasswordReset("invalid")
-      ).resolves.not.toThrow();
-    });
-
-    it("should not update if user not found", async () => {
-      mockDataStore.user.findUnique.mockResolvedValue(null);
-
-      await service.requestPasswordReset("invalid");
-
-      expect(mockDataStore.user.update).not.toHaveBeenCalled();
-    });
-
-    it("should query by clientId", async () => {
-      mockDataStore.user.findUnique.mockResolvedValue({
-        id: "user-123",
-      });
-
-      await service.requestPasswordReset("2605020");
-
-      expect(mockDataStore.user.findUnique).toHaveBeenCalledWith({
-        where: { clientId: "2605020" },
-        select: { id: true },
-      });
-    });
-  });
-
-  describe("resetPassword", () => {
-    it("should reset password with valid token", async () => {
-      mockDataStore.user.findFirst.mockResolvedValue({
-        id: "user-123",
-      });
-
-      await service.resetPassword("valid-token", "new_password");
-
-      expect(bcryptjs.hash).toHaveBeenCalledWith("new_password", 10);
-    });
-
-    it("should clear reset token after successful reset", async () => {
-      mockDataStore.user.findFirst.mockResolvedValue({
-        id: "user-123",
-      });
-
-      await service.resetPassword("valid-token", "new_password");
-
-      const updateCall = mockDataStore.user.update.mock.calls[0][0];
-      expect(updateCall.data).toEqual({
-        password: "hashed_password",
-        passwordResetToken: null,
-        passwordResetExpires: null,
-      });
-    });
-
-    it("should throw error for invalid token", async () => {
-      mockDataStore.user.findFirst.mockResolvedValue(null);
-
-      await expect(
-        service.resetPassword("invalid-token", "new_password")
-      ).rejects.toThrow("Invalid or expired reset token");
-    });
-
-    it("should throw error for expired token", async () => {
-      mockDataStore.user.findFirst.mockResolvedValue(null);
-
-      await expect(
-        service.resetPassword("expired-token", "new_password")
-      ).rejects.toThrow("Invalid or expired reset token");
-    });
-
-    it("should find user by non-expired reset token", async () => {
-      mockDataStore.user.findFirst.mockResolvedValue({
-        id: "user-123",
-      });
-
-      await service.resetPassword("valid-token", "new_password");
-
-      const findFirstCall = mockDataStore.user.findFirst.mock.calls[0][0];
-      expect(findFirstCall.where).toEqual({
-        passwordResetToken: "valid-token",
-        passwordResetExpires: { gt: expect.any(Date) },
-      });
-    });
-
-    it("should hash new password", async () => {
-      mockDataStore.user.findFirst.mockResolvedValue({
-        id: "user-123",
-      });
-
-      await service.resetPassword("valid-token", "new_password");
-
-      expect(bcryptjs.hash).toHaveBeenCalledWith("new_password", 10);
-    });
-  });
-
   describe("changePassword", () => {
     it("should change password when current password is correct", async () => {
       mockDataStore.user.findUnique.mockResolvedValue({
@@ -515,42 +369,4 @@ describe("IdPasswordAuthService", () => {
     });
   });
 
-  describe("authentication flow with password reset", () => {
-    it("should allow authentication after password reset", async () => {
-      mockDataStore.user.findFirst.mockResolvedValue({
-        id: "user-123",
-      });
-
-      await service.resetPassword("valid-token", "new_password");
-
-      mockDataStore.user.findUnique.mockResolvedValue({
-        id: "user-123",
-        clientId: "2605020",
-        password: "hashed_new_password",
-        role: "CLIENT",
-      });
-
-      const passwordVerifier = (service as any).passwordVerifier;
-      vi.spyOn(passwordVerifier, "verify").mockResolvedValue(true);
-
-      const result = await service.authenticate({
-        clientId: "2605020",
-        password: "new_password",
-      });
-
-      expect(result.userId).toBe("user-123");
-    });
-
-    it("should clear reset token on successful reset", async () => {
-      mockDataStore.user.findFirst.mockResolvedValue({
-        id: "user-123",
-      });
-
-      await service.resetPassword("valid-token", "new_password");
-
-      const updateCall = mockDataStore.user.update.mock.calls[0][0];
-      expect(updateCall.data.passwordResetToken).toBeNull();
-      expect(updateCall.data.passwordResetExpires).toBeNull();
-    });
-  });
 });

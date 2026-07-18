@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/supabase/server", () => ({
   getSupabaseServerClient: vi.fn(),
@@ -15,9 +15,12 @@ describe("AuthSecurityService", () => {
   const service = new AuthSecurityService();
 
   beforeEach(() => {
+    vi.stubEnv("AUTH_SECRET", "unit-test-auth-secret");
     vi.clearAllMocks();
     vi.mocked(getSupabaseServerClient).mockReturnValue({ rpc } as never);
   });
+
+  afterEach(() => vi.unstubAllEnvs());
 
   it("creates opaque hashes without retaining the identifier or IP", () => {
     const request = new Request("https://studio.test/login", {

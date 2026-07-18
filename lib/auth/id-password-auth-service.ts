@@ -19,15 +19,6 @@ export interface AuthenticatedUser {
   role: UserRole;
 }
 
-export interface PasswordResetRequest {
-  clientId: string;
-}
-
-export interface ResetPasswordInput {
-  token: string;
-  newPassword: string;
-}
-
 export interface ChangePasswordInput {
   userId: string;
   currentPassword: string;
@@ -48,13 +39,9 @@ type AuthUserRecord = {
 export interface IdPasswordAuthStore {
   findByClientId(clientId: string): Promise<AuthUserRecord | null>;
   findByPhones(phones: string[]): Promise<AuthUserRecord | null>;
-  findResetToken(token: string, now: Date): Promise<{ id: string } | null>;
   findPassword(userId: string): Promise<{ password: string | null } | null>;
-  findIdByClientId(clientId: string): Promise<{ id: string } | null>;
   updateUser(userId: string, data: {
     lastLoginAt?: Date;
-    passwordResetToken?: string | null;
-    passwordResetExpires?: Date | null;
     password?: string;
     mustChangePassword?: boolean;
   }): Promise<void>;
@@ -88,22 +75,9 @@ const supabaseAuthStore: IdPasswordAuthStore = {
     if (error) throw error;
     return data ? { ...data.user, clientProfile: { fullName: data.fullName } } : null;
   },
-  async findResetToken(token, now) {
-    const { data, error } = await getSupabaseServerClient()
-      .from("User").select("id").eq("passwordResetToken", token)
-      .gt("passwordResetExpires", now.toISOString()).maybeSingle();
-    if (error) throw error;
-    return data;
-  },
   async findPassword(userId) {
     const { data, error } = await getSupabaseServerClient()
       .from("User").select("password").eq("id", userId).maybeSingle();
-    if (error) throw error;
-    return data;
-  },
-  async findIdByClientId(clientId) {
-    const { data, error } = await getSupabaseServerClient()
-      .from("User").select("id").eq("clientId", clientId).maybeSingle();
     if (error) throw error;
     return data;
   },
@@ -111,10 +85,6 @@ const supabaseAuthStore: IdPasswordAuthStore = {
     const update = {
       ...data,
       lastLoginAt: data.lastLoginAt?.toISOString(),
-      passwordResetExpires:
-        data.passwordResetExpires instanceof Date
-          ? data.passwordResetExpires.toISOString()
-          : data.passwordResetExpires,
     };
     const { error } = await getSupabaseServerClient()
       .from("User").update(update).eq("id", userId);
@@ -200,38 +170,6 @@ export class IdPasswordAuthService {
     };
   }
 
-  async requestPasswordReset(clientId: string): Promise<void> {
-    const user = await this.store.findIdByClientId(clientId);
-
-    if (!user) {
-      return;
-    }
-
-    const resetToken = this.generateResetToken();
-    const resetExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
-
-    await this.store.updateUser(user.id, {
-        passwordResetToken: resetToken,
-        passwordResetExpires: resetExpires,
-    });
-  }
-
-  async resetPassword(token: string, newPassword: string): Promise<void> {
-    const user = await this.store.findResetToken(token, new Date());
-
-    if (!user) {
-      throw new Error("Invalid or expired reset token");
-    }
-
-    const hashedPassword = await bcryptjs.hash(newPassword, 10);
-
-    await this.store.updateUser(user.id, {
-        password: hashedPassword,
-        passwordResetToken: null,
-        passwordResetExpires: null,
-    });
-  }
-
   async changePassword(
     userId: string,
     currentPassword: string,
@@ -258,12 +196,6 @@ export class IdPasswordAuthService {
         password: hashedPassword,
         mustChangePassword: false,
     });
-  }
-
-  private generateResetToken(): string {
-    return Array.from(crypto.getRandomValues(new Uint8Array(32)))
-      .map((b) => b.toString(16).padStart(2, "0"))
-      .join("");
   }
 }
 

@@ -19,7 +19,7 @@ function LoginForm() {
   const callbackUrl = searchParams.get("callbackUrl");
 
   const [loginMethod, setLoginMethod] = useState<"clientId" | "email">(
-    "clientId"
+    "email"
   );
   const [clientId, setClientId] = useState("");
   const [email, setEmail] = useState("");
@@ -104,7 +104,7 @@ function LoginForm() {
                 password,
               }
             : {
-                email,
+                email: email.trim().toLowerCase(),
                 password,
               };
 
@@ -118,7 +118,15 @@ function LoginForm() {
         });
 
         if (result?.error) {
-          if (result.error === "CredentialsSignin" || result.error === "Credentials") {
+          if (result.code === "rate_limited") {
+            setFormError(
+              "Sign-in is temporarily locked after repeated attempts. Please wait before trying again.",
+            );
+          } else if (result.code === "service_unavailable") {
+            setFormError(
+              "Secure sign-in is temporarily unavailable. Please try again shortly.",
+            );
+          } else if (result.error === "CredentialsSignin" || result.error === "Credentials") {
             const identifier =
               loginMethod === "clientId" ? "Client ID, phone" : "email";
             setFormError(`Invalid ${identifier} or password.`);
@@ -397,7 +405,9 @@ function LoginForm() {
         </div>
 
         <div className="login-help-row">
-          <p className="login-trust-note">Secure portal access.</p>
+          <p className="login-trust-note">
+            Locked out? Ask your administrator for a one-time reset link.
+          </p>
         </div>
 
         <button
@@ -412,7 +422,7 @@ function LoginForm() {
         </button>
       </form>
 
-      <p className="login-help">Need access? Contact the studio administrator.</p>
+      <p className="login-help">Staff access is email-first. Client ID access remains available for member accounts.</p>
     </div>
   );
 }

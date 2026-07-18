@@ -1,4 +1,4 @@
-import NextAuth from "next-auth";
+import NextAuth, { CredentialsSignin } from "next-auth";
 import authConfig from "./auth.config";
 import Credentials from "next-auth/providers/credentials";
 import {
@@ -17,6 +17,14 @@ const credentialsAuthService = new CredentialsAuthService(
   new SupabaseUserRepository(),
   new BcryptPasswordVerifier()
 );
+
+class RateLimitedCredentialsSignin extends CredentialsSignin {
+  code = "rate_limited";
+}
+
+class AuthServiceUnavailableSignin extends CredentialsSignin {
+  code = "service_unavailable";
+}
 
 export const {
   handlers: { GET, POST },
@@ -102,11 +110,11 @@ export const {
           }
 
           if (error instanceof AuthRateLimitError) {
-            return null;
+            throw new RateLimitedCredentialsSignin();
           }
 
           console.error("[auth] sign-in failed because of a system error:", error);
-          return null;
+          throw new AuthServiceUnavailableSignin();
         }
       },
     }),
