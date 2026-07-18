@@ -8,6 +8,7 @@ import { requireRole } from "@/lib/auth/session";
 import { generateTemporaryPassword } from "@/lib/auth/temporary-password";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { clientIdGenerator } from "@/lib/services/client-id-generator";
+import { COACH_FILES_BUCKET } from "@/lib/storage/coach-files";
 import {
   injuryStatusFromLabel,
   lifecycleStatusFromLabel,
@@ -179,10 +180,33 @@ export async function deleteAdminClient(input: DeleteAdminClientInput) {
     throw new Error('Type "Delete" to confirm client deletion.');
   }
 
-  const { error } = await getSupabaseServerClient().rpc("admin_delete_client", {
+  const supabase = getSupabaseServerClient();
+
+  // Capture storage paths before the RPC deletes the File rows that
+  // reference them, so the underlying objects can be removed too. The
+  // bucket has no cascade from a Postgres-side row delete.
+  const { data: clientFiles, error: filesError } = await supabase
+    .from("File")
+    .select("path")
+    .eq("clientId", input.clientId);
+  if (filesError) throw filesError;
+
+  const { error } = await supabase.rpc("admin_delete_client", {
     target_client_id: input.clientId,
   });
   if (error) throw error;
+
+  if (clientFiles.length > 0) {
+    const { error: storageError } = await supabase.storage
+      .from(COACH_FILES_BUCKET)
+      .remove(clientFiles.map((file) => file.path));
+    if (storageError) {
+      console.error(
+        "[admin-clients] failed to remove storage objects for a deleted client:",
+        storageError,
+      );
+    }
+  }
 
   revalidatePath("/admin");
   revalidatePath("/admin/clients");
