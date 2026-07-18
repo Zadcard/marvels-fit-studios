@@ -22,3 +22,21 @@ export async function markNotificationRead(notificationId: string) {
     revalidatePath("/coach/alerts");
   }
 }
+
+export async function markAllNotificationsRead() {
+  const user = await requireUser();
+  const readAt = new Date().toISOString();
+  const { error } = await getSupabaseServerClient()
+    .from("Notification")
+    .update({ status: "READ", readAt })
+    .eq("recipientId", user.id)
+    .neq("status", "FAILED")
+    .is("readAt", null);
+  if (error) throw error;
+
+  if (user.role === UserRole.ADMIN) {
+    revalidatePath("/admin/notifications");
+  } else if (user.role === UserRole.COACH) {
+    revalidatePath("/coach/alerts");
+  }
+}

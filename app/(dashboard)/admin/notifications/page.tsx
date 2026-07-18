@@ -6,5 +6,5 @@ export const metadata = { title: "Notifications" };
 
 export default async function AdminNotificationsPage() {
   const user = await requireUser();
-  return <MarvelOpsNotifications items={await listNotifications(user.id)} />;
+  return <MarvelOpsNotifications role="admin" items={await listNotifications(user.id)} />;
 }

@@ -13,11 +13,14 @@ describe("Marvel Ops canonical workspaces", () => {
     }
   });
 
-  it("implements the reference attendance interactions locally", () => {
+  it("keeps attendance interactions aligned with persisted booking states", () => {
     const workspace = read("components/dashboard/admin-attendance-workspace.tsx");
     expect(workspace).toContain("Mark all in");
+    expect(workspace).toContain("markAttendance");
+    expect(workspace).toContain('nextStatus === "Booked"');
     expect(workspace).toContain("stopPropagation");
-    expect(workspace).toContain('status: "Late"');
+    expect(workspace).not.toContain('status: "Late"');
+    expect(workspace).not.toContain("Send summary to coach");
   });
 
   it("keeps full client management and cash-out in the operations design", () => {

@@ -7,5 +7,5 @@ export const metadata = { title: "Alerts" };
 
 export default async function CoachAlertsPage() {
   const coach = await requireRole(UserRole.COACH);
-  return <MarvelOpsNotifications items={await listNotifications(coach.id)} />;
+  return <MarvelOpsNotifications role="coach" items={await listNotifications(coach.id)} />;
 }

@@ -15,11 +15,10 @@ type Props = {
   sessions: AdminAttendanceSession[];
   dataSource: "demo" | "live";
 };
-type RosterStatus = AttendanceLabel | "Late";
+type RosterStatus = AttendanceLabel;
 
 const exceptions = [
   { label: "Absent", status: "Absent" as const, icon: <X size={15} />, tone: "warning" },
-  { label: "Late", status: "Late" as const, icon: "L", tone: "warning" },
   { label: "No-show", status: "No-show" as const, icon: "N", tone: "danger" },
 ];
 
@@ -39,12 +38,11 @@ function statusGlyph(status: RosterStatus) {
   if (status === "Attended") return <Check size={16} />;
   if (status === "Absent") return <X size={16} />;
   if (status === "No-show") return "N";
-  if (status === "Late") return "L";
   return "-";
 }
 
 function statusForWrite(status: RosterStatus) {
-  if (status === "Attended" || status === "Late") return "ATTENDED";
+  if (status === "Attended") return "ATTENDED";
   if (status === "Absent") return "MISSED";
   if (status === "No-show") return "NO_SHOW";
   return "BOOKED";
@@ -56,7 +54,6 @@ export function AdminAttendanceWorkspace({ sessions, dataSource }: Props) {
   const requestedSession = searchParams.get("session");
   const [selectedId, setSelectedId] = useState(() => sessions.some((session) => session.id === requestedSession) ? requestedSession ?? "" : sessions[0]?.id ?? "");
   const [overrides, setOverrides] = useState<Record<string, RosterStatus>>({});
-  const [summarySent, setSummarySent] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
   const [isSaving, startTransition] = useTransition();
   const selected = useMemo(
@@ -70,7 +67,6 @@ export function AdminAttendanceWorkspace({ sessions, dataSource }: Props) {
 
   function chooseSession(id: string) {
     setSelectedId(id);
-    setSummarySent(false);
     router.replace(`/admin/attendance?session=${encodeURIComponent(id)}`, { scroll: false });
   }
 
@@ -79,32 +75,32 @@ export function AdminAttendanceWorkspace({ sessions, dataSource }: Props) {
 
   function mark(sessionId: string, clientId: string, status: RosterStatus) {
     const key = `${sessionId}:${clientId}`;
-    const previous = overrides[key];
-    setSummarySent(false);
+    const initialStatus = sessions
+      .find((session) => session.id === sessionId)
+      ?.attendees.find((attendee) => attendee.clientId === clientId)?.status ?? "Booked";
+    const previousOverride = overrides[key];
+    const currentStatus = previousOverride ?? initialStatus;
+    const nextStatus = currentStatus === status ? "Booked" : status;
     setSaveMessage("");
     setOverrides((current) => ({
       ...current,
-      [key]: current[key] === status ? "Booked" : status,
+      [key]: nextStatus,
     }));
 
     if (dataSource !== "live") return;
 
-    const nextStatus = previous === status ? "Booked" : status;
-    if (nextStatus === "Booked") {
-      setSaveMessage("Use an attendance exception to update a saved check-in.");
-      return;
-    }
-
     startTransition(async () => {
       try {
         await markAttendance(sessionId, clientId, statusForWrite(nextStatus));
-        setSaveMessage(
-          nextStatus === "Late"
-            ? "Saved as attended. Late remains a visual roster flag until the booking model stores a late state."
-            : "Attendance saved.",
-        );
+        setSaveMessage(nextStatus === "Booked" ? "Check-in cleared." : "Attendance saved.");
+        router.refresh();
       } catch {
-        setOverrides((current) => ({ ...current, [key]: previous ?? "Booked" }));
+        setOverrides((current) => {
+          const next = { ...current };
+          if (previousOverride) next[key] = previousOverride;
+          else delete next[key];
+          return next;
+        });
         setSaveMessage("Could not save attendance. Your previous status was restored.");
       }
     });
@@ -112,7 +108,6 @@ export function AdminAttendanceWorkspace({ sessions, dataSource }: Props) {
 
   function markAllIn() {
     if (!selected) return;
-    setSummarySent(false);
     setSaveMessage("");
     setOverrides((current) => {
       const next = { ...current };
@@ -153,12 +148,11 @@ export function AdminAttendanceWorkspace({ sessions, dataSource }: Props) {
       const status = statusFor(selected.id, attendee.clientId, attendee.status);
       if (status === "Attended") summary.attended += 1;
       else if (status === "Absent" || status === "No-show") summary.absent += 1;
-      else if (status === "Late") summary.late += 1;
       else summary.pending += 1;
       return summary;
     },
-    { attended: 0, absent: 0, late: 0, pending: 0 },
-  ) ?? { attended: 0, absent: 0, late: 0, pending: 0 };
+    { attended: 0, absent: 0, pending: 0 },
+  ) ?? { attended: 0, absent: 0, pending: 0 };
 
   return <div className={styles.page}>
     <div className={styles.sessionTabs} aria-label="Today sessions">
@@ -192,7 +186,7 @@ export function AdminAttendanceWorkspace({ sessions, dataSource }: Props) {
         </article>;
       })}</div>
 
-      <footer><div className={styles.summary}><span data-tone="success">● {totals.attended} in</span><span data-tone="danger">● {totals.absent} absent</span><span data-tone="warning">● {totals.late} late</span><span>● {totals.pending} pending</span></div><button type="button" data-sent={summarySent || undefined} onClick={() => setSummarySent(true)}>{summarySent ? "Summary ready" : "Send summary to coach"}</button></footer>
+      <footer><div className={styles.summary}><span data-tone="success">● {totals.attended} in</span><span data-tone="danger">● {totals.absent} absent</span><span>● {totals.pending} pending</span></div></footer>
     </section>
   </div>;
 }
