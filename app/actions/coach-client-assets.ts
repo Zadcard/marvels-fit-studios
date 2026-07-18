@@ -43,6 +43,9 @@ export async function savePrivateClientNote(input: {
   if (!content) {
     throw new Error("Note cannot be empty.");
   }
+  if (content.length > 2000) {
+    throw new Error("Note must be 2000 characters or fewer.");
+  }
 
   await requireCoachClientAccess(coach.id, clientId);
 

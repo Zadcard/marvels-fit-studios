@@ -33,6 +33,7 @@ export type CoachClientRecord = {
     content: string;
     authorName: string;
     updatedAtLabel: string;
+    canEdit: boolean;
   }>;
   activeFiles: Array<{
     id: string;

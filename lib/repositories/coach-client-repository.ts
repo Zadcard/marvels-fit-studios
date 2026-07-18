@@ -167,8 +167,8 @@ export class SupabaseCoachClientRepository implements CoachClientRepository {
             trainingSession:TrainingSession(title, type, status, startsAt, location,
               coach:Coach(userId))),
           workoutNotes:WorkoutNote(id, content, date, updatedAt, isPrivate,
-            author:User(name, email, role)),
-          files:File(id, name, note, expiresAt, createdAt, deletedAt)
+            author:User(id, name, email, role)),
+          files:File(id, name, note, expiresAt, createdAt, deletedAt, uploadedById)
         `,
         )
         .order("fullName");
@@ -221,7 +221,9 @@ export class SupabaseCoachClientRepository implements CoachClientRepository {
           files: client.files
             .filter(
               (file) =>
-                !file.deletedAt && new Date(file.expiresAt).getTime() > now,
+                !file.deletedAt &&
+                file.uploadedById === userId &&
+                new Date(file.expiresAt).getTime() > now,
             )
             .sort((left, right) =>
               right.createdAt.localeCompare(left.createdAt),
@@ -274,6 +276,7 @@ export class SupabaseCoachClientRepository implements CoachClientRepository {
             content: note.content,
             authorName: note.author?.name ?? note.author?.email ?? "Coach",
             updatedAtLabel: formatDateLabel(note.updatedAt ?? note.date),
+            canEdit: note.author?.id === userId,
           })),
           activeFiles: client.files.map((file) => ({
             id: file.id,
