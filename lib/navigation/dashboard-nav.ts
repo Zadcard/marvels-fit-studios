@@ -40,12 +40,13 @@ const dashboardNavConfig: Record<OpsRole, DashboardNavItem[]> = {
     { label: "Clients", href: "/coach/clients", icon: Users, description: "My roster", section: "primary", available: true },
     { label: "Alerts", href: "/coach/alerts", icon: ShieldAlert, description: "Injuries & changes", section: "primary", available: true },
     { label: "Sessions", href: "/coach/sessions", icon: CalendarClock, description: "Notes, roster & attendance", section: "primary", available: true },
+    { label: "Settings", href: "/coach/settings", icon: Settings, description: "My coach profile", section: "secondary", available: true },
   ],
 };
 
 const dashboardRoleUiConfig: Record<OpsRole, DashboardRoleUiMeta> = {
   admin: { label: "Admin", defaultTitle: "Today", defaultSubtitle: "Live studio operations.", eyebrow: "Operations", profile: { name: "Admin account", subtitle: "Studio admin", initials: "AD" }, searchPrompt: "Search clients, coaches, sessions…", profileHref: "/admin" },
-  coach: { label: "Coach", defaultTitle: "Today", defaultSubtitle: "My sessions and injury context.", eyebrow: "Coach", profile: { name: "Coach account", subtitle: "Coach workspace", initials: "CO" }, searchPrompt: "Search clients or sessions…", profileHref: "/coach" },
+  coach: { label: "Coach", defaultTitle: "Today", defaultSubtitle: "My sessions and injury context.", eyebrow: "Coach", profile: { name: "Coach account", subtitle: "Coach workspace", initials: "CO" }, searchPrompt: "Search clients or sessions…", profileHref: "/coach/settings" },
 };
 
 function resolveOpsRole(role: DashboardRole): OpsRole { return role === "client" ? "coach" : role; }

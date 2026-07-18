@@ -5,43 +5,51 @@ import { revalidatePath } from "next/cache";
 
 import { requireRole } from "@/lib/auth/session";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { z } from "zod";
 
-type SaveCoachSettingsInput = {
-  fullName: string;
-  email: string;
-  phone: string;
-  specialization: string;
+const specializationValues = [
+  "Strength",
+  "Conditioning",
+  "Mobility",
+  "Private Coaching",
+  "Football",
+  "Tennis",
+  "Calisthenics",
+  "Rehab",
+  "Athletic Performance",
+  "General Fitness",
+] as const;
+
+const saveCoachSettingsSchema = z.object({
+  fullName: z.string().trim().min(1, "Coach full name is required.").max(120),
+  email: z.string().trim().toLowerCase().email("Enter a valid email address."),
+  phone: z.string().trim().max(30),
+  specialization: z.enum(specializationValues),
+});
+
+export type SaveCoachSettingsInput = z.infer<typeof saveCoachSettingsSchema>;
+
+const specializationMap: Record<SaveCoachSettingsInput["specialization"], CoachSpecialization> = {
+  Strength: CoachSpecialization.STRENGTH,
+  Conditioning: CoachSpecialization.CONDITIONING,
+  Mobility: CoachSpecialization.MOBILITY,
+  "Private Coaching": CoachSpecialization.PRIVATE_COACHING,
+  Football: CoachSpecialization.FOOTBALL,
+  Tennis: CoachSpecialization.TENNIS,
+  Calisthenics: CoachSpecialization.CALISTHENICS,
+  Rehab: CoachSpecialization.REHAB,
+  "Athletic Performance": CoachSpecialization.ATHLETIC_PERFORMANCE,
+  "General Fitness": CoachSpecialization.GENERAL_FITNESS,
 };
-
-function toCoachSpecialization(
-  specialization: string
-): CoachSpecialization {
-  switch (specialization) {
-    case "Conditioning":
-      return CoachSpecialization.CONDITIONING;
-    case "Mobility":
-      return CoachSpecialization.MOBILITY;
-    case "Private Coaching":
-      return CoachSpecialization.PRIVATE_COACHING;
-    default:
-      return CoachSpecialization.STRENGTH;
-  }
-}
 
 export async function saveCoachSettings(input: SaveCoachSettingsInput) {
   const user = await requireRole(UserRole.COACH);
-  const fullName = input.fullName.trim();
-  const email = input.email.trim().toLowerCase();
-  const phone = input.phone.trim();
-  const specialization = toCoachSpecialization(input.specialization);
-
-  if (!fullName) {
-    throw new Error("Coach full name is required.");
+  const parsed = saveCoachSettingsSchema.safeParse(input);
+  if (!parsed.success) {
+    throw new Error(parsed.error.issues[0]?.message ?? "Invalid coach settings.");
   }
-
-  if (!email) {
-    throw new Error("Coach email is required.");
-  }
+  const { fullName, email, phone } = parsed.data;
+  const specialization = specializationMap[parsed.data.specialization];
 
   const { error } = await getSupabaseServerClient().rpc("save_coach_settings", {
     p_email: email,
@@ -61,5 +69,6 @@ export async function saveCoachSettings(input: SaveCoachSettingsInput) {
   revalidatePath("/coach");
   revalidatePath("/coach/sessions");
   revalidatePath("/coach/schedule");
+  revalidatePath("/coach/settings");
   revalidatePath("/admin/coaches");
 }

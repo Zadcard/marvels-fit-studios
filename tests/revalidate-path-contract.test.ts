@@ -27,6 +27,7 @@ const livePaths = new Set([
   "/coach/clients",
   "/coach/schedule",
   "/coach/sessions",
+  "/coach/settings",
 ]);
 
 describe("server-action cache invalidation", () => {
