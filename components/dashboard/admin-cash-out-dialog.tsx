@@ -6,6 +6,7 @@ import { Dialog } from "radix-ui";
 import { BanknoteArrowDown, X } from "lucide-react";
 
 import { recordStudioExpense } from "@/app/actions/admin-expenses";
+import { useDashboardToast } from "./dashboard-toast-provider";
 import styles from "./admin-cash-out-dialog.module.css";
 
 const categories = [
@@ -21,6 +22,7 @@ function localDateTimeValue(date = new Date()) {
 
 export function AdminCashOutDialog() {
   const router = useRouter();
+  const { showToast } = useDashboardToast();
   const [open, setOpen] = useState(false);
   const [category, setCategory] = useState<(typeof categories)[number][0]>("SUPPLIES");
   const [saved, setSaved] = useState(false);
@@ -49,21 +51,23 @@ export function AdminCashOutDialog() {
             try {
               await recordStudioExpense({
                 amount: Number(data.get("amount")), currency: "EGP", category,
-                paymentMethod: String(data.get("paymentMethod")) as "CASH" | "CARD" | "BANK_TRANSFER" | "INSTAPAY",
+                paymentMethod: "CASH",
                 description: String(data.get("description")),
                 reference: String(data.get("reference") ?? ""),
                 occurredAt: occurredAt.toISOString(),
               });
               setSaved(true);
+              showToast("Cash out recorded.");
               router.refresh();
             } catch (cause) {
-              setError(cause instanceof Error ? cause.message : "The expense could not be recorded.");
+              const description = cause instanceof Error ? cause.message : "The expense could not be recorded.";
+              setError(description);
+              showToast(description, "warning");
             }
           });
         }}>
           <label>Amount (EGP)<input name="amount" type="number" inputMode="decimal" min="0.01" max="10000000" step="0.01" placeholder="0.00" required /></label>
           <label>Category <span className={styles.chips}>{categories.map(([value, label]) => <button key={value} type="button" data-active={category === value || undefined} onClick={() => setCategory(value)}>{label}</button>)}</span></label>
-          <label>Payment method<select name="paymentMethod" defaultValue="CASH"><option value="CASH">Cash</option><option value="CARD">Card</option><option value="BANK_TRANSFER">Bank transfer</option><option value="INSTAPAY">InstaPay</option></select></label>
           <label>Occurred at<input name="occurredAt" type="datetime-local" max={localDateTimeValue()} defaultValue={localDateTimeValue()} required /></label>
           <label>Description<textarea name="description" maxLength={300} placeholder="What was this payment for?" rows={3} required /></label>
           <label>Receipt / reference<input name="reference" maxLength={120} placeholder="Optional paper receipt or transfer reference" /></label>

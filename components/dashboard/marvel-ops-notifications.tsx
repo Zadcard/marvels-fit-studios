@@ -25,10 +25,21 @@ export type MarvelOpsNotification = {
 
 const label = (kind: MarvelOpsNotification["kind"]) =>
   kind === "SESSION_REMINDER"
-    ? "Sessions"
+    ? "Schedule"
     : kind === "RENEWAL_REMINDER"
-      ? "Renewals"
+      ? "Money"
       : "System";
+
+function dateGroupFor(sentAt: string) {
+  const date = new Date(sentAt);
+  const now = new Date();
+  const dayMs = 86_400_000;
+  const startOfDay = (value: Date) => new Date(value.getFullYear(), value.getMonth(), value.getDate()).getTime();
+  const diffDays = Math.round((startOfDay(now) - startOfDay(date)) / dayMs);
+  if (diffDays <= 0) return "Today";
+  if (diffDays === 1) return "Yesterday";
+  return "Earlier";
+}
 
 export function MarvelOpsNotifications({
   items,
@@ -46,6 +57,15 @@ export function MarvelOpsNotifications({
     () => items.filter((item) => filter === "All" || item.kind === filter),
     [filter, items],
   );
+  const groups = useMemo(() => {
+    const order = ["Today", "Yesterday", "Earlier"] as const;
+    const buckets = new Map<(typeof order)[number], MarvelOpsNotification[]>();
+    for (const notice of visible) {
+      const key = dateGroupFor(notice.sentAt);
+      buckets.set(key, [...(buckets.get(key) ?? []), notice]);
+    }
+    return order.filter((key) => buckets.has(key)).map((key) => ({ key, items: buckets.get(key)! }));
+  }, [visible]);
   const unreadIds = items
     .filter((item) => !item.readAt && item.status !== "FAILED")
     .map((item) => item.id);
@@ -97,17 +117,22 @@ export function MarvelOpsNotifications({
       </div>
       {message ? <p role="status">{message}</p> : null}
       <div className={styles.noticeGroups}>
-        {visible.length ? visible.map((notice) => {
-          const safeHref = getSafeNotificationHref(notice.href, role);
-          return (
-            <article key={notice.id} data-read={notice.readAt || readIds.includes(notice.id) || undefined}>
-              <span className={styles.noticeIcon} data-tone={notice.status === "FAILED" ? "red" : notice.kind === "RENEWAL_REMINDER" ? "amber" : "blue"}><Bell size={17} /></span>
-              <div><strong>{notice.title}</strong><p>{notice.body}</p></div>
-              {safeHref ? <button type="button" disabled={pending} onClick={() => openNotification(notice, safeHref)}>Open<ChevronRight size={14} /></button> : null}
-              <time>{new Intl.DateTimeFormat("en", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(notice.sentAt))}</time>
-            </article>
-          );
-        }) : (
+        {groups.length ? groups.map((group) => (
+          <section key={group.key} className={styles.dateGroup}>
+            <h3>{group.key}</h3>
+            {group.items.map((notice) => {
+              const safeHref = getSafeNotificationHref(notice.href, role);
+              return (
+                <article key={notice.id} data-read={notice.readAt || readIds.includes(notice.id) || undefined}>
+                  <span className={styles.noticeIcon} data-tone={notice.status === "FAILED" ? "red" : notice.kind === "RENEWAL_REMINDER" ? "amber" : "blue"}><Bell size={17} /></span>
+                  <div><strong>{notice.title}</strong><p>{notice.body}</p></div>
+                  {safeHref ? <button type="button" disabled={pending} onClick={() => openNotification(notice, safeHref)}>Open<ChevronRight size={14} /></button> : null}
+                  <time>{new Intl.DateTimeFormat("en", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(notice.sentAt))}</time>
+                </article>
+              );
+            })}
+          </section>
+        )) : (
           <section className={styles.empty}><Bell size={24} /><h2>You&apos;re all caught up</h2><p>There are no notifications under this filter.</p></section>
         )}
       </div>

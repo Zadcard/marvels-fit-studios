@@ -12,3 +12,14 @@ export async function listNotifications(recipientId: string) {
   if (error) throw error;
   return data;
 }
+
+export async function countUnreadNotifications(recipientId: string) {
+  const { count, error } = await getSupabaseServerClient()
+    .from("Notification")
+    .select("id", { count: "exact", head: true })
+    .eq("recipientId", recipientId)
+    .is("readAt", null)
+    .neq("status", "FAILED");
+  if (error) throw error;
+  return count ?? 0;
+}

@@ -524,6 +524,12 @@ body:has(.ops-viewport) [role="dialog"] :focus-visible {
   color: var(--ops-text) !important;
 }
 
+.ops-content [class*="__search"] input,
+.ops-content [class*="__searchRow"] input {
+  border: 0 !important;
+  background-color: transparent !important;
+}
+
 .ops-content :is(
   [class*="__filterStrip"],
   [class*="__dossier"],

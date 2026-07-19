@@ -5,8 +5,10 @@ import { DashboardRoleShell } from "@/components/dashboard/dashboard-role-shell"
 import { getDashboardHomeForUserRole } from "@/lib/auth/authorization-policy";
 import { requireRole } from "@/lib/auth/session";
 import { dashboardCommandRepository } from "@/lib/repositories/dashboard-command-repository";
+import { countUnreadNotifications } from "@/lib/repositories/notification-repository";
 import { UserRole } from "@/lib/supabase/domain";
 import { getInitials } from "@/lib/utils";
+import { withSupabaseFallback } from "@/lib/supabase/errors";
 
 export default async function CoachDashboardLayout({
   children,
@@ -33,6 +35,10 @@ export default async function CoachDashboardLayout({
   const commandItems = await dashboardCommandRepository.listForCoachUserId(
     user.id,
   );
+  const unreadNotifications = await withSupabaseFallback(
+    () => countUnreadNotifications(user.id),
+    0,
+  );
 
   return (
     <DashboardRoleShell
@@ -43,6 +49,7 @@ export default async function CoachDashboardLayout({
         initials: getInitials(displayName),
       }}
       commandItems={commandItems}
+      navBadges={{ "/coach/alerts": unreadNotifications }}
     >
       {children}
     </DashboardRoleShell>

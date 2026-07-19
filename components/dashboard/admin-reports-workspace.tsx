@@ -11,6 +11,18 @@ import styles from "./admin-reports-workspace.module.css";
 
 const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "EGP", maximumFractionDigits: 0 });
 
+const rangePresets = [
+  { label: "Week", days: 6 },
+  { label: "Month", days: 29 },
+  { label: "Quarter", days: 89 },
+] as const;
+
+function addDaysToDateOnly(value: string, days: number) {
+  const date = new Date(`${value}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
 function Breakdown({ title, items, empty }: { title: string; items: AdminReportBreakdown[]; empty: string }) {
   const max = Math.max(1, ...items.map((item) => item.amount));
   return <section className={styles.panel}><header><h2>{title}</h2></header><div className={styles.breakdown}>{items.length ? items.map((item) => <div key={item.key}><span>{item.label}<small>{item.count} entries</small></span><b>{money.format(item.amount)}</b><i><em style={{ width: `${item.amount / max * 100}%` }} /></i></div>) : <p className={styles.empty}>{empty}</p>}</div></section>;
@@ -43,8 +55,22 @@ export function AdminReportsWorkspace({ data }: { data: AdminReportData }) {
     });
   }
 
+  const activePreset = rangePresets.find(
+    (preset) => addDaysToDateOnly(data.range.to, -preset.days) === data.range.from,
+  )?.label;
+
   return <div className={styles.page}>
     <section className={styles.toolbar}>
+      <div className={styles.rangeToggle}>{rangePresets.map((preset) => (
+        <button
+          key={preset.label}
+          type="button"
+          data-active={activePreset === preset.label || undefined}
+          onClick={() => router.push(`/admin/reports?from=${addDaysToDateOnly(data.range.to, -preset.days)}&to=${data.range.to}`)}
+        >
+          {preset.label}
+        </button>
+      ))}</div>
       <form method="get" action="/admin/reports"><label>From<input name="from" type="date" defaultValue={data.range.from} /></label><label>To<input name="to" type="date" defaultValue={data.range.to} /></label><button type="submit">Apply range</button></form>
       <a href={exportHref}><Download size={15} /> Export CSV</a>
       <AdminCashOutDialog />
@@ -53,7 +79,7 @@ export function AdminReportsWorkspace({ data }: { data: AdminReportData }) {
     {message ? <p className={styles.success} role="status">{message}</p> : null}
 
     <section className={styles.kpis} aria-label="Report summary">
-      <article><span><BanknoteArrowUp size={15} /> Income</span><strong>{money.format(data.summary.income)}</strong><small>{data.summary.paymentCount} payments</small></article>
+      <article><span><BanknoteArrowUp size={15} /> Income</span><strong>{money.format(data.summary.income)}</strong><small>{data.summary.paymentCount} {data.summary.paymentCount === 1 ? "payment" : "payments"}</small></article>
       <article><span><BanknoteArrowDown size={15} /> Expenses</span><strong>{money.format(data.summary.expenses)}</strong><small>Posted cash out</small></article>
       <article data-tone={data.summary.net >= 0 ? "positive" : "negative"}><span><Scale size={15} /> Net</span><strong>{money.format(data.summary.net)}</strong><small>Income minus expenses</small></article>
       <article><span><UsersRound size={15} /> Attendance</span><strong>{data.summary.attendanceRate}%</strong><small>{data.summary.attended} attended &middot; {data.summary.missed} missed</small></article>
@@ -66,7 +92,7 @@ export function AdminReportsWorkspace({ data }: { data: AdminReportData }) {
     <section className={styles.panel}><header><div><h2>Coach load &amp; occupancy</h2><p>{data.summary.sessionCount} non-canceled sessions in range</p></div></header><div className={styles.tableWrap}><table><thead><tr><th>Coach</th><th>Sessions</th><th>Scheduled</th><th>Attended seats</th><th>Avg. occupancy</th></tr></thead><tbody>{data.coaches.length ? data.coaches.map((coach) => <tr key={coach.id}><td>{coach.fullName}</td><td>{coach.sessionCount}</td><td>{coach.scheduledHours} hr</td><td>{coach.attendedSeats}</td><td><span className={styles.occupancy}><i><em style={{ width: `${coach.occupancyPercent}%` }} /></i>{coach.occupancyPercent}%</span></td></tr>) : <tr><td colSpan={5} className={styles.empty}>No sessions in this range.</td></tr>}</tbody></table></div></section>
 
     <div className={styles.twoColumns}>
-      <section className={styles.panel}><header><div><h2>Expense ledger</h2><p>Posted entries are corrected by voiding, never deletion.</p></div></header><div className={styles.expenses}>{data.recentExpenses.length ? data.recentExpenses.slice(0, 12).map((expense) => <article key={expense.id} data-void={expense.status === "VOID" || undefined}><span><strong>{expense.description}</strong><small>{expense.expenseNumber} &middot; {expense.categoryLabel} &middot; {expense.methodLabel}</small><small>{expense.occurredAtLabel} &middot; {expense.createdByLabel}{expense.reference ? ` · Ref ${expense.reference}` : ""}</small>{expense.voidReason ? <small>Void reason: {expense.voidReason}</small> : null}</span><b>{money.format(expense.amount)}</b>{expense.status === "POSTED" ? voidingId === expense.id ? <div className={styles.voidForm}><input maxLength={300} value={reason} onChange={(event) => setReason(event.target.value)} placeholder="Audit reason" /><button type="button" onClick={voidExpense} disabled={pending || reason.trim().length < 2}>Confirm void</button><button type="button" onClick={() => { setVoidingId(null); setReason(""); }}>Cancel</button></div> : <button type="button" onClick={() => { setVoidingId(expense.id); setReason(""); }}>Void</button> : <em>Void</em>}</article>) : <p className={styles.empty}>No expenses in this range.</p>}</div></section>
+      <section className={styles.panel}><header><div><h2>Expense ledger</h2><p>Posted entries are corrected by voiding, never deletion.</p></div></header><div className={styles.expenses}>{data.recentExpenses.length ? data.recentExpenses.slice(0, 12).map((expense) => <article key={expense.id} data-void={expense.status === "VOID" || undefined}><span><strong>{expense.description}</strong><small>{expense.expenseNumber} &middot; {expense.categoryLabel}</small><small>{expense.occurredAtLabel} &middot; {expense.createdByLabel}{expense.reference ? ` · Ref ${expense.reference}` : ""}</small>{expense.voidReason ? <small>Void reason: {expense.voidReason}</small> : null}</span><b>{money.format(expense.amount)}</b>{expense.status === "POSTED" ? voidingId === expense.id ? <div className={styles.voidForm}><input maxLength={300} value={reason} onChange={(event) => setReason(event.target.value)} placeholder="Audit reason" /><button type="button" onClick={voidExpense} disabled={pending || reason.trim().length < 2}>Confirm void</button><button type="button" onClick={() => { setVoidingId(null); setReason(""); }}>Cancel</button></div> : <button type="button" onClick={() => { setVoidingId(expense.id); setReason(""); }}>Void</button> : <em>Void</em>}</article>) : <p className={styles.empty}>No expenses in this range.</p>}</div></section>
       <section className={styles.panel}><header><div><h2>Payment ledger reconciliation</h2><p>Payment rows compared with posted payment-ledger entries.</p></div></header><dl className={styles.reconciliation}><div><dt>Payment table</dt><dd>{money.format(data.reconciliation.paymentTotal)}</dd></div><div><dt>Billing ledger</dt><dd>{money.format(data.reconciliation.ledgerPaymentTotal)}</dd></div><div data-alert={data.reconciliation.difference !== 0 || undefined}><dt>Difference</dt><dd>{money.format(data.reconciliation.difference)}</dd></div><div data-alert={data.reconciliation.missingLedgerCount > 0 || undefined}><dt>Payments missing ledger entry</dt><dd>{data.reconciliation.missingLedgerCount}</dd></div></dl></section>
     </div>
   </div>;

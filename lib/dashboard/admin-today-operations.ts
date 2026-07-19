@@ -36,6 +36,7 @@ export type AdminTodayRenewal = {
   planName: string;
   amountLabel: string;
   dueLabel: string;
+  methodLabel?: string;
 };
 
 export type AdminTodayPayment = {

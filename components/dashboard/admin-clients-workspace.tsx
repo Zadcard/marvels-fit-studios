@@ -42,6 +42,7 @@ import {
   PasswordResetLinkDialog,
   type PasswordResetLink,
 } from "./password-reset-link-dialog";
+import { useDashboardToast } from "./dashboard-toast-provider";
 import styles from "./admin-clients-workspace.module.css";
 
 type Props = {
@@ -95,6 +96,8 @@ const emptyForm: ClientForm = {
   restrictions: "",
 };
 
+const clientSegments = ["All", "Active", "Trial", "Paused", "Inactive", "Injuries"] as const;
+
 function initials(name: string) {
   return name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
 }
@@ -131,6 +134,7 @@ export function AdminClientsWorkspace({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { showToast } = useDashboardToast();
   const [isPending, startTransition] = useTransition();
   const [search, setSearch] = useState(searchValue);
   const [filters, setFilters] = useState<LocalFilters>({ status: "All", membership: "All", payment: "All", category: "All" });
@@ -145,12 +149,23 @@ export function AdminClientsWorkspace({
   const [resetLink, setResetLink] = useState<PasswordResetLink | null>(null);
   const [resetError, setResetError] = useState("");
 
+  const [segment, setSegment] = useState<(typeof clientSegments)[number]>("All");
+
   const filtered = useMemo(() => records.filter((record) =>
     (filters.status === "All" || record.status === filters.status) &&
     (filters.membership === "All" || record.membership === filters.membership) &&
     (filters.payment === "All" || record.paymentStatus === filters.payment) &&
-    (filters.category === "All" || record.trainingCategory === filters.category)
-  ), [records, filters]);
+    (filters.category === "All" || record.trainingCategory === filters.category) &&
+    (segment === "All" ||
+      (segment === "Injuries" ? record.hasInjuryAlert : record.status === segment))
+  ), [records, filters, segment]);
+
+  const summary = useMemo(() => ({
+    total: records.length,
+    active: records.filter((record) => record.status === "Active").length,
+    trial: records.filter((record) => record.status === "Trial").length,
+    injuries: records.filter((record) => record.hasInjuryAlert).length,
+  }), [records]);
   const paginated = paginateDashboardItems(filtered, currentPage);
   const detail = records.find((record) => record.id === detailId) ?? null;
   const editing = records.find((record) => record.id === editingId) ?? null;
@@ -220,11 +235,21 @@ export function AdminClientsWorkspace({
         if (result.credentials) {
           setCredentials({ accountType: "client", ...result.credentials });
         }
+        showToast(editingId ? "Member updated." : "Member added.");
         router.refresh();
       } catch (caught) {
-        setError(caught instanceof Error ? caught.message : "Could not save the member.");
+        const description = caught instanceof Error ? caught.message : "Could not save the member.";
+        setError(description);
+        showToast(description, "warning");
       }
     });
+  }
+
+  function openDelete(record: AdminClientRecord) {
+    setEditingId(record.id);
+    setDeleteText("");
+    setError("");
+    setDeleteOpen(true);
   }
 
   function confirmDelete() {
@@ -237,9 +262,12 @@ export function AdminClientsWorkspace({
         setEditorOpen(false);
         setDetailId(null);
         setDeleteText("");
+        showToast("Member deleted.");
         router.refresh();
       } catch (caught) {
-        setError(caught instanceof Error ? caught.message : "Could not delete the member.");
+        const description = caught instanceof Error ? caught.message : "Could not delete the member.";
+        setError(description);
+        showToast(description, "warning");
       }
     });
   }
@@ -267,6 +295,19 @@ export function AdminClientsWorkspace({
 
   return (
     <div className={styles.page} aria-busy={isPending}>
+      <section className={styles.summary} aria-label="Client summary">
+        <article><span>Total</span><strong>{summary.total}</strong></article>
+        <article><span>Active</span><strong>{summary.active}</strong></article>
+        <article><span>On trial</span><strong>{summary.trial}</strong></article>
+        <article data-tone="warning"><span>Injuries</span><strong>{summary.injuries}</strong></article>
+      </section>
+
+      <div className={styles.segments} aria-label="Filter members by segment">
+        {clientSegments.map((option) => (
+          <button key={option} type="button" data-active={segment === option || undefined} onClick={() => setSegment(option)}>{option}</button>
+        ))}
+      </div>
+
       <section className={styles.roster}>
         <header className={styles.rosterToolbar}>
           <div><h2>Client roster</h2><p>Know every member</p></div>
@@ -288,15 +329,19 @@ export function AdminClientsWorkspace({
 
         {paginated.items.length ? (
           <div className={styles.rosterTable}>
-            <div className={styles.rosterHead}><span>Client</span><span>Category</span><span>Coach</span><span>Status</span><span>Phone</span><span /></div>
+            <div className={styles.rosterHead}><span>Client</span><span>Category</span><span>Coach</span><span>Sessions left</span><span>Status</span><span>Phone</span><span /></div>
             {paginated.items.map((record) => (
               <article className={styles.rosterRow} key={record.id}>
                 <button type="button" className={styles.clientCell} onClick={() => setDetailId(record.id)} aria-label={`Open ${record.fullName}`}><span className={styles.avatar}>{initials(record.fullName)}</span><span><strong>{record.fullName}</strong>{record.hasInjuryAlert ? <small className={styles.warning}>⚠ {record.injuryStatus}</small> : <small>{record.clientId}</small>}</span></button>
                 <span className={styles.stack}><strong>{record.trainingCategory}</strong><small>{record.membership}</small></span>
                 <span className={styles.coachCell}><i>{initials(record.assignedCoach)}</i>{record.assignedCoach}</span>
+                <span className={styles.sessions}><strong>{record.sessionsLeft}</strong><small>of {record.sessionsTotal}</small><em><b style={{ width: `${Math.min(100, record.sessionsTotal ? (record.sessionsLeft / record.sessionsTotal) * 100 : 0)}%` }} /></em></span>
                 <span className={`${styles.state} ${tone(record.status)}`}>{record.status}</span>
                 <span className={styles.phone}>{record.phone || "—"}</span>
-                <button type="button" className={styles.editRow} onClick={() => openEdit(record)} aria-label={`Edit ${record.fullName}`}><Pencil size={15} /></button>
+                <span className={styles.rowActions}>
+                  <button type="button" className={styles.editRow} onClick={() => openEdit(record)} aria-label={`Edit ${record.fullName}`}><Pencil size={15} /></button>
+                  <button type="button" className={styles.deleteRow} onClick={() => openDelete(record)} aria-label={`Delete ${record.fullName}`}><Trash2 size={15} /></button>
+                </span>
               </article>
             ))}
           </div>

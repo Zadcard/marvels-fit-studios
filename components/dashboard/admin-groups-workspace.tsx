@@ -19,6 +19,7 @@ import {
   adminTrainingCategoryFilters,
 } from "@/lib/dashboard/admin-dashboard-data";
 import { trainingCategoryLabels } from "@/lib/dashboard/client-domain-labels";
+import { useDashboardToast } from "./dashboard-toast-provider";
 import styles from "./admin-groups-workspace.module.css";
 
 type Props = {
@@ -73,18 +74,13 @@ function gradientFor(name: string) {
   return AVATAR_GRADIENTS[hash];
 }
 
-function fillColor(percent: number) {
-  if (percent >= 100) return "var(--ops-danger)";
-  if (percent >= 85) return "var(--ops-warning)";
-  return "linear-gradient(90deg,#e62429,#ff4f54)";
-}
-
 export function AdminGroupsWorkspace({
   records,
   coachOptions,
   clientOptions,
 }: Props) {
   const router = useRouter();
+  const { showToast } = useDashboardToast();
   const [isPending, startTransition] = useTransition();
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] =
@@ -152,9 +148,12 @@ export function AdminGroupsWorkspace({
       try {
         await saveAdminGroup({ groupId: editingId, ...form });
         setEditorOpen(false);
+        showToast(editingId ? "Group updated." : "Group created.");
         router.refresh();
       } catch (caught) {
-        setError(caught instanceof Error ? caught.message : "Could not save the group.");
+        const description = caught instanceof Error ? caught.message : "Could not save the group.";
+        setError(description);
+        showToast(description, "warning");
       }
     });
   }
@@ -171,9 +170,12 @@ export function AdminGroupsWorkspace({
         setDeleteOpen(false);
         setEditorOpen(false);
         setDeleteText("");
+        showToast("Group deleted.");
         router.refresh();
       } catch (caught) {
-        setError(caught instanceof Error ? caught.message : "Could not delete the group.");
+        const description = caught instanceof Error ? caught.message : "Could not delete the group.";
+        setError(description);
+        showToast(description, "warning");
       }
     });
   }
@@ -185,9 +187,12 @@ export function AdminGroupsWorkspace({
       try {
         await setAdminGroupMembership({ groupId: membersId, clientId, action });
         setAddClientId("");
+        showToast(action === "add" ? "Member added." : "Member removed.");
         router.refresh();
       } catch (caught) {
-        setError(caught instanceof Error ? caught.message : "Could not update members.");
+        const description = caught instanceof Error ? caught.message : "Could not update members.";
+        setError(description);
+        showToast(description, "warning");
       }
     });
   }
@@ -249,12 +254,6 @@ export function AdminGroupsWorkspace({
       {filtered.length ? (
         <div className={styles.grid}>
           {filtered.map((record) => {
-            const percent =
-              record.capacity && record.capacity > 0
-                ? Math.min(100, Math.round((record.memberCount / record.capacity) * 100))
-                : 0;
-            const isFull =
-              record.capacity != null && record.memberCount >= record.capacity;
             return (
               <article className={styles.card} key={record.id}>
                 <div className={styles.cardTop}>
@@ -262,13 +261,9 @@ export function AdminGroupsWorkspace({
                     <h2>{record.name}</h2>
                     <div className={styles.days}>{record.scheduleSummary}</div>
                   </div>
-                  {isFull ? (
-                    <span className={styles.fullBadge}>Full</span>
-                  ) : (
-                    <span className={styles.statusPill} data-active={record.isActive || undefined}>
-                      {record.isActive ? "Active" : "Inactive"}
-                    </span>
-                  )}
+                  <span className={styles.statusPill} data-active={record.isActive || undefined}>
+                    {record.isActive ? "Active" : "Inactive"}
+                  </span>
                 </div>
 
                 <dl className={styles.statRow}>
@@ -282,10 +277,7 @@ export function AdminGroupsWorkspace({
                   </span>
                   <div>
                     <div className={styles.coachName}>{record.coachName}</div>
-                    <div className={styles.memberCount}>{record.capacityLabel} members</div>
-                  </div>
-                  <div className={styles.bar}>
-                    <i style={{ width: `${percent}%`, background: fillColor(percent) }} />
+                    <div className={styles.memberCount}>{record.memberCount} {record.memberCount === 1 ? "member" : "members"}</div>
                   </div>
                 </div>
 

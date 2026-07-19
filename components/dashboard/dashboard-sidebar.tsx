@@ -23,6 +23,7 @@ import brandMark from "@/public/img/Logo-3.png";
 type DashboardSidebarProps = {
   role: DashboardRole;
   account?: DashboardAccountSummary;
+  navBadges?: Record<string, number>;
   onClose: () => void;
 };
 
@@ -53,7 +54,7 @@ function OpsBrand() {
   );
 }
 
-export function DashboardSidebar({ role, account, onClose }: DashboardSidebarProps) {
+export function DashboardSidebar({ role, account, navBadges, onClose }: DashboardSidebarProps) {
   const pathname = usePathname();
   const roleLabel = getDashboardRoleLabel(role);
   const navItems = getDashboardNav(role).filter((item) => item.available);
@@ -71,6 +72,8 @@ export function DashboardSidebar({ role, account, onClose }: DashboardSidebarPro
   function NavLink({ item }: { item: NavItem }) {
     const Icon = item.icon as ComponentType<{ size?: number; strokeWidth?: number }>;
     const active = isDashboardNavItemActive(item, pathname);
+    const liveBadge = navBadges?.[item.href];
+    const badge = liveBadge ? String(liveBadge) : item.badge;
     return (
       <Link
         href={item.href}
@@ -84,7 +87,7 @@ export function DashboardSidebar({ role, account, onClose }: DashboardSidebarPro
           <strong>{item.label}</strong>
           <small>{item.description}</small>
         </span>
-        {item.badge ? <b>{item.badge}</b> : null}
+        {badge ? <b>{badge}</b> : null}
       </Link>
     );
   }

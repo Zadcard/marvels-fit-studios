@@ -32,6 +32,19 @@ function dueLabel(value: Date, now: Date) {
   return `in ${days} days`;
 }
 
+function paymentMethodLabel(value: string | null | undefined) {
+  switch (value) {
+    case "INSTA_PAY":
+      return "InstaPay";
+    case "VISA":
+      return "Visa";
+    case "CASH":
+      return "Cash";
+    default:
+      return undefined;
+  }
+}
+
 export class AdminTodayOperationsRepository {
   async getToday(): Promise<AdminTodayOperations> {
     const supabase = getSupabaseServerClient();
@@ -67,7 +80,7 @@ export class AdminTodayOperationsRepository {
         const { data, error } = await supabase
           .from("ClientSubscription")
           .select(
-            "id,renewsAt,customPrice,status,client:Client(fullName),plan:SubscriptionPlan(name,price,currency)",
+            "id,renewsAt,customPrice,status,client:Client(fullName),plan:SubscriptionPlan(name,price,currency),payments:Payment(method,date)",
           )
           .in("status", ["ACTIVE", "TRIAL"])
           .gte("renewsAt", now.toISOString())
@@ -163,6 +176,9 @@ export class AdminTodayOperationsRepository {
       renewals: renewals.map((renewal) => {
         const renewalDate = new Date(renewal.renewsAt!);
         const amount = renewal.customPrice ?? renewal.plan.price;
+        const latestPayment = [...renewal.payments].sort((left, right) =>
+          right.date.localeCompare(left.date),
+        )[0];
         return {
           id: renewal.id,
           fullName: renewal.client.fullName,
@@ -174,6 +190,7 @@ export class AdminTodayOperationsRepository {
             maximumFractionDigits: 0,
           }).format(amount),
           dueLabel: dueLabel(renewalDate, now),
+          methodLabel: paymentMethodLabel(latestPayment?.method),
         };
       }),
       recentPayments: payments.slice(0, 5).map((payment) => ({

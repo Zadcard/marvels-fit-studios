@@ -5,8 +5,10 @@ import { DashboardRoleShell } from "@/components/dashboard/dashboard-role-shell"
 import { getDashboardHomeForUserRole } from "@/lib/auth/authorization-policy";
 import { requireRole } from "@/lib/auth/session";
 import { dashboardCommandRepository } from "@/lib/repositories/dashboard-command-repository";
+import { countUnreadNotifications } from "@/lib/repositories/notification-repository";
 import { UserRole } from "@/lib/supabase/domain";
 import { getInitials } from "@/lib/utils";
+import { withSupabaseFallback } from "@/lib/supabase/errors";
 
 export default async function AdminDashboardLayout({
   children,
@@ -32,6 +34,10 @@ export default async function AdminDashboardLayout({
   const displayName =
     user.name?.trim() || user.email?.trim() || "Studio admin";
   const commandItems = await dashboardCommandRepository.listForAdmin();
+  const unreadNotifications = await withSupabaseFallback(
+    () => countUnreadNotifications(user.id),
+    0,
+  );
 
   return (
     <DashboardRoleShell
@@ -42,6 +48,7 @@ export default async function AdminDashboardLayout({
         initials: getInitials(displayName),
       }}
       commandItems={commandItems}
+      navBadges={{ "/admin/notifications": unreadNotifications }}
     >
       {children}
     </DashboardRoleShell>

@@ -1,6 +1,6 @@
 "use client";
 
-import { LoaderCircle, ReceiptText, X } from "lucide-react";
+import { LoaderCircle, ReceiptText, Search, X } from "lucide-react";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Dialog } from "radix-ui";
@@ -11,6 +11,8 @@ import {
   type AdminPaymentMethod,
   type AdminSubscriptionRecord,
 } from "@/lib/mocks/admin-subscriptions";
+
+import { useDashboardToast } from "./dashboard-toast-provider";
 
 import styles from "./marvel-ops-groups-subscriptions.module.css";
 
@@ -30,12 +32,20 @@ export function MarvelOpsSubscriptions({
   records: AdminSubscriptionRecord[];
 }) {
   const router = useRouter();
+  const { showToast } = useDashboardToast();
   const [pending, startTransition] = useTransition();
   const [selected, setSelected] = useState<AdminSubscriptionRecord | null>(null);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [paymentMethod, setPaymentMethod] =
     useState<AdminPaymentMethod>("InstaPay");
+  const [search, setSearch] = useState("");
+  const term = search.trim().toLowerCase();
+  const visibleRecords = term
+    ? records.filter((record) =>
+        [record.memberName, record.planName].join(" ").toLowerCase().includes(term),
+      )
+    : records;
 
   const confirmMutation = () => {
     if (!selected) return;
@@ -53,13 +63,14 @@ export function MarvelOpsSubscriptions({
         );
         setMessage(result.message);
         setSelected(null);
+        showToast(result.message);
         router.refresh();
       } catch (reason) {
-        setError(
-          reason instanceof Error
-            ? reason.message
-            : "The subscription could not be updated.",
-        );
+        const description = reason instanceof Error
+          ? reason.message
+          : "The subscription could not be updated.";
+        setError(description);
+        showToast(description, "warning");
       }
     });
   };
@@ -95,7 +106,11 @@ export function MarvelOpsSubscriptions({
       <section className={styles.table}>
         <header>
           <h2>Members &amp; renewals</h2>
-          <span>Expiring first</span>
+          <label className={styles.search}>
+            <Search size={16} />
+            <span className="sr-only">Search members</span>
+            <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Member or plan" />
+          </label>
         </header>
         <div className={styles.head}>
           <span>Member</span>
@@ -103,9 +118,9 @@ export function MarvelOpsSubscriptions({
           <span>Sessions left</span>
           <span>Method</span>
           <span>Renews</span>
-          <span />
+          <span>Action</span>
         </div>
-        {records.map((record) => (
+        {visibleRecords.map((record) => (
           <SubscriptionRow
             key={record.id}
             record={record}
@@ -126,6 +141,13 @@ export function MarvelOpsSubscriptions({
               Seed or create client subscriptions in the database to populate
               this workspace.
             </p>
+          </article>
+        </section>
+      ) : !visibleRecords.length ? (
+        <section className={styles.money}>
+          <article>
+            <h2>No matches</h2>
+            <p>Change the search to find a different member or plan.</p>
           </article>
         </section>
       ) : null}
