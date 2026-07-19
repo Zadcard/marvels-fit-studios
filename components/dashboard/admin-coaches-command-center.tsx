@@ -45,6 +45,13 @@ function loadLevel(load: number) {
   return load >= 80 ? "high" : load >= 50 ? "mid" : "low";
 }
 
+function coachState(coach: AdminCoachRecord) {
+  if (coach.conflicts) return { label: "Conflict", className: styles.danger };
+  if (!coach.sessionsThisWeek) return { label: "Unscheduled", className: styles.warning };
+  if (coach.openSlots <= 1) return { label: "At capacity", className: styles.dark };
+  return { label: "Available", className: styles.success };
+}
+
 export function AdminCoachesCommandCenter({ records }: { records: AdminCoachRecord[] }) {
   const router = useRouter();
   const { showToast } = useDashboardToast();
