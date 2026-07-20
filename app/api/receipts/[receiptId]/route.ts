@@ -21,6 +21,21 @@ function paymentMethodLabel(value: string | null | undefined) {
   }
 }
 
+function billingCycleLabel(value: string | null | undefined, cycleMonths: number | null | undefined) {
+  if (value === "WEEKLY") return "Weekly";
+  if (cycleMonths && cycleMonths > 1) return "Quarterly";
+  return "Monthly";
+}
+
+function trainingCategoryLabel(value: string | null | undefined) {
+  if (!value) return "Not set";
+  return value
+    .toLowerCase()
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
 export async function GET(
   _request: Request,
   context: RouteContext<"/api/receipts/[receiptId]">,
@@ -39,7 +54,7 @@ export async function GET(
   const supabase = getSupabaseServerClient();
   const { data, error } = await supabase
     .from("BillingLedgerEntry")
-    .select("id, receiptNumber, type, status, amount, currency, description, occurredAt, payment:Payment(method), client:Client(id,fullName,userId), subscription:ClientSubscription(plan:SubscriptionPlan(name))")
+    .select("id, receiptNumber, type, status, amount, currency, description, occurredAt, payment:Payment(method), createdBy:User!BillingLedgerEntry_createdById_fkey(name), client:Client(id,fullName,phone,userId,trainingCategory,group:Group(name,coach:Coach(fullName))), subscription:ClientSubscription(startsAt,renewsAt,sessionsTotal,cycleMonths,plan:SubscriptionPlan(name,billingCycle))")
     .eq("id", receiptId)
     .maybeSingle();
   if (error) throw error;
@@ -58,10 +73,41 @@ export async function GET(
 
   let html = stored.data?.content;
   if (!html) {
+    const dateFormatter = new Intl.DateTimeFormat("en-US", { dateStyle: "long", timeZone: "Africa/Cairo" });
     const amount = new Intl.NumberFormat("en-US", { style: "currency", currency: data.currency }).format(Number(data.amount));
     const occurredAt = new Intl.DateTimeFormat("en-US", { dateStyle: "long", timeStyle: "short", timeZone: "Africa/Cairo" }).format(new Date(data.occurredAt));
     const paymentMethod = paymentMethodLabel(data.payment?.method);
-    html = `<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(data.receiptNumber)}</title><style>body{font:16px system-ui;max-width:720px;margin:48px auto;padding:24px;color:#171717}header{border-bottom:2px solid #e45f65;margin-bottom:32px}dl{display:grid;grid-template-columns:180px 1fr;gap:14px}dt{color:#666}dd{margin:0;font-weight:600}@media print{button{display:none}}</style></head><body><header><h1>Marvel Fitness Studio</h1><p>Payment receipt</p></header><dl><dt>Receipt</dt><dd>${escapeHtml(data.receiptNumber)}</dd><dt>Client</dt><dd>${escapeHtml(data.client.fullName)}</dd><dt>Plan</dt><dd>${escapeHtml(data.subscription?.plan.name ?? "Membership")}</dd><dt>Type</dt><dd>${escapeHtml(data.type)}</dd><dt>Status</dt><dd>${escapeHtml(data.status)}</dd><dt>Paid with</dt><dd>${escapeHtml(paymentMethod)}</dd><dt>Amount</dt><dd>${escapeHtml(amount)}</dd><dt>Date</dt><dd>${escapeHtml(occurredAt)}</dd><dt>Description</dt><dd>${escapeHtml(data.description)}</dd></dl><p><button onclick="window.print()">Print receipt</button></p></body></html>`;
+    const subscription = data.subscription;
+    const billingCycle = billingCycleLabel(subscription?.plan.billingCycle, subscription?.cycleMonths);
+    const sessionsPerMonth = subscription?.sessionsTotal != null ? `${subscription.sessionsTotal} / month` : "Not set";
+    const subscriptionStart = subscription?.startsAt ? dateFormatter.format(new Date(subscription.startsAt)) : "—";
+    const subscriptionEnd = subscription?.renewsAt ? dateFormatter.format(new Date(subscription.renewsAt)) : "—";
+    const group = data.client.group?.name ?? "No group";
+    const coach = data.client.group?.coach?.fullName ?? "Unassigned";
+    const category = trainingCategoryLabel(data.client.trainingCategory);
+    const creator = data.createdBy?.name ?? "System";
+    const rows: Array<[string, string]> = [
+      ["Receipt", data.receiptNumber],
+      ["Client", data.client.fullName],
+      ["Phone", data.client.phone ?? "Not recorded"],
+      ["Plan", subscription?.plan.name ?? "Membership"],
+      ["Billing", billingCycle],
+      ["Sessions", sessionsPerMonth],
+      ["Subscription start", subscriptionStart],
+      ["Subscription end", subscriptionEnd],
+      ["Group", group],
+      ["Category", category],
+      ["Coach", coach],
+      ["Paid with", paymentMethod],
+      ["Amount", amount],
+      ["Payment date", occurredAt],
+      ["Recorded by", creator],
+      ["Description", data.description],
+    ];
+    const rowsHtml = rows
+      .map(([label, value]) => `<dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd>`)
+      .join("");
+    html = `<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(data.receiptNumber)}</title><style>*{box-sizing:border-box}body{font:16px system-ui;max-width:720px;margin:48px auto;padding:24px;color:#171717;background:#fff}header{border-bottom:2px solid #e45f65;margin-bottom:32px}header h1{margin:0 0 4px}header p{margin:0;color:#666}dl{display:grid;grid-template-columns:180px 1fr;gap:12px 14px}dt{color:#666}dd{margin:0;font-weight:600}footer{margin-top:32px}@media print{body{margin:0;padding:16px}button{display:none}}</style></head><body><header><h1>Marvel Fitness Studio</h1><p>Payment receipt</p></header><dl>${rowsHtml}</dl><footer><button onclick="window.print()">Print receipt</button></footer></body></html>`;
     const persisted = await supabase.from("Receipt").upsert(
       {
         billingLedgerEntryId: data.id,

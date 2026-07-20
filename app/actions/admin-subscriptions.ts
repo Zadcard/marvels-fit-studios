@@ -122,15 +122,20 @@ export async function createAdminSubscription(input: CreateAdminSubscriptionInpu
   if (!price) throw new Error("Enter a valid subscription price.");
 
   const months = input.durationMonths;
-  const sessionsTotal = input.sessionsPerMonth * months;
+  // Sessions are a per-month allowance regardless of billing duration: a
+  // quarterly plan with 20 sessions/month grants 20 each month, not 60 for
+  // the whole quarter (the monthly reset is handled by
+  // reconcile_subscription_session_windows via nextSessionResetAt below).
+  const sessionsTotal = input.sessionsPerMonth;
   const slug = `${months === 1 ? "monthly" : "quarterly"}-${input.sessionsPerMonth}-per-month`;
 
-  let { data: plan, error: planError } = await supabase
+  const { data: planLookup, error: planError } = await supabase
     .from("SubscriptionPlan")
     .select("id")
     .eq("slug", slug)
     .maybeSingle();
   if (planError) throw planError;
+  let plan = planLookup;
   if (!plan) {
     const inserted = await supabase
       .from("SubscriptionPlan")
@@ -163,6 +168,10 @@ export async function createAdminSubscription(input: CreateAdminSubscriptionInpu
   const startsAt = new Date();
   const renewsAt = new Date(startsAt);
   renewsAt.setMonth(renewsAt.getMonth() + months);
+  // Quarterly plans reset the session allowance every month; the monthly
+  // marker is null for monthly plans since renewsAt already does the job.
+  const nextSessionResetAt =
+    months > 1 ? new Date(new Date(startsAt).setMonth(startsAt.getMonth() + 1)) : null;
 
   const { data: subscription, error: subscriptionError } = await supabase
     .from("ClientSubscription")
@@ -175,6 +184,8 @@ export async function createAdminSubscription(input: CreateAdminSubscriptionInpu
       sessionsTotal,
       isAutoRenew: true,
       customPrice: price,
+      cycleMonths: months,
+      nextSessionResetAt: nextSessionResetAt ? nextSessionResetAt.toISOString() : null,
     })
     .select("id")
     .single();

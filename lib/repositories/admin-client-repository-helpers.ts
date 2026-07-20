@@ -12,6 +12,7 @@ import {
   trainingCategoryLabelFor,
   trialOutcomeLabelFor,
 } from "@/lib/dashboard/client-domain-labels";
+import { computeSubscriptionUrgency } from "@/lib/dashboard/subscription-status";
 import type {
   ClientLifecycleStatus,
   InjuryStatus,
@@ -83,6 +84,7 @@ export type AdminClientListRecord = {
   subscriptions: Array<{
     id: string;
     status: string;
+    renewsAt: Date | null;
     sessionsTotal: number | null;
     plan: {
       name: string;
@@ -290,6 +292,9 @@ export function mapAdminClientRecord(client: AdminClientListRecord): AdminClient
     client.group?.coach.fullName ??
       nextBooking?.trainingSession.coach.fullName ??
       "Unassigned";
+  const { subscriptionStatus, daysRemaining } = computeSubscriptionUrgency(
+    client.subscriptions[0] ?? null
+  );
 
   return {
     id: client.id,
@@ -302,6 +307,8 @@ export function mapAdminClientRecord(client: AdminClientListRecord): AdminClient
     status: mapClientStatus(client.status),
     trialOutcome: trialOutcomeLabelFor(client.trialOutcome),
     paymentStatus: inferPaymentStatus(client),
+    subscriptionStatus,
+    subscriptionDaysRemaining: daysRemaining,
     injuryStatus: injuryStatusLabelFor(client.injuryStatus),
     injuryNotes: client.injuryNotes?.trim() ?? "",
     restrictions: client.restrictions?.trim() ?? "",

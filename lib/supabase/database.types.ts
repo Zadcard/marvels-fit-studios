@@ -523,9 +523,11 @@ export type Database = {
           clientId: string
           createdAt: string
           customPrice: number | null
+          cycleMonths: number
           endsAt: string | null
           id: string
           isAutoRenew: boolean
+          nextSessionResetAt: string | null
           planId: string
           renewsAt: string | null
           sessionsTotal: number | null
@@ -538,9 +540,11 @@ export type Database = {
           clientId: string
           createdAt?: string
           customPrice?: number | null
+          cycleMonths?: number
           endsAt?: string | null
           id?: string
           isAutoRenew?: boolean
+          nextSessionResetAt?: string | null
           planId: string
           renewsAt?: string | null
           sessionsTotal?: number | null
@@ -553,9 +557,11 @@ export type Database = {
           clientId?: string
           createdAt?: string
           customPrice?: number | null
+          cycleMonths?: number
           endsAt?: string | null
           id?: string
           isAutoRenew?: boolean
+          nextSessionResetAt?: string | null
           planId?: string
           renewsAt?: string | null
           sessionsTotal?: number | null
@@ -784,9 +790,14 @@ export type Database = {
           email: string | null
           fullName: string
           id: string
+          interestedCategory:
+            | Database["public"]["Enums"]["TrainingCategory"]
+            | null
+          lostReason: string | null
           message: string | null
           passwordHash: string | null
           phone: string
+          preferredAvailability: string | null
           source: string
           status: Database["public"]["Enums"]["LeadStatus"]
           trialGroupId: string | null
@@ -798,9 +809,14 @@ export type Database = {
           email?: string | null
           fullName: string
           id?: string
+          interestedCategory?:
+            | Database["public"]["Enums"]["TrainingCategory"]
+            | null
+          lostReason?: string | null
           message?: string | null
           passwordHash?: string | null
           phone: string
+          preferredAvailability?: string | null
           source?: string
           status?: Database["public"]["Enums"]["LeadStatus"]
           trialGroupId?: string | null
@@ -812,9 +828,14 @@ export type Database = {
           email?: string | null
           fullName?: string
           id?: string
+          interestedCategory?:
+            | Database["public"]["Enums"]["TrainingCategory"]
+            | null
+          lostReason?: string | null
           message?: string | null
           passwordHash?: string | null
           phone?: string
+          preferredAvailability?: string | null
           source?: string
           status?: Database["public"]["Enums"]["LeadStatus"]
           trialGroupId?: string | null
@@ -2282,6 +2303,10 @@ export type Database = {
         }[]
       }
       check_auth_throttle: { Args: { p_key_hash: string }; Returns: Json }
+      close_lead_as_lost: {
+        Args: { target_lead_id: string; target_reason: string }
+        Returns: undefined
+      }
       consume_password_reset_grant: {
         Args: { p_password_hash: string; p_token_hash: string }
         Returns: boolean
@@ -2333,6 +2358,7 @@ export type Database = {
           p_reason: string
           p_source_session_id?: string
           p_target_session_id?: string
+          p_to_group_id?: string
           p_to_weekdays?: number[]
         }
         Returns: string
@@ -2343,6 +2369,10 @@ export type Database = {
       }
       reconcile_client_subscription_lifecycle: {
         Args: { target_client_id: string }
+        Returns: undefined
+      }
+      reconcile_subscription_session_windows: {
+        Args: never
         Returns: undefined
       }
       record_auth_attempt: {

@@ -8,6 +8,7 @@ import {
   lifecycleStatusLabels,
   trainingCategoryLabels,
 } from "@/lib/dashboard/client-domain-labels";
+import type { SubscriptionUrgencyStatus } from "@/lib/dashboard/subscription-status";
 
 export type AdminClientStatus = LifecycleStatusLabel;
 export type AdminClientMembership =
@@ -28,6 +29,8 @@ export type AdminClientRecord = {
   trialOutcome: TrialOutcomeLabel;
   paymentStatus: AdminPaymentStatus;
   paymentAmountLabel: string;
+  subscriptionStatus: SubscriptionUrgencyStatus;
+  subscriptionDaysRemaining: number | null;
   sessionsLeft: number;
   sessionsTotal: number;
   injuryStatus: InjuryStatusLabel;
@@ -61,6 +64,10 @@ export const adminClientStatusFilters: Array<"All" | AdminClientStatus> = [
   ...lifecycleStatusLabels,
 ];
 
+export const adminClientSubscriptionUrgencyFilters: Array<
+  "All" | SubscriptionUrgencyStatus
+> = ["All", "Expiring", "Active", "Inactive"];
+
 export const adminClientMembershipFilters: Array<
   "All" | AdminClientMembership
 > = ["All", "Group Membership", "Private Coaching", "Hybrid"];
@@ -89,6 +96,9 @@ export type AdminLeadRecord = {
   createdAt: string;
   message: string;
   trialGroupId: string | null;
+  interestedCategory: TrainingCategoryLabel | null;
+  preferredAvailability: string | null;
+  lostReason: string | null;
 };
 
 export const adminLeadStatusFilters: Array<"All" | AdminLeadStatus> = [

@@ -1,17 +1,20 @@
-export type AdminLeadSource =
-  | "Admin"
-  | "WhatsApp"
-  | "Instagram"
-  | "Call"
-  | "On-ground"
-  | "Other";
+export const adminLeadSources = [
+  "Instagram",
+  "WhatsApp",
+  "Phone",
+  "Facebook Messenger",
+  "Walk-in",
+  "Other",
+] as const;
+
+export type AdminLeadSource = (typeof adminLeadSources)[number];
 
 export function normalizeLeadSource(source: string): AdminLeadSource {
   const value = source.trim().toLowerCase();
-  if (value.includes("admin")) return "Admin";
-  if (value.includes("whatsapp") || value === "wa") return "WhatsApp";
   if (value.includes("instagram")) return "Instagram";
-  if (value.includes("call")) return "Call";
-  if (value.includes("ground") || value.includes("walk")) return "On-ground";
+  if (value.includes("whatsapp") || value === "wa") return "WhatsApp";
+  if (value.includes("messenger") || value.includes("facebook")) return "Facebook Messenger";
+  if (value.includes("phone") || value.includes("call")) return "Phone";
+  if (value.includes("walk") || value.includes("ground")) return "Walk-in";
   return "Other";
 }

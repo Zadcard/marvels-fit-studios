@@ -107,6 +107,14 @@ function mapPaymentStatus(record: {
   return record.client.isPaid ? "Paid" : "Manual review";
 }
 
+// Sort urgency: Pending renewal (expiring soonest first), then Active, then
+// everything else (Trial/Paused/Canceled) last.
+function subscriptionUrgencyRank(status: AdminSubscriptionStatus): number {
+  if (status === "Pending renewal") return 0;
+  if (status === "Active") return 1;
+  return 2;
+}
+
 function mapBillingCycleLabel(value: string) {
   return value.charAt(0) + value.slice(1).toLowerCase();
 }
@@ -150,6 +158,10 @@ export class AdminSubscriptionRepository {
         const now = new Date();
         const in7Days = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+        // Self-heals quarterly session windows on every read (cheap no-op
+        // when nothing is due) instead of relying on a cron job.
+        await supabase.rpc("reconcile_subscription_session_windows");
 
         const [
           subscriptionsResult,
@@ -303,6 +315,18 @@ export class AdminSubscriptionRepository {
               note: payment.note ?? "Payment recorded.",
             })),
           } satisfies AdminSubscriptionRecord;
+        });
+
+        // Expiring (Pending renewal) first, nearest renewal date first; then
+        // Active; everything else last.
+        records.sort((a, b) => {
+          const rankDiff =
+            subscriptionUrgencyRank(a.subscriptionStatus) -
+            subscriptionUrgencyRank(b.subscriptionStatus);
+          if (rankDiff !== 0) return rankDiff;
+          const aDate = a.renewalDateValue || "9999-99-99";
+          const bDate = b.renewalDateValue || "9999-99-99";
+          return aDate.localeCompare(bDate);
         });
 
         const stats: Array<{

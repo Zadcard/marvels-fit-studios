@@ -13,6 +13,7 @@ import {
   Pencil,
   Plus,
   ReceiptText,
+  RefreshCcw,
   Search,
   Trash2,
   X,
@@ -100,7 +101,7 @@ const emptyForm: ClientForm = {
   restrictions: "",
 };
 
-const clientSegments = ["All", "Active", "Trial", "Paused", "Inactive", "Injuries"] as const;
+const clientSegments = ["All", "Active", "Expiring", "Trial", "Paused", "Inactive", "Injuries"] as const;
 
 function initials(name: string) {
   return name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
@@ -108,7 +109,7 @@ function initials(name: string) {
 
 function tone(status: string) {
   if (["Active", "Paid"].includes(status)) return styles.success;
-  if (["Pending", "Due soon", "Trial"].includes(status)) return styles.warning;
+  if (["Pending", "Due soon", "Trial", "Expiring"].includes(status)) return styles.warning;
   return styles.neutral;
 }
 
@@ -160,7 +161,11 @@ export function AdminClientsWorkspace({
     (filters.payment === "All" || record.paymentStatus === filters.payment) &&
     (filters.category === "All" || record.trainingCategory === filters.category) &&
     (segment === "All" ||
-      (segment === "Injuries" ? record.hasInjuryAlert : record.status === segment))
+      (segment === "Injuries"
+        ? record.hasInjuryAlert
+        : segment === "Expiring"
+          ? record.subscriptionStatus === "Expiring"
+          : record.status === segment))
   ), [records, filters, segment]);
 
   const summary = useMemo(() => ({
@@ -168,6 +173,7 @@ export function AdminClientsWorkspace({
     active: records.filter((record) => record.status === "Active").length,
     trial: records.filter((record) => record.status === "Trial").length,
     injuries: records.filter((record) => record.hasInjuryAlert).length,
+    expiring: records.filter((record) => record.subscriptionStatus === "Expiring").length,
   }), [records]);
   const paginated = paginateDashboardItems(filtered, currentPage);
   const detail = records.find((record) => record.id === detailId) ?? null;
@@ -298,6 +304,7 @@ export function AdminClientsWorkspace({
       <section className={styles.summary} aria-label="Client summary">
         <article><span>Total</span><strong>{summary.total}</strong></article>
         <article><span>Active</span><strong>{summary.active}</strong></article>
+        <article data-tone="warning"><span>Expiring soon</span><strong>{summary.expiring}</strong></article>
         <article><span>On trial</span><strong>{summary.trial}</strong></article>
         <article data-tone="warning"><span>Injuries</span><strong>{summary.injuries}</strong></article>
       </section>
@@ -331,14 +338,49 @@ export function AdminClientsWorkspace({
           <div className={styles.rosterTable}>
             <div className={styles.rosterHead}><span>Client</span><span>Category</span><span>Coach</span><span>Sessions left</span><span>Status</span><span>Phone</span><span /></div>
             {paginated.items.map((record) => (
-              <article className={styles.rosterRow} key={record.id}>
+              <article
+                className={styles.rosterRow}
+                data-subdued={record.subscriptionStatus === "Inactive" || undefined}
+                key={record.id}
+              >
                 <button type="button" className={styles.clientCell} onClick={() => setDetailId(record.id)} aria-label={`Open ${record.fullName}`}><span className={styles.avatar}>{initials(record.fullName)}</span><span><strong>{record.fullName}</strong>{record.hasInjuryAlert ? <small className={styles.warning}>⚠ {record.injuryStatus}</small> : <small>{record.phone}</small>}</span></button>
                 <span className={styles.stack}><strong>{record.trainingCategory}</strong><small>{record.membership}</small></span>
                 <span className={styles.coachCell}><i>{initials(record.assignedCoach)}</i>{record.assignedCoach}</span>
                 <span className={styles.sessions}><strong>{record.sessionsLeft}</strong><small>of {record.sessionsTotal}</small><em><b style={{ width: `${Math.min(100, record.sessionsTotal ? (record.sessionsLeft / record.sessionsTotal) * 100 : 0)}%` }} /></em></span>
-                <span className={`${styles.state} ${tone(record.status)}`}>{record.status}</span>
+                <span className={styles.stack}>
+                  <span className={`${styles.state} ${tone(record.status)}`}>{record.status}</span>
+                  <small className={tone(record.subscriptionStatus)}>
+                    {record.subscriptionStatus === "Expiring" && record.subscriptionDaysRemaining != null
+                      ? `Expiring in ${record.subscriptionDaysRemaining}d`
+                      : record.subscriptionStatus}
+                  </small>
+                </span>
                 <span className={styles.phone}>{record.phone || "—"}</span>
                 <span className={styles.rowActions}>
+                  {record.subscriptionStatus === "Inactive" ? (
+                    <>
+                      <a
+                        className={styles.editRow}
+                        href={`/admin/subscriptions?client=${record.id}`}
+                        aria-label={`Renew ${record.fullName}`}
+                        title="Renew subscription"
+                      >
+                        <RefreshCcw size={15} />
+                      </a>
+                      <a
+                        className={styles.editRow}
+                        href={record.receipts[0]?.href ?? "#"}
+                        aria-disabled={!record.receipts[0] || undefined}
+                        onClick={(event) => { if (!record.receipts[0]) event.preventDefault(); }}
+                        target="_blank"
+                        rel="noreferrer"
+                        aria-label={`Last receipt for ${record.fullName}`}
+                        title="Last receipt"
+                      >
+                        <ReceiptText size={15} />
+                      </a>
+                    </>
+                  ) : null}
                   <button type="button" className={styles.editRow} onClick={() => openEdit(record)} aria-label={`Edit ${record.fullName}`}><Pencil size={15} /></button>
                   <button type="button" className={styles.deleteRow} onClick={() => openDelete(record)} aria-label={`Delete ${record.fullName}`}><Trash2 size={15} /></button>
                 </span>

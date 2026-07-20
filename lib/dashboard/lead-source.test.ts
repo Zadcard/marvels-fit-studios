@@ -4,11 +4,12 @@ import { normalizeLeadSource } from "@/lib/dashboard/lead-source";
 
 describe("normalizeLeadSource", () => {
   it.each([
-    ["Admin", "Admin"],
     ["whatsapp-form", "WhatsApp"],
     ["Instagram bio", "Instagram"],
-    ["phone-call", "Call"],
-    ["walk-in", "On-ground"],
+    ["phone-call", "Phone"],
+    ["walk-in", "Walk-in"],
+    ["Facebook Messenger", "Facebook Messenger"],
+    ["messenger dm", "Facebook Messenger"],
   ] as const)("maps %s to %s", (input, expected) => {
     expect(normalizeLeadSource(input)).toBe(expected);
   });

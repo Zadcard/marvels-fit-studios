@@ -33,9 +33,12 @@ export default async function AdminJoinRequestsPage() {
     tone: tones[index % tones.length],
     source: normalizeLeadSource(record.source),
     phone: record.phone,
-    wants: "Trial consultation",
+    wants: record.interestedCategory ?? "Trial consultation",
     note: record.message,
     assigned: record.trialGroupId ? `Trial: ${groups.find((group) => group.id === record.trialGroupId)?.name ?? "Assigned group"}` : undefined,
+    trialGroupId: record.trialGroupId ?? undefined,
+    preferredAvailability: record.preferredAvailability ?? undefined,
+    lostReason: record.lostReason ?? undefined,
   }));
 
   return <MarvelOpsAdminView view="leads" initialLeads={initialLeads} trialGroups={groups.filter((group) => group.isActive).map((group) => ({ id: group.id, name: group.name }))} />;

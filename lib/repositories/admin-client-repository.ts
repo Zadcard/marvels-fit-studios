@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { AdminClientInitialOption, AdminClientRecord } from "@/lib/dashboard/admin-dashboard-data";
+import { compareByUrgency } from "@/lib/dashboard/subscription-status";
 import { withSupabaseFallback } from "@/lib/supabase/errors";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import {
@@ -24,11 +25,14 @@ export class AdminClientRepository {
     const filters = normalizeAdminClientListFilters(input);
     const clients = await withSupabaseFallback<AdminClientListRecord[]>(async () => {
       const supabase = getSupabaseServerClient();
+      // Self-heals quarterly session windows on every read (cheap no-op when
+      // nothing is due) instead of relying on a cron job.
+      await supabase.rpc("reconcile_subscription_session_windows");
       const [clientsResult, ledgerResult] = await Promise.all([
         supabase
           .from("Client")
           .select(
-            "id,fullName,phone,sessionsLeft,paymentStatus,status,trialOutcome,trainingCategory,sport,injuryStatus,injuryNotes,restrictions,createdAt,user:User(email),group:Group(id,name,coach:Coach(fullName)),subscriptions:ClientSubscription(id,status,startsAt,sessionsTotal,plan:SubscriptionPlan(name),payments:Payment(date)),payments:Payment(id,amount,currency,date,method),bookings:SessionBooking(status,trainingSession:TrainingSession(startsAt,title,type,status,coach:Coach(fullName)))"
+            "id,fullName,phone,sessionsLeft,paymentStatus,status,trialOutcome,trainingCategory,sport,injuryStatus,injuryNotes,restrictions,createdAt,user:User(email),group:Group(id,name,coach:Coach(fullName)),subscriptions:ClientSubscription(id,status,startsAt,renewsAt,sessionsTotal,plan:SubscriptionPlan(name),payments:Payment(date)),payments:Payment(id,amount,currency,date,method),bookings:SessionBooking(status,trainingSession:TrainingSession(startsAt,title,type,status,coach:Coach(fullName)))"
           ),
         supabase
           .from("BillingLedgerEntry")
@@ -84,6 +88,7 @@ export class AdminClientRepository {
           .slice(0, 1)
           .map((subscription) => ({
             ...subscription,
+            renewsAt: subscription.renewsAt ? new Date(subscription.renewsAt) : null,
             sessionsTotal: subscription.sessionsTotal,
             payments: subscription.payments
               .sort((a, b) => b.date.localeCompare(a.date))
@@ -129,14 +134,17 @@ export class AdminClientRepository {
             client.group?.name,
           ].some((value) => value?.toLowerCase().includes(search));
         return matchesInitial && matchesSearch;
-      })
-      .sort((a, b) => {
-        const result = a.fullName.localeCompare(b.fullName);
-        return filters.sort === "desc" ? -result : result;
       });
     const totalCount = clients.length;
     const filteredCount = filteredClients.length;
-    const records = filteredClients.map((client) => mapAdminClientRecord(client));
+    const records = filteredClients
+      .map((client) => mapAdminClientRecord(client))
+      .sort((a, b) => {
+        const urgencyResult = compareByUrgency(a, b);
+        if (urgencyResult !== 0) return urgencyResult;
+        const nameResult = a.fullName.localeCompare(b.fullName);
+        return filters.sort === "desc" ? -nameResult : nameResult;
+      });
     const initialOptions = buildInitialOptions(initialNameRecords);
 
     return {
