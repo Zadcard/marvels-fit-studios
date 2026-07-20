@@ -2,13 +2,20 @@
 
 import { useMemo, useState, useTransition, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { Dialog } from "radix-ui";
-import { KeyRound, Pencil, Plus, Search, Trash2, Users, X } from "lucide-react";
+import { KeyRound, Pencil, Plus, Search, Trash2, Users } from "lucide-react";
 
 import { issueAccountPasswordResetLink } from "@/app/actions/account-security";
 import { deleteCoach, saveCoach } from "@/app/actions/admin-coaches";
 import type { AdminCoachRecord, AdminCoachSpecialization } from "@/lib/mocks/admin-coaches";
 import { getInitials } from "@/lib/utils";
+import {
+  ConfirmDeleteDialog,
+  EntityDialog,
+  EntityForm,
+  FormActions,
+  FormErrorBanner,
+  FormField,
+} from "@/components/ui/entity-form";
 import {
   TemporaryCredentialsDialog,
   type TemporaryCredentials,
@@ -58,7 +65,7 @@ export function AdminCoachesCommandCenter({ records }: { records: AdminCoachReco
   const [pending, startTransition] = useTransition();
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [deleteMode, setDeleteMode] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const [confirmation, setConfirmation] = useState("");
   const [form, setForm] = useState<CoachForm>(emptyForm);
   const [error, setError] = useState("");
@@ -79,13 +86,13 @@ export function AdminCoachesCommandCenter({ records }: { records: AdminCoachReco
   }, [records, query]);
 
   function openCreate() {
-    setEditingId(null); setForm(emptyForm); setDeleteMode(false); setConfirmation(""); setError(""); setEditorOpen(true);
+    setEditingId(null); setForm(emptyForm); setDeleteOpen(false); setConfirmation(""); setError(""); setEditorOpen(true);
   }
   function openEdit(coach: AdminCoachRecord) {
-    setEditingId(coach.id); setForm({ fullName: coach.fullName, email: coach.email, phone: coach.phone, specialization: coach.specialization }); setDeleteMode(false); setConfirmation(""); setError(""); setEditorOpen(true);
+    setEditingId(coach.id); setForm({ fullName: coach.fullName, email: coach.email, phone: coach.phone, specialization: coach.specialization }); setDeleteOpen(false); setConfirmation(""); setError(""); setEditorOpen(true);
   }
   function openDelete(coach: AdminCoachRecord) {
-    setEditingId(coach.id); setForm({ fullName: coach.fullName, email: coach.email, phone: coach.phone, specialization: coach.specialization }); setDeleteMode(true); setConfirmation(""); setError(""); setEditorOpen(true);
+    setEditingId(coach.id); setForm({ fullName: coach.fullName, email: coach.email, phone: coach.phone, specialization: coach.specialization }); setConfirmation(""); setError(""); setEditorOpen(false); setDeleteOpen(true);
   }
   function submit(event: FormEvent) {
     event.preventDefault(); setError("");
@@ -97,7 +104,7 @@ export function AdminCoachesCommandCenter({ records }: { records: AdminCoachReco
   function removeCoach() {
     if (!editingId) return;
     setError(""); startTransition(async () => {
-      try { await deleteCoach({ coachId: editingId, confirmationText: confirmation }); setEditorOpen(false); showToast("Coach deleted."); router.refresh(); }
+      try { await deleteCoach({ coachId: editingId, confirmationText: confirmation }); setDeleteOpen(false); setEditorOpen(false); showToast("Coach deleted."); router.refresh(); }
       catch (caught) { const description = caught instanceof Error ? caught.message : "Could not delete coach."; setError(description); showToast(description, "warning"); }
     });
   }
@@ -135,9 +142,54 @@ export function AdminCoachesCommandCenter({ records }: { records: AdminCoachReco
         </article>})}</div> : <div className={styles.empty}><Users size={24}/><strong>No coaches yet</strong><span>Add your first coach to get started.</span></div>}
       </section>
 
-      <Dialog.Root open={editorOpen} onOpenChange={setEditorOpen}><Dialog.Portal><Dialog.Overlay className={styles.overlay} /><Dialog.Content className={styles.editor}><Dialog.Title>{editingId ? "Manage coach" : "Add a coach"}</Dialog.Title><Dialog.Description>Maintain the coach account and core training specialty.</Dialog.Description><Dialog.Close className={styles.close} aria-label="Close coach editor"><X size={18} /></Dialog.Close>
-        {!deleteMode ? <form onSubmit={submit} className={styles.form}><label className={styles.full}>Full name<input required value={form.fullName} onChange={(event) => setForm((value) => ({ ...value, fullName: event.target.value }))} /></label><label>Email<input required type="email" value={form.email} onChange={(event) => setForm((value) => ({ ...value, email: event.target.value }))} /></label><label>Phone<input type="tel" value={form.phone} onChange={(event) => setForm((value) => ({ ...value, phone: event.target.value }))} /></label><label className={styles.full}>Specialty<select value={form.specialization} onChange={(event) => setForm((value) => ({ ...value, specialization: event.target.value as AdminCoachSpecialization }))}>{specialties.filter((item) => item !== "All").map((item) => <option key={item}>{item}</option>)}</select></label>{error ? <p className={`${styles.error} ${styles.full}`} role="alert">{error}</p> : null}<div className={`${styles.formActions} ${styles.full}`}>{editingId ? <><button type="button" className={styles.deleteButton} onClick={() => setDeleteMode(true)}><Trash2 size={16} /> Delete</button><button type="button" className="mv-btn mv-btn-secondary" onClick={issueResetLink} disabled={pending}><KeyRound size={16} /> Reset access</button></> : <span />}<button type="button" className="mv-btn mv-btn-secondary" onClick={() => setEditorOpen(false)}>Cancel</button><button type="submit" className="mv-btn mv-btn-primary" disabled={pending}>{pending ? "Saving…" : "Save coach"}</button></div></form> : <div className={styles.deletePanel}><Trash2 size={25} /><h3>Delete this coach?</h3><p>Assigned groups or sessions must be moved first. Type Delete to confirm.</p><label>Confirmation<input value={confirmation} onChange={(event) => setConfirmation(event.target.value)} placeholder="Delete" /></label>{error ? <p className={styles.error} role="alert">{error}</p> : null}<div><button className="mv-btn mv-btn-secondary" onClick={() => setDeleteMode(false)}>Back</button><button className={styles.deleteButton} onClick={removeCoach} disabled={confirmation !== "Delete" || pending}>Delete permanently</button></div></div>}
-      </Dialog.Content></Dialog.Portal></Dialog.Root>
+      <EntityDialog
+        open={editorOpen}
+        onOpenChange={setEditorOpen}
+        title={editingId ? "Manage coach" : "Add a coach"}
+        description="Maintain the coach account and core training specialty."
+        closeLabel="Close coach editor"
+      >
+        <EntityForm onSubmit={submit}>
+          <FormField label="Full name" required full>
+            <input required value={form.fullName} onChange={(event) => setForm((value) => ({ ...value, fullName: event.target.value }))} />
+          </FormField>
+          <FormField label="Email" required>
+            <input required type="email" value={form.email} onChange={(event) => setForm((value) => ({ ...value, email: event.target.value }))} />
+          </FormField>
+          <FormField label="Phone">
+            <input type="tel" value={form.phone} onChange={(event) => setForm((value) => ({ ...value, phone: event.target.value }))} />
+          </FormField>
+          <FormField label="Specialty" full>
+            <select value={form.specialization} onChange={(event) => setForm((value) => ({ ...value, specialization: event.target.value as AdminCoachSpecialization }))}>{specialties.filter((item) => item !== "All").map((item) => <option key={item}>{item}</option>)}</select>
+          </FormField>
+          {editingId ? (
+            <button type="button" className={`mv-btn mv-btn-secondary ${styles.full}`} onClick={issueResetLink} disabled={pending}>
+              <KeyRound size={16} /> Reset access
+            </button>
+          ) : null}
+          {error ? <FormErrorBanner>{error}</FormErrorBanner> : null}
+          <FormActions
+            onCancel={() => setEditorOpen(false)}
+            onDelete={editingId ? () => { setConfirmation(""); setDeleteOpen(true); } : undefined}
+            submitLabel="Save coach"
+            pendingLabel="Saving…"
+            pending={pending}
+          />
+        </EntityForm>
+      </EntityDialog>
+
+      <ConfirmDeleteDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title="Delete this coach?"
+        description="Assigned groups or sessions must be moved first. Type Delete to confirm."
+        confirmationValue={confirmation}
+        onConfirmationChange={setConfirmation}
+        error={error}
+        pending={pending}
+        onConfirm={removeCoach}
+        closeLabel="Close delete confirmation"
+      />
       <TemporaryCredentialsDialog credentials={credentials} onClose={() => setCredentials(null)} />
       <PasswordResetLinkDialog resetLink={resetLink} onClose={() => setResetLink(null)} />
     </div>

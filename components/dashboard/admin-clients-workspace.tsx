@@ -35,6 +35,14 @@ import {
 import { paginateDashboardItems } from "@/lib/dashboard/pagination";
 import { buildWhatsAppHref } from "@/lib/whatsapp";
 import {
+  ConfirmDeleteDialog,
+  EntityDialog,
+  EntityForm,
+  FormActions,
+  FormErrorBanner,
+  FormField,
+} from "@/components/ui/entity-form";
+import {
   PasswordResetLinkDialog,
   type PasswordResetLink,
 } from "./password-reset-link-dialog";
@@ -350,30 +358,76 @@ export function AdminClientsWorkspace({
         </Dialog.Content></Dialog.Portal>
       </Dialog.Root>
 
-      <Dialog.Root open={editorOpen} onOpenChange={setEditorOpen}>
-        <Dialog.Portal><Dialog.Overlay className={styles.overlay} /><Dialog.Content className={styles.editor}>
-          <Dialog.Title>{editingId ? "Edit member" : "Add a new member"}</Dialog.Title><Dialog.Description>Update the roster record and account state.</Dialog.Description><Dialog.Close className={styles.close} aria-label="Close editor"><X size={18} /></Dialog.Close>
-          <form onSubmit={submitClient} className={styles.form}>
-            <label className={styles.full}>Full name<input required value={form.fullName} onChange={(event) => setForm((value) => ({ ...value, fullName: event.target.value }))} /></label>
-            <label>Email<input type="email" value={form.email} onChange={(event) => setForm((value) => ({ ...value, email: event.target.value }))} /></label>
-            <label>Phone<input type="tel" value={form.phone} onChange={(event) => setForm((value) => ({ ...value, phone: event.target.value }))} /></label>
-            <label>Status<select value={form.status} onChange={(event) => setForm((value) => ({ ...value, status: event.target.value as ClientForm["status"] }))}>{adminClientStatusFilters.filter((item) => item !== "All").map((item) => <option key={item}>{item}</option>)}</select></label>
-            <label>Trial outcome<select value={form.trialOutcome} onChange={(event) => setForm((value) => ({ ...value, trialOutcome: event.target.value as ClientForm["trialOutcome"] }))}>{trialOutcomeLabels.map((item) => <option key={item}>{item}</option>)}</select></label>
-            <label>Payment<select value={form.paymentStatus} onChange={(event) => setForm((value) => ({ ...value, paymentStatus: event.target.value as ClientForm["paymentStatus"] }))}>{adminPaymentStatusFilters.filter((item) => item !== "All").map((item) => <option key={item}>{item}</option>)}</select></label>
-            <label>Amount<input inputMode="decimal" value={form.paymentAmount} onChange={(event) => setForm((value) => ({ ...value, paymentAmount: event.target.value }))} /></label>
-            <label>Group<select value={form.groupId} onChange={(event) => setForm((value) => ({ ...value, groupId: event.target.value }))}><option value="">No group</option>{groupOptions.map((group) => <option key={group.id} value={group.id}>{group.name}</option>)}</select></label>
-            <label>Training category<select value={form.trainingCategory} onChange={(event) => setForm((value) => ({ ...value, trainingCategory: event.target.value as ClientForm["trainingCategory"] }))}>{trainingCategoryLabels.map((item) => <option key={item}>{item}</option>)}</select></label>
-            <label>Sport (optional)<input value={form.sport} onChange={(event) => setForm((value) => ({ ...value, sport: event.target.value }))} placeholder="e.g. Football" /></label>
-            <label>Injury status<select value={form.injuryStatus} onChange={(event) => setForm((value) => ({ ...value, injuryStatus: event.target.value as ClientForm["injuryStatus"] }))}>{injuryStatusLabels.map((item) => <option key={item}>{item}</option>)}</select></label>
-            <label className={styles.full}>Injury notes<input value={form.injuryNotes} onChange={(event) => setForm((value) => ({ ...value, injuryNotes: event.target.value }))} placeholder="Current or previous injury the coach must know about" /></label>
-            <label className={styles.full}>Exercise restrictions<input value={form.restrictions} onChange={(event) => setForm((value) => ({ ...value, restrictions: event.target.value }))} placeholder="Movements or loads to avoid" /></label>
-            {error ? <p className={styles.error} role="alert">{error}</p> : null}
-            <div className={`${styles.formActions} ${styles.full}`}>{editingId ? <button type="button" className={styles.deleteButton} onClick={() => { setDeleteText(""); setDeleteOpen(true); }}><Trash2 size={16} /> Delete</button> : <span />}<button type="button" className="mv-btn mv-btn-secondary" onClick={() => setEditorOpen(false)}>Cancel</button><button type="submit" className="mv-btn mv-btn-primary" disabled={isPending}>{isPending ? "Saving…" : "Save member"}</button></div>
-          </form>
-        </Dialog.Content></Dialog.Portal>
-      </Dialog.Root>
+      <EntityDialog
+        open={editorOpen}
+        onOpenChange={setEditorOpen}
+        title={editingId ? "Edit member" : "Add a new member"}
+        description="Update the roster record and account state."
+        closeLabel="Close editor"
+      >
+        <EntityForm onSubmit={submitClient}>
+          <FormField label="Full name" required full>
+            <input required value={form.fullName} onChange={(event) => setForm((value) => ({ ...value, fullName: event.target.value }))} />
+          </FormField>
+          <FormField label="Email">
+            <input type="email" value={form.email} onChange={(event) => setForm((value) => ({ ...value, email: event.target.value }))} />
+          </FormField>
+          <FormField label="Phone">
+            <input type="tel" value={form.phone} onChange={(event) => setForm((value) => ({ ...value, phone: event.target.value }))} />
+          </FormField>
+          <FormField label="Status">
+            <select value={form.status} onChange={(event) => setForm((value) => ({ ...value, status: event.target.value as ClientForm["status"] }))}>{adminClientStatusFilters.filter((item) => item !== "All").map((item) => <option key={item}>{item}</option>)}</select>
+          </FormField>
+          <FormField label="Trial outcome">
+            <select value={form.trialOutcome} onChange={(event) => setForm((value) => ({ ...value, trialOutcome: event.target.value as ClientForm["trialOutcome"] }))}>{trialOutcomeLabels.map((item) => <option key={item}>{item}</option>)}</select>
+          </FormField>
+          <FormField label="Payment">
+            <select value={form.paymentStatus} onChange={(event) => setForm((value) => ({ ...value, paymentStatus: event.target.value as ClientForm["paymentStatus"] }))}>{adminPaymentStatusFilters.filter((item) => item !== "All").map((item) => <option key={item}>{item}</option>)}</select>
+          </FormField>
+          <FormField label="Amount">
+            <input inputMode="decimal" value={form.paymentAmount} onChange={(event) => setForm((value) => ({ ...value, paymentAmount: event.target.value }))} />
+          </FormField>
+          <FormField label="Group">
+            <select value={form.groupId} onChange={(event) => setForm((value) => ({ ...value, groupId: event.target.value }))}><option value="">No group</option>{groupOptions.map((group) => <option key={group.id} value={group.id}>{group.name}</option>)}</select>
+          </FormField>
+          <FormField label="Training category">
+            <select value={form.trainingCategory} onChange={(event) => setForm((value) => ({ ...value, trainingCategory: event.target.value as ClientForm["trainingCategory"] }))}>{trainingCategoryLabels.map((item) => <option key={item}>{item}</option>)}</select>
+          </FormField>
+          <FormField label="Sport (optional)">
+            <input value={form.sport} onChange={(event) => setForm((value) => ({ ...value, sport: event.target.value }))} placeholder="e.g. Football" />
+          </FormField>
+          <FormField label="Injury status">
+            <select value={form.injuryStatus} onChange={(event) => setForm((value) => ({ ...value, injuryStatus: event.target.value as ClientForm["injuryStatus"] }))}>{injuryStatusLabels.map((item) => <option key={item}>{item}</option>)}</select>
+          </FormField>
+          <FormField label="Injury notes" full>
+            <input value={form.injuryNotes} onChange={(event) => setForm((value) => ({ ...value, injuryNotes: event.target.value }))} placeholder="Current or previous injury the coach must know about" />
+          </FormField>
+          <FormField label="Exercise restrictions" full>
+            <input value={form.restrictions} onChange={(event) => setForm((value) => ({ ...value, restrictions: event.target.value }))} placeholder="Movements or loads to avoid" />
+          </FormField>
+          {error ? <FormErrorBanner>{error}</FormErrorBanner> : null}
+          <FormActions
+            onCancel={() => setEditorOpen(false)}
+            onDelete={editingId ? () => { setDeleteText(""); setDeleteOpen(true); } : undefined}
+            submitLabel="Save member"
+            pendingLabel="Saving…"
+            pending={isPending}
+          />
+        </EntityForm>
+      </EntityDialog>
 
-      <Dialog.Root open={deleteOpen} onOpenChange={setDeleteOpen}><Dialog.Portal><Dialog.Overlay className={styles.overlay} /><Dialog.Content className={styles.confirm}><Dialog.Title>Delete this member?</Dialog.Title><Dialog.Description>This removes the account and connected operational records. Type Delete to continue.</Dialog.Description><label>Confirmation<input value={deleteText} onChange={(event) => setDeleteText(event.target.value)} placeholder="Delete" /></label>{error ? <p className={styles.error} role="alert">{error}</p> : null}<div><button className="mv-btn mv-btn-secondary" onClick={() => setDeleteOpen(false)}>Cancel</button><button className={styles.deleteButton} disabled={deleteText !== "Delete" || isPending} onClick={confirmDelete}>Delete permanently</button></div></Dialog.Content></Dialog.Portal></Dialog.Root>
+      <ConfirmDeleteDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title="Delete this member?"
+        description="This removes the account and connected operational records. Type Delete to continue."
+        confirmationValue={deleteText}
+        onConfirmationChange={setDeleteText}
+        error={error}
+        pending={isPending}
+        onConfirm={confirmDelete}
+        closeLabel="Close delete confirmation"
+      />
       <PasswordResetLinkDialog resetLink={resetLink} onClose={() => setResetLink(null)} />
     </div>
   );

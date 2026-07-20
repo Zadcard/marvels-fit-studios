@@ -8,6 +8,7 @@ const page = readFileSync(resolve(root, "app/(dashboard)/admin/coaches/page.tsx"
 const screen = readFileSync(resolve(root, "components/dashboard/admin-coaches-command-center.tsx"), "utf8");
 const styles = readFileSync(resolve(root, "components/dashboard/admin-coaches-command-center.module.css"), "utf8");
 const repository = readFileSync(resolve(root, "lib/repositories/admin-coach-repository.ts"), "utf8");
+const entityForm = readFileSync(resolve(root, "components/ui/entity-form.tsx"), "utf8");
 
 describe("admin coach management contract", () => {
   it("renders the command center from repository records", () => {
@@ -21,8 +22,9 @@ describe("admin coach management contract", () => {
     expect(screen).toContain("deleteCoach");
     expect(screen).toContain("New coach");
     expect(screen).toContain("Save coach");
-    expect(screen).toContain("Delete permanently");
-    expect(screen).toContain("<Dialog.Content");
+    expect(screen).toContain("ConfirmDeleteDialog");
+    expect(entityForm).toContain("Delete permanently");
+    expect(screen).toContain("EntityDialog");
     expect(screen).toContain("Close coach editor");
   });
 
@@ -35,11 +37,19 @@ describe("admin coach management contract", () => {
   it("uses the current responsive REDLINE styling", () => {
     expect(styles).toContain(".coachGrid");
     expect(styles).toContain(".timeline");
-    expect(styles).toContain(".editor");
     expect(styles).toContain("@media(max-width:960px)");
     expect(styles).toContain("@media(max-width:620px)");
     expect(styles).toContain("var(--rl-red)");
     expect(styles).not.toContain("var(--mv-");
     expect(styles).not.toContain("scale(");
+  });
+
+  it("shares the REDLINE entity-editor dialog styling instead of a page-local copy", () => {
+    const sharedStyles = readFileSync(
+      resolve(root, "components/ui/entity-form.module.css"),
+      "utf8",
+    );
+    expect(sharedStyles).toContain(".dialog");
+    expect(sharedStyles).toContain("var(--rl-red)");
   });
 });
