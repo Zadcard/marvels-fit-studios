@@ -46,7 +46,9 @@
       "Bash(disown)",
       "Read(//tmp/**)",
       "Bash(node -e ' *)",
-      "Bash(grep *)"
+      "Bash(grep *)",
+      "Bash(netlify --version)",
+      "WebFetch(domain:marvel-fit-studios.netlify.app)"
     ]
   },
   "disabledMcpjsonServers": [

@@ -1,9 +1,5 @@
-import bcryptjs from "bcryptjs";
 import { LeadStatus, UserRole } from "@/lib/supabase/domain";
 
-import { readLeadCredentialClientId } from "@/lib/leads/lead-credential-metadata";
-import { generateTemporaryPassword } from "@/lib/auth/temporary-password";
-import { clientIdGenerator } from "@/lib/services/client-id-generator";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 export type PromoteLeadsInput = {
@@ -20,16 +16,12 @@ export type PromoteLeadResult =
       email: string | null;
       outcome: "promoted";
       details: string;
-      clientId?: string;
-      temporaryPassword?: string;
     }
   | {
       leadId: string;
       email: string | null;
       outcome: "skipped";
       details: string;
-      clientId?: string;
-      temporaryPassword?: string;
     };
 
 export type PromoteLeadsSummary = {
@@ -75,12 +67,11 @@ export async function promoteLeadsToClients(
 
   for (const lead of leads) {
     const normalizedEmail = lead.email?.trim().toLowerCase() ?? null;
-    const reservedClientId = readLeadCredentialClientId(lead.message);
 
     const existingUserResult = normalizedEmail
       ? await supabase
           .from("User")
-          .select("id, role, clientId, clientProfile:Client(id)")
+          .select("id, role, clientProfile:Client(id)")
           .eq("email", normalizedEmail)
           .maybeSingle()
       : { data: null, error: null };
@@ -97,35 +88,21 @@ export async function promoteLeadsToClients(
       continue;
     }
 
-    const generatedClientId =
-      reservedClientId ??
-      existingUser?.clientId ??
-      (await clientIdGenerator.getNextAvailableId());
-    const temporaryPassword = generateTemporaryPassword();
-
     if (input.dryRun) {
       results.push({
         leadId: lead.id,
         email: normalizedEmail,
         outcome: "promoted",
         details: existingUser
-          ? "Would issue a fresh temporary password, confirm the client profile, and mark the lead as converted."
-          : "Would create a User, create a Client profile, generate credentials, and mark the lead as converted.",
-        clientId: generatedClientId,
-        temporaryPassword,
+          ? "Would confirm the client profile and mark the lead as converted."
+          : "Would create a User, create a Client profile, and mark the lead as converted.",
       });
       continue;
     }
 
-    // Promotion always issues a fresh one-time credential. Reusing a landing
-    // form hash would make the clear-text credential shown to the admin false.
-    const hashedPassword = await bcryptjs.hash(temporaryPassword, 12);
-
     const { data: promotion, error: promotionError } = await supabase.rpc(
       "promote_lead_to_client",
       {
-        generated_client_id: generatedClientId,
-        hashed_password: hashedPassword,
         target_lead_id: lead.id,
       },
     );
@@ -142,29 +119,19 @@ export async function promoteLeadsToClients(
         outcome: "skipped",
         details:
           promotionResult.reason === "already_converted"
-            ? "This lead was already converted. No credentials were changed."
+            ? "This lead was already converted."
             : "Existing non-client account was preserved.",
       });
       continue;
     }
 
-    const credentialsIssued = promotionResult?.credentialsIssued !== false;
-    const promotedClientId =
-      typeof promotionResult?.clientId === "string"
-        ? promotionResult.clientId
-        : generatedClientId;
-
     results.push({
       leadId: lead.id,
       email: normalizedEmail,
       outcome: "promoted",
-      details: credentialsIssued
-        ? existingUser
-          ? "Issued temporary credentials, created the missing client profile, and marked the lead as converted."
-          : "Created a new client account, generated credentials, and marked the lead as converted."
-        : "Linked the lead to the existing client account without changing its credentials.",
-      clientId: promotedClientId,
-      temporaryPassword: credentialsIssued ? temporaryPassword : undefined,
+      details: existingUser
+        ? "Confirmed the client profile and marked the lead as converted."
+        : "Created a new client profile and marked the lead as converted.",
     });
   }
 

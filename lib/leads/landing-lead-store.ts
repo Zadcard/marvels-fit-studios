@@ -4,15 +4,6 @@ import type { Insert } from "@/lib/supabase/domain";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 export const landingLeadStore = {
-  async listPendingCredentialMessages() {
-    const { data, error } = await getSupabaseServerClient()
-      .from("Lead")
-      .select("message")
-      .in("status", ["NEW", "CONTACTED"])
-      .like("message", "__join_credentials__:%");
-    if (error) throw error;
-    return data;
-  },
   async phoneExists(phone: string) {
     const supabase = getSupabaseServerClient();
     const [client, lead] = await Promise.all([

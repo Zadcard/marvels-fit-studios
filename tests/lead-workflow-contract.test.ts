@@ -20,11 +20,10 @@ describe("lead workflow integrity contract", () => {
     expect(leadActions).toMatch(/summary\.examined !== 1/);
   });
 
-  it("issues a matching fresh temporary password at bcrypt cost 12", () => {
-    expect(promotionService).toContain(
-      "bcryptjs.hash(temporaryPassword, 12)",
-    );
-    expect(promotionService).not.toMatch(/lead\.passwordHash\s*\?/);
+  it("promotes trials without issuing client login credentials", () => {
+    expect(promotionService).not.toContain("temporaryPassword");
+    expect(promotionService).not.toContain("bcryptjs");
+    expect(promotionService).not.toContain("clientId");
   });
 
   it("enforces the group requirement in both the action and database", () => {

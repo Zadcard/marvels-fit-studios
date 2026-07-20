@@ -26,8 +26,8 @@ describe("TemporaryCredentialsDialog", () => {
       root.render(
         <TemporaryCredentialsDialog
           credentials={{
-            accountType: "client",
-            signInId: "2607001",
+            accountType: "coach",
+            signInId: "coach@example.com",
             temporaryPassword: "Mfs9-random-temporary-value",
           }}
           onClose={vi.fn()}
@@ -36,7 +36,7 @@ describe("TemporaryCredentialsDialog", () => {
     });
 
     expect(document.querySelector('[role="dialog"]')?.textContent).toContain(
-      "Client access created",
+      "Coach access created",
     );
 
     const copyButton = Array.from(document.querySelectorAll("button")).find(
@@ -47,7 +47,7 @@ describe("TemporaryCredentialsDialog", () => {
     });
 
     expect(writeText).toHaveBeenCalledWith(
-      "Sign-in: 2607001\nTemporary password: Mfs9-random-temporary-value",
+      "Sign-in: coach@example.com\nTemporary password: Mfs9-random-temporary-value",
     );
     expect(copyButton?.textContent).toContain("Copied");
 

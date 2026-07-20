@@ -2,25 +2,17 @@ import { describe, expect, it } from "vitest";
 
 import {
   changePasswordSchema,
-  clientIdSchema,
   clientRegistrationSchema,
   emailLoginSchema,
   emailSchema,
   fullNameSchema,
   normalizePhoneNumber,
-  passwordResetRequestSchema,
   passwordResetSchema,
   passwordSchema,
   phoneSchema,
 } from "@/lib/validators/id-auth";
 
-describe("ID-based authentication validators", () => {
-  it("validates 7-digit client IDs", () => {
-    expect(clientIdSchema.parse(" 2605020 ")).toBe("2605020");
-    expect(clientIdSchema.safeParse("260502").success).toBe(false);
-    expect(clientIdSchema.safeParse("2605ABC").success).toBe(false);
-  });
-
+describe("authentication validators", () => {
   it("validates strong passwords", () => {
     expect(passwordSchema.safeParse("Password123").success).toBe(true);
     expect(passwordSchema.safeParse("Password").success).toBe(false);
@@ -71,10 +63,7 @@ describe("ID-based authentication validators", () => {
     expect(result).not.toHaveProperty("email");
   });
 
-  it("validates password reset request and reset passwords", () => {
-    expect(
-      passwordResetRequestSchema.safeParse({ clientId: "2605020" }).success
-    ).toBe(true);
+  it("rejects mismatched reset passwords", () => {
     expect(
       passwordResetSchema.safeParse({
         token: "0123456789abcdef",

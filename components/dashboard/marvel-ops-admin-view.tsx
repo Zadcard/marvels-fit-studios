@@ -99,10 +99,7 @@ function LeadsWorkspace({ records, trialGroups }: { records: MarvelOpsLead[]; tr
           const summary = await approveLeadAsClient(lead.id);
           const result = summary.results[0];
           if (result?.outcome !== "promoted") throw new Error(result?.details ?? "Could not create the client.");
-          const success =
-            result.clientId && result.temporaryPassword
-              ? `${result.details} Client ID: ${result.clientId}. Temporary password: ${result.temporaryPassword}.`
-              : result.details;
+          const success = result.details;
           setNotice(success);
           showToast(success);
           router.refresh();

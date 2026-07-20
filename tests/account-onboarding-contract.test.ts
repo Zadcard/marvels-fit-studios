@@ -8,8 +8,8 @@ const read = (path: string) => readFileSync(resolve(root, path), "utf8");
 const clientAction = read("app/actions/admin-clients.ts");
 const coachAction = read("app/actions/admin-coaches.ts");
 const promotionService = read("lib/leads/promote-leads-to-clients.ts");
-const clientMigration = read(
-  "supabase/migrations/20260718140000_fix_client_and_lead_rpc_integrity.sql",
+const removeClientIdMigration = read(
+  "supabase/migrations/20260720000000_remove_client_id_membership_code.sql",
 );
 const coachMigration = read(
   "supabase/migrations/20260718150000_require_new_coach_password_rotation.sql",
@@ -20,28 +20,32 @@ const coachWorkspace = read(
 );
 
 describe("admin account onboarding", () => {
-  it("uses random temporary passwords in every live account creation path", () => {
-    expect(clientAction).toContain("generateTemporaryPassword()");
+  it("uses random temporary passwords for coach account creation", () => {
     expect(coachAction).toContain("generateTemporaryPassword()");
-    expect(promotionService).toContain("generateTemporaryPassword()");
     expect(coachAction).not.toContain("MFS_${localPart");
   });
 
-  it("forces newly created client and coach accounts to rotate credentials", () => {
-    expect(clientMigration).toMatch(/payload->>'password',\s+true,\s+'CLIENT'/);
+  it("creates clients without login credentials, since only staff sign in", () => {
+    expect(removeClientIdMigration).toContain(
+      'DROP COLUMN IF EXISTS "clientId"',
+    );
+    expect(clientAction).not.toContain("temporaryPassword");
+    expect(clientAction).not.toContain("generateTemporaryPassword");
+    expect(promotionService).not.toContain("temporaryPassword");
     expect(coachMigration).toMatch(/p_password_hash,\s+true,\s+'COACH'/);
   });
 
-  it("returns only a one-time credential DTO to the guarded admin caller", () => {
-    for (const action of [clientAction, coachAction]) {
-      expect(action).toContain("await requireRole(UserRole.ADMIN)");
-      expect(action).toContain("credentials:");
-      expect(action).toContain("temporaryPassword");
-    }
+  it("returns a one-time credential DTO only for coach creation", () => {
+    expect(clientAction).toContain("await requireRole(UserRole.ADMIN)");
+    expect(clientAction).not.toContain("temporaryPassword");
+
+    expect(coachAction).toContain("await requireRole(UserRole.ADMIN)");
+    expect(coachAction).toContain("credentials:");
+    expect(coachAction).toContain("temporaryPassword");
   });
 
-  it("shows the one-time credential dialog in both live admin workspaces", () => {
-    expect(clientWorkspace).toContain("<TemporaryCredentialsDialog");
+  it("shows the one-time credential dialog only in the coach workspace", () => {
     expect(coachWorkspace).toContain("<TemporaryCredentialsDialog");
+    expect(clientWorkspace).not.toContain("<TemporaryCredentialsDialog");
   });
 });

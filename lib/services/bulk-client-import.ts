@@ -15,8 +15,6 @@ export interface ClientImportData {
 
 export interface ImportResult {
   success: boolean;
-  clientId: string;
-  temporaryPassword: string;
   fullName: string;
   phone: string;
   groupName?: string;
@@ -37,8 +35,6 @@ export type BulkClientPreviewRow = BulkClientInput & {
 
 export type BulkClientImportSuccess = BulkClientInput & {
   rowNumber: number;
-  clientId: string;
-  password: string;
 };
 
 export type BulkClientImportFailure = BulkClientInput & {
@@ -59,7 +55,7 @@ export type BulkClientImportStats = {
 };
 
 export type BulkClientImportReport = BulkClientImportStats & {
-  credentialsCsv: string;
+  importedCsv: string;
   summary: string;
 };
 
@@ -123,16 +119,12 @@ function createStats(
     results: [
       ...successfulImports.map((client) => ({
         success: true,
-        clientId: client.clientId,
-        temporaryPassword: client.password,
         fullName: client.fullName,
         phone: client.phone,
         groupName: client.groupName,
       })),
       ...failedImports.map((client) => ({
         success: false,
-        clientId: "",
-        temporaryPassword: "",
         fullName: client.fullName,
         phone: client.phone,
         groupName: client.groupName,
@@ -318,7 +310,7 @@ export class BulkClientImportService {
           groupId = matchedGroup.id;
         }
 
-        const result = await clientRegistrationService.registerClient({
+        await clientRegistrationService.registerClient({
           fullName: row.fullName,
           phone: row.phone,
           groupId,
@@ -329,8 +321,6 @@ export class BulkClientImportService {
           phone: row.phone,
           groupName: row.groupName,
           rowNumber: row.rowNumber,
-          clientId: result.clientId,
-          password: result.temporaryPassword,
         });
       } catch (error) {
         failedImports.push({
@@ -347,15 +337,13 @@ export class BulkClientImportService {
   }
 
   generateImportReport(stats: BulkClientImportStats): BulkClientImportReport {
-    const credentialsCsv = [
-      ["clientId", "fullName", "groupName", "phone", "password"].join(","),
+    const importedCsv = [
+      ["fullName", "groupName", "phone"].join(","),
       ...stats.successfulImports.map((client) =>
         [
-          client.clientId,
           client.fullName,
           client.groupName ?? "",
           client.phone,
-          client.password,
         ]
           .map(toCsvValue)
           .join(",")
@@ -364,7 +352,7 @@ export class BulkClientImportService {
 
     return {
       ...stats,
-      credentialsCsv,
+      importedCsv,
       summary: `${stats.successfulImports.length}/${stats.totalRecords} clients imported (${stats.successRate}%).`,
     };
   }

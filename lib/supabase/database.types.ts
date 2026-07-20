@@ -1837,7 +1837,6 @@ export type Database = {
       }
       User: {
         Row: {
-          clientId: string | null
           createdAt: string
           email: string | null
           emailVerified: string | null
@@ -1853,7 +1852,6 @@ export type Database = {
           updatedAt: string
         }
         Insert: {
-          clientId?: string | null
           createdAt?: string
           email?: string | null
           emailVerified?: string | null
@@ -1869,7 +1867,6 @@ export type Database = {
           updatedAt?: string
         }
         Update: {
-          clientId?: string | null
           createdAt?: string
           email?: string | null
           emailVerified?: string | null
@@ -2247,11 +2244,7 @@ export type Database = {
         Returns: string
       }
       promote_lead_to_client: {
-        Args: {
-          generated_client_id: string
-          hashed_password: string
-          target_lead_id: string
-        }
+        Args: { target_lead_id: string }
         Returns: Json
       }
       reconcile_client_subscription_lifecycle: {
@@ -2325,15 +2318,12 @@ export type Database = {
       }
       register_client: {
         Args: {
-          p_client_id: string
           p_email: string
           p_full_name: string
           p_group_id: string
-          p_password_hash: string
           p_phone: string
         }
         Returns: {
-          clientId: string
           userId: string
         }[]
       }

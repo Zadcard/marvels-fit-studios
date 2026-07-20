@@ -35,10 +35,6 @@ import {
 import { paginateDashboardItems } from "@/lib/dashboard/pagination";
 import { buildWhatsAppHref } from "@/lib/whatsapp";
 import {
-  TemporaryCredentialsDialog,
-  type TemporaryCredentials,
-} from "./temporary-credentials-dialog";
-import {
   PasswordResetLinkDialog,
   type PasswordResetLink,
 } from "./password-reset-link-dialog";
@@ -145,7 +141,6 @@ export function AdminClientsWorkspace({
   const [deleteText, setDeleteText] = useState("");
   const [form, setForm] = useState<ClientForm>(emptyForm);
   const [error, setError] = useState("");
-  const [credentials, setCredentials] = useState<TemporaryCredentials | null>(null);
   const [resetLink, setResetLink] = useState<PasswordResetLink | null>(null);
   const [resetError, setResetError] = useState("");
 
@@ -230,11 +225,8 @@ export function AdminClientsWorkspace({
     setError("");
     startTransition(async () => {
       try {
-        const result = await saveAdminClient({ clientId: editingId, ...form });
+        await saveAdminClient({ clientId: editingId, ...form });
         setEditorOpen(false);
-        if (result.credentials) {
-          setCredentials({ accountType: "client", ...result.credentials });
-        }
         showToast(editingId ? "Member updated." : "Member added.");
         router.refresh();
       } catch (caught) {
@@ -332,7 +324,7 @@ export function AdminClientsWorkspace({
             <div className={styles.rosterHead}><span>Client</span><span>Category</span><span>Coach</span><span>Sessions left</span><span>Status</span><span>Phone</span><span /></div>
             {paginated.items.map((record) => (
               <article className={styles.rosterRow} key={record.id}>
-                <button type="button" className={styles.clientCell} onClick={() => setDetailId(record.id)} aria-label={`Open ${record.fullName}`}><span className={styles.avatar}>{initials(record.fullName)}</span><span><strong>{record.fullName}</strong>{record.hasInjuryAlert ? <small className={styles.warning}>⚠ {record.injuryStatus}</small> : <small>{record.clientId}</small>}</span></button>
+                <button type="button" className={styles.clientCell} onClick={() => setDetailId(record.id)} aria-label={`Open ${record.fullName}`}><span className={styles.avatar}>{initials(record.fullName)}</span><span><strong>{record.fullName}</strong>{record.hasInjuryAlert ? <small className={styles.warning}>⚠ {record.injuryStatus}</small> : <small>{record.phone}</small>}</span></button>
                 <span className={styles.stack}><strong>{record.trainingCategory}</strong><small>{record.membership}</small></span>
                 <span className={styles.coachCell}><i>{initials(record.assignedCoach)}</i>{record.assignedCoach}</span>
                 <span className={styles.sessions}><strong>{record.sessionsLeft}</strong><small>of {record.sessionsTotal}</small><em><b style={{ width: `${Math.min(100, record.sessionsTotal ? (record.sessionsLeft / record.sessionsTotal) * 100 : 0)}%` }} /></em></span>
@@ -354,7 +346,7 @@ export function AdminClientsWorkspace({
         <Dialog.Portal><Dialog.Overlay className={styles.overlay} /><Dialog.Content className={styles.drawer}>
           <Dialog.Title className={styles.drawerTitle}>{detail?.fullName ?? "Member dossier"}</Dialog.Title><Dialog.Description className={styles.drawerDescription}>{detail?.progressNote}</Dialog.Description>
           <Dialog.Close className={styles.close} aria-label="Close member details"><X size={18} /></Dialog.Close>
-          {detail ? <><div className={styles.dossierHero}><span className={styles.avatar}>{initials(detail.fullName)}</span><div><small>{detail.clientId}</small><strong>{detail.fullName}</strong><p>{detail.email || detail.phone}</p></div></div><div className={styles.statusRow}><span className={tone(detail.status)}>{detail.status}</span><span className={tone(detail.paymentStatus)}>{detail.paymentStatus}</span></div><section className={styles.dossierSection}><h3>Membership</h3><dl><div><dt>Program</dt><dd>{detail.membership}</dd></div><div><dt>Training</dt><dd>{detail.trainingCategory}</dd></div><div><dt>Sport</dt><dd>{detail.sport || "—"}</dd></div><div><dt>Trial outcome</dt><dd>{detail.trialOutcome}</dd></div><div><dt>Group</dt><dd>{detail.primaryGroup}</dd></div><div><dt>Coach</dt><dd>{detail.assignedCoach}</dd></div><div><dt>Payment</dt><dd>{detail.paymentAmountLabel}</dd></div></dl></section><ReceiptHistory receipts={detail.receipts} /><section className={styles.dossierSection}><h3>Injury &amp; restrictions{detail.hasInjuryAlert ? <span className={styles.warning}>⚠ {detail.injuryStatus}</span> : null}</h3><dl><div><dt>Status</dt><dd>{detail.injuryStatus}</dd></div><div><dt>Injury notes</dt><dd>{detail.injuryNotes || "None recorded"}</dd></div><div><dt>Restrictions</dt><dd>{detail.restrictions || "None recorded"}</dd></div></dl></section><section className={styles.dossierSection}><h3>Next sessions</h3>{detail.nextSessions.length ? <ol>{detail.nextSessions.slice(0, 3).map((session) => <li key={session}>{session}</li>)}</ol> : <p>{detail.nextSession}</p>}</section>{resetError ? <p className={styles.error} role="alert">{resetError}</p> : null}<div className={styles.drawerActions}>{buildWhatsAppHref(detail.phone) ? <a className="mv-btn mv-btn-secondary" href={buildWhatsAppHref(detail.phone) ?? undefined} target="_blank" rel="noreferrer"><MessageCircle size={17} /> Message</a> : null}<button type="button" className="mv-btn mv-btn-secondary" disabled={isPending} onClick={() => issueResetLink(detail)}><KeyRound size={17} /> Reset access</button><button type="button" className="mv-btn mv-btn-primary" onClick={() => { setDetailId(null); openEdit(detail); }}><Pencil size={17} /> Edit member</button></div></> : null}
+          {detail ? <><div className={styles.dossierHero}><span className={styles.avatar}>{initials(detail.fullName)}</span><div><small>{detail.membership}</small><strong>{detail.fullName}</strong><p>{detail.email || detail.phone}</p></div></div><div className={styles.statusRow}><span className={tone(detail.status)}>{detail.status}</span><span className={tone(detail.paymentStatus)}>{detail.paymentStatus}</span></div><section className={styles.dossierSection}><h3>Membership</h3><dl><div><dt>Program</dt><dd>{detail.membership}</dd></div><div><dt>Training</dt><dd>{detail.trainingCategory}</dd></div><div><dt>Sport</dt><dd>{detail.sport || "—"}</dd></div><div><dt>Trial outcome</dt><dd>{detail.trialOutcome}</dd></div><div><dt>Group</dt><dd>{detail.primaryGroup}</dd></div><div><dt>Coach</dt><dd>{detail.assignedCoach}</dd></div><div><dt>Payment</dt><dd>{detail.paymentAmountLabel}</dd></div></dl></section><ReceiptHistory receipts={detail.receipts} /><section className={styles.dossierSection}><h3>Injury &amp; restrictions{detail.hasInjuryAlert ? <span className={styles.warning}>⚠ {detail.injuryStatus}</span> : null}</h3><dl><div><dt>Status</dt><dd>{detail.injuryStatus}</dd></div><div><dt>Injury notes</dt><dd>{detail.injuryNotes || "None recorded"}</dd></div><div><dt>Restrictions</dt><dd>{detail.restrictions || "None recorded"}</dd></div></dl></section><section className={styles.dossierSection}><h3>Next sessions</h3>{detail.nextSessions.length ? <ol>{detail.nextSessions.slice(0, 3).map((session) => <li key={session}>{session}</li>)}</ol> : <p>{detail.nextSession}</p>}</section>{resetError ? <p className={styles.error} role="alert">{resetError}</p> : null}<div className={styles.drawerActions}>{buildWhatsAppHref(detail.phone) ? <a className="mv-btn mv-btn-secondary" href={buildWhatsAppHref(detail.phone) ?? undefined} target="_blank" rel="noreferrer"><MessageCircle size={17} /> Message</a> : null}<button type="button" className="mv-btn mv-btn-secondary" disabled={isPending} onClick={() => issueResetLink(detail)}><KeyRound size={17} /> Reset access</button><button type="button" className="mv-btn mv-btn-primary" onClick={() => { setDetailId(null); openEdit(detail); }}><Pencil size={17} /> Edit member</button></div></> : null}
         </Dialog.Content></Dialog.Portal>
       </Dialog.Root>
 
@@ -382,7 +374,6 @@ export function AdminClientsWorkspace({
       </Dialog.Root>
 
       <Dialog.Root open={deleteOpen} onOpenChange={setDeleteOpen}><Dialog.Portal><Dialog.Overlay className={styles.overlay} /><Dialog.Content className={styles.confirm}><Dialog.Title>Delete this member?</Dialog.Title><Dialog.Description>This removes the account and connected operational records. Type Delete to continue.</Dialog.Description><label>Confirmation<input value={deleteText} onChange={(event) => setDeleteText(event.target.value)} placeholder="Delete" /></label>{error ? <p className={styles.error} role="alert">{error}</p> : null}<div><button className="mv-btn mv-btn-secondary" onClick={() => setDeleteOpen(false)}>Cancel</button><button className={styles.deleteButton} disabled={deleteText !== "Delete" || isPending} onClick={confirmDelete}>Delete permanently</button></div></Dialog.Content></Dialog.Portal></Dialog.Root>
-      <TemporaryCredentialsDialog credentials={credentials} onClose={() => setCredentials(null)} />
       <PasswordResetLinkDialog resetLink={resetLink} onClose={() => setResetLink(null)} />
     </div>
   );

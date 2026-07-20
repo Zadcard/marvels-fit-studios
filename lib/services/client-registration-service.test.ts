@@ -1,15 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import * as bcryptjs from "bcryptjs";
-
-vi.mock("bcryptjs");
-vi.mock("@/lib/services/client-id-generator");
-vi.mock("@/lib/services/password-generator");
 
 describe("ClientRegistrationService", () => {
   let mockDataStore: any;
   let mockTx: any;
-  let mockClientIdGenerator: any;
-  let mockPasswordGenerator: any;
   let service: any;
 
   beforeEach(async () => {
@@ -34,28 +27,6 @@ describe("ClientRegistrationService", () => {
       $transaction: vi.fn((callback) => callback(mockTx)),
     };
 
-    vi.mocked(bcryptjs.hash).mockResolvedValue("hashed_password" as never);
-
-    mockClientIdGenerator = {
-      getNextClientNumber: vi.fn().mockResolvedValue(1),
-      getNextAvailableId: vi.fn().mockResolvedValue("2605001"),
-      generateId: vi.fn(({ clientNumber }: any) =>
-        `2605${String(clientNumber || 1).padStart(3, "0")}`
-      ),
-    };
-
-    mockPasswordGenerator = {
-      generatePassword: vi.fn((clientId: string) => `MFS_${clientId}`),
-    };
-
-    const idGenModule = await import("@/lib/services/client-id-generator");
-    vi.mocked(idGenModule, { partial: true }).clientIdGenerator =
-      mockClientIdGenerator;
-
-    const pwdGenModule = await import("@/lib/services/password-generator");
-    vi.mocked(pwdGenModule, { partial: true }).passwordGenerator =
-      mockPasswordGenerator;
-
     const {
       ClientRegistrationService: Cls,
     } = await import("@/lib/services/client-registration-service");
@@ -65,10 +36,7 @@ describe("ClientRegistrationService", () => {
           const user = await tx.user.create({
             data: {
               name: input.fullName,
-              clientId: input.clientId,
               email: input.email || null,
-              password: input.passwordHash,
-              mustChangePassword: true,
               role: "CLIENT",
             },
             select: { id: true },
@@ -82,7 +50,7 @@ describe("ClientRegistrationService", () => {
               status: "ACTIVE",
             },
           });
-          return { userId: user.id, clientId: input.clientId };
+          return { userId: user.id };
         }),
       findClientByPhone: (phone: string) =>
         mockDataStore.client.findUnique({ where: { phone } }),
@@ -92,108 +60,20 @@ describe("ClientRegistrationService", () => {
 
   describe("registerClient", () => {
     it("should create user and client in transaction", async () => {
-      mockTx.user.create.mockResolvedValue({
-        id: "user-123",
-      });
-      mockTx.client.create.mockResolvedValue({
-        id: "client-123",
-      });
+      mockTx.user.create.mockResolvedValue({ id: "user-123" });
+      mockTx.client.create.mockResolvedValue({ id: "client-123" });
 
       const result = await service.registerClient({
         fullName: "John Doe",
         phone: "+1234567890",
       });
 
-      expect(result).toEqual({
-        userId: "user-123",
-        clientId: expect.stringMatching(/^\d{7}$/),
-        temporaryPassword: expect.stringMatching(/^MFS_\d{7}$/),
-      });
-    });
-
-    it("should generate client ID in format YYMMXXX", async () => {
-      mockTx.user.create.mockResolvedValue({
-        id: "user-123",
-      });
-      mockTx.client.create.mockResolvedValue({
-        id: "client-123",
-      });
-
-      const result = await service.registerClient({
-        fullName: "Jane Doe",
-        phone: "+1987654321",
-      });
-
-      expect(result.clientId).toMatch(/^\d{7}$/);
-      expect(result.clientId.length).toBe(7);
-    });
-
-    it("should generate temporary password matching client ID", async () => {
-      mockTx.user.create.mockResolvedValue({
-        id: "user-123",
-      });
-      mockTx.client.create.mockResolvedValue({
-        id: "client-123",
-      });
-
-      const result = await service.registerClient({
-        fullName: "Test Client",
-        phone: "+1111111111",
-      });
-
-      expect(result.temporaryPassword).toBe(`MFS_${result.clientId}`);
-    });
-
-    it("should hash temporary password with bcryptjs", async () => {
-      mockTx.user.create.mockResolvedValue({
-        id: "user-123",
-      });
-      mockTx.client.create.mockResolvedValue({
-        id: "client-123",
-      });
-
-      await service.registerClient({
-        fullName: "Hash Test",
-        phone: "+1111111111",
-      });
-
-      expect(bcryptjs.hash).toHaveBeenCalledWith(
-        expect.stringMatching(/^MFS_\d{7}$/),
-        10
-      );
-    });
-
-    it("should create user with hashed password", async () => {
-      mockTx.user.create.mockResolvedValue({
-        id: "user-123",
-      });
-      mockTx.client.create.mockResolvedValue({
-        id: "client-123",
-      });
-
-      await service.registerClient({
-        fullName: "John Doe",
-        phone: "+1234567890",
-      });
-
-      const userCreateCall = mockTx.user.create.mock.calls[0][0];
-      expect(userCreateCall.data).toEqual({
-        name: "John Doe",
-        clientId: expect.stringMatching(/^\d{7}$/),
-        email: null,
-        password: "hashed_password",
-        mustChangePassword: true,
-        role: "CLIENT",
-      });
+      expect(result).toEqual({ userId: "user-123" });
     });
 
     it("should create client with provided data", async () => {
-      mockTx.user.create.mockResolvedValue({
-        id: "user-123",
-      });
-      mockTx.client.create.mockResolvedValue({
-        id: "client-123",
-      });
+      mockTx.user.create.mockResolvedValue({ id: "user-123" });
+      mockTx.client.create.mockResolvedValue({ id: "client-123" });
 
       await service.registerClient({
         fullName: "John Doe",
@@ -211,12 +91,8 @@ describe("ClientRegistrationService", () => {
     });
 
     it("should set user role to CLIENT", async () => {
-      mockTx.user.create.mockResolvedValue({
-        id: "user-123",
-      });
-      mockTx.client.create.mockResolvedValue({
-        id: "client-123",
-      });
+      mockTx.user.create.mockResolvedValue({ id: "user-123" });
+      mockTx.client.create.mockResolvedValue({ id: "client-123" });
 
       await service.registerClient({
         fullName: "Test User",
@@ -228,12 +104,8 @@ describe("ClientRegistrationService", () => {
     });
 
     it("should set client status to ACTIVE", async () => {
-      mockTx.user.create.mockResolvedValue({
-        id: "user-123",
-      });
-      mockTx.client.create.mockResolvedValue({
-        id: "client-123",
-      });
+      mockTx.user.create.mockResolvedValue({ id: "user-123" });
+      mockTx.client.create.mockResolvedValue({ id: "client-123" });
 
       await service.registerClient({
         fullName: "Test User",
@@ -245,12 +117,8 @@ describe("ClientRegistrationService", () => {
     });
 
     it("should include email if provided", async () => {
-      mockTx.user.create.mockResolvedValue({
-        id: "user-123",
-      });
-      mockTx.client.create.mockResolvedValue({
-        id: "client-123",
-      });
+      mockTx.user.create.mockResolvedValue({ id: "user-123" });
+      mockTx.client.create.mockResolvedValue({ id: "client-123" });
 
       await service.registerClient({
         fullName: "John Doe",
@@ -263,12 +131,8 @@ describe("ClientRegistrationService", () => {
     });
 
     it("should set email to null if not provided", async () => {
-      mockTx.user.create.mockResolvedValue({
-        id: "user-123",
-      });
-      mockTx.client.create.mockResolvedValue({
-        id: "client-123",
-      });
+      mockTx.user.create.mockResolvedValue({ id: "user-123" });
+      mockTx.client.create.mockResolvedValue({ id: "client-123" });
 
       await service.registerClient({
         fullName: "Jane Doe",
@@ -280,12 +144,8 @@ describe("ClientRegistrationService", () => {
     });
 
     it("should return user ID from transaction", async () => {
-      mockTx.user.create.mockResolvedValue({
-        id: "user-456",
-      });
-      mockTx.client.create.mockResolvedValue({
-        id: "client-123",
-      });
+      mockTx.user.create.mockResolvedValue({ id: "user-456" });
+      mockTx.client.create.mockResolvedValue({ id: "client-123" });
 
       const result = await service.registerClient({
         fullName: "John Doe",
@@ -296,12 +156,8 @@ describe("ClientRegistrationService", () => {
     });
 
     it("should execute within transaction", async () => {
-      mockTx.user.create.mockResolvedValue({
-        id: "user-123",
-      });
-      mockTx.client.create.mockResolvedValue({
-        id: "client-123",
-      });
+      mockTx.user.create.mockResolvedValue({ id: "user-123" });
+      mockTx.client.create.mockResolvedValue({ id: "client-123" });
 
       await service.registerClient({
         fullName: "John Doe",
@@ -309,23 +165,6 @@ describe("ClientRegistrationService", () => {
       });
 
       expect(mockDataStore.$transaction).toHaveBeenCalled();
-    });
-
-    it("should hash password with correct bcrypt rounds", async () => {
-      mockTx.user.create.mockResolvedValue({
-        id: "user-123",
-      });
-      mockTx.client.create.mockResolvedValue({
-        id: "client-123",
-      });
-
-      await service.registerClient({
-        fullName: "John Doe",
-        phone: "+1234567890",
-      });
-
-      const hashCall = vi.mocked(bcryptjs.hash).mock.calls[0];
-      expect(hashCall[1]).toBe(10);
     });
   });
 
@@ -359,28 +198,6 @@ describe("ClientRegistrationService", () => {
       });
     });
 
-    it("should work with different phone formats", async () => {
-      mockDataStore.client.findUnique.mockResolvedValue(null);
-
-      const phones = ["+1234567890", "201012345678", "0101234567"];
-      for (const phone of phones) {
-        const available = await service.isPhoneAvailable(phone);
-        expect(available).toBe(true);
-      }
-    });
-
-    it("should return false if client exists", async () => {
-      mockDataStore.client.findUnique.mockResolvedValue({
-        id: "existing-client",
-        fullName: "Existing User",
-        phone: "+1234567890",
-      });
-
-      const available = await service.isPhoneAvailable("+1234567890");
-
-      expect(available).toBe(false);
-    });
-
     it("should query by phone field", async () => {
       mockDataStore.client.findUnique.mockResolvedValue(null);
 
@@ -394,12 +211,8 @@ describe("ClientRegistrationService", () => {
   describe("integration scenarios", () => {
     it("should allow registration if phone is available", async () => {
       mockDataStore.client.findUnique.mockResolvedValue(null);
-      mockTx.user.create.mockResolvedValue({
-        id: "user-123",
-      });
-      mockTx.client.create.mockResolvedValue({
-        id: "client-123",
-      });
+      mockTx.user.create.mockResolvedValue({ id: "user-123" });
+      mockTx.client.create.mockResolvedValue({ id: "client-123" });
 
       const phoneAvailable = await service.isPhoneAvailable("+1234567890");
       expect(phoneAvailable).toBe(true);
@@ -410,8 +223,7 @@ describe("ClientRegistrationService", () => {
       });
 
       expect(result).toHaveProperty("userId");
-      expect(result).toHaveProperty("clientId");
-      expect(result).toHaveProperty("temporaryPassword");
+      expect(typeof result.userId).toBe("string");
     });
 
     it("should prevent registration if phone is taken", async () => {
@@ -421,28 +233,6 @@ describe("ClientRegistrationService", () => {
 
       const phoneAvailable = await service.isPhoneAvailable("+1234567890");
       expect(phoneAvailable).toBe(false);
-    });
-
-    it("should return all required fields in registration result", async () => {
-      mockTx.user.create.mockResolvedValue({
-        id: "user-123",
-      });
-      mockTx.client.create.mockResolvedValue({
-        id: "client-123",
-      });
-
-      const result = await service.registerClient({
-        fullName: "John Doe",
-        phone: "+1234567890",
-      });
-
-      expect(result).toHaveProperty("userId");
-      expect(result).toHaveProperty("clientId");
-      expect(result).toHaveProperty("temporaryPassword");
-
-      expect(typeof result.userId).toBe("string");
-      expect(typeof result.clientId).toBe("string");
-      expect(typeof result.temporaryPassword).toBe("string");
     });
   });
 });

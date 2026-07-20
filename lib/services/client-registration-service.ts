@@ -1,9 +1,4 @@
-import bcryptjs from "bcryptjs";
-
-import { clientIdGenerator } from "@/lib/services/client-id-generator";
-import { passwordGenerator } from "@/lib/services/password-generator";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
-import { BcryptPasswordVerifier } from "@/lib/auth/password-verifier";
 
 export interface RegisterClientInput {
   fullName: string;
@@ -14,8 +9,6 @@ export interface RegisterClientInput {
 
 export interface RegisterClientResult {
   userId: string;
-  clientId: string;
-  temporaryPassword: string;
 }
 
 export interface ResolvedClientGroup {
@@ -24,7 +17,7 @@ export interface ResolvedClientGroup {
 }
 
 export interface ClientRegistrationStore {
-  register(input: RegisterClientInput & { clientId: string; passwordHash: string }): Promise<{ userId: string; clientId: string }>;
+  register(input: RegisterClientInput): Promise<{ userId: string }>;
   findClientByPhone(phone: string): Promise<{ id: string } | null>;
   findGroupByName(groupName: string): Promise<ResolvedClientGroup | null>;
 }
@@ -32,17 +25,15 @@ export interface ClientRegistrationStore {
 const supabaseRegistrationStore: ClientRegistrationStore = {
   async register(input) {
     const { data, error } = await getSupabaseServerClient().rpc("register_client", {
-      p_client_id: input.clientId,
       p_email: input.email ?? "",
       p_full_name: input.fullName,
       p_group_id: input.groupId ?? "",
-      p_password_hash: input.passwordHash,
       p_phone: input.phone,
     });
     if (error) throw error;
     const result = data[0];
     if (!result) throw new Error("Client registration returned no record");
-    return result;
+    return { userId: result.userId };
   },
   async findClientByPhone(phone) {
     const { data, error } = await getSupabaseServerClient()
@@ -60,27 +51,11 @@ const supabaseRegistrationStore: ClientRegistrationStore = {
 
 export class ClientRegistrationService {
   constructor(private readonly store: ClientRegistrationStore = supabaseRegistrationStore) {}
-  private passwordVerifier = new BcryptPasswordVerifier();
 
   async registerClient(
     input: RegisterClientInput
   ): Promise<RegisterClientResult> {
-    const clientId = await clientIdGenerator.getNextAvailableId();
-    const temporaryPassword = passwordGenerator.generatePassword(clientId);
-
-    const hashedPassword = await bcryptjs.hash(temporaryPassword, 10);
-
-    const result = await this.store.register({
-      ...input,
-      clientId,
-      passwordHash: hashedPassword,
-    });
-
-    return {
-      userId: result.userId,
-      clientId: result.clientId,
-      temporaryPassword,
-    };
+    return this.store.register(input);
   }
 
   async isPhoneAvailable(phone: string): Promise<boolean> {

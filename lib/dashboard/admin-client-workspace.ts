@@ -90,7 +90,7 @@ export const adminClientWorkspaceDefinition: WorkspaceDefinition<
   getSearchValue: (record) =>
     [
       record.fullName,
-      record.clientId,
+      record.phone,
       record.assignedCoach,
       record.membership,
     ].join(" "),

@@ -1,13 +1,10 @@
 "use server";
 
-import bcrypt from "bcryptjs";
 import { ClientPaymentStatus, UserRole } from "@/lib/supabase/domain";
 import { revalidatePath } from "next/cache";
 
 import { requireRole } from "@/lib/auth/session";
-import { generateTemporaryPassword } from "@/lib/auth/temporary-password";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
-import { clientIdGenerator } from "@/lib/services/client-id-generator";
 import { COACH_FILES_BUCKET } from "@/lib/storage/coach-files";
 import {
   injuryStatusFromLabel,
@@ -65,36 +62,6 @@ function normalizeEmail(value: string | undefined) {
   return normalized.length > 0 ? normalized : null;
 }
 
-async function generateUniqueClientId() {
-  const supabase = getSupabaseServerClient();
-  const firstCandidate = await clientIdGenerator.getNextAvailableSlot();
-
-  for (let offset = 0; offset < 1200; offset += 1) {
-    const baseDate = new Date(
-      firstCandidate.year,
-      firstCandidate.month - 1 + offset,
-      1,
-    );
-    const slot = await clientIdGenerator.getNextAvailableSlot(
-      baseDate.getMonth() + 1,
-      baseDate.getFullYear(),
-    );
-    const candidate = clientIdGenerator.generateId(slot);
-    const { data: existing, error } = await supabase
-      .from("User")
-      .select("id")
-      .eq("clientId", candidate)
-      .maybeSingle();
-    if (error) throw error;
-
-    if (!existing) {
-      return candidate;
-    }
-  }
-
-  throw new Error("Could not generate a unique client ID. Please try again.");
-}
-
 export async function saveAdminClient(input: SaveAdminClientInput) {
   await requireRole(UserRole.ADMIN);
   const supabase = getSupabaseServerClient();
@@ -116,15 +83,6 @@ export async function saveAdminClient(input: SaveAdminClientInput) {
     throw new Error("Client full name is required.");
   }
 
-  const generatedClientId = input.clientId
-    ? null
-    : await generateUniqueClientId();
-  const temporaryPassword = generatedClientId
-    ? generateTemporaryPassword()
-    : null;
-  const password = temporaryPassword
-    ? await bcrypt.hash(temporaryPassword, 12)
-    : null;
   const { data: savedClientId, error } = await supabase.rpc(
     "admin_save_client",
     {
@@ -143,8 +101,6 @@ export async function saveAdminClient(input: SaveAdminClientInput) {
         injuryNotes,
         restrictions,
         trialOutcome,
-        loginClientId: generatedClientId,
-        password,
       },
     },
   );
@@ -161,16 +117,6 @@ export async function saveAdminClient(input: SaveAdminClientInput) {
   revalidatePath("/admin/schedule");
   revalidatePath("/coach/clients");
   revalidatePath("/coach/sessions");
-
-  return {
-    credentials:
-      generatedClientId && temporaryPassword
-        ? {
-            signInId: generatedClientId,
-            temporaryPassword,
-          }
-        : null,
-  };
 }
 
 export async function deleteAdminClient(input: DeleteAdminClientInput) {

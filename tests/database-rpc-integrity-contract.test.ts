@@ -14,6 +14,13 @@ const promotionService = readFileSync(
   resolve(root, "lib/leads/promote-leads-to-clients.ts"),
   "utf8",
 );
+const removeClientIdMigration = readFileSync(
+  resolve(
+    root,
+    "supabase/migrations/20260720000000_remove_client_id_membership_code.sql",
+  ),
+  "utf8",
+);
 
 describe("client and lead RPC integrity migration", () => {
   it("replaces UUID assumptions with the schema's text identifiers", () => {
@@ -29,24 +36,27 @@ describe("client and lead RPC integrity migration", () => {
     expect(migration).toContain("if should_record_payment then");
   });
 
-  it("requires password rotation and preserves existing client credentials", () => {
-    expect(migration).toMatch(/payload->>'password',\s+true,\s+'CLIENT'/);
-    expect(migration).toContain("'credentialsIssued', false");
-    expect(promotionService).toContain("promotionResult?.credentialsIssued !== false");
-    expect(promotionService).toContain(
-      "Linked the lead to the existing client account without changing its credentials.",
+  it("drops the membership Client ID and creates clients without credentials", () => {
+    expect(removeClientIdMigration).toContain(
+      'ALTER TABLE public."User" DROP COLUMN IF EXISTS "clientId"',
     );
+    expect(removeClientIdMigration).not.toContain("payload->>'password'");
+    expect(promotionService).not.toContain("clientId");
+    expect(promotionService).not.toContain("credentialsIssued");
   });
 
-  it("keeps both definer functions service-role only", () => {
-    expect(migration).toContain(
-      "revoke all on function public.admin_save_client(jsonb) from public, anon, authenticated",
+  it("keeps the recreated definer functions service-role only", () => {
+    expect(removeClientIdMigration).toContain(
+      "revoke all on function public.register_client(text, text, text, text) from public, anon, authenticated",
     );
-    expect(migration).toContain(
-      "revoke all on function public.promote_lead_to_client(text, text, text) from public, anon, authenticated",
+    expect(removeClientIdMigration).toContain(
+      "grant execute on function public.register_client(text, text, text, text) to service_role",
     );
-    expect(migration).toContain(
-      "grant execute on function public.promote_lead_to_client(text, text, text) to service_role",
+    expect(removeClientIdMigration).toContain(
+      "revoke all on function public.promote_lead_to_client(text) from public, anon, authenticated",
+    );
+    expect(removeClientIdMigration).toContain(
+      "grant execute on function public.promote_lead_to_client(text) to service_role",
     );
   });
 });

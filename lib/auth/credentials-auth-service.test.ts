@@ -10,7 +10,6 @@ function createService(overrides?: {
 }) {
   const userRepository: UserRepository = {
     findByEmail: vi.fn().mockResolvedValue(null),
-    findByClientId: vi.fn().mockResolvedValue(null),
     findById: vi.fn().mockResolvedValue(null),
     ...overrides?.repository,
   };
@@ -32,7 +31,6 @@ describe("CredentialsAuthService", () => {
         findByEmail: vi.fn().mockResolvedValue({
           id: "admin-1",
           email: "admin@example.com",
-          clientId: null,
           name: "Studio Admin",
           password: "hashed-password",
           mustChangePassword: false,

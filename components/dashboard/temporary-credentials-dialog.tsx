@@ -68,7 +68,7 @@ export function TemporaryCredentialsDialog({
 
           <dl>
             <div>
-              <dt>{credentials?.accountType === "coach" ? "Email" : "Client ID"}</dt>
+              <dt>{credentials?.accountType === "coach" ? "Email" : "Sign-in ID"}</dt>
               <dd>{credentials?.signInId}</dd>
             </div>
             <div>

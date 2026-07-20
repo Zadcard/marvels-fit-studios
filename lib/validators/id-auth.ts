@@ -24,22 +24,11 @@ export function normalizePhoneNumber(value: string) {
   return hasPlus ? `+${digits}` : digits;
 }
 
-export const clientIdSchema = z
-  .string()
-  .trim()
-  .length(7, "Client ID must be exactly 7 digits")
-  .regex(/^\d{7}$/, "Client ID must contain only digits");
-
 export const passwordSchema = z
   .string()
   .min(8, "Password must be at least 8 characters")
   .regex(/[A-Za-z]/, "Password must include at least one letter")
   .regex(/[0-9]/, "Password must include at least one number");
-
-export const mfsPasswordSchema = z
-  .string()
-  .regex(/^MFS_\d{7}$/, "Password must be in format MFS_YYMMXXX")
-  .optional();
 
 export const phoneSchema = z
   .string()
@@ -75,10 +64,6 @@ export const clientRegistrationSchema = z.object({
   phone: phoneSchema,
 });
 
-export const passwordResetRequestSchema = z.object({
-  clientId: clientIdSchema,
-});
-
 export const passwordResetSchema = z
   .object({
     token: z.string().min(1, "Reset token is required"),
@@ -107,6 +92,5 @@ export const changePasswordSchema = z
 
 export type EmailLogin = z.infer<typeof emailLoginSchema>;
 export type ClientRegistration = z.infer<typeof clientRegistrationSchema>;
-export type PasswordResetRequest = z.infer<typeof passwordResetRequestSchema>;
 export type PasswordReset = z.infer<typeof passwordResetSchema>;
 export type ChangePassword = z.infer<typeof changePasswordSchema>;

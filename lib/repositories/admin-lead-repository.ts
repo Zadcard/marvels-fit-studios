@@ -2,8 +2,9 @@ import "server-only";
 
 import { LeadStatus } from "@/lib/supabase/domain";
 
-import { readLeadCredentialClientId } from "@/lib/leads/lead-credential-metadata";
 import type { AdminLeadRecord, AdminLeadStatus } from "@/lib/dashboard/admin-dashboard-data";
+
+const LEGACY_JOIN_CREDENTIALS_PREFIX = "__join_credentials__:";
 import { withSupabaseFallback } from "@/lib/supabase/errors";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -33,11 +34,12 @@ function toLeadStatus(status: LeadStatus): AdminLeadStatus {
 }
 
 function normalizeMessage(value: string | null) {
-  if (readLeadCredentialClientId(value)) {
+  const trimmed = value?.trim();
+  if (!trimmed || trimmed.startsWith(LEGACY_JOIN_CREDENTIALS_PREFIX)) {
     return "No message submitted.";
   }
 
-  return value?.trim() || "No message submitted.";
+  return trimmed;
 }
 
 export type AdminLeadInitialOption = {

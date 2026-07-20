@@ -46,14 +46,12 @@ describe("BulkClientImportService", () => {
     });
   });
 
-  it("imports valid clients and records generated credentials", async () => {
+  it("imports valid clients", async () => {
     vi.mocked(clientRegistrationService.isPhoneAvailable).mockResolvedValue(
       true
     );
     vi.mocked(clientRegistrationService.registerClient).mockResolvedValue({
       userId: "user-1",
-      clientId: "2605001",
-      temporaryPassword: "MFS_2605001",
     });
 
     const stats = await service.importClientsFromCSV(
@@ -69,13 +67,10 @@ describe("BulkClientImportService", () => {
         fullName: "John Doe",
         groupName: "",
         phone: "+201012345678",
-        clientId: "2605001",
-        password: "MFS_2605001",
       },
     ]);
     expect(stats.results[0]).toMatchObject({
       success: true,
-      temporaryPassword: "MFS_2605001",
     });
     expect(stats.successRate).toBe(100);
   });
@@ -86,8 +81,6 @@ describe("BulkClientImportService", () => {
     );
     vi.mocked(clientRegistrationService.registerClient).mockResolvedValue({
       userId: "user-1",
-      clientId: "2605001",
-      temporaryPassword: "MFS_2605001",
     });
 
     await service.importClients([
@@ -121,7 +114,7 @@ describe("BulkClientImportService", () => {
     });
   });
 
-  it("generates credentials CSV report", () => {
+  it("generates the imported-clients CSV report", () => {
     const report = service.generateImportReport({
       total: 1,
       successful: 1,
@@ -135,8 +128,6 @@ describe("BulkClientImportService", () => {
           fullName: "John Doe",
           groupName: "",
           phone: "+201012345678",
-          clientId: "2605001",
-          password: "MFS_2605001",
         },
       ],
       failedImports: [],
@@ -144,8 +135,6 @@ describe("BulkClientImportService", () => {
     });
 
     expect(report.summary).toBe("1/1 clients imported (100%).");
-    expect(report.credentialsCsv).toContain(
-      "2605001,John Doe,,+201012345678,MFS_2605001"
-    );
+    expect(report.importedCsv).toContain("John Doe,,+201012345678");
   });
 });

@@ -72,7 +72,6 @@ export type AdminClientListRecord = {
   createdAt: Date;
   user: {
     email: string | null;
-    clientId: string | null;
   };
   group: {
     id: string;
@@ -244,15 +243,6 @@ export function buildAdminClientWhere(filters: AdminClientListFilters) {
                 },
               },
               {
-                user: {
-                  is: {
-                    clientId: {
-                      contains: filters.search,
-                    },
-                  },
-                },
-              },
-              {
                 group: {
                   is: {
                     name: {
@@ -304,7 +294,6 @@ export function mapAdminClientRecord(client: AdminClientListRecord): AdminClient
   return {
     id: client.id,
     fullName: client.fullName,
-    clientId: client.user.clientId ?? "Not assigned",
     email: client.user.email ?? "No email",
     phone: client.phone ?? "No phone",
     membership,
