@@ -1,10 +1,19 @@
 import type { TrainingCategoryLabel } from "@/lib/dashboard/client-domain-labels";
+import type { RecurringSessionTemplateSlot } from "@/lib/dashboard/recurring-session-template";
 
 export type AdminGroupType = "Group" | "Private";
 
 export type AdminGroupMember = {
   id: string;
   fullName: string;
+};
+
+export type AdminGroupSeries = {
+  templateId: string;
+  durationMinutes: number;
+  startsOn: string;
+  endsOn: string;
+  slots: RecurringSessionTemplateSlot[];
 };
 
 export type AdminGroupRecord = {
@@ -21,6 +30,7 @@ export type AdminGroupRecord = {
   members: AdminGroupMember[];
   scheduleSummary: string;
   capacityLabel: string;
+  series: AdminGroupSeries | null;
 };
 
 export type AdminGroupCoachOption = {

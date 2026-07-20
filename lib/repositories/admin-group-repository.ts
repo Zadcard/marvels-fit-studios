@@ -4,6 +4,7 @@ import type {
   AdminGroupClientOption,
   AdminGroupCoachOption,
   AdminGroupRecord,
+  AdminGroupSeries,
 } from "@/lib/dashboard/admin-group-record";
 import { trainingCategoryLabelFor } from "@/lib/dashboard/client-domain-labels";
 import { withSupabaseFallback } from "@/lib/supabase/errors";
@@ -26,22 +27,48 @@ function formatLocalTime(value: string) {
 }
 
 function buildScheduleSummary(
-  templates: Array<{ weekday: number; localStartTime: string; active: boolean }>,
+  templates: Array<{
+    active: boolean;
+    slots: Array<{ weekday: number; localStartTime: string }>;
+  }>,
 ): string {
-  const active = templates
+  const activeSlots = templates
     .filter((template) => template.active)
+    .flatMap((template) => template.slots)
     .sort((left, right) => left.weekday - right.weekday);
 
-  if (!active.length) {
+  if (!activeSlots.length) {
     return "Sessions to be determined";
   }
 
-  return active
-    .map(
-      (template) =>
-        `${WEEKDAY_LABELS[template.weekday] ?? "?"} ${formatLocalTime(template.localStartTime)}`,
-    )
+  return activeSlots
+    .map((slot) => `${WEEKDAY_LABELS[slot.weekday] ?? "?"} ${formatLocalTime(slot.localStartTime)}`)
     .join(" · ");
+}
+
+function pickPrimarySeries(
+  templates: Array<{
+    id: string;
+    createdAt: string;
+    durationMinutes: number;
+    startsOn: string;
+    endsOn: string | null;
+    slots: Array<{ weekday: number; localStartTime: string }>;
+  }>,
+): AdminGroupSeries | null {
+  if (!templates.length) return null;
+  const [primary] = [...templates].sort((left, right) =>
+    right.createdAt.localeCompare(left.createdAt),
+  );
+  return {
+    templateId: primary.id,
+    durationMinutes: primary.durationMinutes,
+    startsOn: primary.startsOn,
+    endsOn: primary.endsOn ?? "",
+    slots: primary.slots
+      .map((slot) => ({ weekday: slot.weekday, localStartTime: slot.localStartTime.slice(0, 5) }))
+      .sort((left, right) => left.weekday - right.weekday),
+  };
 }
 
 export class AdminGroupRepository {
@@ -57,7 +84,7 @@ export class AdminGroupRepository {
         const { data, error } = await supabase
           .from("Group")
           .select(
-            "id,name,type,trainingCategory,capacity,isActive,notes,createdAt,coach:Coach(id,fullName),members:Client(id,fullName),templates:RecurringSessionTemplate(weekday,localStartTime,active)",
+            "id,name,type,trainingCategory,capacity,isActive,notes,createdAt,coach:Coach(id,fullName),members:Client(id,fullName),templates:RecurringSessionTemplate(id,createdAt,active,durationMinutes,startsOn,endsOn,slots:RecurringSessionSlot(weekday,localStartTime))",
           )
           .order("name");
         if (error) throw error;
@@ -84,6 +111,7 @@ export class AdminGroupRepository {
               group.capacity != null
                 ? `${members.length} / ${group.capacity}`
                 : `${members.length}`,
+            series: pickPrimarySeries(group.templates),
           } satisfies AdminGroupRecord;
         });
       }, []),
