@@ -140,6 +140,16 @@ begin
           and requested."localStartTime" = slot."localStartTime"
       )
   loop
+    update public."SessionBooking"
+    set "status" = 'CANCELED', "canceledAt" = current_timestamp
+    where "trainingSessionId" in (
+      select ts."id" from public."TrainingSession" ts
+      where ts."sourceSlotId" = existing_slot."id"
+        and ts."status" = 'SCHEDULED'
+        and ts."startsAt" > now()
+    )
+      and "status" in ('BOOKED','ATTENDED','WAITLIST');
+
     update public."TrainingSession"
     set "status" = 'CANCELED'
     where "sourceSlotId" = existing_slot."id"

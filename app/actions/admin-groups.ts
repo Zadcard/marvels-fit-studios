@@ -29,13 +29,28 @@ type SaveAdminGroupInput = {
   series?: SaveAdminGroupSeriesInput;
 };
 
-const saveAdminGroupSeriesSchema = z.object({
-  templateId: z.string().uuid().nullish(),
-  durationMinutes: z.number().int().min(15).max(480),
-  startsOn: z.string().date(),
-  endsOn: z.string().date().optional(),
-  slots: z.array(recurringSessionSlotSchema).min(1).max(7),
-});
+const saveAdminGroupSeriesSchema = z
+  .object({
+    templateId: z.string().uuid().nullish(),
+    durationMinutes: z.number().int().min(15).max(480),
+    startsOn: z.string().date(),
+    endsOn: z.string().date().optional(),
+    slots: z.array(recurringSessionSlotSchema).min(1).max(7),
+  })
+  .superRefine((value, context) => {
+    const seen = new Set<string>();
+    value.slots.forEach((slot, index) => {
+      const key = `${slot.weekday}:${slot.localStartTime}`;
+      if (seen.has(key)) {
+        context.addIssue({
+          code: "custom",
+          path: ["slots", index],
+          message: "Each day and time can only appear once in a series.",
+        });
+      }
+      seen.add(key);
+    });
+  });
 
 type DeleteAdminGroupInput = {
   groupId: string;

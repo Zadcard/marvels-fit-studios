@@ -53,7 +53,7 @@ export async function saveRecurringSessionTemplate(
     throw error;
   }
   revalidateRecurringViews();
-  return { id: data as string };
+  return { id: data };
 }
 
 export async function generateRecurringSessions(input: {

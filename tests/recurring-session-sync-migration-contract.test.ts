@@ -23,6 +23,11 @@ describe("recurring session sync migration", () => {
     expect(migration).toContain('insert into public."RecurringSessionSlot"');
   });
 
+  it("cancels dangling bookings for removed slots before canceling their sessions", () => {
+    expect(migration).toContain('update public."SessionBooking"');
+    expect(migration).toContain('"trainingSessionId"');
+  });
+
   it("regenerates through the existing horizon after every sync", () => {
     expect(migration).toContain('coalesce(p_through_date, "lastGeneratedThrough", p_starts_on + 28)');
     expect(migration).toContain('perform public.generate_recurring_sessions(v_template_id, v_through);');

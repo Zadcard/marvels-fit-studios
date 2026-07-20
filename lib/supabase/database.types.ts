@@ -2485,6 +2485,24 @@ export type Database = {
         }
         Returns: undefined
       }
+      sync_recurring_session_template: {
+        Args: {
+          p_capacity: number | null
+          p_coach_id: string
+          p_created_by_id: string
+          p_description: string | null
+          p_duration_minutes: number
+          p_ends_on: string | null
+          p_group_id: string | null
+          p_slots: Json
+          p_starts_on: string
+          p_template_id: string | null
+          p_through_date?: string | null
+          p_title: string
+          p_type: Database["public"]["Enums"]["TrainingSessionType"]
+        }
+        Returns: string
+      }
       update_session_attendance: {
         Args: {
           p_client_id: string
