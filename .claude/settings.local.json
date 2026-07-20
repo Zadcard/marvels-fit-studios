@@ -48,7 +48,19 @@
       "Bash(node -e ' *)",
       "Bash(grep *)",
       "Bash(netlify --version)",
-      "WebFetch(domain:marvel-fit-studios.netlify.app)"
+      "WebFetch(domain:marvel-fit-studios.netlify.app)",
+      "Bash(xargs wc -l)",
+      "Bash(npx vitest *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(npx supabase *)",
+      "mcp__claude_ai_Supabase__list_migrations",
+      "mcp__claude_ai_Supabase__execute_sql",
+      "Bash(awk -F_ '$1 >= 20260719000000')",
+      "mcp__claude_ai_Supabase__apply_migration",
+      "mcp__claude_ai_Supabase__generate_typescript_types",
+      "Bash(python -c ' *)",
+      "Bash(rm lib/supabase/database.types.ts.new)"
     ]
   },
   "disabledMcpjsonServers": [
