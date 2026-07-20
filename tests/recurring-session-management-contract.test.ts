@@ -28,6 +28,12 @@ describe("recurring session management", () => {
     expect(manager).toContain("deleteRecurringSessionTemplate");
   });
 
+  it("lets one series manage multiple weekday/time slots", () => {
+    expect(manager).toContain("SeriesSlotsEditor");
+    expect(manager).toContain("slots:");
+    expect(manager).not.toContain('weekday: form.weekday');
+  });
+
   it("blocks deletion after occurrences have been generated", () => {
     expect(migration).toContain('session_record."sourceTemplateId" = p_template_id');
     expect(migration).toContain("Recurring template has generated occurrences.");
