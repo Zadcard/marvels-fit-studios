@@ -27,7 +27,7 @@ export function CoachTodayOperations({ coachName, sessions, clients }: Props) {
             <article key={session.id}>
               <div className={styles.sessionTop}>
                 <time><strong>{session.timeLabel}</strong><small>{session.dayLabel}</small></time>
-                <div><span><strong>{session.title}</strong><b data-status={session.status}>{session.status}</b></span><small>{session.sessionType} · {session.location} · {session.rosterLabel}</small></div>
+                <div><span><strong>{session.title}</strong><b data-status={session.status}>{session.status}</b></span><small>{session.sessionType} · {session.rosterLabel}</small></div>
                 <Link href="/coach/sessions">Open session</Link>
               </div>
               {session.bookings.length ? <div className={styles.roster}>{session.bookings.slice(0, 8).map((booking) => <span key={booking.clientId} data-alert={booking.hasInjuryAlert || undefined}>{getInitials(booking.fullName)}<small>{booking.fullName}</small></span>)}</div> : <p className={styles.empty}>No clients booked.</p>}

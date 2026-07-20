@@ -18,7 +18,6 @@ import {
   ChevronRight,
   Clock3,
   Dumbbell,
-  MapPin,
   Repeat2,
   Search,
   ShieldUser,
@@ -84,10 +83,8 @@ type SessionForm = {
   status: "DRAFT" | "SCHEDULED" | "COMPLETED";
   coachId: string;
   groupId: string;
-  location: string;
   startsAt: string;
   endsAt: string;
-  capacity: string;
 };
 
 type Confirmation =
@@ -156,10 +153,8 @@ function createEmptyForm(coachId = "", durationMinutes = 60): SessionForm {
     status: "SCHEDULED",
     coachId,
     groupId: "",
-    location: "",
     startsAt: instantToStudioDateTimeLocal(starts),
     endsAt: instantToStudioDateTimeLocal(ends),
-    capacity: "12",
   };
 }
 
@@ -241,7 +236,7 @@ export function AdminScheduleWorkspace({
   const filtered = useMemo(() => {
     const query = deferredSearch.trim().toLowerCase();
     return records.filter((record) =>
-      (!query || [record.title, record.coachName, record.groupName, record.location].join(" ").toLowerCase().includes(query)) &&
+      (!query || [record.title, record.coachName, record.groupName].join(" ").toLowerCase().includes(query)) &&
       (status === "All" || record.status === status) &&
       (type === "All" || record.sessionType === type) &&
       (coach === "all" || record.coachId === coach) &&
@@ -256,8 +251,6 @@ export function AdminScheduleWorkspace({
   const weekDays = Array.from({ length: 7 }, (_, index) =>
     addStudioDays(weekStartDate, index),
   );
-  const weekCapacity = records.reduce((sum, item) => sum + (item.capacity ?? 1), 0);
-  const weekBooked = records.reduce((sum, item) => sum + item.bookedCount, 0);
 
   const timeRows = useMemo(() => {
     const map = new Map<number, string>();
@@ -313,10 +306,8 @@ export function AdminScheduleWorkspace({
       status: record.rawStatus,
       coachId: record.coachId,
       groupId: record.groupId ?? "",
-      location: record.location,
       startsAt: toDateTimeLocal(record.startsAt),
       endsAt: toDateTimeLocal(record.endsAt),
-      capacity: String(record.capacity ?? 1),
     });
     setError("");
     setEditorOpen(true);
@@ -335,10 +326,8 @@ export function AdminScheduleWorkspace({
           status: form.status,
           coachId: form.coachId,
           groupId: form.groupId || null,
-          location: form.location,
           startsAt: studioDateTimeLocalToIso(form.startsAt),
           endsAt: studioDateTimeLocalToIso(form.endsAt),
-          capacity: form.type === "PRIVATE" ? 1 : Number(form.capacity) || null,
         });
         setEditorOpen(false);
         router.refresh();
@@ -456,14 +445,13 @@ export function AdminScheduleWorkspace({
 
       <section className={styles.stats} aria-label="Schedule summary">
         {stats.map((stat) => <article key={stat.id}><span>{stat.label}</span><strong>{stat.value}</strong><p>{stat.change}</p></article>)}
-        <article className={styles.utilization}><span>Seat utilization</span><strong>{weekCapacity ? Math.round((weekBooked / weekCapacity) * 100) : 0}%</strong><div><i style={{ width: `${weekCapacity ? Math.round((weekBooked / weekCapacity) * 100) : 0}%` }} /></div><p>{weekBooked} booked / {weekCapacity} places</p></article>
       </section>
 
       <section className={styles.reviewLayout}>
         <div className={styles.scheduler}>
           <div className={styles.schedulerTop}>
             <div className={styles.monthNav}><button type="button" aria-label="Previous week" onClick={() => navigateWeek(-1)} disabled={isPending}><ChevronLeft size={18} /></button><div><button type="button" className={styles.todayButton} onClick={navigateToday} disabled={isPending}>Today</button><strong>{monthFormatter.format(weekStart)}</strong></div><button type="button" aria-label="Next week" onClick={() => navigateWeek(1)} disabled={isPending}><ChevronRight size={18} /></button></div>
-            <div className={styles.search}><Search size={17} /><label className="sr-only" htmlFor="schedule-search">Search schedule</label><input id="schedule-search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Session, coach, group or room" /></div>
+            <div className={styles.search}><Search size={17} /><label className="sr-only" htmlFor="schedule-search">Search schedule</label><input id="schedule-search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Session, coach or group" /></div>
             <div className={styles.schedulerActions}><AdminRecurringSessionManager templates={recurringTemplates} coachOptions={coachOptions} groupOptions={groupOptions} defaultDurationMinutes={defaultDurationMinutes} /><button type="button" className="mv-btn mv-btn-primary" onClick={openCreate}><CalendarPlus2 size={17} /> New session</button></div>
           </div>
           <div className={styles.filterStrip}>
@@ -547,7 +535,7 @@ export function AdminScheduleWorkspace({
         <Dialog.Description>{selected.dayLabel}, {selected.dateLabel} · {selected.timeRange}</Dialog.Description>
         <Dialog.Close className={styles.close} aria-label="Close session details"><X size={18} /></Dialog.Close>
         <div className={styles.inspectorStatus}><span className={statusClass(selected.status)}>{selected.rawStatus === "CANCELED" ? "Canceled" : selected.status}</span><span>{selected.sessionType}</span></div>
-        <dl><div><dt><Clock3 size={15} /> Time</dt><dd>{selected.dayLabel}, {selected.dateLabel}<br />{selected.timeRange}</dd></div><div><dt><ShieldUser size={15} /> Coach</dt><dd>{selected.coachName}</dd></div><div><dt><MapPin size={15} /> Location</dt><dd>{selected.location}</dd></div><div><dt><Users size={15} /> Capacity</dt><dd>{selected.occupancyLabel}<br />{selected.waitlistCount} waitlisted</dd></div><div><dt><Dumbbell size={15} /> Group</dt><dd>{selected.groupName}</dd></div></dl>
+        <dl><div><dt><Clock3 size={15} /> Time</dt><dd>{selected.dayLabel}, {selected.dateLabel}<br />{selected.timeRange}</dd></div><div><dt><ShieldUser size={15} /> Coach</dt><dd>{selected.coachName}</dd></div><div><dt><Users size={15} /> Booked</dt><dd>{selected.bookedCount} booked<br />{selected.waitlistCount} waitlisted</dd></div><div><dt><Dumbbell size={15} /> Group</dt><dd>{selected.groupName}</dd></div></dl>
         <div className={styles.inspectorNote}><strong>Roster</strong>{selected.bookedClients.length ? <ul>{selected.bookedClients.map((client) => <li key={client.id}><span>{client.fullName} · {client.status}</span>{selected.rawStatus === "SCHEDULED" || selected.rawStatus === "DRAFT" ? <div><button type="button" onClick={() => openLogRequest(client)}><CalendarClock size={13} /> Log request</button><button type="button" disabled={isPending} onClick={() => setConfirmation({ kind: "remove-booking", sessionId: selected.id, clientId: client.id, label: client.fullName })}>Remove</button></div> : null}</li>)}</ul> : <p>No clients booked.</p>}{selected.rawStatus === "SCHEDULED" || selected.rawStatus === "DRAFT" ? <div><select aria-label="Client to add" value={bookingClientId} onChange={(event) => setBookingClientId(event.target.value)}><option value="">Select client</option>{availableClients.map((client) => <option key={client.id} value={client.id}>{client.fullName}</option>)}</select><button type="button" disabled={!bookingClientId || isPending} onClick={addBooking}><UserPlus size={14} /> Add</button></div> : null}</div>
         <div className={styles.inspectorNote}><strong>Training focus</strong><p>{selected.focus}</p></div>
         {selected.sourceTemplateId ? <div className={styles.inspectorNote}><strong><Repeat2 size={14} /> {selected.isTemplateException ? "Recurring exception" : "Recurring occurrence"}</strong><p>{selected.isTemplateException ? "This occurrence has an intentional day or time override." : "Editing or cancelling here changes this occurrence only."}</p></div> : null}
@@ -558,7 +546,7 @@ export function AdminScheduleWorkspace({
         </div>
       </> : null}</Dialog.Content></Dialog.Portal></Dialog.Root>
 
-      <Dialog.Root open={editorOpen} onOpenChange={setEditorOpen}><Dialog.Portal><Dialog.Overlay className={styles.overlay} /><Dialog.Content className={styles.editor}><Dialog.Title>{editingId ? "Edit session" : "Create a session"}</Dialog.Title><Dialog.Description>Define the occurrence, linked group, coach, capacity, and location.</Dialog.Description><Dialog.Close className={styles.close} aria-label="Close session editor"><X size={18} /></Dialog.Close><form onSubmit={submitSession} className={styles.form}>
+      <Dialog.Root open={editorOpen} onOpenChange={setEditorOpen}><Dialog.Portal><Dialog.Overlay className={styles.overlay} /><Dialog.Content className={styles.editor}><Dialog.Title>{editingId ? "Edit session" : "Create a session"}</Dialog.Title><Dialog.Description>Define the occurrence, linked group, coach, and timing.</Dialog.Description><Dialog.Close className={styles.close} aria-label="Close session editor"><X size={18} /></Dialog.Close><form onSubmit={submitSession} className={styles.form}>
         <label className={styles.full}>Session title<input required value={form.title} onChange={(event) => setForm((value) => ({ ...value, title: event.target.value }))} /></label>
         <label className={styles.full}>Training focus<textarea value={form.description} onChange={(event) => setForm((value) => ({ ...value, description: event.target.value }))} /></label>
         <label>Type<select value={form.type} onChange={(event) => setForm((value) => ({ ...value, type: event.target.value as SessionForm["type"] }))}><option value="GROUP">Group</option><option value="PRIVATE">Private</option></select></label>
@@ -567,8 +555,6 @@ export function AdminScheduleWorkspace({
         <label>Ends<input type="datetime-local" required value={form.endsAt} onChange={(event) => setForm((value) => ({ ...value, endsAt: event.target.value }))} /></label>
         <label>Coach<select required value={form.coachId} onChange={(event) => setForm((value) => ({ ...value, coachId: event.target.value }))}><option value="">Select coach</option>{coachOptions.map((item) => <option value={item.id} key={item.id}>{item.fullName}</option>)}</select></label>
         <label>Group<select value={form.groupId} onChange={(event) => setForm((value) => ({ ...value, groupId: event.target.value }))}><option value="">No linked group</option>{groupOptions.map((item) => <option value={item.id} key={item.id}>{item.name}</option>)}</select></label>
-        <label>Capacity<input type="number" min="1" disabled={form.type === "PRIVATE"} value={form.type === "PRIVATE" ? "1" : form.capacity} onChange={(event) => setForm((value) => ({ ...value, capacity: event.target.value }))} /></label>
-        <label>Location<input value={form.location} onChange={(event) => setForm((value) => ({ ...value, location: event.target.value }))} placeholder="Studio floor or zone" /></label>
         {error ? <p className={`${styles.error} ${styles.full}`} role="alert">{error}</p> : null}
         <div className={`${styles.formActions} ${styles.full}`}><button type="button" className="mv-btn mv-btn-secondary" onClick={() => setEditorOpen(false)}>Close</button><button type="submit" className="mv-btn mv-btn-primary" disabled={isPending}>{isPending ? "Saving…" : "Save session"}</button></div>
       </form></Dialog.Content></Dialog.Portal></Dialog.Root>

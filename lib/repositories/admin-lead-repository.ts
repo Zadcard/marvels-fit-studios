@@ -122,7 +122,7 @@ export class AdminLeadRepository {
         });
 
       return {
-        records: filtered.slice(0, 5).map((lead) => ({
+        records: filtered.map((lead) => ({
           id: lead.id,
           fullName: lead.fullName,
           email: lead.email ?? "No email",

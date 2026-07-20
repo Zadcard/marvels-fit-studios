@@ -22,6 +22,17 @@ type SaveAdminSubscriptionInput = {
 
 type SubscriptionMutation = "pause" | "resume" | "cancel" | "renew";
 
+const subscriptionDurations = [1, 3] as const;
+const subscriptionSessionChoices = [8, 12, 16, 20] as const;
+
+type CreateAdminSubscriptionInput = {
+  clientId: string;
+  durationMonths: (typeof subscriptionDurations)[number];
+  sessionsPerMonth: (typeof subscriptionSessionChoices)[number];
+  price: string;
+  paymentMethod: AdminPaymentMethod;
+};
+
 function toStoredPaymentMethod(method: AdminPaymentMethod) {
   switch (method) {
     case "InstaPay":
@@ -93,6 +104,102 @@ function buildMutationSuccessMessage(action: SubscriptionMutation) {
     case "renew":
       return "Subscription renewed.";
   }
+}
+
+export async function createAdminSubscription(input: CreateAdminSubscriptionInput) {
+  await requireRole(UserRole.ADMIN);
+  const supabase = getSupabaseServerClient();
+
+  const clientId = input.clientId.trim();
+  if (!clientId) throw new Error("Choose a client.");
+  if (!subscriptionDurations.includes(input.durationMonths)) {
+    throw new Error("Duration must be one month or a quarter.");
+  }
+  if (!subscriptionSessionChoices.includes(input.sessionsPerMonth)) {
+    throw new Error("Sessions per month must be 8, 12, 16, or 20.");
+  }
+  const price = parseAmount(input.price);
+  if (!price) throw new Error("Enter a valid subscription price.");
+
+  const months = input.durationMonths;
+  const sessionsTotal = input.sessionsPerMonth * months;
+  const slug = `${months === 1 ? "monthly" : "quarterly"}-${input.sessionsPerMonth}-per-month`;
+
+  let { data: plan, error: planError } = await supabase
+    .from("SubscriptionPlan")
+    .select("id")
+    .eq("slug", slug)
+    .maybeSingle();
+  if (planError) throw planError;
+  if (!plan) {
+    const inserted = await supabase
+      .from("SubscriptionPlan")
+      .insert({
+        name: `${months === 1 ? "Monthly" : "Quarterly"} · ${input.sessionsPerMonth} sessions/mo`,
+        slug,
+        billingCycle: months === 1 ? "MONTHLY" : "CUSTOM",
+        sessionsIncluded: sessionsTotal,
+        price,
+        currency: "EGP",
+        isActive: true,
+      })
+      .select("id")
+      .single();
+    if (inserted.error) throw inserted.error;
+    plan = inserted.data;
+  }
+
+  const { data: existing, error: existingError } = await supabase
+    .from("ClientSubscription")
+    .select("id")
+    .eq("clientId", clientId)
+    .eq("planId", plan.id)
+    .neq("status", "CANCELED")
+    .limit(1)
+    .maybeSingle();
+  if (existingError) throw existingError;
+  if (existing) throw new Error("This client already has that subscription plan.");
+
+  const startsAt = new Date();
+  const renewsAt = new Date(startsAt);
+  renewsAt.setMonth(renewsAt.getMonth() + months);
+
+  const { data: subscription, error: subscriptionError } = await supabase
+    .from("ClientSubscription")
+    .insert({
+      clientId,
+      planId: plan.id,
+      status: "ACTIVE",
+      startsAt: startsAt.toISOString(),
+      renewsAt: renewsAt.toISOString(),
+      sessionsTotal,
+      isAutoRenew: true,
+      customPrice: price,
+    })
+    .select("id")
+    .single();
+  if (subscriptionError) throw subscriptionError;
+
+  const { error: paymentError } = await supabase.from("Payment").insert({
+    amount: price,
+    currency: "EGP",
+    note: `New ${months === 1 ? "monthly" : "quarterly"} subscription · ${input.sessionsPerMonth} sessions/mo.`,
+    clientId,
+    clientSubscriptionId: subscription.id,
+    method: toStoredPaymentMethod(input.paymentMethod),
+  });
+  if (paymentError) throw paymentError;
+
+  const { error: clientError } = await supabase
+    .from("Client")
+    .update({ isPaid: true, paymentStatus: "PAID", sessionsLeft: sessionsTotal })
+    .eq("id", clientId);
+  if (clientError) throw clientError;
+
+  revalidateSubscriptionViews();
+  revalidatePath("/admin/reports");
+
+  return { id: subscription.id };
 }
 
 export async function saveAdminSubscription(input: SaveAdminSubscriptionInput) {

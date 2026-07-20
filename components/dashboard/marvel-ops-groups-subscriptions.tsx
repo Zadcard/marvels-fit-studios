@@ -1,11 +1,14 @@
 "use client";
 
-import { LoaderCircle, ReceiptText, Search, X } from "lucide-react";
+import { LoaderCircle, Plus, ReceiptText, Search, X } from "lucide-react";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Dialog } from "radix-ui";
 
-import { mutateAdminSubscriptionLifecycle } from "@/app/actions/admin-subscriptions";
+import {
+  createAdminSubscription,
+  mutateAdminSubscriptionLifecycle,
+} from "@/app/actions/admin-subscriptions";
 import {
   adminPaymentMethods,
   type AdminPaymentMethod,
@@ -24,17 +27,22 @@ export type MarvelOpsSubscriptionStat = {
   tone: "accent" | "success" | "warning" | "neutral";
 };
 
+export type MarvelOpsSubscriptionClientOption = { id: string; label: string };
+
 export function MarvelOpsSubscriptions({
   stats,
   records,
+  clientOptions = [],
 }: {
   stats: MarvelOpsSubscriptionStat[];
   records: AdminSubscriptionRecord[];
+  clientOptions?: MarvelOpsSubscriptionClientOption[];
 }) {
   const router = useRouter();
   const { showToast } = useDashboardToast();
   const [pending, startTransition] = useTransition();
   const [selected, setSelected] = useState<AdminSubscriptionRecord | null>(null);
+  const [creating, setCreating] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [paymentMethod, setPaymentMethod] =
@@ -111,6 +119,9 @@ export function MarvelOpsSubscriptions({
             <span className="sr-only">Search members</span>
             <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Member or plan" />
           </label>
+          <button type="button" onClick={() => setCreating(true)} disabled={pending}>
+            <Plus size={13} /> New subscription
+          </button>
         </header>
         <div className={styles.head}>
           <span>Member</span>
@@ -162,7 +173,184 @@ export function MarvelOpsSubscriptions({
           onPaymentMethodChange={setPaymentMethod}
         />
       ) : null}
+      {creating ? (
+        <NewSubscriptionDialog
+          clientOptions={clientOptions}
+          close={() => setCreating(false)}
+          onCreated={(text) => {
+            setCreating(false);
+            setMessage(text);
+            showToast(text);
+            router.refresh();
+          }}
+        />
+      ) : null}
     </div>
+  );
+}
+
+const subscriptionDurations = [
+  { months: 1 as const, label: "1 Month" },
+  { months: 3 as const, label: "Quarter (3 months)" },
+];
+const sessionsPerMonthChoices = [8, 12, 16, 20] as const;
+
+function NewSubscriptionDialog({
+  clientOptions,
+  close,
+  onCreated,
+}: {
+  clientOptions: MarvelOpsSubscriptionClientOption[];
+  close: () => void;
+  onCreated: (message: string) => void;
+}) {
+  const [pending, startTransition] = useTransition();
+  const [clientId, setClientId] = useState("");
+  const [months, setMonths] = useState<(typeof subscriptionDurations)[number]["months"]>(1);
+  const [sessionsPerMonth, setSessionsPerMonth] =
+    useState<(typeof sessionsPerMonthChoices)[number]>(12);
+  const [price, setPrice] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<AdminPaymentMethod>("Cash");
+  const [error, setError] = useState("");
+
+  function submit() {
+    setError("");
+    startTransition(async () => {
+      try {
+        await createAdminSubscription({
+          clientId,
+          durationMonths: months,
+          sessionsPerMonth,
+          price,
+          paymentMethod,
+        });
+        onCreated("Subscription created and payment recorded.");
+      } catch (caught) {
+        setError(
+          caught instanceof Error ? caught.message : "The subscription could not be created.",
+        );
+      }
+    });
+  }
+
+  return (
+    <Dialog.Root open onOpenChange={(open) => !open && !pending && close()}>
+      <Dialog.Portal>
+        <Dialog.Overlay className={styles.overlay} />
+        <Dialog.Content className={styles.modal}>
+          <Dialog.Close className={styles.close} disabled={pending} aria-label="Close">
+            <X size={16} />
+          </Dialog.Close>
+          <span>Membership</span>
+          <Dialog.Title asChild>
+            <h2>New subscription</h2>
+          </Dialog.Title>
+          <Dialog.Description>
+            Choose the member, duration, monthly sessions, and price.
+          </Dialog.Description>
+          <label>
+            Member
+            <select
+              value={clientId}
+              onChange={(event) => setClientId(event.target.value)}
+              disabled={pending}
+            >
+              <option value="">Select a member</option>
+              {clientOptions.map((client) => (
+                <option key={client.id} value={client.id}>
+                  {client.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <fieldset className={styles.paymentChoices} disabled={pending}>
+            <legend>Duration</legend>
+            <div className={styles.chips}>
+              {subscriptionDurations.map((duration) => (
+                <button
+                  key={duration.months}
+                  type="button"
+                  data-active={months === duration.months || undefined}
+                  aria-pressed={months === duration.months}
+                  onClick={() => setMonths(duration.months)}
+                >
+                  {duration.label}
+                </button>
+              ))}
+            </div>
+          </fieldset>
+          <fieldset className={styles.paymentChoices} disabled={pending}>
+            <legend>Sessions per month</legend>
+            <div className={styles.chips}>
+              {sessionsPerMonthChoices.map((choice) => (
+                <button
+                  key={choice}
+                  type="button"
+                  data-active={sessionsPerMonth === choice || undefined}
+                  aria-pressed={sessionsPerMonth === choice}
+                  onClick={() => setSessionsPerMonth(choice)}
+                >
+                  {choice}
+                </button>
+              ))}
+            </div>
+          </fieldset>
+          <p>
+            {sessionsPerMonth * months} sessions assigned over {months === 1 ? "1 month" : "3 months"}.
+          </p>
+          <label>
+            Price (EGP)
+            <input
+              inputMode="decimal"
+              value={price}
+              onChange={(event) => setPrice(event.target.value)}
+              placeholder="0.00"
+              disabled={pending}
+            />
+          </label>
+          <fieldset className={styles.paymentChoices} disabled={pending}>
+            <legend>Paid with</legend>
+            <div className={styles.chips}>
+              {adminPaymentMethods.map((method) => (
+                <button
+                  key={method}
+                  type="button"
+                  data-active={paymentMethod === method || undefined}
+                  aria-pressed={paymentMethod === method}
+                  onClick={() => setPaymentMethod(method)}
+                >
+                  {method}
+                </button>
+              ))}
+            </div>
+          </fieldset>
+          {error ? (
+            <p className={styles.error} role="alert">
+              {error}
+            </p>
+          ) : null}
+          <footer>
+            <button type="button" onClick={close} disabled={pending}>
+              Cancel
+            </button>
+            <button
+              className={styles.submit}
+              type="button"
+              onClick={submit}
+              disabled={pending || !clientId || !price.trim()}
+            >
+              {pending ? (
+                <>
+                  <LoaderCircle size={14} className={styles.spinner} /> Saving
+                </>
+              ) : (
+                "Create subscription"
+              )}
+            </button>
+          </footer>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
   );
 }
 

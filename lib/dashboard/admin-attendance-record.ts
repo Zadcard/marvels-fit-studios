@@ -33,7 +33,6 @@ export type AdminAttendanceSession = {
   coachName: string;
   sessionType: "Group" | "Private";
   trainingCategory: string | null;
-  location: string;
   attendees: AdminAttendanceAttendee[];
 };
 

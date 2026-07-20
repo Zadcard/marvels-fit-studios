@@ -95,7 +95,7 @@ export class CoachSessionRepository {
     return withSupabaseFallback(async () => {
       const { data, error } = await getSupabaseServerClient()
         .from("TrainingSession")
-        .select("id,title,description,type,status,startsAt,location,capacity,coach:Coach!inner(userId),notes:SessionNote(content,createdAt),bookings:SessionBooking(status,bookedAt,client:Client(id,fullName,injuryStatus,injuryNotes,restrictions))")
+        .select("id,title,description,type,status,startsAt,coach:Coach!inner(userId),notes:SessionNote(content,createdAt),bookings:SessionBooking(status,bookedAt,client:Client(id,fullName,injuryStatus,injuryNotes,restrictions))")
         .eq("coach.userId", userId).neq("status", "CANCELED").order("startsAt");
       if (error) throw error;
       const sessions = data.map((session) => ({
@@ -131,7 +131,7 @@ export class CoachSessionRepository {
       const rosterLabel =
         session.type === "PRIVATE"
           ? bookings[0]?.fullName ?? "No client assigned"
-          : `${bookings.length} / ${(session.capacity ?? bookings.length) || 1} booked`;
+          : `${bookings.length} booked`;
 
       const noteValue = session.notes[0]?.content ?? "";
 
@@ -146,7 +146,6 @@ export class CoachSessionRepository {
         }),
         dayLabel: getDayLabel(session.startsAt),
         timeLabel: timeFormatter.format(session.startsAt),
-        location: session.location ?? "Studio floor",
         rosterLabel,
         focus:
           session.description ??
@@ -181,7 +180,6 @@ export class CoachSessionRepository {
           timeRange,
           sessionType: session.sessionType,
           status: session.status,
-          location: session.location,
           rosterLabel: session.rosterLabel,
           note: session.note,
         };

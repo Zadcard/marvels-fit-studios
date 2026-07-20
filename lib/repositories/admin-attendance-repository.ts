@@ -52,7 +52,7 @@ export class AdminAttendanceRepository {
       const { data, error } = await getSupabaseServerClient()
         .from("TrainingSession")
         .select(
-          "id,title,type,status,startsAt,location,coach:Coach(fullName),group:Group(trainingCategory),bookings:SessionBooking(status,client:Client(id,fullName,status,injuryStatus,injuryNotes))",
+          "id,title,type,status,startsAt,coach:Coach(fullName),group:Group(trainingCategory),bookings:SessionBooking(status,client:Client(id,fullName,status,injuryStatus,injuryNotes))",
         )
         .neq("status", "CANCELED")
         .gte("startsAt", startOfDay.toISOString())
@@ -82,7 +82,6 @@ export class AdminAttendanceRepository {
           trainingCategory: session.group?.trainingCategory
             ? trainingCategoryLabelFor(session.group.trainingCategory)
             : null,
-          location: session.location ?? "Studio floor",
           attendees,
         };
       });

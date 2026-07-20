@@ -17,7 +17,6 @@ export type CoachOverviewSession = {
   title: string;
   dayLabel: string;
   timeLabel: string;
-  location: string;
   sessionType: "Group" | "Private";
   status: "Ready" | "Waitlist" | "Prep" | "Completed";
   occupancyLabel: string;

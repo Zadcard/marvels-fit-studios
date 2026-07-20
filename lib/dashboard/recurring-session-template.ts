@@ -7,8 +7,6 @@ export type RecurringSessionTemplateRecord = {
   coachName: string;
   groupId: string | null;
   groupName: string;
-  location: string;
-  capacity: number;
   weekday: number;
   localStartTime: string;
   durationMinutes: number;

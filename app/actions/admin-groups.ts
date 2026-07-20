@@ -63,9 +63,6 @@ export async function saveAdminGroup(input: SaveAdminGroupInput) {
   if (!coachId) {
     throw new Error("Assign a coach to the group.");
   }
-  if (capacity === null) {
-    throw new Error("Group capacity is required.");
-  }
 
   const { error } = await supabase.rpc("save_admin_group", {
     p_group_id: input.groupId ?? "",

@@ -37,8 +37,8 @@ export function MarvelOpsToday({ data }: { data: AdminTodayOperations }) {
           <div className={styles.sessionList}>
             {data.sessions.map((session, index) => <button type="button" key={session.id} className={styles.session} data-live={session.isLive || undefined} onClick={() => openAttendance(session.id)}>
               <time><strong>{session.timeLabel}</strong><small>{session.isLive ? "Live now" : "Today"}</small></time>
-              <span className={styles.sessionTitle}><i data-tone={tones[index % tones.length]}>{session.coachInitials}</i><b>{session.title}<small>{session.coachName} · {session.location}</small></b></span>
-              <span className={styles.occupancy}><strong>{session.bookedCount}/{session.capacity}</strong><small>checked in</small></span><ArrowRight size={15} />
+              <span className={styles.sessionTitle}><i data-tone={tones[index % tones.length]}>{session.coachInitials}</i><b>{session.title}<small>{session.coachName}</small></b></span>
+              <span className={styles.occupancy}><strong>{session.bookedCount}</strong><small>checked in</small></span><ArrowRight size={15} />
             </button>)}
             {!data.sessions.length ? <p className={styles.panelEmpty}>No sessions scheduled today.</p> : null}
           </div>

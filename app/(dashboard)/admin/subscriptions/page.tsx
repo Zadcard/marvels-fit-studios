@@ -2,6 +2,6 @@ import { MarvelOpsSubscriptions } from "@/components/dashboard/marvel-ops-groups
 import { adminSubscriptionRepository } from "@/lib/repositories/admin-subscription-repository";
 export const metadata={title:"Subscriptions"};
 export default async function AdminSubscriptionsPage(){
-  const { stats, records } = await adminSubscriptionRepository.list();
-  return <MarvelOpsSubscriptions stats={stats} records={records}/>;
+  const { stats, records, clientOptions } = await adminSubscriptionRepository.list();
+  return <MarvelOpsSubscriptions stats={stats} records={records} clientOptions={clientOptions}/>;
 }

@@ -88,7 +88,7 @@ export function CoachSessionWorkspace({
 
     {selected ? <section className={styles.detail}>
       <header><div><span>{selected.dayLabel} &middot; {selected.timeLabel}</span><h2>{selected.title}</h2><p>{selected.focus}</p></div><b data-status={selected.status}>{selected.status}</b></header>
-      <div className={styles.meta}><span>{selected.sessionType}</span><span>{selected.location}</span><span>{selected.rosterLabel}</span></div>
+      <div className={styles.meta}><span>{selected.sessionType}</span><span>{selected.rosterLabel}</span></div>
       {error ? <p className={styles.error} role="alert">{error}</p> : null}
       {message ? <p className={styles.success} role="status">{message}</p> : null}
 

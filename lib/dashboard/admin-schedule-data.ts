@@ -36,8 +36,6 @@ export type AdminScheduleSessionRecord = {
   trainingCategory: TrainingCategoryLabel | null;
   injuryAlertCount: number;
   trialCount: number;
-  location: string;
-  occupancyLabel: string;
   rosterCount: number;
   bookedCount: number;
   waitlistCount: number;
@@ -46,7 +44,6 @@ export type AdminScheduleSessionRecord = {
   highlight: string;
   startsAt: string;
   endsAt: string;
-  capacity: number | null;
   sourceTemplateId: string | null;
   isTemplateException: boolean;
   bookedClients: Array<{

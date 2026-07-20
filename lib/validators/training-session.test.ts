@@ -15,10 +15,8 @@ describe('Training Session Validators', () => {
     type: TrainingSessionType.GROUP,
     status: TrainingSessionStatus.SCHEDULED,
     coachId: 'coach-123',
-    location: 'Studio A',
     startsAt: '2024-06-01T10:00:00Z',
     endsAt: '2024-06-01T11:00:00Z',
-    capacity: 10,
   };
 
   describe('createTrainingSessionSchema', () => {
@@ -91,50 +89,6 @@ describe('Training Session Validators', () => {
       expect(result.success).toBe(false);
     });
 
-    it('should accept location up to 120 characters', () => {
-      const location = 'a'.repeat(120);
-      const input = { ...validInput, location };
-      const result = createTrainingSessionSchema.safeParse(input);
-      expect(result.success).toBe(true);
-    });
-
-    it('should reject location longer than 120 characters', () => {
-      const location = 'a'.repeat(121);
-      const input = { ...validInput, location };
-      const result = createTrainingSessionSchema.safeParse(input);
-      expect(result.success).toBe(false);
-    });
-
-    it('should reject non-integer capacity', () => {
-      const input = { ...validInput, capacity: 10.5 };
-      const result = createTrainingSessionSchema.safeParse(input);
-      expect(result.success).toBe(false);
-    });
-
-    it('should reject zero capacity', () => {
-      const input = { ...validInput, capacity: 0 };
-      const result = createTrainingSessionSchema.safeParse(input);
-      expect(result.success).toBe(false);
-    });
-
-    it('should reject negative capacity', () => {
-      const input = { ...validInput, capacity: -1 };
-      const result = createTrainingSessionSchema.safeParse(input);
-      expect(result.success).toBe(false);
-    });
-
-    it('should reject capacity greater than 100', () => {
-      const input = { ...validInput, capacity: 101 };
-      const result = createTrainingSessionSchema.safeParse(input);
-      expect(result.success).toBe(false);
-    });
-
-    it('should accept null capacity', () => {
-      const input = { ...validInput, capacity: null };
-      const result = createTrainingSessionSchema.safeParse(input);
-      expect(result.success).toBe(true);
-    });
-
     it('should reject invalid start datetime', () => {
       const input = { ...validInput, startsAt: 'not-a-date' };
       const result = createTrainingSessionSchema.safeParse(input);
@@ -170,34 +124,10 @@ describe('Training Session Validators', () => {
       expect(result.success).toBe(false);
     });
 
-    it('should reject PRIVATE session with capacity not equal to 1', () => {
+    it('should accept a PRIVATE session', () => {
       const input = {
         ...validInput,
         type: TrainingSessionType.PRIVATE,
-        capacity: 2,
-      };
-      const result = createTrainingSessionSchema.safeParse(input);
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error.issues.some(i => i.path[0] === 'capacity')).toBe(true);
-      }
-    });
-
-    it('should accept PRIVATE session with capacity of 1', () => {
-      const input = {
-        ...validInput,
-        type: TrainingSessionType.PRIVATE,
-        capacity: 1,
-      };
-      const result = createTrainingSessionSchema.safeParse(input);
-      expect(result.success).toBe(true);
-    });
-
-    it('should accept GROUP session with any valid capacity', () => {
-      const input = {
-        ...validInput,
-        type: TrainingSessionType.GROUP,
-        capacity: 10,
       };
       const result = createTrainingSessionSchema.safeParse(input);
       expect(result.success).toBe(true);
@@ -317,59 +247,21 @@ describe('Training Session Validators', () => {
       expect(result.success).toBe(false);
     });
 
-    it('should accept UPDATE_LOCATION action with location', () => {
+    it('should reject removed UPDATE_LOCATION action', () => {
       const input = {
         sessionIds: ['session-1'],
-        action: 'UPDATE_LOCATION' as const,
+        action: 'UPDATE_LOCATION',
         location: 'Studio B',
       };
       const result = bulkUpdateTrainingSessionsSchema.safeParse(input);
-      expect(result.success).toBe(true);
-    });
-
-    it('should reject UPDATE_LOCATION action without location', () => {
-      const input = {
-        sessionIds: ['session-1'],
-        action: 'UPDATE_LOCATION' as const,
-      };
-      const result = bulkUpdateTrainingSessionsSchema.safeParse(input);
       expect(result.success).toBe(false);
     });
 
-    it('should reject UPDATE_LOCATION action with empty location', () => {
+    it('should reject removed UPDATE_CAPACITY action', () => {
       const input = {
         sessionIds: ['session-1'],
-        action: 'UPDATE_LOCATION' as const,
-        location: '',
-      };
-      const result = bulkUpdateTrainingSessionsSchema.safeParse(input);
-      expect(result.success).toBe(false);
-    });
-
-    it('should accept UPDATE_CAPACITY action with capacity', () => {
-      const input = {
-        sessionIds: ['session-1'],
-        action: 'UPDATE_CAPACITY' as const,
+        action: 'UPDATE_CAPACITY',
         capacity: 15,
-      };
-      const result = bulkUpdateTrainingSessionsSchema.safeParse(input);
-      expect(result.success).toBe(true);
-    });
-
-    it('should reject UPDATE_CAPACITY action without capacity', () => {
-      const input = {
-        sessionIds: ['session-1'],
-        action: 'UPDATE_CAPACITY' as const,
-      };
-      const result = bulkUpdateTrainingSessionsSchema.safeParse(input);
-      expect(result.success).toBe(false);
-    });
-
-    it('should reject UPDATE_CAPACITY action with null capacity', () => {
-      const input = {
-        sessionIds: ['session-1'],
-        action: 'UPDATE_CAPACITY' as const,
-        capacity: null,
       };
       const result = bulkUpdateTrainingSessionsSchema.safeParse(input);
       expect(result.success).toBe(false);

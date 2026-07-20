@@ -17,7 +17,7 @@ const sessionTypeOptions: Array<{
   {
     value: "GROUP",
     label: "Group",
-    description: "Multi-client class with adjustable capacity.",
+    description: "Multi-client class booked from a linked group.",
   },
   {
     value: "PRIVATE",

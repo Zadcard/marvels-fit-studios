@@ -25,8 +25,6 @@ type FormState = {
   type: "GROUP" | "PRIVATE";
   coachId: string;
   groupId: string;
-  location: string;
-  capacity: string;
   weekday: string;
   localStartTime: string;
   durationMinutes: string;
@@ -43,8 +41,6 @@ function emptyForm(coachId = "", defaultDurationMinutes = 60): FormState {
     type: "GROUP",
     coachId,
     groupId: "",
-    location: "",
-    capacity: "12",
     weekday: "1",
     localStartTime: "18:00",
     durationMinutes: String(defaultDurationMinutes),
@@ -60,8 +56,6 @@ function formFor(template: RecurringSessionTemplateRecord): FormState {
     type: template.type,
     coachId: template.coachId,
     groupId: template.groupId ?? "",
-    location: template.location,
-    capacity: String(template.capacity),
     weekday: String(template.weekday),
     localStartTime: template.localStartTime,
     durationMinutes: String(template.durationMinutes),
@@ -120,8 +114,6 @@ export function AdminRecurringSessionManager({
           type: form.type,
           coachId: form.coachId,
           groupId: form.groupId || undefined,
-          location: form.location,
-          capacity: form.type === "PRIVATE" ? 1 : Number(form.capacity),
           weekday: Number(form.weekday),
           localStartTime: form.localStartTime,
           durationMinutes: Number(form.durationMinutes),
@@ -201,11 +193,9 @@ export function AdminRecurringSessionManager({
               <label>Type<select value={form.type} onChange={(event) => setForm((value) => ({ ...value, type: event.target.value as FormState["type"] }))}><option value="GROUP">Group</option><option value="PRIVATE">Private</option></select></label>
               <label>Coach<select required value={form.coachId} onChange={(event) => setForm((value) => ({ ...value, coachId: event.target.value }))}><option value="">Select coach</option>{coachOptions.map((coach) => <option key={coach.id} value={coach.id}>{coach.fullName}</option>)}</select></label>
               <label>Group<select value={form.groupId} onChange={(event) => setForm((value) => ({ ...value, groupId: event.target.value }))}><option value="">No linked group</option>{groupOptions.map((group) => <option key={group.id} value={group.id}>{group.name}</option>)}</select></label>
-              <label>Location<input value={form.location} onChange={(event) => setForm((value) => ({ ...value, location: event.target.value }))} /></label>
               <label>Weekday<select value={form.weekday} onChange={(event) => setForm((value) => ({ ...value, weekday: event.target.value }))}>{weekdays.map((day, index) => <option key={day} value={index}>{day}</option>)}</select></label>
               <label>Start time<input type="time" required value={form.localStartTime} onChange={(event) => setForm((value) => ({ ...value, localStartTime: event.target.value }))} /></label>
               <label>Duration minutes<input type="number" min="15" max="480" required value={form.durationMinutes} onChange={(event) => setForm((value) => ({ ...value, durationMinutes: event.target.value }))} /></label>
-              <label>Capacity<input type="number" min="1" max="100" disabled={form.type === "PRIVATE"} value={form.type === "PRIVATE" ? "1" : form.capacity} onChange={(event) => setForm((value) => ({ ...value, capacity: event.target.value }))} /></label>
               <label>Starts on<input type="date" required value={form.startsOn} onChange={(event) => setForm((value) => ({ ...value, startsOn: event.target.value }))} /></label>
               <label>Ends on<input type="date" value={form.endsOn} onChange={(event) => setForm((value) => ({ ...value, endsOn: event.target.value }))} /></label>
               {selected ? <section className={`${styles.generate} ${styles.full}`}><label>Generate through<input type="date" min={selected.startsOn} value={throughDate} onChange={(event) => setThroughDate(event.target.value)} /></label><button type="button" onClick={generate} disabled={pending}><CalendarRange size={15} /> Generate</button><button type="button" onClick={toggleActive} disabled={pending}>{selected.active ? <Pause size={15} /> : <Play size={15} />}{selected.active ? "Pause" : "Resume"}</button><button type="button" className={styles.deleteButton} onClick={remove} disabled={pending}><Trash2 size={15} /> Delete</button></section> : null}

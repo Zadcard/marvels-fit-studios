@@ -175,7 +175,6 @@ export class CoachOverviewRepository {
         title: session.title,
         dayLabel: session.dayLabel,
         timeLabel: session.timeLabel,
-        location: session.location,
         sessionType: session.sessionType,
         status: session.status,
         occupancyLabel: session.rosterLabel,

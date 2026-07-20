@@ -10,7 +10,6 @@ export type CoachScheduleRecord = {
   timeRange: string;
   sessionType: CoachScheduleSessionType;
   status: CoachScheduleStatus;
-  location: string;
   rosterLabel: string;
   note: string;
 };

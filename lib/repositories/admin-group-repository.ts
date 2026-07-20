@@ -33,7 +33,7 @@ function buildScheduleSummary(
     .sort((left, right) => left.weekday - right.weekday);
 
   if (!active.length) {
-    return "No recurring sessions set";
+    return "Sessions to be determined";
   }
 
   return active

@@ -17,7 +17,7 @@ export function CoachPhoneOperations({ coachName, sessions }: Props) {
         <section className={styles.phone} aria-label="Coach mobile operations view">
           <header><span className={styles.avatar}>{getInitials(coachName)}</span><span><strong>{coachName}</strong><small>Coach</small></span></header>
           <p>Up next · {next ? next.dayLabel : "No session"}</p>
-          {next ? <article className={styles.next}><div><strong>{next.title}</strong><small>{next.sessionType} · {next.location}</small></div><time>{next.timeLabel}</time><b>{next.rosterLabel}</b><Link href="/coach/schedule">View schedule</Link></article> : <div className={styles.empty}>No assigned sessions.</div>}
+          {next ? <article className={styles.next}><div><strong>{next.title}</strong><small>{next.sessionType}</small></div><time>{next.timeLabel}</time><b>{next.rosterLabel}</b><Link href="/coach/schedule">View schedule</Link></article> : <div className={styles.empty}>No assigned sessions.</div>}
           <h2>Injuries to watch</h2>
           {injury ? <article className={styles.injury}><span>{getInitials(injury.fullName)}</span><div><strong>{injury.fullName}</strong><small>{injury.injuryStatus} · {injury.injuryNotes}</small></div></article> : <div className={styles.empty}>No injury alert in the next roster.</div>}
           <nav><Link href="/coach"><Smartphone size={17} />Today</Link><Link href="/coach/schedule"><CalendarDays size={17} />Week</Link><Link href="/coach/clients"><Users size={17} />Clients</Link></nav>

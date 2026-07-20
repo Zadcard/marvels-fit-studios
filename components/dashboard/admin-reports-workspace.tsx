@@ -1,12 +1,16 @@
 "use client";
 
-import { BanknoteArrowDown, BanknoteArrowUp, Download, Scale, UsersRound } from "lucide-react";
-import { useState, useTransition } from "react";
+import { BanknoteArrowDown, BanknoteArrowUp, Download, Scale } from "lucide-react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { voidStudioExpense } from "@/app/actions/admin-expenses";
+import { AdminCashInDialog } from "@/components/dashboard/admin-cash-in-dialog";
 import { AdminCashOutDialog } from "@/components/dashboard/admin-cash-out-dialog";
-import type { AdminReportData, AdminReportBreakdown } from "@/lib/dashboard/admin-report-data";
+import type {
+  AdminReportData,
+  AdminReportBreakdown,
+  AdminReportDailyPoint,
+} from "@/lib/dashboard/admin-report-data";
 import styles from "./admin-reports-workspace.module.css";
 
 const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "EGP", maximumFractionDigits: 0 });
@@ -28,32 +32,95 @@ function Breakdown({ title, items, empty }: { title: string; items: AdminReportB
   return <section className={styles.panel}><header><h2>{title}</h2></header><div className={styles.breakdown}>{items.length ? items.map((item) => <div key={item.key}><span>{item.label}<small>{item.count} entries</small></span><b>{money.format(item.amount)}</b><i><em style={{ width: `${item.amount / max * 100}%` }} /></i></div>) : <p className={styles.empty}>{empty}</p>}</div></section>;
 }
 
-export function AdminReportsWorkspace({ data }: { data: AdminReportData }) {
-  const router = useRouter();
-  const [voidingId, setVoidingId] = useState<string | null>(null);
-  const [reason, setReason] = useState("");
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
-  const [pending, startTransition] = useTransition();
-  const maxDaily = Math.max(1, ...data.daily.flatMap((point) => [point.income, point.expenses]));
-  const exportHref = `/api/reports/operations?from=${encodeURIComponent(data.range.from)}&to=${encodeURIComponent(data.range.to)}`;
+const CHART_WIDTH = 940;
+const CHART_HEIGHT = 220;
+const CHART_PAD_X = 14;
+const CHART_PAD_Y = 18;
 
-  function voidExpense() {
-    if (!voidingId || !reason.trim()) return;
-    setMessage("");
-    setError("");
-    startTransition(async () => {
-      try {
-        await voidStudioExpense(voidingId, reason);
-        setVoidingId(null);
-        setReason("");
-        setMessage("Expense voided with an audit reason.");
-        router.refresh();
-      } catch (cause) {
-        setError(cause instanceof Error ? cause.message : "The expense could not be voided.");
-      }
-    });
-  }
+function CashLinesChart({ daily }: { daily: AdminReportDailyPoint[] }) {
+  const [hover, setHover] = useState<number | null>(null);
+  const max = Math.max(1, ...daily.flatMap((point) => [point.income, point.expenses]));
+  const count = daily.length;
+  const x = (index: number) =>
+    count <= 1
+      ? CHART_WIDTH / 2
+      : CHART_PAD_X + (index * (CHART_WIDTH - CHART_PAD_X * 2)) / (count - 1);
+  const y = (value: number) =>
+    CHART_HEIGHT - CHART_PAD_Y - (value / max) * (CHART_HEIGHT - CHART_PAD_Y * 2);
+  const line = (valueFor: (point: AdminReportDailyPoint) => number) =>
+    daily.map((point, index) => `${x(index)},${y(valueFor(point))}`).join(" ");
+  const columnWidth = count ? (CHART_WIDTH - CHART_PAD_X * 2) / Math.max(1, count - 1) : 0;
+  const hovered = hover === null ? null : daily[hover];
+
+  if (!count) return <p className={styles.empty}>No days in this range.</p>;
+
+  return (
+    <div className={styles.chartWrap}>
+      <svg
+        viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}
+        preserveAspectRatio="none"
+        role="img"
+        aria-label="Cash in and cash out per day"
+        onMouseLeave={() => setHover(null)}
+      >
+        <polyline className={styles.lineIn} points={line((point) => point.income)} />
+        <polyline className={styles.lineOut} points={line((point) => point.expenses)} />
+        {hover !== null ? (
+          <line
+            className={styles.hoverLine}
+            x1={x(hover)}
+            x2={x(hover)}
+            y1={CHART_PAD_Y / 2}
+            y2={CHART_HEIGHT - CHART_PAD_Y / 2}
+          />
+        ) : null}
+        {hovered !== null && hover !== null ? (
+          <>
+            <circle className={styles.dotIn} cx={x(hover)} cy={y(hovered.income)} r={5} />
+            <circle className={styles.dotOut} cx={x(hover)} cy={y(hovered.expenses)} r={5} />
+          </>
+        ) : null}
+        {daily.map((point, index) => (
+          <rect
+            key={point.date}
+            x={x(index) - columnWidth / 2}
+            y={0}
+            width={Math.max(columnWidth, 8)}
+            height={CHART_HEIGHT}
+            fill="transparent"
+            onMouseEnter={() => setHover(index)}
+          >
+            <title>{`${point.date}: ${money.format(point.income)} in · ${money.format(point.expenses)} out`}</title>
+          </rect>
+        ))}
+      </svg>
+      {hovered !== null && hover !== null ? (
+        <div
+          className={styles.chartTip}
+          style={{ left: `${(x(hover) / CHART_WIDTH) * 100}%` }}
+        >
+          <strong>{hovered.date}</strong>
+          <span className={styles.tipIn}>Cash in {money.format(hovered.income)}</span>
+          <span className={styles.tipOut}>Cash out {money.format(hovered.expenses)}</span>
+        </div>
+      ) : null}
+      <div className={styles.chartAxis}>
+        <small>{daily[0].date}</small>
+        <small>{daily[daily.length - 1].date}</small>
+      </div>
+    </div>
+  );
+}
+
+export function AdminReportsWorkspace({
+  data,
+  clientOptions = [],
+}: {
+  data: AdminReportData;
+  clientOptions?: Array<{ id: string; fullName: string }>;
+}) {
+  const router = useRouter();
+  const exportHref = `/api/reports/operations?from=${encodeURIComponent(data.range.from)}&to=${encodeURIComponent(data.range.to)}`;
 
   const activePreset = rangePresets.find(
     (preset) => addDaysToDateOnly(data.range.to, -preset.days) === data.range.from,
@@ -73,27 +140,18 @@ export function AdminReportsWorkspace({ data }: { data: AdminReportData }) {
       ))}</div>
       <form method="get" action="/admin/reports"><label>From<input name="from" type="date" defaultValue={data.range.from} /></label><label>To<input name="to" type="date" defaultValue={data.range.to} /></label><button type="submit">Apply range</button></form>
       <a href={exportHref}><Download size={15} /> Export CSV</a>
+      <AdminCashInDialog clientOptions={clientOptions} />
       <AdminCashOutDialog />
     </section>
-    {error ? <p className={styles.error} role="alert">{error}</p> : null}
-    {message ? <p className={styles.success} role="status">{message}</p> : null}
 
     <section className={styles.kpis} aria-label="Report summary">
-      <article><span><BanknoteArrowUp size={15} /> Income</span><strong>{money.format(data.summary.income)}</strong><small>{data.summary.paymentCount} {data.summary.paymentCount === 1 ? "payment" : "payments"}</small></article>
-      <article><span><BanknoteArrowDown size={15} /> Expenses</span><strong>{money.format(data.summary.expenses)}</strong><small>Posted cash out</small></article>
-      <article data-tone={data.summary.net >= 0 ? "positive" : "negative"}><span><Scale size={15} /> Net</span><strong>{money.format(data.summary.net)}</strong><small>Income minus expenses</small></article>
-      <article><span><UsersRound size={15} /> Attendance</span><strong>{data.summary.attendanceRate}%</strong><small>{data.summary.attended} attended &middot; {data.summary.missed} missed</small></article>
+      <article><span><BanknoteArrowUp size={15} /> Cash in</span><strong>{money.format(data.summary.income)}</strong><small>{data.summary.paymentCount} {data.summary.paymentCount === 1 ? "payment" : "payments"}</small></article>
+      <article><span><BanknoteArrowDown size={15} /> Cash out</span><strong>{money.format(data.summary.expenses)}</strong><small>Posted cash out</small></article>
+      <article data-tone={data.summary.net >= 0 ? "positive" : "negative"}><span><Scale size={15} /> Net</span><strong>{money.format(data.summary.net)}</strong><small>Cash in minus cash out</small></article>
     </section>
 
-    <section className={styles.panel}><header><div><h2>Daily cash movement</h2><p>{data.range.from} through {data.range.to} &middot; {data.range.timezone}</p></div><span>Green income &middot; red expense</span></header><div className={styles.chart}>{data.daily.map((point) => <div key={point.date} title={`${point.date}: ${money.format(point.income)} in, ${money.format(point.expenses)} out`}><span><i style={{ height: `${Math.max(2, point.income / maxDaily * 100)}%` }} /><em style={{ height: `${Math.max(2, point.expenses / maxDaily * 100)}%` }} /></span><small>{point.date.slice(5)}</small></div>)}</div></section>
+    <section className={styles.panel}><header><div><h2>Daily cash movement</h2><p>{data.range.from} through {data.range.to} &middot; {data.range.timezone}</p></div><span>Green line cash in &middot; red line cash out</span></header><CashLinesChart daily={data.daily} /></section>
 
-    <div className={styles.twoColumns}><Breakdown title="Income by payment method" items={data.paymentMethods} empty="No payments in this range." /><Breakdown title="Expenses by category" items={data.expenseCategories} empty="No posted expenses in this range." /></div>
-
-    <section className={styles.panel}><header><div><h2>Coach load &amp; occupancy</h2><p>{data.summary.sessionCount} non-canceled sessions in range</p></div></header><div className={styles.tableWrap}><table><thead><tr><th>Coach</th><th>Sessions</th><th>Scheduled</th><th>Attended seats</th><th>Avg. occupancy</th></tr></thead><tbody>{data.coaches.length ? data.coaches.map((coach) => <tr key={coach.id}><td>{coach.fullName}</td><td>{coach.sessionCount}</td><td>{coach.scheduledHours} hr</td><td>{coach.attendedSeats}</td><td><span className={styles.occupancy}><i><em style={{ width: `${coach.occupancyPercent}%` }} /></i>{coach.occupancyPercent}%</span></td></tr>) : <tr><td colSpan={5} className={styles.empty}>No sessions in this range.</td></tr>}</tbody></table></div></section>
-
-    <div className={styles.twoColumns}>
-      <section className={styles.panel}><header><div><h2>Expense ledger</h2><p>Posted entries are corrected by voiding, never deletion.</p></div></header><div className={styles.expenses}>{data.recentExpenses.length ? data.recentExpenses.slice(0, 12).map((expense) => <article key={expense.id} data-void={expense.status === "VOID" || undefined}><span><strong>{expense.description}</strong><small>{expense.expenseNumber} &middot; {expense.categoryLabel}</small><small>{expense.occurredAtLabel} &middot; {expense.createdByLabel}{expense.reference ? ` · Ref ${expense.reference}` : ""}</small>{expense.voidReason ? <small>Void reason: {expense.voidReason}</small> : null}</span><b>{money.format(expense.amount)}</b>{expense.status === "POSTED" ? voidingId === expense.id ? <div className={styles.voidForm}><input maxLength={300} value={reason} onChange={(event) => setReason(event.target.value)} placeholder="Audit reason" /><button type="button" onClick={voidExpense} disabled={pending || reason.trim().length < 2}>Confirm void</button><button type="button" onClick={() => { setVoidingId(null); setReason(""); }}>Cancel</button></div> : <button type="button" onClick={() => { setVoidingId(expense.id); setReason(""); }}>Void</button> : <em>Void</em>}</article>) : <p className={styles.empty}>No expenses in this range.</p>}</div></section>
-      <section className={styles.panel}><header><div><h2>Payment ledger reconciliation</h2><p>Payment rows compared with posted payment-ledger entries.</p></div></header><dl className={styles.reconciliation}><div><dt>Payment table</dt><dd>{money.format(data.reconciliation.paymentTotal)}</dd></div><div><dt>Billing ledger</dt><dd>{money.format(data.reconciliation.ledgerPaymentTotal)}</dd></div><div data-alert={data.reconciliation.difference !== 0 || undefined}><dt>Difference</dt><dd>{money.format(data.reconciliation.difference)}</dd></div><div data-alert={data.reconciliation.missingLedgerCount > 0 || undefined}><dt>Payments missing ledger entry</dt><dd>{data.reconciliation.missingLedgerCount}</dd></div></dl></section>
-    </div>
+    <div className={styles.twoColumns}><Breakdown title="Cash in by payment method" items={data.paymentMethods} empty="No payments in this range." /><Breakdown title="Cash out by category" items={data.expenseCategories} empty="No posted cash out in this range." /></div>
   </div>;
 }

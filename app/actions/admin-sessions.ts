@@ -27,10 +27,8 @@ type SaveAdminSessionInput = {
   status: "DRAFT" | "SCHEDULED" | "COMPLETED" | "CANCELED";
   coachId: string;
   groupId?: string | null;
-  location?: string;
   startsAt: string;
   endsAt: string;
-  capacity: number | null;
 };
 
 function revalidateSessionViews() {
@@ -54,10 +52,8 @@ export async function saveAdminSession(input: SaveAdminSessionInput) {
       status: input.status,
       coachId: input.coachId,
       groupId: input.groupId,
-      location: input.location,
       startsAt: input.startsAt,
       endsAt: input.endsAt,
-      capacity: input.capacity,
     });
 
     if (!parsed.success) {
@@ -106,10 +102,8 @@ export async function deleteAdminSession(sessionId: string) {
 
 export async function bulkUpdateAdminSessions(input: {
   sessionIds: string[];
-  action: "CANCEL" | "REASSIGN_COACH" | "UPDATE_LOCATION" | "UPDATE_CAPACITY";
+  action: "CANCEL" | "REASSIGN_COACH";
   coachId?: string;
-  location?: string;
-  capacity?: number | null;
 }) {
   await requireRole(UserRole.ADMIN);
 

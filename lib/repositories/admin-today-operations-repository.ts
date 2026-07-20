@@ -57,7 +57,7 @@ export class AdminTodayOperationsRepository {
         const { data, error } = await supabase
           .from("TrainingSession")
           .select(
-            "id,title,startsAt,endsAt,type,status,location,capacity,coach:Coach(id,fullName,specialization),bookings:SessionBooking(id,status)",
+            "id,title,startsAt,endsAt,type,status,coach:Coach(id,fullName,specialization),bookings:SessionBooking(id,status)",
           )
           .neq("status", "CANCELED")
           .gte("startsAt", start)
@@ -117,9 +117,7 @@ export class AdminTodayOperationsRepository {
         sessionType: session.type === "PRIVATE" ? ("Private" as const) : ("Group" as const),
         coachName: session.coach.fullName,
         coachInitials: getInitials(session.coach.fullName),
-        location: session.location ?? "Studio floor",
         bookedCount,
-        capacity: session.capacity ?? Math.max(bookedCount, 1),
         isLive:
           startsAt.getTime() <= now.getTime() &&
           endsAt.getTime() > now.getTime() &&

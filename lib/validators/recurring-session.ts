@@ -8,8 +8,6 @@ export const recurringSessionTemplateSchema = z
     type: z.nativeEnum(TrainingSessionType),
     coachId: z.string().trim().min(1),
     groupId: z.string().trim().optional(),
-    location: z.string().trim().max(120).optional(),
-    capacity: z.number().int().positive().max(100),
     weekday: z.number().int().min(0).max(6),
     localStartTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
     durationMinutes: z.number().int().min(15).max(480),
@@ -17,13 +15,6 @@ export const recurringSessionTemplateSchema = z
     endsOn: z.string().date().optional(),
   })
   .superRefine((value, context) => {
-    if (value.type === TrainingSessionType.PRIVATE && value.capacity !== 1) {
-      context.addIssue({
-        code: "custom",
-        path: ["capacity"],
-        message: "Private recurring sessions must have a capacity of 1.",
-      });
-    }
     if (value.endsOn && value.endsOn < value.startsOn) {
       context.addIssue({
         code: "custom",

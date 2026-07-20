@@ -6,9 +6,7 @@ export type AdminTodaySession = {
   sessionType: "Group" | "Private";
   coachName: string;
   coachInitials: string;
-  location: string;
   bookedCount: number;
-  capacity: number;
   isLive: boolean;
 };
 

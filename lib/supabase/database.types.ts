@@ -1071,6 +1071,51 @@ export type Database = {
           },
         ]
       }
+      Receipt: {
+        Row: {
+          billingLedgerEntryId: string | null
+          clientId: string | null
+          content: string
+          createdAt: string
+          id: string
+          receiptNumber: string
+          updatedAt: string
+        }
+        Insert: {
+          billingLedgerEntryId?: string | null
+          clientId?: string | null
+          content: string
+          createdAt?: string
+          id?: string
+          receiptNumber: string
+          updatedAt?: string
+        }
+        Update: {
+          billingLedgerEntryId?: string | null
+          clientId?: string | null
+          content?: string
+          createdAt?: string
+          id?: string
+          receiptNumber?: string
+          updatedAt?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "Receipt_billingLedgerEntryId_fkey"
+            columns: ["billingLedgerEntryId"]
+            isOneToOne: true
+            referencedRelation: "BillingLedgerEntry"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "Receipt_clientId_fkey"
+            columns: ["clientId"]
+            isOneToOne: false
+            referencedRelation: "Client"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       RecurringSessionTemplate: {
         Row: {
           active: boolean
@@ -2333,7 +2378,7 @@ export type Database = {
       }
       save_admin_group: {
         Args: {
-          p_capacity: number
+          p_capacity: number | null
           p_coach_id: string
           p_group_id: string
           p_is_active: boolean

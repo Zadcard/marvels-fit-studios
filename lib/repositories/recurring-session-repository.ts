@@ -27,8 +27,6 @@ export class RecurringSessionRepository {
         coachName: template.coach.fullName,
         groupId: template.groupId,
         groupName: template.group?.name ?? "No linked group",
-        location: template.location ?? "",
-        capacity: template.capacity ?? 1,
         weekday: template.weekday,
         localStartTime: template.localStartTime.slice(0, 5),
         durationMinutes: template.durationMinutes,

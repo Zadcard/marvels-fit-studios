@@ -21,7 +21,6 @@ export type CoachSessionRecord = {
   status: CoachSessionStatus;
   dayLabel: string;
   timeLabel: string;
-  location: string;
   rosterLabel: string;
   focus: string;
   note: string;

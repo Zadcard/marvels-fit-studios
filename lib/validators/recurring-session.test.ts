@@ -7,8 +7,6 @@ const validTemplate = {
   type: "GROUP" as const,
   coachId: "coach-1",
   groupId: "group-1",
-  location: "Main floor",
-  capacity: 12,
   weekday: 1,
   localStartTime: "18:30",
   durationMinutes: 60,
@@ -21,13 +19,12 @@ describe("recurringSessionTemplateSchema", () => {
     expect(recurringSessionTemplateSchema.safeParse(validTemplate).success).toBe(true);
   });
 
-  it("requires private sessions to have one place", () => {
+  it("accepts a private template", () => {
     const result = recurringSessionTemplateSchema.safeParse({
       ...validTemplate,
       type: "PRIVATE",
-      capacity: 2,
     });
-    expect(result.success).toBe(false);
+    expect(result.success).toBe(true);
   });
 
   it("rejects an end date before the start date", () => {

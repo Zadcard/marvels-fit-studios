@@ -277,7 +277,7 @@ export function AdminGroupsWorkspace({
                   </span>
                   <div>
                     <div className={styles.coachName}>{record.coachName}</div>
-                    <div className={styles.memberCount}>{record.memberCount} {record.memberCount === 1 ? "member" : "members"}</div>
+                    <div className={styles.memberCount}>{record.memberCount ? `${record.memberCount} ${record.memberCount === 1 ? "member" : "members"}` : "Members to be determined"}</div>
                   </div>
                 </div>
 
@@ -338,7 +338,7 @@ export function AdminGroupsWorkspace({
               </label>
               <label>
                 Capacity (optional)
-                <input inputMode="numeric" value={form.capacity} onChange={(event) => setForm((value) => ({ ...value, capacity: event.target.value }))} placeholder="No limit" />
+                <input inputMode="numeric" value={form.capacity} onChange={(event) => setForm((value) => ({ ...value, capacity: event.target.value }))} placeholder="To be determined" />
               </label>
               <label className={`${styles.full} ${styles.checkbox}`}>
                 <input type="checkbox" checked={form.isActive} onChange={(event) => setForm((value) => ({ ...value, isActive: event.target.checked }))} />

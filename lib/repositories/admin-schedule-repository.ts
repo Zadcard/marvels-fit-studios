@@ -120,7 +120,7 @@ export class AdminScheduleRepository {
           .from("TrainingSession")
           .select(
             `
-          id, title, description, type, status, startsAt, endsAt, location,
+          id, title, description, type, status, startsAt, endsAt,
           capacity, coachId, groupId, sourceTemplateId, isTemplateException,
           coach:Coach(fullName),
           group:Group(name, trainingCategory, clients:Client(id)),
@@ -194,13 +194,6 @@ export class AdminScheduleRepository {
               : null,
             injuryAlertCount,
             trialCount,
-            location: session.location ?? "Studio floor",
-            occupancyLabel:
-              session.type === TrainingSessionType.PRIVATE
-                ? `${Math.min(bookingsCount, 1)} / 1 booked`
-                : `${bookingsCount} / ${
-                    session.capacity ?? Math.max(bookingsCount, 1)
-                  } booked`,
             rosterCount: session.group?.clients.length ?? 0,
             bookedCount: bookingsCount,
             waitlistCount,
@@ -221,10 +214,6 @@ export class AdminScheduleRepository {
                   : "Manual session",
             startsAt: startsAt.toISOString(),
             endsAt: endsAt.toISOString(),
-            capacity:
-              session.type === TrainingSessionType.PRIVATE
-                ? 1
-                : session.capacity,
             sourceTemplateId: session.sourceTemplateId,
             isTemplateException: session.isTemplateException,
             bookedClients: activeBookings.flatMap((booking) =>
