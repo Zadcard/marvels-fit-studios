@@ -307,7 +307,8 @@ export class AdminScheduleRepository {
           id, clientId, kind, reason, createdAt,
           fromWeekdays, toWeekdays, effectiveFrom,
           client:Client(fullName),
-          group:Group(name),
+          group:Group!ScheduleChangeRequest_groupId_fkey(name),
+          toGroup:Group!ScheduleChangeRequest_toGroupId_fkey(name),
           sourceSession:TrainingSession!ScheduleChangeRequest_sourceSessionId_fkey(title, startsAt),
           targetSession:TrainingSession!ScheduleChangeRequest_targetSessionId_fkey(title, startsAt)
         `,
@@ -326,7 +327,16 @@ export class AdminScheduleRepository {
           const fromLabel = (request.fromWeekdays ?? []).map((day) => weekdayNames[day]).join("+");
           const toLabel = (request.toWeekdays ?? []).map((day) => weekdayNames[day]).join("+");
           description = `${request.group.name} ${fromLabel} → ${toLabel} from ${request.effectiveFrom}`;
+        } else if (request.kind === "PERMANENT_GROUP_CHANGE" && request.group && request.toGroup) {
+          description = `Move from ${request.group.name} to ${request.toGroup.name}, effective ${request.effectiveFrom}`;
         }
+
+        const kindLabel: AdminScheduleChangeRequestRecord["kindLabel"] =
+          request.kind === "RECURRING_WEEKDAYS"
+            ? "Recurring"
+            : request.kind === "PERMANENT_GROUP_CHANGE"
+              ? "Group change"
+              : "One session";
 
         return {
           id: request.id,
@@ -334,7 +344,7 @@ export class AdminScheduleRepository {
           clientName: request.client?.fullName ?? "Unknown client",
           reason: request.reason,
           kind: request.kind as AdminScheduleChangeRequestRecord["kind"],
-          kindLabel: request.kind === "RECURRING_WEEKDAYS" ? "Recurring" : "One session",
+          kindLabel,
           description,
           createdAt: request.createdAt,
         } satisfies AdminScheduleChangeRequestRecord;

@@ -100,12 +100,13 @@ type LogRequestTarget = {
 };
 
 type RequestForm = {
-  kind: "CANCEL_OCCURRENCE" | "MOVE_OCCURRENCE" | "RECURRING_WEEKDAYS";
+  kind: "CANCEL_OCCURRENCE" | "MOVE_OCCURRENCE" | "RECURRING_WEEKDAYS" | "PERMANENT_GROUP_CHANGE";
   reason: string;
   targetSessionId: string;
   fromWeekdays: number[];
   toWeekdays: number[];
   effectiveFrom: string;
+  toGroupId: string;
 };
 
 const weekdayOptions = [
@@ -166,6 +167,7 @@ function emptyRequestForm(): RequestForm {
     fromWeekdays: [],
     toWeekdays: [],
     effectiveFrom: getStudioDateKey(),
+    toGroupId: "",
   };
 }
 
@@ -406,12 +408,22 @@ export function AdminScheduleWorkspace({
           clientId: logRequestFor.clientId,
           kind: requestForm.kind,
           reason: requestForm.reason,
-          sourceSessionId: requestForm.kind !== "RECURRING_WEEKDAYS" ? logRequestFor.sessionId : undefined,
+          sourceSessionId:
+            requestForm.kind === "CANCEL_OCCURRENCE" || requestForm.kind === "MOVE_OCCURRENCE"
+              ? logRequestFor.sessionId
+              : undefined,
           targetSessionId: requestForm.kind === "MOVE_OCCURRENCE" ? requestForm.targetSessionId : undefined,
-          groupId: requestForm.kind === "RECURRING_WEEKDAYS" ? (logRequestFor.groupId ?? undefined) : undefined,
+          groupId:
+            requestForm.kind === "RECURRING_WEEKDAYS" || requestForm.kind === "PERMANENT_GROUP_CHANGE"
+              ? (logRequestFor.groupId ?? undefined)
+              : undefined,
+          toGroupId: requestForm.kind === "PERMANENT_GROUP_CHANGE" ? requestForm.toGroupId : undefined,
           fromWeekdays: requestForm.kind === "RECURRING_WEEKDAYS" ? requestForm.fromWeekdays : undefined,
           toWeekdays: requestForm.kind === "RECURRING_WEEKDAYS" ? requestForm.toWeekdays : undefined,
-          effectiveFrom: requestForm.kind === "RECURRING_WEEKDAYS" ? requestForm.effectiveFrom : undefined,
+          effectiveFrom:
+            requestForm.kind === "RECURRING_WEEKDAYS" || requestForm.kind === "PERMANENT_GROUP_CHANGE"
+              ? requestForm.effectiveFrom
+              : undefined,
         });
         setLogRequestFor(null);
         router.refresh();
@@ -516,7 +528,16 @@ export function AdminScheduleWorkspace({
                 <div className={styles.requestItem} key={request.id}>
                   <div className={styles.requestItemHead}>
                     <div><strong>{request.clientName}</strong><small>{request.reason}</small></div>
-                    <span className={styles.requestBadge} data-recurring={request.kind === "RECURRING_WEEKDAYS" || undefined}>{request.kindLabel}</span>
+                    <span
+                      className={styles.requestBadge}
+                      data-recurring={
+                        request.kind === "RECURRING_WEEKDAYS" || request.kind === "PERMANENT_GROUP_CHANGE"
+                          ? true
+                          : undefined
+                      }
+                    >
+                      {request.kindLabel}
+                    </span>
                   </div>
                   <p className={styles.requestDescription}>{request.description}</p>
                   <div className={styles.requestActions}>
@@ -566,6 +587,7 @@ export function AdminScheduleWorkspace({
           <option value="CANCEL_OCCURRENCE">Cancel this booking</option>
           <option value="MOVE_OCCURRENCE">Move to a different session</option>
           {logRequestFor?.groupId ? <option value="RECURRING_WEEKDAYS">Change weekly days</option> : null}
+          {logRequestFor?.groupId ? <option value="PERMANENT_GROUP_CHANGE">Permanently change group</option> : null}
         </select></label>
         <label className={styles.full}>Reason<input required value={requestForm.reason} onChange={(event) => setRequestForm((value) => ({ ...value, reason: event.target.value }))} placeholder="e.g. Work travel" /></label>
         {requestForm.kind === "MOVE_OCCURRENCE" ? (
@@ -578,6 +600,15 @@ export function AdminScheduleWorkspace({
           <>
             <label className={styles.full}>From weekdays<div className={styles.weekdayPicker}>{weekdayOptions.map((option) => <label key={option.value}><input type="checkbox" checked={requestForm.fromWeekdays.includes(option.value)} onChange={() => toggleWeekday("fromWeekdays", option.value)} /><span>{option.label}</span></label>)}</div></label>
             <label className={styles.full}>To weekdays<div className={styles.weekdayPicker}>{weekdayOptions.map((option) => <label key={option.value}><input type="checkbox" checked={requestForm.toWeekdays.includes(option.value)} onChange={() => toggleWeekday("toWeekdays", option.value)} /><span>{option.label}</span></label>)}</div></label>
+            <label className={styles.full}>Effective from<input type="date" required value={requestForm.effectiveFrom} onChange={(event) => setRequestForm((value) => ({ ...value, effectiveFrom: event.target.value }))} /></label>
+          </>
+        ) : null}
+        {requestForm.kind === "PERMANENT_GROUP_CHANGE" ? (
+          <>
+            <label className={styles.full}>Move to group<select required value={requestForm.toGroupId} onChange={(event) => setRequestForm((value) => ({ ...value, toGroupId: event.target.value }))}>
+              <option value="">Select a group</option>
+              {groupOptions.filter((option) => option.id !== logRequestFor?.groupId).map((option) => <option value={option.id} key={option.id}>{option.name}</option>)}
+            </select></label>
             <label className={styles.full}>Effective from<input type="date" required value={requestForm.effectiveFrom} onChange={(event) => setRequestForm((value) => ({ ...value, effectiveFrom: event.target.value }))} /></label>
           </>
         ) : null}

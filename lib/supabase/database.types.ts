@@ -1316,6 +1316,7 @@ export type Database = {
           sourceSessionId: string | null
           status: string
           targetSessionId: string | null
+          toGroupId: string | null
           toWeekdays: number[] | null
         }
         Insert: {
@@ -1334,6 +1335,7 @@ export type Database = {
           sourceSessionId?: string | null
           status?: string
           targetSessionId?: string | null
+          toGroupId?: string | null
           toWeekdays?: number[] | null
         }
         Update: {
@@ -1352,6 +1354,7 @@ export type Database = {
           sourceSessionId?: string | null
           status?: string
           targetSessionId?: string | null
+          toGroupId?: string | null
           toWeekdays?: number[] | null
         }
         Relationships: [
@@ -1395,6 +1398,13 @@ export type Database = {
             columns: ["targetSessionId"]
             isOneToOne: false
             referencedRelation: "TrainingSession"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ScheduleChangeRequest_toGroupId_fkey"
+            columns: ["toGroupId"]
+            isOneToOne: false
+            referencedRelation: "Group"
             referencedColumns: ["id"]
           },
         ]

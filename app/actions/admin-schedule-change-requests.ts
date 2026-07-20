@@ -18,6 +18,13 @@ const knownErrors = [
   "A session is required to cancel a booking.",
   "A source and target session are required to move a booking.",
   "A group, from/to weekdays, and an effective date are required.",
+  "A current group, a new group, and an effective date are required.",
+  "The new group must be different from the current group.",
+  "Current group not found.",
+  "New group not found.",
+  "The target session has already happened or is no longer active.",
+  "The target session does not match the source session's training category.",
+  "The new group is already at capacity.",
   "Unknown change request kind.",
   "Change request not found.",
   "This request was already decided.",
@@ -57,6 +64,7 @@ export async function logScheduleChangeRequest(input: LogScheduleChangeRequestIn
     p_from_weekdays: value.fromWeekdays,
     p_to_weekdays: value.toWeekdays,
     p_effective_from: value.effectiveFrom,
+    p_to_group_id: value.toGroupId,
   });
   if (error) mapError(error);
   revalidateScheduleViews();

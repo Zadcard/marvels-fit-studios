@@ -59,8 +59,8 @@ export type AdminScheduleChangeRequestRecord = {
   clientId: string;
   clientName: string;
   reason: string;
-  kind: "CANCEL_OCCURRENCE" | "MOVE_OCCURRENCE" | "RECURRING_WEEKDAYS";
-  kindLabel: "One session" | "Recurring";
+  kind: "CANCEL_OCCURRENCE" | "MOVE_OCCURRENCE" | "RECURRING_WEEKDAYS" | "PERMANENT_GROUP_CHANGE";
+  kindLabel: "One session" | "Recurring" | "Group change";
   description: string;
   createdAt: string;
 };

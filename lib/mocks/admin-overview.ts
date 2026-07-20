@@ -190,7 +190,7 @@ export const adminOverviewData: {
       label: "Create session",
       description: "Open the session workspace and set the next class.",
       ctaLabel: "Launch",
-      href: "/admin/sessions",
+      href: "/admin/schedule",
       icon: CalendarPlus2,
       emphasis: "secondary",
     },

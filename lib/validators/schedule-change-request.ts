@@ -4,6 +4,7 @@ export const scheduleChangeRequestKinds = [
   "CANCEL_OCCURRENCE",
   "MOVE_OCCURRENCE",
   "RECURRING_WEEKDAYS",
+  "PERMANENT_GROUP_CHANGE",
 ] as const;
 
 export const logScheduleChangeRequestSchema = z
@@ -14,6 +15,7 @@ export const logScheduleChangeRequestSchema = z
     sourceSessionId: z.string().trim().min(1).optional(),
     targetSessionId: z.string().trim().min(1).optional(),
     groupId: z.string().trim().min(1).optional(),
+    toGroupId: z.string().trim().min(1).optional(),
     fromWeekdays: z.array(z.number().int().min(0).max(6)).optional(),
     toWeekdays: z.array(z.number().int().min(0).max(6)).optional(),
     effectiveFrom: z.string().date().optional(),
@@ -42,6 +44,21 @@ export const logScheduleChangeRequestSchema = z
         path: ["groupId"],
         message: "A group, from/to weekdays, and an effective date are required.",
       });
+    }
+    if (value.kind === "PERMANENT_GROUP_CHANGE") {
+      if (!value.groupId || !value.toGroupId || !value.effectiveFrom) {
+        context.addIssue({
+          code: "custom",
+          path: ["toGroupId"],
+          message: "A current group, a new group, and an effective date are required.",
+        });
+      } else if (value.groupId === value.toGroupId) {
+        context.addIssue({
+          code: "custom",
+          path: ["toGroupId"],
+          message: "The new group must be different from the current group.",
+        });
+      }
     }
   });
 
