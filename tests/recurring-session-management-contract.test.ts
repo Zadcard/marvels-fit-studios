@@ -16,12 +16,16 @@ describe("recurring session management", () => {
     expect(actions).toContain("deleteRecurringSessionTemplate");
   });
 
+  it("saves through the multi-slot sync RPC", () => {
+    expect(actions).toContain('rpc("sync_recurring_session_template"');
+    expect(actions).toContain("p_slots:");
+  });
+
   it("exposes edit, generation, activation, and deletion in the live manager", () => {
     expect(manager).toContain("saveRecurringSessionTemplate");
     expect(manager).toContain("generateRecurringSessions");
     expect(manager).toContain("setRecurringTemplateActive");
     expect(manager).toContain("deleteRecurringSessionTemplate");
-    expect(manager).toContain("Existing occurrences were not changed.");
   });
 
   it("blocks deletion after occurrences have been generated", () => {
