@@ -5,11 +5,6 @@ import * as bcryptjs from "bcryptjs";
 vi.mock("bcryptjs");
 
 describe("IdPasswordAuthService", () => {
-  const userSelect = {
-    id: true, name: true, clientId: true, email: true, password: true,
-    mustChangePassword: true, role: true,
-    clientProfile: { select: { fullName: true } },
-  } as const;
   let service: IdPasswordAuthService;
   let mockDataStore: any;
 
@@ -17,230 +12,17 @@ describe("IdPasswordAuthService", () => {
     mockDataStore = {
       user: {
         findUnique: vi.fn(),
-        findFirst: vi.fn(),
         update: vi.fn(),
-      },
-      client: {
-        findFirst: vi.fn(),
       },
     };
 
     vi.mocked(bcryptjs.hash).mockResolvedValue("hashed_password" as never);
 
     service = new IdPasswordAuthService({
-      findByClientId: (clientId) =>
-        mockDataStore.user.findUnique({ where: { clientId }, select: userSelect }),
-      findByPhones: async (phones) => {
-        const result = await mockDataStore.client.findFirst({
-          where: { phone: { in: phones } },
-          select: { user: { select: userSelect } },
-        });
-        return result?.user ?? null;
-      },
       findPassword: (userId) =>
         mockDataStore.user.findUnique({ where: { id: userId }, select: { password: true } }),
       updateUser: (userId, data) =>
         mockDataStore.user.update({ where: { id: userId }, data }),
-    });
-  });
-
-  describe("authenticate", () => {
-    it("should authenticate user with valid credentials", async () => {
-      mockDataStore.user.findUnique.mockResolvedValue({
-        id: "user-123",
-        clientId: "2605020",
-        email: null,
-        name: "Client User",
-        password: "hashed_password",
-        mustChangePassword: false,
-        role: "CLIENT",
-        clientProfile: {
-          fullName: "Client User",
-        },
-      });
-
-      const passwordVerifier = (service as any).passwordVerifier;
-      vi.spyOn(passwordVerifier, "verify").mockResolvedValue(true);
-
-      const result = await service.authenticate({
-        clientId: "2605020",
-        password: "MFS_2605020",
-      });
-
-      expect(result).toEqual({
-        userId: "user-123",
-        clientId: "2605020",
-        name: "Client User",
-        email: null,
-        mustChangePassword: false,
-        role: "CLIENT",
-      });
-    });
-
-    it("should authenticate user by phone number when client ID is not found", async () => {
-      mockDataStore.user.findUnique.mockResolvedValue(null);
-      mockDataStore.client.findFirst.mockResolvedValue({
-        user: {
-          id: "user-123",
-          clientId: "2605020",
-          email: null,
-          name: "Client User",
-          password: "hashed_password",
-          mustChangePassword: false,
-          role: "CLIENT",
-          clientProfile: {
-            fullName: "Client User",
-          },
-        },
-      });
-
-      const passwordVerifier = (service as any).passwordVerifier;
-      vi.spyOn(passwordVerifier, "verify").mockResolvedValue(true);
-
-      const result = await service.authenticate({
-        clientId: "01080481525",
-        password: "MFS_2605020",
-      });
-
-      expect(mockDataStore.client.findFirst).toHaveBeenCalledWith({
-        where: {
-          phone: {
-            in: ["01080481525", "+201080481525"],
-          },
-        },
-        select: {
-          user: {
-            select: expect.any(Object),
-          },
-        },
-      });
-      expect(result.clientId).toBe("2605020");
-    });
-
-    it("should update lastLoginAt on successful authentication", async () => {
-      mockDataStore.user.findUnique.mockResolvedValue({
-        id: "user-123",
-        clientId: "2605020",
-        password: "hashed_password",
-        role: "CLIENT",
-      });
-
-      const passwordVerifier = (service as any).passwordVerifier;
-      vi.spyOn(passwordVerifier, "verify").mockResolvedValue(true);
-
-      await service.authenticate({
-        clientId: "2605020",
-        password: "MFS_2605020",
-      });
-
-      expect(mockDataStore.user.update).toHaveBeenCalledWith({
-        where: { id: "user-123" },
-        data: { lastLoginAt: expect.any(Date) },
-      });
-    });
-
-    it("should throw error when user not found", async () => {
-      mockDataStore.user.findUnique.mockResolvedValue(null);
-
-      await expect(
-        service.authenticate({
-          clientId: "invalid",
-          password: "password",
-        })
-      ).rejects.toThrow("Invalid client ID, phone, or password");
-    });
-
-    it("should throw error when user has no password", async () => {
-      mockDataStore.user.findUnique.mockResolvedValue({
-        id: "user-123",
-        clientId: "2605020",
-        password: null,
-        role: "CLIENT",
-      });
-
-      await expect(
-        service.authenticate({
-          clientId: "2605020",
-          password: "MFS_2605020",
-        })
-      ).rejects.toThrow("Invalid client ID, phone, or password");
-    });
-
-    it("should throw error when password is incorrect", async () => {
-      mockDataStore.user.findUnique.mockResolvedValue({
-        id: "user-123",
-        clientId: "2605020",
-        password: "hashed_password",
-        role: "CLIENT",
-      });
-
-      const passwordVerifier = (service as any).passwordVerifier;
-      vi.spyOn(passwordVerifier, "verify").mockResolvedValue(false);
-
-      await expect(
-        service.authenticate({
-          clientId: "2605020",
-          password: "wrong_password",
-        })
-      ).rejects.toThrow("Invalid client ID, phone, or password");
-    });
-
-    it("should query by clientId", async () => {
-      mockDataStore.user.findUnique.mockResolvedValue({
-        id: "user-123",
-        clientId: "2605020",
-        password: "hashed_password",
-        role: "CLIENT",
-      });
-
-      const passwordVerifier = (service as any).passwordVerifier;
-      vi.spyOn(passwordVerifier, "verify").mockResolvedValue(true);
-
-      await service.authenticate({
-        clientId: "2605020",
-        password: "MFS_2605020",
-      });
-
-      expect(mockDataStore.user.findUnique).toHaveBeenCalledWith({
-        where: { clientId: "2605020" },
-        select: {
-          id: true,
-          clientId: true,
-          email: true,
-          name: true,
-          password: true,
-          mustChangePassword: true,
-          role: true,
-          clientProfile: {
-            select: {
-              fullName: true,
-            },
-          },
-        },
-      });
-    });
-
-    it("should handle different user roles", async () => {
-      const roles = ["CLIENT", "COACH", "ADMIN"];
-
-      for (const role of roles) {
-        mockDataStore.user.findUnique.mockResolvedValue({
-          id: "user-123",
-          clientId: "2605020",
-          password: "hashed_password",
-          role,
-        });
-
-        const passwordVerifier = (service as any).passwordVerifier;
-        vi.spyOn(passwordVerifier, "verify").mockResolvedValue(true);
-
-        const result = await service.authenticate({
-          clientId: "2605020",
-          password: "MFS_2605020",
-        });
-
-        expect(result.role).toBe(role);
-      }
     });
   });
 

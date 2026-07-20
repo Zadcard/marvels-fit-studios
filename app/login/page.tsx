@@ -18,10 +18,6 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl");
 
-  const [loginMethod, setLoginMethod] = useState<"clientId" | "email">(
-    "email"
-  );
-  const [clientId, setClientId] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -29,13 +25,11 @@ function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [formError, setFormError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<{
-    clientId?: string;
     email?: string;
     password?: string;
   }>({});
   const [shakeForm, setShakeForm] = useState(false);
 
-  const clientIdInputRef = useRef<HTMLInputElement>(null);
   const emailInputRef = useRef<HTMLInputElement>(null);
   const passwordInputRef = useRef<HTMLInputElement>(null);
 
@@ -46,29 +40,17 @@ function LoginForm() {
 
   const validateFields = useCallback((): boolean => {
     const errors: {
-      clientId?: string;
       email?: string;
       password?: string;
     } = {};
     let firstInvalidField: HTMLInputElement | null = null;
 
-    if (loginMethod === "clientId") {
-      if (!clientId.trim()) {
-        errors.clientId = "Please enter your Client ID or phone number";
-        firstInvalidField = clientIdInputRef.current;
-      } else if (!/^[+\d\s().-]{7,24}$/.test(clientId.trim())) {
-        errors.clientId =
-          "Enter a valid Client ID or phone number";
-        firstInvalidField = clientIdInputRef.current;
-      }
-    } else {
-      if (!email.trim()) {
-        errors.email = "Please enter your email address";
-        firstInvalidField = emailInputRef.current;
-      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-        errors.email = "Please enter a valid email address";
-        firstInvalidField = emailInputRef.current;
-      }
+    if (!email.trim()) {
+      errors.email = "Please enter your email address";
+      firstInvalidField = emailInputRef.current;
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      errors.email = "Please enter a valid email address";
+      firstInvalidField = emailInputRef.current;
     }
 
     if (!password) {
@@ -82,7 +64,7 @@ function LoginForm() {
     setFieldErrors(errors);
     firstInvalidField?.focus();
     return Object.keys(errors).length === 0;
-  }, [clientId, email, password, loginMethod]);
+  }, [email, password]);
 
   const handleSubmit = useCallback(
     async (event: FormEvent) => {
@@ -97,19 +79,9 @@ function LoginForm() {
       setIsLoading(true);
 
       try {
-        const credentials =
-          loginMethod === "clientId"
-            ? {
-                clientId: clientId.trim(),
-                password,
-              }
-            : {
-                email: email.trim().toLowerCase(),
-                password,
-              };
-
         const result = await signIn("credentials", {
-          ...credentials,
+          email: email.trim().toLowerCase(),
+          password,
           redirect: false,
           callbackUrl:
             callbackUrl?.startsWith("/") && !callbackUrl.startsWith("//")
@@ -127,9 +99,7 @@ function LoginForm() {
               "Secure sign-in is temporarily unavailable. Please try again shortly.",
             );
           } else if (result.error === "CredentialsSignin" || result.error === "Credentials") {
-            const identifier =
-              loginMethod === "clientId" ? "Client ID, phone" : "email";
-            setFormError(`Invalid ${identifier} or password.`);
+            setFormError("Invalid email or password.");
             passwordInputRef.current?.focus();
           } else {
             setFormError("Something went wrong. Try again.");
@@ -152,16 +122,14 @@ function LoginForm() {
         setIsLoading(false);
       }
     },
-    [callbackUrl, clientId, email, password, loginMethod, triggerShake, validateFields]
+    [callbackUrl, email, password, triggerShake, validateFields]
   );
 
   const handlePasswordKeyState = (event: KeyboardEvent<HTMLInputElement>) => {
     setCapsLockOn(event.getModifierState("CapsLock"));
   };
 
-  const clearFieldError = (
-    field: "clientId" | "email" | "password"
-  ) => {
+  const clearFieldError = (field: "email" | "password") => {
     setFieldErrors((prev) => {
       const next = { ...prev };
       delete next[field];
@@ -213,121 +181,33 @@ function LoginForm() {
         onSubmit={handleSubmit}
         noValidate
       >
-        <div
-          className="login-method-tabs"
-          role="tablist"
-          aria-label="Choose how to sign in"
-        >
-          <button
-            type="button"
-            role="tab"
-            id="login-tab-clientId"
-            aria-selected={loginMethod === "clientId"}
-            aria-controls="login-identifier-panel"
-            tabIndex={loginMethod === "clientId" ? 0 : -1}
-            onClick={() => {
-              setLoginMethod("clientId");
-              setFieldErrors({});
-              setFormError("");
+        <div className="login-field-group">
+          <label className="login-field-label" htmlFor="login-email">
+            Email address
+          </label>
+          <input
+            ref={emailInputRef}
+            id="login-email"
+            name="email"
+            type="email"
+            className={`auth-field ${fieldErrors.email ? "field-error" : ""}`}
+            value={email}
+            onChange={(event) => {
+              setEmail(event.target.value);
+              clearFieldError("email");
             }}
-            className={`login-method-tab ${
-              loginMethod === "clientId" ? "active" : ""
-            }`}
+            placeholder="name@example.com"
+            autoComplete="email"
+            inputMode="email"
+            spellCheck={false}
             disabled={isLoading}
-          >
-            Client ID / Phone
-          </button>
-          <button
-            type="button"
-            role="tab"
-            id="login-tab-email"
-            aria-selected={loginMethod === "email"}
-            aria-controls="login-identifier-panel"
-            tabIndex={loginMethod === "email" ? 0 : -1}
-            onClick={() => {
-              setLoginMethod("email");
-              setFieldErrors({});
-              setFormError("");
-            }}
-            className={`login-method-tab ${
-              loginMethod === "email" ? "active" : ""
-            }`}
-            disabled={isLoading}
-          >
-            Email
-          </button>
+          />
+          {fieldErrors.email ? (
+            <div className="login-field-error" role="alert">
+              {fieldErrors.email}
+            </div>
+          ) : null}
         </div>
-
-        {loginMethod === "clientId" && (
-          <div
-            className="login-field-group"
-            id="login-identifier-panel"
-            role="tabpanel"
-            aria-labelledby="login-tab-clientId"
-          >
-            <label className="login-field-label" htmlFor="login-client-id">
-              Client ID or phone number
-            </label>
-            <input
-              ref={clientIdInputRef}
-              id="login-client-id"
-              name="clientId"
-              type="tel"
-              className={`auth-field ${
-                fieldErrors.clientId ? "field-error" : ""
-              }`}
-              value={clientId}
-              onChange={(event) => {
-                setClientId(event.target.value.slice(0, 24));
-                clearFieldError("clientId");
-              }}
-              placeholder="e.g., 2605020 or +201012345678"
-              inputMode="tel"
-              autoComplete="tel"
-              disabled={isLoading}
-            />
-            {fieldErrors.clientId ? (
-              <div className="login-field-error" role="alert">
-                {fieldErrors.clientId}
-              </div>
-            ) : null}
-          </div>
-        )}
-
-        {loginMethod === "email" && (
-          <div
-            className="login-field-group"
-            id="login-identifier-panel"
-            role="tabpanel"
-            aria-labelledby="login-tab-email"
-          >
-            <label className="login-field-label" htmlFor="login-email">
-              Email address
-            </label>
-            <input
-              ref={emailInputRef}
-              id="login-email"
-              name="email"
-              type="email"
-              className={`auth-field ${fieldErrors.email ? "field-error" : ""}`}
-              value={email}
-              onChange={(event) => {
-                setEmail(event.target.value);
-                clearFieldError("email");
-              }}
-              placeholder="name@example.com"
-              autoComplete="email"
-              inputMode="email"
-              spellCheck={false}
-              disabled={isLoading}
-            />
-            {fieldErrors.email ? (
-              <div className="login-field-error" role="alert">
-                {fieldErrors.email}
-              </div>
-            ) : null}
-          </div>
-        )}
 
         <div className="login-field-group">
           <label className="login-field-label" htmlFor="login-password">
@@ -422,7 +302,7 @@ function LoginForm() {
         </button>
       </form>
 
-      <p className="login-help">Staff access is email-first. Client ID access remains available for member accounts.</p>
+      <p className="login-help">Staff access only. Sign in with your work email and password.</p>
     </div>
   );
 }

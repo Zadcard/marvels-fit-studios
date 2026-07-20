@@ -39,7 +39,13 @@
       "Bash(taskkill /PID 27996 /F)",
       "Bash(curl *)",
       "Bash(npx eslint *)",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(taskkill //F //IM node.exe //FI \"PID ne 25324\")",
+      "Bash(netstat -ano)",
+      "Bash(nohup npm run dev)",
+      "Bash(disown)",
+      "Read(//tmp/**)",
+      "Bash(node -e ' *)"
     ]
   },
   "disabledMcpjsonServers": [

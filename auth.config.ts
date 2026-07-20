@@ -12,16 +12,12 @@ export default {
       if (user) {
         const authUser = user as typeof user & {
           role?: UserRole;
-          clientId?: string;
           mustChangePassword?: boolean;
         };
         token.sub = user.id;
         token.name = user.name;
         token.email = user.email;
         token.role = authUser.role;
-        if (authUser.clientId) {
-          token.clientId = authUser.clientId;
-        }
         token.mustChangePassword = authUser.mustChangePassword ?? false;
       }
 
@@ -42,10 +38,6 @@ export default {
 
       if (session.user && token.role) {
         session.user.role = token.role as UserRole;
-      }
-
-      if (session.user && token.clientId) {
-        session.user.clientId = token.clientId as string;
       }
 
       if (session.user) {

@@ -2,13 +2,11 @@ import { describe, expect, it } from "vitest";
 
 import {
   changePasswordSchema,
-  clientIdLoginSchema,
   clientIdSchema,
   clientRegistrationSchema,
   emailLoginSchema,
   emailSchema,
   fullNameSchema,
-  loginSchema,
   normalizePhoneNumber,
   passwordResetRequestSchema,
   passwordResetSchema,
@@ -49,18 +47,6 @@ describe("ID-based authentication validators", () => {
       email: "john@example.com",
       password: "Password123",
     }).success).toBe(true);
-  });
-
-  it("validates client ID login schema", () => {
-    expect(
-      clientIdLoginSchema.safeParse({
-        clientId: "2605020",
-        password: "MFS_2605020",
-      }).success
-    ).toBe(true);
-    expect(
-      loginSchema.safeParse({ clientId: "abc", password: "password" }).success
-    ).toBe(false);
   });
 
   it("validates client registration without email", () => {

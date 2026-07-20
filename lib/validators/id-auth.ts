@@ -65,13 +65,6 @@ export const emailSchema = z
   .optional()
   .or(z.literal(""));
 
-export const clientIdLoginSchema = z.object({
-  clientId: clientIdSchema.describe("7-digit client ID"),
-  password: z.string().min(1, "Password is required"),
-});
-
-export const loginSchema = clientIdLoginSchema;
-
 export const emailLoginSchema = z.object({
   email: z.string().trim().email("Please enter a valid email address"),
   password: z.string().min(1, "Password is required"),
@@ -112,7 +105,6 @@ export const changePasswordSchema = z
     path: ["newPassword"],
   });
 
-export type ClientIdLogin = z.infer<typeof clientIdLoginSchema>;
 export type EmailLogin = z.infer<typeof emailLoginSchema>;
 export type ClientRegistration = z.infer<typeof clientRegistrationSchema>;
 export type PasswordResetRequest = z.infer<typeof passwordResetRequestSchema>;
