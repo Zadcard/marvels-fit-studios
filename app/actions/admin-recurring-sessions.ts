@@ -25,36 +25,35 @@ export async function saveRecurringSessionTemplate(
   if (!parsed.success) throw new Error(parsed.error.issues[0]?.message ?? "Invalid template.");
 
   const value = parsed.data;
-  const record = {
-      title: value.title,
-      description: value.description || null,
-      type: value.type,
-      coachId: value.coachId,
-      groupId: value.groupId || null,
-      capacity: value.type === "PRIVATE" ? 1 : null,
-      weekday: value.weekday,
-      localStartTime: value.localStartTime,
-      durationMinutes: value.durationMinutes,
-      startsOn: value.startsOn,
-      endsOn: value.endsOn || null,
-  };
   const templateId = input.templateId
     ? recurringSessionTemplateIdSchema.parse(input.templateId)
     : null;
-  const query = templateId
-    ? getSupabaseServerClient()
-        .from("RecurringSessionTemplate")
-        .update(record)
-        .eq("id", templateId)
-    : getSupabaseServerClient()
-        .from("RecurringSessionTemplate")
-        .insert({ ...record, createdById: user.id });
-  const { data, error } = await query
-    .select("id")
-    .single();
-  if (error) throw error;
+
+  const { data, error } = await getSupabaseServerClient().rpc("sync_recurring_session_template", {
+    p_template_id: templateId,
+    p_title: value.title,
+    p_description: value.description || null,
+    p_type: value.type,
+    p_coach_id: value.coachId,
+    p_group_id: value.groupId || null,
+    p_capacity: value.type === "PRIVATE" ? 1 : null,
+    p_duration_minutes: value.durationMinutes,
+    p_starts_on: value.startsOn,
+    p_ends_on: value.endsOn || null,
+    p_slots: value.slots,
+    p_created_by_id: user.id,
+    p_through_date: null,
+  });
+  if (error) {
+    if (error.code === "23P01") {
+      throw new Error(
+        "One or more generated sessions overlap another active session for this coach.",
+      );
+    }
+    throw error;
+  }
   revalidateRecurringViews();
-  return data;
+  return { id: data };
 }
 
 export async function generateRecurringSessions(input: {

@@ -1,0 +1,7 @@
+.editor{display:grid;gap:8px}
+.row{display:grid;grid-template-columns:1fr 120px 34px;gap:8px;align-items:center}
+.row select,.row input{min-height:38px;padding:0 9px;border:1px solid #36363a;border-radius:9px;background:#0a0a0b;color:#fff;font-size:.74rem}
+.removeButton{min-height:38px;display:grid;place-items:center;border:1px solid #36363a;border-radius:9px;background:#171719;color:#ff565b}
+.removeButton:disabled{opacity:.35}
+.addButton{display:inline-flex;align-items:center;gap:6px;justify-self:start;padding:8px 11px;border:1px dashed #3a3a3e;border-radius:9px;background:transparent;color:#ff565b;font-size:.7rem;font-weight:700}
+.addButton:disabled{opacity:.35}

@@ -5,7 +5,17 @@ import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth/session";
 import { trainingCategoryFromLabel } from "@/lib/dashboard/client-domain-labels";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
-import { GroupType, UserRole } from "@/lib/supabase/domain";
+import { GroupType, TrainingSessionType, UserRole } from "@/lib/supabase/domain";
+import { recurringSessionSlotSchema } from "@/lib/validators/recurring-session";
+import { z } from "zod";
+
+type SaveAdminGroupSeriesInput = {
+  templateId?: string | null;
+  durationMinutes: number;
+  startsOn: string;
+  endsOn?: string;
+  slots: Array<{ weekday: number; localStartTime: string }>;
+};
 
 type SaveAdminGroupInput = {
   groupId?: string | null;
@@ -16,7 +26,31 @@ type SaveAdminGroupInput = {
   capacity?: string;
   isActive: boolean;
   notes?: string;
+  series?: SaveAdminGroupSeriesInput;
 };
+
+const saveAdminGroupSeriesSchema = z
+  .object({
+    templateId: z.string().uuid().nullish(),
+    durationMinutes: z.number().int().min(15).max(480),
+    startsOn: z.string().date(),
+    endsOn: z.string().date().optional(),
+    slots: z.array(recurringSessionSlotSchema).min(1).max(7),
+  })
+  .superRefine((value, context) => {
+    const seen = new Set<string>();
+    value.slots.forEach((slot, index) => {
+      const key = `${slot.weekday}:${slot.localStartTime}`;
+      if (seen.has(key)) {
+        context.addIssue({
+          code: "custom",
+          path: ["slots", index],
+          message: "Each day and time can only appear once in a series.",
+        });
+      }
+      seen.add(key);
+    });
+  });
 
 type DeleteAdminGroupInput = {
   groupId: string;
@@ -46,7 +80,7 @@ function revalidateGroupViews() {
 }
 
 export async function saveAdminGroup(input: SaveAdminGroupInput) {
-  await requireRole(UserRole.ADMIN);
+  const user = await requireRole(UserRole.ADMIN);
   const supabase = getSupabaseServerClient();
 
   const name = input.name.trim();
@@ -64,7 +98,9 @@ export async function saveAdminGroup(input: SaveAdminGroupInput) {
     throw new Error("Assign a coach to the group.");
   }
 
-  const { error } = await supabase.rpc("save_admin_group", {
+  const series = input.series ? saveAdminGroupSeriesSchema.parse(input.series) : null;
+
+  const { data: groupId, error } = await supabase.rpc("save_admin_group", {
     p_group_id: input.groupId ?? "",
     p_name: name,
     p_type: type,
@@ -81,7 +117,34 @@ export async function saveAdminGroup(input: SaveAdminGroupInput) {
     throw error;
   }
 
+  if (series) {
+    const { error: seriesError } = await supabase.rpc("sync_recurring_session_template", {
+      p_template_id: series.templateId ?? null,
+      p_title: name,
+      p_description: null,
+      p_type: type === GroupType.PRIVATE ? TrainingSessionType.PRIVATE : TrainingSessionType.GROUP,
+      p_coach_id: coachId,
+      p_group_id: groupId as string,
+      p_capacity: type === GroupType.PRIVATE ? 1 : capacity,
+      p_duration_minutes: series.durationMinutes,
+      p_starts_on: series.startsOn,
+      p_ends_on: series.endsOn || null,
+      p_slots: series.slots,
+      p_created_by_id: user.id,
+      p_through_date: null,
+    });
+    if (seriesError) {
+      if (seriesError.code === "23P01") {
+        throw new Error(
+          "One or more generated sessions overlap another active session for this coach.",
+        );
+      }
+      throw seriesError;
+    }
+  }
+
   revalidateGroupViews();
+  return { id: groupId as string };
 }
 
 export async function deleteAdminGroup(input: DeleteAdminGroupInput) {

@@ -20,6 +20,9 @@ import {
 } from "@/lib/dashboard/admin-dashboard-data";
 import { trainingCategoryLabels } from "@/lib/dashboard/client-domain-labels";
 import { useDashboardToast } from "./dashboard-toast-provider";
+import { SeriesSlotsEditor } from "./series-slots-editor";
+import type { RecurringSessionTemplateSlot } from "@/lib/dashboard/recurring-session-template";
+import { getStudioDateKey } from "@/lib/time/studio-time";
 import styles from "./admin-groups-workspace.module.css";
 
 type Props = {
@@ -36,6 +39,12 @@ type GroupForm = {
   capacity: string;
   isActive: boolean;
   notes: string;
+  hasSchedule: boolean;
+  templateId: string | null;
+  durationMinutes: string;
+  startsOn: string;
+  endsOn: string;
+  slots: RecurringSessionTemplateSlot[];
 };
 
 const emptyForm: GroupForm = {
@@ -46,6 +55,12 @@ const emptyForm: GroupForm = {
   capacity: "",
   isActive: true,
   notes: "",
+  hasSchedule: false,
+  templateId: null,
+  durationMinutes: "60",
+  startsOn: getStudioDateKey(),
+  endsOn: "",
+  slots: [{ weekday: 1, localStartTime: "18:00" }],
 };
 
 const AVATAR_GRADIENTS = [
@@ -136,6 +151,12 @@ export function AdminGroupsWorkspace({
       capacity: record.capacity != null ? String(record.capacity) : "",
       isActive: record.isActive,
       notes: record.notes,
+      hasSchedule: record.series != null,
+      templateId: record.series?.templateId ?? null,
+      durationMinutes: record.series ? String(record.series.durationMinutes) : "60",
+      startsOn: record.series?.startsOn ?? getStudioDateKey(),
+      endsOn: record.series?.endsOn ?? "",
+      slots: record.series?.slots ?? [{ weekday: 1, localStartTime: "18:00" }],
     });
     setError("");
     setEditorOpen(true);
@@ -146,7 +167,25 @@ export function AdminGroupsWorkspace({
     setError("");
     startTransition(async () => {
       try {
-        await saveAdminGroup({ groupId: editingId, ...form });
+        await saveAdminGroup({
+          groupId: editingId,
+          name: form.name,
+          groupType: form.groupType,
+          trainingCategory: form.trainingCategory,
+          coachId: form.coachId,
+          capacity: form.capacity,
+          isActive: form.isActive,
+          notes: form.notes,
+          series: form.hasSchedule
+            ? {
+                templateId: form.templateId,
+                durationMinutes: Number(form.durationMinutes),
+                startsOn: form.startsOn,
+                endsOn: form.endsOn || undefined,
+                slots: form.slots,
+              }
+            : undefined,
+        });
         setEditorOpen(false);
         showToast(editingId ? "Group updated." : "Group created.");
         router.refresh();
@@ -344,6 +383,23 @@ export function AdminGroupsWorkspace({
                 <input type="checkbox" checked={form.isActive} onChange={(event) => setForm((value) => ({ ...value, isActive: event.target.checked }))} />
                 Group is active
               </label>
+              <label className={`${styles.full} ${styles.checkbox}`}>
+                <input
+                  type="checkbox"
+                  checked={form.hasSchedule}
+                  onChange={(event) => setForm((value) => ({ ...value, hasSchedule: event.target.checked }))}
+                />
+                This group meets on a recurring schedule
+              </label>
+              {form.hasSchedule ? (
+                <div className={styles.full}>
+                  <label>Duration minutes<input type="number" min="15" max="480" required value={form.durationMinutes} onChange={(event) => setForm((value) => ({ ...value, durationMinutes: event.target.value }))} /></label>
+                  <label>Starts on<input type="date" required value={form.startsOn} onChange={(event) => setForm((value) => ({ ...value, startsOn: event.target.value }))} /></label>
+                  <label>Ends on<input type="date" value={form.endsOn} onChange={(event) => setForm((value) => ({ ...value, endsOn: event.target.value }))} /></label>
+                  <span>Repeats on</span>
+                  <SeriesSlotsEditor slots={form.slots} onChange={(slots) => setForm((value) => ({ ...value, slots }))} />
+                </div>
+              ) : null}
               <label className={styles.full}>
                 Notes
                 <input value={form.notes} onChange={(event) => setForm((value) => ({ ...value, notes: event.target.value }))} placeholder="Anything the team should know about this group" />
