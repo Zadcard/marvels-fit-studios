@@ -1,3 +1,8 @@
+export type RecurringSessionTemplateSlot = {
+  weekday: number;
+  localStartTime: string;
+};
+
 export type RecurringSessionTemplateRecord = {
   id: string;
   title: string;
@@ -7,8 +12,7 @@ export type RecurringSessionTemplateRecord = {
   coachName: string;
   groupId: string | null;
   groupName: string;
-  weekday: number;
-  localStartTime: string;
+  slots: RecurringSessionTemplateSlot[];
   durationMinutes: number;
   startsOn: string;
   endsOn: string;

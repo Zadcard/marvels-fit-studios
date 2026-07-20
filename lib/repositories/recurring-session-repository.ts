@@ -9,7 +9,9 @@ export class RecurringSessionRepository {
     const [templates, coaches, groups] = await Promise.all([
       supabase
         .from("RecurringSessionTemplate")
-        .select("*, coach:Coach(fullName), group:Group(name)")
+        .select(
+          "*, coach:Coach(fullName), group:Group(name), slots:RecurringSessionSlot(weekday, localStartTime)",
+        )
         .order("createdAt", { ascending: false }),
       supabase.from("Coach").select("id, fullName").order("fullName"),
       supabase.from("Group").select("id, name").order("name"),
@@ -27,8 +29,12 @@ export class RecurringSessionRepository {
         coachName: template.coach.fullName,
         groupId: template.groupId,
         groupName: template.group?.name ?? "No linked group",
-        weekday: template.weekday,
-        localStartTime: template.localStartTime.slice(0, 5),
+        slots: template.slots
+          .map((slot) => ({
+            weekday: slot.weekday,
+            localStartTime: slot.localStartTime.slice(0, 5),
+          }))
+          .sort((left, right) => left.weekday - right.weekday),
         durationMinutes: template.durationMinutes,
         startsOn: template.startsOn,
         endsOn: template.endsOn ?? "",

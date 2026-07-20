@@ -1116,6 +1116,41 @@ export type Database = {
           },
         ]
       }
+      RecurringSessionSlot: {
+        Row: {
+          createdAt: string
+          id: string
+          localStartTime: string
+          templateId: string
+          updatedAt: string
+          weekday: number
+        }
+        Insert: {
+          createdAt?: string
+          id?: string
+          localStartTime: string
+          templateId: string
+          updatedAt?: string
+          weekday: number
+        }
+        Update: {
+          createdAt?: string
+          id?: string
+          localStartTime?: string
+          templateId?: string
+          updatedAt?: string
+          weekday?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "RecurringSessionSlot_templateId_fkey"
+            columns: ["templateId"]
+            isOneToOne: false
+            referencedRelation: "RecurringSessionTemplate"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       RecurringSessionTemplate: {
         Row: {
           active: boolean
@@ -1129,7 +1164,6 @@ export type Database = {
           groupId: string | null
           id: string
           lastGeneratedThrough: string | null
-          localStartTime: string
           location: string | null
           startsOn: string
           status: Database["public"]["Enums"]["TrainingSessionStatus"]
@@ -1137,7 +1171,6 @@ export type Database = {
           title: string
           type: Database["public"]["Enums"]["TrainingSessionType"]
           updatedAt: string
-          weekday: number
         }
         Insert: {
           active?: boolean
@@ -1151,7 +1184,6 @@ export type Database = {
           groupId?: string | null
           id?: string
           lastGeneratedThrough?: string | null
-          localStartTime: string
           location?: string | null
           startsOn: string
           status?: Database["public"]["Enums"]["TrainingSessionStatus"]
@@ -1159,7 +1191,6 @@ export type Database = {
           title: string
           type: Database["public"]["Enums"]["TrainingSessionType"]
           updatedAt?: string
-          weekday: number
         }
         Update: {
           active?: boolean
@@ -1173,7 +1204,6 @@ export type Database = {
           groupId?: string | null
           id?: string
           lastGeneratedThrough?: string | null
-          localStartTime?: string
           location?: string | null
           startsOn?: string
           status?: Database["public"]["Enums"]["TrainingSessionStatus"]
@@ -1181,7 +1211,6 @@ export type Database = {
           title?: string
           type?: Database["public"]["Enums"]["TrainingSessionType"]
           updatedAt?: string
-          weekday?: number
         }
         Relationships: [
           {
@@ -1806,6 +1835,7 @@ export type Database = {
           id: string
           isTemplateException: boolean
           location: string | null
+          sourceSlotId: string | null
           sourceTemplateId: string | null
           startsAt: string
           status: Database["public"]["Enums"]["TrainingSessionStatus"]
@@ -1824,6 +1854,7 @@ export type Database = {
           id?: string
           isTemplateException?: boolean
           location?: string | null
+          sourceSlotId?: string | null
           sourceTemplateId?: string | null
           startsAt: string
           status?: Database["public"]["Enums"]["TrainingSessionStatus"]
@@ -1842,6 +1873,7 @@ export type Database = {
           id?: string
           isTemplateException?: boolean
           location?: string | null
+          sourceSlotId?: string | null
           sourceTemplateId?: string | null
           startsAt?: string
           status?: Database["public"]["Enums"]["TrainingSessionStatus"]
@@ -1869,6 +1901,13 @@ export type Database = {
             columns: ["groupId"]
             isOneToOne: false
             referencedRelation: "Group"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "TrainingSession_sourceSlotId_fkey"
+            columns: ["sourceSlotId"]
+            isOneToOne: false
+            referencedRelation: "RecurringSessionSlot"
             referencedColumns: ["id"]
           },
           {
