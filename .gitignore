@@ -40,3 +40,6 @@ Thumbs.db
 
 # Local no-docker database stack
 .localdb/
+
+# Local Netlify folder
+.netlify
