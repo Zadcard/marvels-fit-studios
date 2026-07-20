@@ -45,7 +45,8 @@
       "Bash(nohup npm run dev)",
       "Bash(disown)",
       "Read(//tmp/**)",
-      "Bash(node -e ' *)"
+      "Bash(node -e ' *)",
+      "Bash(grep *)"
     ]
   },
   "disabledMcpjsonServers": [

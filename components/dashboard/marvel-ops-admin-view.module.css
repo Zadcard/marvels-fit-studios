@@ -8,5 +8,7 @@
 .kanban{grid-template-columns:repeat(5,minmax(238px,1fr))}
 .lane{position:relative;border-top:3px solid #3a3a3a}.lane[data-stage="Trial booked"]{border-top-color:#ff4f54;background:rgba(230,36,41,.03)}.lane[data-stage="Trial done"]{border-top-color:#f59e0b;background:rgba(245,158,11,.03)}.lane[data-stage="Won"]{border-top-color:#25d366;background:rgba(37,211,102,.03)}.lane[data-stage="Lost"]{border-top-color:#6b6b6b;background:rgba(255,255,255,.015)}
 .laneEmpty{margin:12px 0 0;color:#5f5f5f;font-size:.66rem;text-align:center}
+@media(max-width:850px){.kanban{grid-template-columns:repeat(3,minmax(220px,1fr))}}
+@media(max-width:620px){.kanban{grid-template-columns:1fr;overflow-x:visible}}
 .leadName{position:relative}.deleteLead{position:absolute;top:-2px;right:-2px;width:22px;height:22px;display:grid;place-items:center;border:1px solid #3a3a3a;border-radius:7px;background:transparent;color:#8f8f8f;cursor:pointer}.deleteLead:hover{border-color:#ef4444;color:#ef4444}
 .wantsChip{display:inline-flex;align-items:center;gap:6px}.wantsChip::before{width:6px;height:6px;border-radius:50%;background:#e62429;content:""}
