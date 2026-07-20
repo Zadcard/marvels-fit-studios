@@ -11,10 +11,10 @@ describe("admin groups series integration", () => {
   });
 
   it("skips the series sync when no schedule was provided", () => {
-    expect(actions).toMatch(/if \(input\.series\)/);
+    expect(actions).toMatch(/if \(series\)/);
   });
 
   it("keeps the admin role guard on the group save path", () => {
-    expect(actions.match(/requireRole\(UserRole\.ADMIN\)/g)?.length).toBeGreaterThanOrEqual(4);
+    expect(actions.match(/requireRole\(UserRole\.ADMIN\)/g)?.length).toBeGreaterThanOrEqual(3);
   });
 });

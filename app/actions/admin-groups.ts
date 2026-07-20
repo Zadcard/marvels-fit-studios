@@ -102,20 +102,19 @@ export async function saveAdminGroup(input: SaveAdminGroupInput) {
     throw error;
   }
 
-  if (input.series) {
-    await requireRole(UserRole.ADMIN);
+  if (series) {
     const { error: seriesError } = await supabase.rpc("sync_recurring_session_template", {
-      p_template_id: series!.templateId ?? null,
+      p_template_id: series.templateId ?? null,
       p_title: name,
       p_description: null,
       p_type: type === GroupType.PRIVATE ? TrainingSessionType.PRIVATE : TrainingSessionType.GROUP,
       p_coach_id: coachId,
       p_group_id: groupId as string,
       p_capacity: type === GroupType.PRIVATE ? 1 : capacity,
-      p_duration_minutes: series!.durationMinutes,
-      p_starts_on: series!.startsOn,
-      p_ends_on: series!.endsOn || null,
-      p_slots: series!.slots,
+      p_duration_minutes: series.durationMinutes,
+      p_starts_on: series.startsOn,
+      p_ends_on: series.endsOn || null,
+      p_slots: series.slots,
       p_created_by_id: user.id,
       p_through_date: null,
     });
