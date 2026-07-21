@@ -171,7 +171,7 @@ export class AdminCoachRepository {
                 : `${coach.fullName} has no assigned clients yet.`,
           };
         });
-    }, adminCoachRecords);
+    }, []);
   }
 }
 

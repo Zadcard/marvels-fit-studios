@@ -176,8 +176,8 @@ export class AdminSubscriptionRepository {
               `
               id, status, renewsAt, customPrice, startsAt, sessionsTotal, cycleMonths,
               plan:SubscriptionPlan(id, name, billingCycle, price),
-              client:Client(id, fullName, isPaid, sessionsLeft,
-                group:Group(coach:Coach(fullName)),
+              client:Client(id, fullName, isPaid, sessionsLeft, groupId,
+                group:Group(id, name, category:TrainingCategory(name), coach:Coach(fullName)),
                 bookings:SessionBooking(status,
                   trainingSession:TrainingSession(type, status,
                     coach:Coach(fullName)))),
@@ -297,6 +297,9 @@ export class AdminSubscriptionRepository {
             sessionsLeft: subscription.client.sessionsLeft,
             sessionsTotal: subscription.sessionsTotal ?? undefined,
             cycleMonths: subscription.cycleMonths ?? 1,
+            groupId: subscription.client.groupId ?? subscription.client.group?.id,
+            groupName: subscription.client.group?.name,
+            category: subscription.client.group?.category?.name,
             note:
               paymentStatus === "Paid"
                 ? "Latest payment is recorded."

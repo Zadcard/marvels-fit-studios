@@ -113,8 +113,8 @@ export class AdminSessionRepository {
           .from("TrainingSession")
           .select(
             `
-          id, title, description, startsAt, endsAt, location, status, type,
-          capacity, coachId, groupId,
+          id, title, description, startsAt, endsAt, status, type,
+          coachId, groupId,
           coach:Coach(fullName),
           group:Group(name),
           bookings:SessionBooking(status, bookedAt, client:Client(id, fullName)),
@@ -165,17 +165,14 @@ export class AdminSessionRepository {
                 booking !== null,
             );
           const enrolled = bookedClients.length;
-          const isAtCapacity =
-            session.capacity !== null &&
-            session.capacity > 0 &&
-            enrolled >= session.capacity;
+          const isAtCapacity = false;
           const baseRecord = {
             id: session.id,
             title: session.title,
             coachName: session.coach.fullName,
             dayLabel: getDayLabel(startsAt),
             timeLabel: timeFormatter.format(startsAt),
-            location: session.location ?? "Studio floor",
+            location: "Studio floor",
             status: mapStatus(session.status, isAtCapacity),
           };
 
@@ -188,10 +185,10 @@ export class AdminSessionRepository {
             coachId: session.coachId,
             groupId: session.groupId,
             groupName: session.group?.name ?? "No linked group",
-            location: session.location ?? "",
+            location: "Studio floor",
             startsAt: session.startsAt,
             endsAt: session.endsAt,
-            capacity: session.capacity,
+            capacity: null,
             bookedClients,
           });
 
@@ -207,7 +204,7 @@ export class AdminSessionRepository {
           } else {
             groupRecords.push({
               ...baseRecord,
-              capacity: session.capacity ?? Math.max(enrolled, 1),
+              capacity: Math.max(enrolled, 1),
               enrolled,
             });
           }

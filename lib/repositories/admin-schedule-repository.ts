@@ -121,7 +121,7 @@ export class AdminScheduleRepository {
           .select(
             `
           id, title, description, type, status, startsAt, endsAt,
-          capacity, coachId, groupId, sourceTemplateId, isTemplateException,
+          coachId, groupId, sourceTemplateId, isTemplateException,
           coach:Coach(fullName),
           group:Group(name, trainingCategory, clients:Client(id)),
           bookings:SessionBooking(id, status, client:Client(id, fullName, status, injuryStatus)),
@@ -169,7 +169,7 @@ export class AdminScheduleRepository {
           const scheduleStatus: AdminScheduleSessionStatus = mapScheduleStatus({
             status: session.status,
             bookingsCount,
-            capacity: session.capacity,
+            capacity: null,
           });
 
           return {

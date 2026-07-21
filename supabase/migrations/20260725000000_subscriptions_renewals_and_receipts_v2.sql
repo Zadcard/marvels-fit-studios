@@ -27,14 +27,14 @@ security definer
 set search_path = ''
 as $$
 declare
-  l_entry record;
-  l_client record;
-  l_sub record;
-  l_payment record;
-  l_plan record;
-  l_group record;
-  l_coach record;
-  l_creator record;
+  l_entry public."BillingLedgerEntry"%rowtype;
+  l_client public."Client"%rowtype;
+  l_sub public."ClientSubscription"%rowtype;
+  l_payment public."Payment"%rowtype;
+  l_plan public."SubscriptionPlan"%rowtype;
+  l_group public."Group"%rowtype;
+  l_coach public."Coach"%rowtype;
+  l_creator public."User"%rowtype;
   l_snapshot jsonb;
 begin
   select * into l_entry from public."BillingLedgerEntry" where id = p_ledger_entry_id;
@@ -81,12 +81,12 @@ begin
     'sessionsIncluded', coalesce(l_sub."sessionsTotal", l_plan."sessionsIncluded", 12),
     'startsAt', l_sub."startsAt",
     'endsAt', l_sub."renewsAt",
-    'coachId', l_coach.id,
-    'coachName', l_coach."fullName",
-    'groupId', l_group.id,
-    'groupName', l_group.name,
-    'createdById', l_creator.id,
-    'createdByName', l_creator.name,
+    'coachId', case when l_coach.id is not null then l_coach.id else null end,
+    'coachName', case when l_coach."fullName" is not null then l_coach."fullName" else null end,
+    'groupId', case when l_group.id is not null then l_group.id else null end,
+    'groupName', case when l_group.name is not null then l_group.name else null end,
+    'createdById', case when l_creator.id is not null then l_creator.id else null end,
+    'createdByName', case when l_creator.name is not null then l_creator.name else null end,
     'createdAt', l_entry."createdAt",
     'paymentStatus', 'PAID',
     'note', l_entry.description
@@ -393,5 +393,5 @@ begin
 end;
 $$;
 
-revoke all on function public.admin_mutate_subscription(text, text, text, numeric, integer, integer) from public, anon, authenticated;
-grant execute on function public.admin_mutate_subscription(text, text, text, numeric, integer, integer) to service_role;
+revoke all on function public.admin_mutate_subscription(text, text, text, numeric, integer, integer, text) from public, anon, authenticated;
+grant execute on function public.admin_mutate_subscription(text, text, text, numeric, integer, integer, text) to service_role;

@@ -37,10 +37,10 @@ export function getSessionBookingStore(): SessionBookingStore {
     async findSession(id) {
       const { data, error } = await supabase
         .from("TrainingSession")
-        .select("id,type,status,capacity,bookings:SessionBooking(id,clientId,status)")
+        .select("id,type,status,bookings:SessionBooking(id,clientId,status)")
         .eq("id", id).maybeSingle();
       if (error) throw error;
-      return data;
+      return data ? { ...data, capacity: null } : null;
     },
     async findClient(id) {
       const { data, error } = await supabase.from("Client").select("id").eq("id", id).maybeSingle();

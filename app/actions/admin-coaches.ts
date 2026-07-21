@@ -1,5 +1,6 @@
 "use server";
 
+// qualifiedCategoryIds handling
 import bcrypt from "bcryptjs";
 import { CoachSpecialization, UserRole } from "@/lib/supabase/domain";
 import { revalidatePath } from "next/cache";
@@ -24,6 +25,7 @@ type SaveCoachInput = {
     | "Rehab"
     | "Athletic Performance"
     | "General Fitness";
+  qualifiedCategoryIds?: string[];
 };
 
 type DeleteCoachInput = {

@@ -16,6 +16,7 @@ describe("dashboard navigation", () => {
       "Leads & Trials",
       "Clients",
       "Groups",
+      "Categories",
       "Coaches",
       "Subscriptions",
       "Reports",

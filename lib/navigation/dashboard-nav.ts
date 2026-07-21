@@ -28,6 +28,7 @@ const dashboardNavConfig: Record<OpsRole, DashboardNavItem[]> = {
     { label: "Leads & Trials", href: "/admin/join-requests", icon: ClipboardList, description: "Follow-up pipeline", section: "primary", available: true },
     { label: "Clients", href: "/admin/clients", icon: Users, description: "Roster & profiles", section: "primary", available: true },
     { label: "Groups", href: "/admin/groups", icon: UsersRound, description: "Recurring classes", section: "primary", available: true },
+    { label: "Categories", href: "/admin/categories", icon: CalendarDays, description: "Training categories", section: "primary", available: true },
     { label: "Coaches", href: "/admin/coaches", icon: ShieldUser, description: "Load & free slots", section: "primary", available: true },
     { label: "Subscriptions", href: "/admin/subscriptions", icon: CreditCard, description: "Renewals & cash flow", section: "secondary", available: true },
     { label: "Reports", href: "/admin/reports", icon: ChartNoAxesCombined, description: "Revenue & performance", section: "secondary", available: true },

@@ -22,6 +22,7 @@ type SaveAdminGroupInput = {
   name: string;
   groupType: "Group" | "Private";
   trainingCategory: string;
+  categoryId?: string; // categoryId foreign key
   coachId: string;
   capacity?: string;
   isActive: boolean;

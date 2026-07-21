@@ -49,6 +49,9 @@ export type AdminSubscriptionRecord = {
   sessionsLeft?: number;
   sessionsTotal?: number;
   cycleMonths?: number;
+  groupId?: string;
+  groupName?: string;
+  category?: string;
   note: string;
   paymentHistory: Array<{
     id: string;

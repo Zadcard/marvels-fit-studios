@@ -1,4 +1,4 @@
-export type Json =
+﻿export type Json =
   | string
   | number
   | boolean
@@ -11,6 +11,31 @@ export type Database = {
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "14.5"
+  }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
   }
   public: {
     Tables: {
@@ -215,7 +240,7 @@ export type Database = {
           sessionsLeft: number
           sport: string | null
           status: Database["public"]["Enums"]["ClientLifecycleStatus"]
-          trainingCategory: Database["public"]["Enums"]["TrainingCategory"]
+          trainingCategory: Database["public"]["Enums"]["LegacyTrainingCategory"]
           trialOutcome: Database["public"]["Enums"]["TrialOutcome"] | null
           updatedAt: string
           userId: string
@@ -236,7 +261,7 @@ export type Database = {
           sessionsLeft?: number
           sport?: string | null
           status?: Database["public"]["Enums"]["ClientLifecycleStatus"]
-          trainingCategory?: Database["public"]["Enums"]["TrainingCategory"]
+          trainingCategory?: Database["public"]["Enums"]["LegacyTrainingCategory"]
           trialOutcome?: Database["public"]["Enums"]["TrialOutcome"] | null
           updatedAt?: string
           userId: string
@@ -257,7 +282,7 @@ export type Database = {
           sessionsLeft?: number
           sport?: string | null
           status?: Database["public"]["Enums"]["ClientLifecycleStatus"]
-          trainingCategory?: Database["public"]["Enums"]["TrainingCategory"]
+          trainingCategory?: Database["public"]["Enums"]["LegacyTrainingCategory"]
           trialOutcome?: Database["public"]["Enums"]["TrialOutcome"] | null
           updatedAt?: string
           userId?: string
@@ -622,6 +647,39 @@ export type Database = {
           },
         ]
       }
+      CoachTrainingCategory: {
+        Row: {
+          categoryId: string
+          coachId: string
+          createdAt: string
+        }
+        Insert: {
+          categoryId: string
+          coachId: string
+          createdAt?: string
+        }
+        Update: {
+          categoryId?: string
+          coachId?: string
+          createdAt?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "CoachTrainingCategory_categoryId_fkey"
+            columns: ["categoryId"]
+            isOneToOne: false
+            referencedRelation: "TrainingCategory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "CoachTrainingCategory_coachId_fkey"
+            columns: ["coachId"]
+            isOneToOne: false
+            referencedRelation: "Coach"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       Exercise: {
         Row: {
           category: string
@@ -741,39 +799,43 @@ export type Database = {
       }
       Group: {
         Row: {
-          capacity: number | null
+          categoryId: string
           coachId: string
           createdAt: string
           id: string
           isActive: boolean
           name: string
           notes: string | null
-          trainingCategory: Database["public"]["Enums"]["TrainingCategory"]
           type: Database["public"]["Enums"]["GroupType"]
         }
         Insert: {
-          capacity?: number | null
+          categoryId: string
           coachId: string
           createdAt?: string
           id?: string
           isActive?: boolean
           name: string
           notes?: string | null
-          trainingCategory?: Database["public"]["Enums"]["TrainingCategory"]
           type?: Database["public"]["Enums"]["GroupType"]
         }
         Update: {
-          capacity?: number | null
+          categoryId?: string
           coachId?: string
           createdAt?: string
           id?: string
           isActive?: boolean
           name?: string
           notes?: string | null
-          trainingCategory?: Database["public"]["Enums"]["TrainingCategory"]
           type?: Database["public"]["Enums"]["GroupType"]
         }
         Relationships: [
+          {
+            foreignKeyName: "Group_categoryId_fkey"
+            columns: ["categoryId"]
+            isOneToOne: false
+            referencedRelation: "TrainingCategory"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "Group_coachId_fkey"
             columns: ["coachId"]
@@ -791,7 +853,7 @@ export type Database = {
           fullName: string
           id: string
           interestedCategory:
-            | Database["public"]["Enums"]["TrainingCategory"]
+            | Database["public"]["Enums"]["LegacyTrainingCategory"]
             | null
           lostReason: string | null
           message: string | null
@@ -810,7 +872,7 @@ export type Database = {
           fullName: string
           id?: string
           interestedCategory?:
-            | Database["public"]["Enums"]["TrainingCategory"]
+            | Database["public"]["Enums"]["LegacyTrainingCategory"]
             | null
           lostReason?: string | null
           message?: string | null
@@ -829,7 +891,7 @@ export type Database = {
           fullName?: string
           id?: string
           interestedCategory?:
-            | Database["public"]["Enums"]["TrainingCategory"]
+            | Database["public"]["Enums"]["LegacyTrainingCategory"]
             | null
           lostReason?: string | null
           message?: string | null
@@ -1092,6 +1154,30 @@ export type Database = {
           },
         ]
       }
+      RateLimitBucket: {
+        Row: {
+          blockedUntil: string | null
+          keyHash: string
+          lastRequestAt: string
+          requestCount: number
+          windowStartedAt: string
+        }
+        Insert: {
+          blockedUntil?: string | null
+          keyHash: string
+          lastRequestAt?: string
+          requestCount?: number
+          windowStartedAt?: string
+        }
+        Update: {
+          blockedUntil?: string | null
+          keyHash?: string
+          lastRequestAt?: string
+          requestCount?: number
+          windowStartedAt?: string
+        }
+        Relationships: []
+      }
       Receipt: {
         Row: {
           billingLedgerEntryId: string | null
@@ -1100,6 +1186,7 @@ export type Database = {
           createdAt: string
           id: string
           receiptNumber: string
+          snapshot: Json | null
           updatedAt: string
         }
         Insert: {
@@ -1109,6 +1196,7 @@ export type Database = {
           createdAt?: string
           id?: string
           receiptNumber: string
+          snapshot?: Json | null
           updatedAt?: string
         }
         Update: {
@@ -1118,6 +1206,7 @@ export type Database = {
           createdAt?: string
           id?: string
           receiptNumber?: string
+          snapshot?: Json | null
           updatedAt?: string
         }
         Relationships: [
@@ -1175,7 +1264,6 @@ export type Database = {
       RecurringSessionTemplate: {
         Row: {
           active: boolean
-          capacity: number | null
           coachId: string
           createdAt: string
           createdById: string
@@ -1195,7 +1283,6 @@ export type Database = {
         }
         Insert: {
           active?: boolean
-          capacity?: number | null
           coachId: string
           createdAt?: string
           createdById: string
@@ -1215,7 +1302,6 @@ export type Database = {
         }
         Update: {
           active?: boolean
-          capacity?: number | null
           coachId?: string
           createdAt?: string
           createdById?: string
@@ -1800,6 +1886,36 @@ export type Database = {
         }
         Relationships: []
       }
+      TrainingCategory: {
+        Row: {
+          createdAt: string
+          id: string
+          isActive: boolean
+          legacyValue: string | null
+          name: string
+          slug: string
+          updatedAt: string
+        }
+        Insert: {
+          createdAt?: string
+          id?: string
+          isActive?: boolean
+          legacyValue?: string | null
+          name: string
+          slug: string
+          updatedAt?: string
+        }
+        Update: {
+          createdAt?: string
+          id?: string
+          isActive?: boolean
+          legacyValue?: string | null
+          name?: string
+          slug?: string
+          updatedAt?: string
+        }
+        Relationships: []
+      }
       TrainingProgram: {
         Row: {
           clientId: string
@@ -1856,7 +1972,6 @@ export type Database = {
       }
       TrainingSession: {
         Row: {
-          capacity: number | null
           coachId: string
           createdAt: string
           createdById: string
@@ -1875,7 +1990,6 @@ export type Database = {
           updatedAt: string
         }
         Insert: {
-          capacity?: number | null
           coachId: string
           createdAt?: string
           createdById: string
@@ -1894,7 +2008,6 @@ export type Database = {
           updatedAt?: string
         }
         Update: {
-          capacity?: number | null
           coachId?: string
           createdAt?: string
           createdById?: string
@@ -2267,11 +2380,12 @@ export type Database = {
       admin_mutate_subscription: {
         Args: {
           target_action: string
-          target_amount?: number | null
-          target_duration_months?: number | null
+          target_amount?: number
+          target_duration_months?: number
           target_id: string
+          target_note?: string
           target_payment_method: string
-          target_sessions_per_month?: number | null
+          target_sessions_per_month?: number
         }
         Returns: Json
       }
@@ -2279,6 +2393,10 @@ export type Database = {
       admin_save_subscription: { Args: { payload: Json }; Returns: Json }
       book_client_into_session: {
         Args: { p_client_id: string; p_session_id: string }
+        Returns: Json
+      }
+      build_receipt_snapshot: {
+        Args: { p_ledger_entry_id: string }
         Returns: Json
       }
       bulk_update_session_attendance: {
@@ -2290,13 +2408,7 @@ export type Database = {
         Returns: number
       }
       bulk_update_training_sessions: {
-        Args: {
-          p_action: string
-          p_capacity: number
-          p_coach_id: string
-          p_location: string
-          p_session_ids: string[]
-        }
+        Args: { p_action: string; p_coach_id: string; p_session_ids: string[] }
         Returns: number
       }
       cancel_training_session: {
@@ -2469,13 +2581,12 @@ export type Database = {
       }
       save_admin_group: {
         Args: {
-          p_capacity: number | null
+          p_category_id: string
           p_coach_id: string
           p_group_id: string
           p_is_active: boolean
           p_name: string
           p_notes: string
-          p_training_category: Database["public"]["Enums"]["TrainingCategory"]
           p_type: Database["public"]["Enums"]["GroupType"]
         }
         Returns: string
@@ -2493,6 +2604,7 @@ export type Database = {
       }
       save_coach: {
         Args: {
+          p_category_ids: string[]
           p_coach_id: string
           p_email: string
           p_full_name: string
@@ -2500,7 +2612,7 @@ export type Database = {
           p_phone: string
           p_specialization: Database["public"]["Enums"]["CoachSpecialization"]
         }
-        Returns: undefined
+        Returns: string
       }
       save_coach_settings: {
         Args: {
@@ -2539,17 +2651,16 @@ export type Database = {
       }
       sync_recurring_session_template: {
         Args: {
-          p_capacity: number | null
           p_coach_id: string
           p_created_by_id: string
-          p_description: string | null
+          p_description: string
           p_duration_minutes: number
-          p_ends_on: string | null
-          p_group_id: string | null
+          p_ends_on: string
+          p_group_id: string
           p_slots: Json
           p_starts_on: string
-          p_template_id: string | null
-          p_through_date?: string | null
+          p_template_id: string
+          p_through_date?: string
           p_title: string
           p_type: Database["public"]["Enums"]["TrainingSessionType"]
         }
@@ -2567,7 +2678,6 @@ export type Database = {
       }
       update_training_session: {
         Args: {
-          p_capacity: number
           p_coach_id: string
           p_description: string
           p_ends_at: string
@@ -2625,6 +2735,15 @@ export type Database = {
       LeadStatus: "NEW" | "CONTACTED" | "CONVERTED" | "CLOSED" | "TRIAL_DONE"
       LedgerEntryStatus: "POSTED" | "VOID"
       LedgerEntryType: "PAYMENT" | "CHARGE" | "CREDIT" | "REFUND"
+      LegacyTrainingCategory:
+        | "FOOTBALL"
+        | "TENNIS"
+        | "OTHER_SPORT"
+        | "FAT_LOSS"
+        | "MUSCLE_GAIN"
+        | "CALISTHENICS"
+        | "REHAB"
+        | "GENERAL_FITNESS"
       NotificationKind: "SESSION_REMINDER" | "RENEWAL_REMINDER" | "SYSTEM"
       NotificationStatus: "SENT" | "READ" | "FAILED"
       ProgramStatus: "DRAFT" | "ACTIVE" | "COMPLETED" | "ARCHIVED"
@@ -2637,16 +2756,14 @@ export type Database = {
         | "OTHER"
       StudioExpenseMethod: "CASH" | "CARD" | "BANK_TRANSFER" | "INSTAPAY"
       StudioExpenseStatus: "POSTED" | "VOID"
-      SubscriptionStatus: "ACTIVE" | "TRIAL" | "PAUSED" | "EXPIRED" | "CANCELED"
-      TrainingCategory:
-        | "FOOTBALL"
-        | "TENNIS"
-        | "OTHER_SPORT"
-        | "FAT_LOSS"
-        | "MUSCLE_GAIN"
-        | "CALISTHENICS"
-        | "REHAB"
-        | "GENERAL_FITNESS"
+      SubscriptionStatus:
+        | "ACTIVE"
+        | "TRIAL"
+        | "PAUSED"
+        | "EXPIRED"
+        | "CANCELED"
+        | "UPCOMING"
+        | "QUEUED"
       TrainingSessionStatus: "DRAFT" | "SCHEDULED" | "COMPLETED" | "CANCELED"
       TrainingSessionType: "GROUP" | "PRIVATE"
       TrialOutcome:
@@ -2782,6 +2899,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       AssessmentStatus: ["DRAFT", "COMPLETE"],
@@ -2823,6 +2943,16 @@ export const Constants = {
       LeadStatus: ["NEW", "CONTACTED", "CONVERTED", "CLOSED", "TRIAL_DONE"],
       LedgerEntryStatus: ["POSTED", "VOID"],
       LedgerEntryType: ["PAYMENT", "CHARGE", "CREDIT", "REFUND"],
+      LegacyTrainingCategory: [
+        "FOOTBALL",
+        "TENNIS",
+        "OTHER_SPORT",
+        "FAT_LOSS",
+        "MUSCLE_GAIN",
+        "CALISTHENICS",
+        "REHAB",
+        "GENERAL_FITNESS",
+      ],
       NotificationKind: ["SESSION_REMINDER", "RENEWAL_REMINDER", "SYSTEM"],
       NotificationStatus: ["SENT", "READ", "FAILED"],
       ProgramStatus: ["DRAFT", "ACTIVE", "COMPLETED", "ARCHIVED"],
@@ -2836,16 +2966,14 @@ export const Constants = {
       ],
       StudioExpenseMethod: ["CASH", "CARD", "BANK_TRANSFER", "INSTAPAY"],
       StudioExpenseStatus: ["POSTED", "VOID"],
-      SubscriptionStatus: ["ACTIVE", "TRIAL", "PAUSED", "EXPIRED", "CANCELED"],
-      TrainingCategory: [
-        "FOOTBALL",
-        "TENNIS",
-        "OTHER_SPORT",
-        "FAT_LOSS",
-        "MUSCLE_GAIN",
-        "CALISTHENICS",
-        "REHAB",
-        "GENERAL_FITNESS",
+      SubscriptionStatus: [
+        "ACTIVE",
+        "TRIAL",
+        "PAUSED",
+        "EXPIRED",
+        "CANCELED",
+        "UPCOMING",
+        "QUEUED",
       ],
       TrainingSessionStatus: ["DRAFT", "SCHEDULED", "COMPLETED", "CANCELED"],
       TrainingSessionType: ["GROUP", "PRIVATE"],
@@ -2861,3 +2989,4 @@ export const Constants = {
     },
   },
 } as const
+

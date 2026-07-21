@@ -37,12 +37,7 @@ export async function withSupabaseFallback<T>(
   try {
     return await operation();
   } catch (error) {
-    // Keep the cause in server logs, but never turn an outage into believable
-    // empty business data. Dashboard error boundaries render the safe message.
     console.error("[withSupabaseFallback] database operation unavailable:", error);
-    if (_legacyFallback !== undefined && _legacyFallback !== null) {
-      return _legacyFallback;
-    }
     throw new OperationalDataUnavailableError({ cause: error });
   }
 }

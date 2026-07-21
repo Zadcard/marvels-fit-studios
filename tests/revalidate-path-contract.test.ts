@@ -13,6 +13,7 @@ const actionFiles = readdirSync(actionsDirectory)
 const livePaths = new Set([
   "/admin",
   "/admin/attendance",
+  "/admin/categories",
   "/admin/clients",
   "/admin/coaches",
   "/admin/groups",

@@ -28,6 +28,12 @@ export type MarvelOpsSubscriptionStat = {
 };
 
 export type MarvelOpsSubscriptionClientOption = { id: string; label: string };
+export type MarvelOpsGroupOption = {
+  id: string;
+  name: string;
+  category?: string;
+  scheduleSummary?: string;
+};
 
 const subscriptionDurations = [
   { months: 1 as const, label: "1 Month" },
@@ -50,10 +56,12 @@ export function MarvelOpsSubscriptions({
   stats,
   records,
   clientOptions = [],
+  groupOptions = [],
 }: {
   stats: MarvelOpsSubscriptionStat[];
   records: AdminSubscriptionRecord[];
   clientOptions?: MarvelOpsSubscriptionClientOption[];
+  groupOptions?: MarvelOpsGroupOption[];
 }) {
   const router = useRouter();
   const { showToast } = useDashboardToast();
@@ -69,6 +77,8 @@ export function MarvelOpsSubscriptions({
     useState<(typeof sessionsPerMonthChoices)[number]>(12);
   const [renewDurationMonths, setRenewDurationMonths] =
     useState<(typeof subscriptionDurations)[number]["months"]>(1);
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [renewGroupId, setRenewGroupId] = useState("");
   const [search, setSearch] = useState("");
   const term = search.trim().toLowerCase();
   const visibleRecords = term
@@ -95,6 +105,7 @@ export function MarvelOpsSubscriptions({
                 amount: renewAmount,
                 sessionsPerMonth: renewSessionsPerMonth,
                 durationMonths: renewDurationMonths,
+                newGroupId: renewGroupId || undefined,
               }
             : undefined,
         );
@@ -140,26 +151,26 @@ export function MarvelOpsSubscriptions({
           {message}
         </p>
       ) : null}
-      <section className={styles.table}>
-        <header>
-          <h2>Members &amp; renewals</h2>
-          <label className={styles.search}>
-            <Search size={16} />
-            <span className="sr-only">Search members</span>
-            <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Member or plan" />
-          </label>
-          <button type="button" onClick={() => setCreating(true)} disabled={pending}>
-            <Plus size={13} /> New subscription
-          </button>
-        </header>
-        <div className={styles.head}>
-          <span>Member</span>
-          <span>Plan</span>
-          <span>Sessions left</span>
-          <span>Method</span>
-          <span>Renews</span>
-          <span>Action</span>
+      <section className={styles.toolbar}>
+        <div className={styles.search}>
+          <Search size={16} />
+          <input
+            type="search"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Filter member or plan"
+            aria-label="Filter member or plan"
+          />
         </div>
+        <button
+          type="button"
+          className={styles.createBtn}
+          onClick={() => setCreating(true)}
+        >
+          <Plus size={16} /> New subscription
+        </button>
+      </section>
+      <section className={styles.list}>
         {visibleRecords.map((record) => (
           <SubscriptionRow
             key={record.id}
@@ -171,6 +182,8 @@ export function MarvelOpsSubscriptions({
               setRenewAmount(record.amountValue);
               setRenewSessionsPerMonth(nearestSessionsChoice(record.sessionsTotal));
               setRenewDurationMonths(nearestDurationMonths(record.cycleMonths));
+              setSelectedCategory(record.category || "");
+              setRenewGroupId(record.groupId || "");
               setError("");
             }}
           />
@@ -198,6 +211,9 @@ export function MarvelOpsSubscriptions({
         <SubscriptionDialog
           record={selected}
           paymentMethod={paymentMethod}
+          groupOptions={groupOptions}
+          selectedCategory={selectedCategory}
+          renewGroupId={renewGroupId}
           renewAmount={renewAmount}
           renewSessionsPerMonth={renewSessionsPerMonth}
           renewDurationMonths={renewDurationMonths}
@@ -205,6 +221,8 @@ export function MarvelOpsSubscriptions({
           pending={pending}
           close={() => setSelected(null)}
           confirm={confirmMutation}
+          onSelectedCategoryChange={setSelectedCategory}
+          onRenewGroupIdChange={setRenewGroupId}
           onPaymentMethodChange={setPaymentMethod}
           onRenewAmountChange={setRenewAmount}
           onRenewSessionsPerMonthChange={setRenewSessionsPerMonth}
@@ -507,6 +525,9 @@ function SubscriptionDialog({
 }: {
   record: AdminSubscriptionRecord;
   paymentMethod: AdminPaymentMethod;
+  groupOptions?: MarvelOpsGroupOption[];
+  selectedCategory: string;
+  renewGroupId: string;
   renewAmount: string;
   renewSessionsPerMonth: (typeof sessionsPerMonthChoices)[number];
   renewDurationMonths: (typeof subscriptionDurations)[number]["months"];
@@ -514,6 +535,8 @@ function SubscriptionDialog({
   pending: boolean;
   close: () => void;
   confirm: () => void;
+  onSelectedCategoryChange: (value: string) => void;
+  onRenewGroupIdChange: (value: string) => void;
   onPaymentMethodChange: (method: AdminPaymentMethod) => void;
   onRenewAmountChange: (value: string) => void;
   onRenewSessionsPerMonthChange: (value: (typeof sessionsPerMonthChoices)[number]) => void;
@@ -548,8 +571,66 @@ function SubscriptionDialog({
               ? "Record the payment method, close the current period, and create a new active period."
               : "This reactivates the existing membership and sets its next renewal date."}
           </p>
-          {action === "Renew" ? (
+          {action === "Renew" || action === "Reactivate" ? (
             <>
+              {groupOptions.length > 0 ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 16 }}>
+                  <label style={{ fontSize: "0.75rem", fontWeight: 600, color: "#a1a1aa" }}>
+                    Training Category
+                    <select
+                      value={selectedCategory}
+                      onChange={(e) => onSelectedCategoryChange(e.target.value)}
+                      disabled={pending}
+                      style={{
+                        width: "100%",
+                        marginTop: 4,
+                        padding: "8px 12px",
+                        borderRadius: 6,
+                        background: "#18181b",
+                        border: "1px solid #27272a",
+                        color: "#fff",
+                        fontSize: "0.875rem",
+                      }}
+                    >
+                      <option value="">All Categories ({record.category || "Current"})</option>
+                      {Array.from(new Set(groupOptions.map((g) => g.category).filter(Boolean))).map((cat) => (
+                        <option key={cat} value={cat}>
+                          {cat}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label style={{ fontSize: "0.75rem", fontWeight: 600, color: "#a1a1aa" }}>
+                    Group / Class
+                    <select
+                      value={renewGroupId}
+                      onChange={(e) => onRenewGroupIdChange(e.target.value)}
+                      disabled={pending}
+                      style={{
+                        width: "100%",
+                        marginTop: 4,
+                        padding: "8px 12px",
+                        borderRadius: 6,
+                        background: "#18181b",
+                        border: "1px solid #27272a",
+                        color: "#fff",
+                        fontSize: "0.875rem",
+                      }}
+                    >
+                      <option value="">Keep current group ({record.groupName || "Unassigned"})</option>
+                      {groupOptions
+                        .filter((g) => !selectedCategory || g.category === selectedCategory)
+                        .map((g) => (
+                          <option key={g.id} value={g.id}>
+                            {g.name} {g.category ? `(${g.category})` : ""} {g.scheduleSummary ? `- ${g.scheduleSummary}` : ""}
+                          </option>
+                        ))}
+                    </select>
+                  </label>
+                </div>
+              ) : null}
+
               <label>
                 Amount (EGP)
                 <input

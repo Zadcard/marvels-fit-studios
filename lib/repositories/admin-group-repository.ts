@@ -84,7 +84,7 @@ export class AdminGroupRepository {
         const { data, error } = await supabase
           .from("Group")
           .select(
-            "id,name,type,trainingCategory,capacity,isActive,notes,createdAt,coach:Coach(id,fullName),members:Client(id,fullName),templates:RecurringSessionTemplate(id,createdAt,active,durationMinutes,startsOn,endsOn,slots:RecurringSessionSlot(weekday,localStartTime))",
+            "id,name,type,category:TrainingCategory(name),isActive,notes,createdAt,coach:Coach(id,fullName),members:Client(id,fullName),templates:RecurringSessionTemplate(id,createdAt,active,durationMinutes,startsOn,endsOn,slots:RecurringSessionSlot(weekday,localStartTime))",
           )
           .order("name");
         if (error) throw error;
@@ -98,19 +98,16 @@ export class AdminGroupRepository {
             id: group.id,
             name: group.name,
             groupType: group.type === "PRIVATE" ? "Private" : "Group",
-            trainingCategory: trainingCategoryLabelFor(group.trainingCategory),
+            trainingCategory: group.category?.name ?? "General Fitness",
             coachId: group.coach?.id ?? "",
             coachName: group.coach?.fullName ?? "Unassigned",
-            capacity: group.capacity,
+            capacity: null,
             isActive: group.isActive,
             notes: group.notes?.trim() ?? "",
             memberCount: members.length,
             members,
             scheduleSummary: buildScheduleSummary(group.templates),
-            capacityLabel:
-              group.capacity != null
-                ? `${members.length} / ${group.capacity}`
-                : `${members.length}`,
+            capacityLabel: `${members.length}`,
             series: pickPrimarySeries(group.templates),
           } satisfies AdminGroupRecord;
         });

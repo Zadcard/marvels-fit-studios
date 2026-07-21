@@ -71,7 +71,7 @@ export const TrialOutcome = enumValues(
   ] as const
 );
 
-export type TrainingCategory = PublicEnums["TrainingCategory"];
+export type TrainingCategory = string;
 export const TrainingCategory = enumValues(
   [
     "FOOTBALL",

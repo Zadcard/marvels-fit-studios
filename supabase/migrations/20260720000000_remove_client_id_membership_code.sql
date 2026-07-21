@@ -186,6 +186,8 @@ $function$;
 -- 2. register_client: new 4-arg signature, no clientId, no password.
 DROP FUNCTION IF EXISTS public.register_client(text, text, text, text, text, text);
 
+DROP FUNCTION IF EXISTS public.register_client(text, text, text, text);
+
 CREATE FUNCTION public.register_client(
   p_full_name text,
   p_phone text,
@@ -219,6 +221,7 @@ $function$;
 
 -- 3. promote_lead_to_client: new 1-arg signature, no clientId, no credentials.
 DROP FUNCTION IF EXISTS public.promote_lead_to_client(text, text, text);
+DROP FUNCTION IF EXISTS public.promote_lead_to_client(text);
 
 CREATE FUNCTION public.promote_lead_to_client(target_lead_id text)
  RETURNS jsonb
