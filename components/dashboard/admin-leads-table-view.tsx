@@ -50,14 +50,13 @@ const TONE_GRAD: Record<string, string> = {
 
 // ─── sort helpers ─────────────────────────────────────────────────────────────
 
-type SortKey = "name" | "source" | "wants" | "stage";
+type SortKey = "name" | "source" | "stage";
 const STAGE_ORDER: Record<Stage, number> = { New: 0, "Trial booked": 1, "Trial done": 2, Won: 3, Lost: 4 };
 
 function compare(a: MarvelOpsLead, b: MarvelOpsLead, key: SortKey): number {
   if (key === "stage") return STAGE_ORDER[a.stage] - STAGE_ORDER[b.stage];
   if (key === "name") return a.name.localeCompare(b.name);
   if (key === "source") return a.source.localeCompare(b.source);
-  if (key === "wants") return a.wants.localeCompare(b.wants);
   return 0;
 }
 
@@ -156,9 +155,6 @@ export function AdminLeadsTableView({ leads, pending, onAdd, onProgress, onDelet
             <button className={s.sortBtn} onClick={() => toggleSort("source")} type="button">
               Source{sortLabel("source")}
             </button>
-            <button className={s.sortBtn} onClick={() => toggleSort("wants")} type="button">
-              Wants{sortLabel("wants")}
-            </button>
             <span className={s.colLabel}>Phone</span>
             <button className={s.sortBtn} onClick={() => toggleSort("stage")} type="button">
               Stage{sortLabel("stage")}
@@ -225,12 +221,6 @@ export function AdminLeadsTableView({ leads, pending, onAdd, onProgress, onDelet
                 {/* source */}
                 <div className={s.pad}>
                   <span className={s.sourcePill} data-source={lead.source}>{lead.source}</span>
-                </div>
-
-                {/* wants */}
-                <div className={`${s.pad} ${s.wantsCell}`}>
-                  <span className={s.catDot} style={{ background: stageColor }} />
-                  <span className={s.wantsText}>{lead.wants}</span>
                 </div>
 
                 {/* phone */}
