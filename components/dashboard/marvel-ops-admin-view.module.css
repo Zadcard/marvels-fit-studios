@@ -13,3 +13,18 @@
 @media(max-width:620px){.kanban{grid-template-columns:1fr;overflow-x:visible}}
 .leadName{position:relative}.deleteLead{position:absolute;top:-2px;right:-2px;width:22px;height:22px;display:grid;place-items:center;border:1px solid #3a3a3a;border-radius:7px;background:transparent;color:#8f8f8f;cursor:pointer}.deleteLead:hover{border-color:#ef4444;color:#ef4444}
 .wantsChip{display:inline-flex;align-items:center;gap:6px}.wantsChip::before{width:6px;height:6px;border-radius:50%;background:#e62429;content:""}
+.membershipModal{width:min(540px,calc(100vw - 32px))}
+.modalIntro{margin:0;color:#c4c4c4;font-size:.75rem;line-height:1.55}
+.paymentChoices{margin:0;padding:0;border:0}
+.paymentChoices legend{margin:0 0 10px;padding:0;color:#8f8f8f;font:.54rem var(--font-ops-mono);letter-spacing:.12em;text-transform:uppercase}
+.choiceChips{display:flex;flex-wrap:wrap;gap:7px}
+.choiceChips button,.groupChoices button{min-height:34px;padding:0 12px;border:1px solid #3a3a3a;border-radius:999px;background:#171717;color:#8f8f8f;font:.58rem var(--font-ops-mono);cursor:pointer}
+.choiceChips button[data-active],.groupChoices button[data-active]{border-color:#e62429;background:#2d1011;color:#fff}
+.choiceChips button:focus-visible,.groupChoices button:focus-visible{outline:2px solid #ff4f54;outline-offset:2px}
+.groupChoices{display:grid;gap:7px}
+.groupChoices button{display:flex;align-items:center;justify-content:space-between;width:100%;min-height:42px;border-radius:10px;text-align:left}
+.groupChoices small{color:#25d366;font:.48rem var(--font-ops-mono);letter-spacing:.08em;text-transform:uppercase}
+.modal footer .primary{display:inline-flex;align-items:center;justify-content:center;gap:7px;flex:2;background:linear-gradient(135deg,#e62429,#ff4f54)}
+.spinner{animation:leadSpin .8s linear infinite}
+@keyframes leadSpin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.spinner{animation:none}}

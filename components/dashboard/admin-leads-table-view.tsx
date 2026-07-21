@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Flag, Search, TriangleAlert, X } from "lucide-react";
+import { ArrowRight, Flag, Phone, Search, TriangleAlert, X } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import type { MarvelOpsLead } from "./marvel-ops-admin-view";
@@ -236,7 +236,7 @@ export function AdminLeadsTableView({ leads, pending, onAdd, onProgress, onDelet
                 {/* phone */}
                 <div className={s.pad}>
                   <span className={s.phone}>
-                    <span className={s.phoneIcon}>✆</span>
+                    <span className={s.phoneIcon}><Phone size={12} aria-hidden="true" /></span>
                     {lead.phone || "—"}
                   </span>
                 </div>

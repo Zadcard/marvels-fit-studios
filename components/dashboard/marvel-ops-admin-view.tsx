@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, ChevronRight, LoaderCircle, Plus, Search, Trash2, X } from "lucide-react";
+import { LoaderCircle, Trash2, X } from "lucide-react";
 import { useEffect, useState, useTransition, type FormEvent } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Dialog } from "radix-ui";
@@ -16,6 +16,7 @@ import {
 import { adminLeadSources, type AdminLeadSource } from "@/lib/dashboard/lead-source";
 import { trainingCategoryLabels } from "@/lib/dashboard/client-domain-labels";
 import { adminPaymentMethods } from "@/lib/mocks/admin-subscriptions";
+import { AdminLeadsTableView } from "./admin-leads-table-view";
 import { useDashboardToast } from "./dashboard-toast-provider";
 import styles from "./marvel-ops-admin-view.module.css";
 
@@ -38,7 +39,6 @@ export type MarvelOpsLead = {
   preferredAvailability?: string;
   lostReason?: string;
 };
-const actions: Record<Stage, string> = { New: "Assign to group", "Trial booked": "Mark trial done", "Trial done": "Subscribe", Won: "", Lost: "" };
 const sessionChoices = [8, 12, 16, 20] as const;
 type LeadGroup = { id: string; name: string };
 
@@ -51,8 +51,6 @@ function LeadsWorkspace({ records, trialGroups }: { records: MarvelOpsLead[]; tr
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { showToast } = useDashboardToast();
-  const [source, setSource] = useState<MarvelOpsLead["source"] | "All">("All");
-  const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<MarvelOpsLead | null>(null);
   const [leadForGroup, setLeadForGroup] = useState<MarvelOpsLead | null>(null);
   const [deleting, setDeleting] = useState<MarvelOpsLead | null>(null);
@@ -61,12 +59,6 @@ function LeadsWorkspace({ records, trialGroups }: { records: MarvelOpsLead[]; tr
   const [losing, setLosing] = useState<MarvelOpsLead | null>(null);
   const [notice, setNotice] = useState("");
   const [pending, startTransition] = useTransition();
-  const term = search.trim().toLowerCase();
-  const shown = records.filter(
-    (lead) =>
-      (source === "All" || lead.source === source) &&
-      (!term || [lead.name, lead.phone, lead.note].join(" ").toLowerCase().includes(term)),
-  );
 
   useEffect(() => {
     if (searchParams.get("new") !== "1") return;
@@ -223,12 +215,15 @@ function LeadsWorkspace({ records, trialGroups }: { records: MarvelOpsLead[]; tr
   }
 
   return <div className={styles.page} aria-busy={pending}>
-    <div className={styles.leadsToolbar}>
-      <label className={styles.leadsSearch}><Search size={16} /><span className="sr-only">Search leads</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Name, phone, or note" /></label>
-      <div className={styles.sources}>{(["All", ...adminLeadSources] as const).map((item) => <button key={item} type="button" data-active={source === item || undefined} onClick={() => setSource(item)}>{item}<b>{item === "All" ? records.length : records.filter((lead) => lead.source === item).length}</b></button>)}<button type="button" onClick={() => setCreating(true)}><Plus size={16} /> Add lead</button></div>
-    </div>
     {notice ? <p className={styles.notice} role="status">{notice}</p> : null}
-    <section className={styles.kanban}>{stages.map((stage) => <div className={styles.lane} data-stage={stage} key={stage}><header><strong>{stage}</strong><small>{shown.filter((lead) => lead.stage === stage).length}</small></header>{shown.filter((lead) => lead.stage === stage).map((lead) => <article key={lead.id} role="button" tabIndex={0} onClick={() => setSelected(lead)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setSelected(lead); } }}><div className={styles.leadName}><i data-tone={lead.tone}>{lead.initials}</i><span><strong>{lead.name}</strong><small>{lead.note}</small></span><button type="button" className={styles.deleteLead} aria-label={`Delete ${lead.name}`} onClick={(event) => { event.stopPropagation(); setDeleting(lead); }}><X size={13} /></button></div><em data-source={lead.source}>{lead.source}</em><p><small>Wants</small><b className={styles.wantsChip}>{lead.wants}</b></p>{lead.injury ? <p className={styles.leadInjury}><AlertTriangle size={11} /> {lead.injury}</p> : null}{lead.assigned ? <p className={styles.assigned}>{lead.assigned}</p> : null}<p className={styles.phone}>{lead.phone}</p><div className={styles.leadActions}>{actions[stage] ? <button type="button" disabled={pending} onClick={(event) => { event.stopPropagation(); progressLead(lead); }}>{pending ? <LoaderCircle size={14} /> : <>{actions[stage]}<ChevronRight size={14} /></>}</button> : null}{stage !== "Won" && stage !== "Lost" ? <button type="button" className={styles.lostButton} disabled={pending} onClick={(event) => { event.stopPropagation(); setLosing(lead); }}>Mark lost</button> : null}</div></article>)}{!shown.filter((lead) => lead.stage === stage).length ? <p className={styles.laneEmpty}>No leads</p> : null}</div>)}</section>
+    <AdminLeadsTableView
+      leads={records}
+      pending={pending}
+      onAdd={() => setCreating(true)}
+      onProgress={progressLead}
+      onDelete={(lead) => setDeleting(lead)}
+      onMarkLost={(lead) => setLosing(lead)}
+    />
     {selected ? <LeadDrawer lead={selected} close={() => setSelected(null)} /> : null}
     {leadForGroup ? <TrialGroupModal lead={leadForGroup} groups={trialGroups} pending={pending} close={() => setLeadForGroup(null)} submit={assignGroup} /> : null}
     {creating ? <CreateLeadModal pending={pending} close={() => setCreating(false)} submit={addLead} /> : null}
@@ -266,18 +261,18 @@ function SubscribeLeadModal({ lead, groups, pending, close, submit }: {
   const [price, setPrice] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<(typeof adminPaymentMethods)[number]>("Cash");
 
-  return <Dialog.Root open onOpenChange={(open) => !open && close()}><Dialog.Portal><Dialog.Overlay className={styles.overlay} /><Dialog.Content className={styles.modal}>
+  return <Dialog.Root open onOpenChange={(open) => !open && !pending && close()}><Dialog.Portal><Dialog.Overlay className={styles.overlay} /><Dialog.Content className={`${styles.modal} ${styles.membershipModal}`}>
     <form onSubmit={(event) => { event.preventDefault(); submit({ groupId, durationMonths, sessionsPerMonth, price, paymentMethod }); }}>
-      <Dialog.Close className={styles.close} aria-label="Close"><X size={17} /></Dialog.Close>
-      <span>Trial attended</span>
+      <Dialog.Close className={styles.close} aria-label="Close" disabled={pending}><X size={17} /></Dialog.Close>
+      <span>Membership</span>
       <Dialog.Title asChild><h2>Subscribe {lead.name}</h2></Dialog.Title>
-      <Dialog.Description className="sr-only">Choose a group, plan, and payment to convert {lead.name} into a paying client.</Dialog.Description>
-      <label>Group<select value={groupId} onChange={(event) => setGroupId(event.target.value)} required><option value="" disabled>Choose a group</option>{groups.map((group) => <option value={group.id} key={group.id}>{group.name}</option>)}</select></label>
-      <label>Plan<select value={durationMonths} onChange={(event) => setDurationMonths(Number(event.target.value) as 1 | 3)}><option value={1}>Monthly</option><option value={3}>Quarterly</option></select></label>
-      <label>Sessions per month<select value={sessionsPerMonth} onChange={(event) => setSessionsPerMonth(Number(event.target.value) as (typeof sessionChoices)[number])}>{sessionChoices.map((value) => <option key={value} value={value}>{value}</option>)}</select></label>
-      <label>Amount (EGP)<input inputMode="decimal" value={price} onChange={(event) => setPrice(event.target.value)} required /></label>
-      <label>Payment method<select value={paymentMethod} onChange={(event) => setPaymentMethod(event.target.value as (typeof adminPaymentMethods)[number])}>{adminPaymentMethods.map((method) => <option key={method}>{method}</option>)}</select></label>
-      <footer><Dialog.Close asChild><button type="button">Cancel</button></Dialog.Close><button className={styles.primary} disabled={pending || !groupId || !price}>{pending ? "Subscribing…" : "Create subscription"}</button></footer>
+      <Dialog.Description className={styles.modalIntro}>Convert {lead.name} into an active member, record the payment, and create the first subscription receipt.</Dialog.Description>
+      <label>Amount (EGP)<input inputMode="decimal" value={price} onChange={(event) => setPrice(event.target.value)} placeholder="0.00" disabled={pending} required /></label>
+      <fieldset className={styles.paymentChoices} disabled={pending}><legend>Duration</legend><div className={styles.choiceChips}>{([{ months: 1, label: "1 month" }, { months: 3, label: "3 months" }] as const).map((duration) => <button key={duration.months} type="button" data-active={durationMonths === duration.months || undefined} aria-pressed={durationMonths === duration.months} onClick={() => setDurationMonths(duration.months)}>{duration.label}</button>)}</div></fieldset>
+      <fieldset className={styles.paymentChoices} disabled={pending}><legend>Sessions per month</legend><div className={styles.choiceChips}>{sessionChoices.map((value) => <button key={value} type="button" data-active={sessionsPerMonth === value || undefined} aria-pressed={sessionsPerMonth === value} onClick={() => setSessionsPerMonth(value)}>{value}</button>)}</div></fieldset>
+      <fieldset className={styles.paymentChoices} disabled={pending}><legend>Paid with</legend><div className={styles.choiceChips}>{adminPaymentMethods.map((method) => <button key={method} type="button" data-active={paymentMethod === method || undefined} aria-pressed={paymentMethod === method} onClick={() => setPaymentMethod(method)}>{method}</button>)}</div></fieldset>
+      <fieldset className={styles.paymentChoices} disabled={pending}><legend>Group</legend><div className={styles.groupChoices}>{groups.map((group) => <button key={group.id} type="button" data-active={groupId === group.id || undefined} aria-pressed={groupId === group.id} onClick={() => setGroupId(group.id)}><span>{group.name}</span>{group.id === lead.trialGroupId ? <small>Trial group</small> : null}</button>)}</div></fieldset>
+      <footer><Dialog.Close asChild><button type="button" disabled={pending}>Cancel</button></Dialog.Close><button className={styles.primary} disabled={pending || !groupId || !price.trim()}>{pending ? <><LoaderCircle size={14} className={styles.spinner} /> Saving</> : "Subscribe"}</button></footer>
     </form>
   </Dialog.Content></Dialog.Portal></Dialog.Root>;
 }

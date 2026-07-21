@@ -89,7 +89,7 @@
 /* ─── table ──────────────────────────────────────────── */
 .tableScroll { overflow-x: auto; padding-bottom: 4px; }
 .table {
-  min-width: 1140px;
+  min-width: 1040px;
   border: 1px solid var(--ops-line);
   border-radius: 16px;
   background: var(--ops-surface);
@@ -98,7 +98,7 @@
 .head,
 .row {
   display: grid;
-  grid-template-columns: 3px minmax(200px, 1.8fr) 108px minmax(160px, 1.1fr) 156px 116px minmax(220px, 1.35fr) 156px 44px 44px;
+  grid-template-columns: 3px minmax(180px, 1.55fr) 88px minmax(130px, 1fr) 132px 96px minmax(160px, 1.25fr) 130px 40px 40px;
   align-items: center;
   border-bottom: 1px solid var(--ops-line);
 }
