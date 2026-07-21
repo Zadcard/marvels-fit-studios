@@ -1,6 +1,7 @@
 "use client";
 import { useOps } from "@/lib/ops/store";
 import { css } from "@/lib/ops/css";
+import { formatPhoneNumber } from "@/lib/phone-format";
 import u from "../ui.module.css";
 import s from "./ClientsScreen.module.css";
 
@@ -63,7 +64,7 @@ export default function ClientsScreen() {
               <span className={s.coachName}>{cl.coach}</span>
             </div>
             <div><span className={s.statusPill} style={css(cl.statusStyle)}>{cl.status}</span></div>
-            <div className={s.phone}>{cl.phone}</div>
+            <div className={s.phone}>{formatPhoneNumber(cl.phone)}</div>
             <div className={s.rowTools}>
               <div className={u.iconBtn} title="Edit client" onClick={cl.edit}>✎</div>
               <div className={`${u.iconBtn} ${u.iconBtnDanger}`} title="Delete client" onClick={cl.del}>✕</div>

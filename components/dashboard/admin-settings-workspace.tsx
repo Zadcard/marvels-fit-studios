@@ -69,7 +69,7 @@ export function AdminSettingsWorkspace({
           <Field label="Studio name"><input value={form.studioName} onChange={(event) => update("studioName", event.target.value)} /></Field>
           <Field label="Timezone"><input value={form.timezone} onChange={(event) => update("timezone", event.target.value)} /></Field>
           <Field label="Support email"><input type="email" value={form.supportEmail} onChange={(event) => update("supportEmail", event.target.value)} /></Field>
-          <Field label="Support phone"><input type="tel" value={form.supportPhone} onChange={(event) => update("supportPhone", event.target.value)} /></Field>
+          <Field label="Support phone"><input type="tel" placeholder="+20 100 000 0000" value={form.supportPhone} onChange={(event) => update("supportPhone", event.target.value)} /></Field>
         </div>
       </section>
 

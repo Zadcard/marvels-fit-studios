@@ -29,7 +29,7 @@ export default function ClientEditor() {
         <div className={u.modalBody}>
           <div>
             <label className={u.fieldLabel}>Phone number</label>
-            <input className={`${u.input} ${u.inputMono}`} value={v.clPhone} onChange={v.setClPhone} placeholder="+20 1XX XXX XXXX" />
+            <input className={`${u.input} ${u.inputMono}`} value={v.clPhone} onChange={v.setClPhone} placeholder="+20 100 000 0000" />
           </div>
           {chipGroup("Category", v.clCatChips)}
           {chipGroup("Coach", v.clCoachChips)}

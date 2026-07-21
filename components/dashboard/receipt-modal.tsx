@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Dialog } from "radix-ui";
 import { Download, MessageCircle, X } from "lucide-react";
+import { formatPhoneNumber } from "@/lib/phone-format";
 import { generateReceiptPDF, type ReceiptSnapshot } from "@/lib/receipts/pdf-generator";
 import styles from "./receipt-modal.module.css";
 
@@ -88,7 +89,7 @@ export function ReceiptModal({ open, onOpenChange, receipt }: ReceiptModalProps)
                 </div>
                 <div className={styles.dataRow}>
                   <dt>Phone</dt>
-                  <dd>{receipt.clientPhone || "Not recorded"}</dd>
+                  <dd>{formatPhoneNumber(receipt.clientPhone, "Not recorded")}</dd>
                 </div>
                 <div className={styles.dataRow}>
                   <dt>Group</dt>

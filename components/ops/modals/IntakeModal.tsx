@@ -33,7 +33,7 @@ export default function IntakeModal() {
             </div>
             <div>
               <label className={u.fieldLabel}>Phone number</label>
-              <input className={`${u.input} ${u.inputMono}`} value={v.inPhone} onChange={v.setInPhone} placeholder="+20 1XX XXX XXXX" />
+              <input className={`${u.input} ${u.inputMono}`} value={v.inPhone} onChange={v.setInPhone} placeholder="+20 100 000 0000" />
             </div>
           </div>
 

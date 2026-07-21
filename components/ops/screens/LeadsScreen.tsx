@@ -1,6 +1,7 @@
 "use client";
 import { useOps } from "@/lib/ops/store";
 import { css } from "@/lib/ops/css";
+import { formatPhoneNumber } from "@/lib/phone-format";
 import u from "../ui.module.css";
 import s from "./LeadsScreen.module.css";
 
@@ -55,7 +56,7 @@ export default function LeadsScreen() {
               </div>
               <div className={s.pad}><span className={s.sourcePill} style={css(l.sourceStyle)}>{l.source}</span></div>
               <div className={`${s.pad} ${s.wants}`}><span className={s.catDot} style={css(l.catDot)} /><span className={s.wantsText}>{l.wants}</span></div>
-              <div className={s.pad}><span className={s.phone}><span className={s.phoneIcon}>✆</span>{l.phone}</span></div>
+              <div className={s.pad}><span className={s.phone}><span className={s.phoneIcon}>✆</span>{formatPhoneNumber(l.phone)}</span></div>
               <div className={s.pad}><span className={s.stagePill} style={css(l.stagePill)}>{l.stage}</span></div>
               <div className={`${s.pad} ${s.min}`}><span className={s.nextStep} style={{ color: l.nextColor }}>{l.nextStep}</span></div>
               <div className={s.actionPad}>

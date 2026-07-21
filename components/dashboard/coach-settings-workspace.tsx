@@ -52,7 +52,7 @@ export function CoachSettingsWorkspace({ settings }: { settings: CoachSettingsRe
     }}>
       <label>Full name<input required maxLength={120} value={form.fullName} onChange={(event) => update("fullName", event.target.value)} /></label>
       <label>Email<input required type="email" value={form.email} onChange={(event) => update("email", event.target.value)} /></label>
-      <label>Phone<input type="tel" maxLength={30} value={form.phone} onChange={(event) => update("phone", event.target.value)} /></label>
+      <label>Phone<input type="tel" maxLength={30} placeholder="+20 100 000 0000" value={form.phone} onChange={(event) => update("phone", event.target.value)} /></label>
       <label>Specialization<select value={form.specialization} onChange={(event) => update("specialization", event.target.value as SaveCoachSettingsInput["specialization"])}>{specializations.map((specialization) => <option key={specialization}>{specialization}</option>)}</select></label>
       {error ? <p className={styles.error} role="alert">{error}</p> : null}
       {message ? <p className={styles.success} role="status">{message}</p> : null}

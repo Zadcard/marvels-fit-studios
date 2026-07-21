@@ -1,6 +1,7 @@
 "use client";
 import { useOps } from "@/lib/ops/store";
 import { css } from "@/lib/ops/css";
+import { formatPhoneNumber } from "@/lib/phone-format";
 import s from "./ClientProfileDrawer.module.css";
 
 export default function ClientProfileDrawer() {
@@ -61,7 +62,7 @@ export default function ClientProfileDrawer() {
 
         <div className={s.detailsWrap}>
           <div className={s.details}>
-            <div className={s.detailRow}><span className={s.detailKey}>Phone</span><span className={s.detailMono}>{p.phone}</span></div>
+            <div className={s.detailRow}><span className={s.detailKey}>Phone</span><span className={s.detailMono}>{formatPhoneNumber(p.phone)}</span></div>
             <div className={s.detailRow}><span className={s.detailKey}>Coach</span><span className={s.coachAvatar} style={{ background: p.coachGrad }}>{p.coachInitials}</span><span className={s.detailVal}>{p.coach}</span></div>
             <div className={s.detailRow}><span className={s.detailKey}>Schedule</span><span className={s.detailMuted}>{p.days}</span></div>
             <div className={s.detailRow}><span className={s.detailKey}>Plan</span><span className={s.detailVal}>{p.plan}</span></div>

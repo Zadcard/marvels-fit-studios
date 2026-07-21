@@ -1,5 +1,7 @@
 import { jsPDF } from "jspdf";
 
+import { formatPhoneNumber } from "@/lib/phone-format";
+
 export type ReceiptSnapshot = {
   id?: string;
   receiptNumber: string;
@@ -126,7 +128,7 @@ export function generateReceiptPDF(snapshot: ReceiptSnapshot): void {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8.5);
     doc.setTextColor(80, 80, 80);
-    doc.text(`Phone: ${snapshot.clientPhone || "Not recorded"}`, margin + 6, y + 22);
+    doc.text(`Phone: ${formatPhoneNumber(snapshot.clientPhone, "Not recorded")}`, margin + 6, y + 22);
     doc.text(`Group: ${snapshot.groupName || "No group"}`, margin + 6, y + 28);
     doc.text(`Coach: ${snapshot.coachName || "Unassigned"}`, margin + 6, y + 34);
 

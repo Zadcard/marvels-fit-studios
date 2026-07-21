@@ -27,6 +27,7 @@ import {
   trialOutcomeLabels,
 } from "@/lib/dashboard/client-domain-labels";
 import { paginateDashboardItems } from "@/lib/dashboard/pagination";
+import { formatPhoneNumber } from "@/lib/phone-format";
 import { buildWhatsAppHref } from "@/lib/whatsapp";
 import {
   ConfirmDeleteDialog,
@@ -386,7 +387,7 @@ export function AdminClientsWorkspace({
                   </div>
 
                   {/* PHONE */}
-                  <span className={styles.phoneText}>{record.phone || "—"}</span>
+                  <span className={styles.phoneText}>{formatPhoneNumber(record.phone)}</span>
 
                   {/* ACTIONS */}
                   <span className={styles.rowActions}>
@@ -462,7 +463,7 @@ export function AdminClientsWorkspace({
                   <div>
                     <small>{detail.membership}</small>
                     <strong>{detail.fullName}</strong>
-                    <p>{detail.email || detail.phone}</p>
+                    <p>{detail.email || formatPhoneNumber(detail.phone)}</p>
                   </div>
                 </div>
 
@@ -564,7 +565,7 @@ export function AdminClientsWorkspace({
             <input type="email" value={form.email} onChange={(event) => setForm((value) => ({ ...value, email: event.target.value }))} />
           </FormField>
           <FormField label="Phone">
-            <input type="tel" value={form.phone} onChange={(event) => setForm((value) => ({ ...value, phone: event.target.value }))} />
+            <input type="tel" placeholder="+20 100 000 0000" value={form.phone} onChange={(event) => setForm((value) => ({ ...value, phone: event.target.value }))} />
           </FormField>
           <FormField label="Status">
             <select value={form.status} onChange={(event) => setForm((value) => ({ ...value, status: event.target.value as ClientForm["status"] }))}>

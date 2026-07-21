@@ -92,7 +92,7 @@
   width: 100%;
   min-width: 900px;
   display: grid;
-  grid-template-columns: 3px minmax(210px, 240px) max-content max-content max-content minmax(180px, 230px) max-content 40px 40px;
+  grid-template-columns: 3px minmax(210px, 240px) max-content max-content max-content minmax(180px, 230px) max-content 70px;
   column-gap: clamp(6px, .6vw, 10px);
   justify-content: space-between;
   border: 1px solid var(--ops-line);
@@ -355,14 +355,16 @@
   transition: filter 180ms ease, background-color 180ms ease;
 }
 .actionBtn svg { flex: 0 0 auto; }
-.actionBtn[data-subscribe] {
-  background: #e62429;
-  font-family: var(--font-ops-mono);
-  font-size: .55rem;
-  font-weight: 700;
-}
 .actionBtn:hover { filter: brightness(1.1); }
 .actionBtn:disabled { opacity: .5; cursor: not-allowed; filter: none; }
+
+.rowTools {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  align-self: stretch;
+}
 
 .delBtn {
   width: 32px;

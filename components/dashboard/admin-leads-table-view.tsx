@@ -1,8 +1,9 @@
 "use client";
 
-import { ArrowRight, Flag, Phone, Search, TriangleAlert, X } from "lucide-react";
+import { ArrowRight, Phone, Search, TriangleAlert, UserRoundX, X } from "lucide-react";
 import { useMemo, useState } from "react";
 
+import { formatPhoneNumber } from "@/lib/phone-format";
 import type { MarvelOpsLead } from "./marvel-ops-admin-view";
 import s from "./admin-leads-table-view.module.css";
 
@@ -162,7 +163,6 @@ export function AdminLeadsTableView({ leads, pending, onAdd, onProgress, onDelet
             <span className={s.colLabel}>Next step</span>
             <span className={`${s.colLabel} ${s.actionLabel}`}>Action</span>
             <span />
-            <span />
           </div>
 
           {/* empty */}
@@ -226,7 +226,7 @@ export function AdminLeadsTableView({ leads, pending, onAdd, onProgress, onDelet
                 <div className={s.pad}>
                   <span className={s.phone}>
                     <span className={s.phoneIcon}><Phone size={12} aria-hidden="true" /></span>
-                    {lead.phone || "—"}
+                    {formatPhoneNumber(lead.phone)}
                   </span>
                 </div>
 
@@ -255,7 +255,6 @@ export function AdminLeadsTableView({ leads, pending, onAdd, onProgress, onDelet
                   {action ? (
                     <button
                       className={s.actionBtn}
-                      data-subscribe={action === "Subscribe" || undefined}
                       disabled={pending}
                       onClick={() => onProgress(lead)}
                       type="button"
@@ -266,8 +265,8 @@ export function AdminLeadsTableView({ leads, pending, onAdd, onProgress, onDelet
                   ) : null}
                 </div>
 
-                {/* mark lost */}
-                <div className={s.actionPad}>
+                {/* row actions */}
+                <div className={s.rowTools}>
                   {lead.stage !== "Won" && lead.stage !== "Lost" ? (
                     <button
                       className={s.delBtn}
@@ -277,13 +276,9 @@ export function AdminLeadsTableView({ leads, pending, onAdd, onProgress, onDelet
                       onClick={() => onMarkLost(lead)}
                       type="button"
                     >
-                      <Flag size={11} />
+                      <UserRoundX size={14} aria-hidden="true" />
                     </button>
                   ) : null}
-                </div>
-
-                {/* delete */}
-                <div className={s.actionPad}>
                   <button
                     className={s.delBtn}
                     aria-label={`Delete ${lead.name}`}
@@ -292,7 +287,7 @@ export function AdminLeadsTableView({ leads, pending, onAdd, onProgress, onDelet
                     onClick={() => onDelete(lead)}
                     type="button"
                   >
-                    <X size={11} />
+                    <X size={14} aria-hidden="true" />
                   </button>
                 </div>
               </div>

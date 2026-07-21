@@ -1,4 +1,5 @@
 import { getRouteUserOrNull } from "@/lib/auth/route-user";
+import { formatPhoneNumber } from "@/lib/phone-format";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { isUuid } from "@/lib/validators/uuid";
 
@@ -90,7 +91,7 @@ export async function GET(
     const rows: Array<[string, string]> = [
       ["Receipt", data.receiptNumber],
       ["Client", data.client.fullName],
-      ["Phone", data.client.phone ?? "Not recorded"],
+      ["Phone", formatPhoneNumber(data.client.phone, "Not recorded")],
       ["Plan", subscription?.plan.name ?? "Membership"],
       ["Billing", billingCycle],
       ["Sessions", sessionsPerMonth],

@@ -241,7 +241,7 @@ export function AdminCoachesCommandCenter({
         <EntityForm onSubmit={submit}>
           <FormField label="Full name" required full><input required value={form.fullName} onChange={(event) => setForm((value) => ({ ...value, fullName: event.target.value }))} /></FormField>
           <FormField label="Email" required><input required type="email" value={form.email} onChange={(event) => setForm((value) => ({ ...value, email: event.target.value }))} /></FormField>
-          <FormField label="Phone"><input type="tel" value={form.phone} onChange={(event) => setForm((value) => ({ ...value, phone: event.target.value }))} /></FormField>
+          <FormField label="Phone"><input type="tel" placeholder="+20 100 000 0000" value={form.phone} onChange={(event) => setForm((value) => ({ ...value, phone: event.target.value }))} /></FormField>
           <FormField label="Qualified categories" full>
             <div className={styles.categoryGrid}>
               {categoryOptions.filter((category) => category.isActive || form.qualifiedCategoryIds.includes(category.id)).map((category) => (
