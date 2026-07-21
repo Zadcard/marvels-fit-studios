@@ -269,10 +269,17 @@ export async function saveAdminSubscription(input: SaveAdminSubscriptionInput) {
   return result;
 }
 
+type RenewSubscriptionDetails = {
+  amount: string;
+  sessionsPerMonth: (typeof subscriptionSessionChoices)[number];
+  durationMonths: (typeof subscriptionDurations)[number];
+};
+
 export async function mutateAdminSubscriptionLifecycle(
   subscriptionId: string,
   action: SubscriptionMutation,
   paymentMethod?: AdminPaymentMethod,
+  renewalDetails?: RenewSubscriptionDetails,
 ) {
   await requireRole(UserRole.ADMIN);
   const supabase = getSupabaseServerClient();
@@ -286,6 +293,18 @@ export async function mutateAdminSubscriptionLifecycle(
     throw new Error("Choose how the member paid before renewing.");
   }
 
+  let amount: number | null = null;
+  if (action === "renew" && renewalDetails) {
+    amount = parseAmount(renewalDetails.amount);
+    if (!amount) throw new Error("Enter a valid renewal amount.");
+    if (!subscriptionSessionChoices.includes(renewalDetails.sessionsPerMonth)) {
+      throw new Error("Sessions per month must be 8, 12, 16, or 20.");
+    }
+    if (!subscriptionDurations.includes(renewalDetails.durationMonths)) {
+      throw new Error("Duration must be one month or a quarter.");
+    }
+  }
+
   const { data, error } = await supabase.rpc("admin_mutate_subscription", {
     target_action: action,
     target_id: trimmedSubscriptionId,
@@ -293,6 +312,9 @@ export async function mutateAdminSubscriptionLifecycle(
       action === "renew" && paymentMethod
         ? toStoredPaymentMethod(paymentMethod)
         : "",
+    target_amount: amount,
+    target_sessions_per_month: renewalDetails?.sessionsPerMonth ?? null,
+    target_duration_months: renewalDetails?.durationMonths ?? null,
   });
   if (error) throw error;
   if (!data || typeof data !== "object" || Array.isArray(data)) {

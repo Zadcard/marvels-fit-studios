@@ -48,6 +48,7 @@ export type AdminSubscriptionRecord = {
   billingCycle: string;
   sessionsLeft?: number;
   sessionsTotal?: number;
+  cycleMonths?: number;
   note: string;
   paymentHistory: Array<{
     id: string;

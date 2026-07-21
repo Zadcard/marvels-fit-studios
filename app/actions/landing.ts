@@ -3,6 +3,7 @@
 import { z } from "zod";
 
 import { landingLeadStore } from "@/lib/leads/landing-lead-store";
+import { enforceRateLimit, RateLimitError } from "@/lib/rate-limit/rate-limiter";
 import {
   fullNameSchema,
   normalizePhoneNumber,
@@ -15,10 +16,31 @@ const joinNowSchema = z.object({
   phone: phoneSchema,
 });
 
+function rateLimitMessage(retryAfterSeconds: number) {
+  const minutes = Math.ceil(retryAfterSeconds / 60);
+  return `Too many requests from this device. Please try again in ${minutes} ${minutes === 1 ? "minute" : "minutes"}.`;
+}
+
 export async function submitJoinNowLead(
   _previousState: JoinNowActionState,
   formData: FormData
 ): Promise<JoinNowActionState> {
+  try {
+    // Public, unauthenticated form: cap submissions per device so it can't
+    // be used to spam the leads pipeline with fake entries.
+    await enforceRateLimit({
+      action: "join-now",
+      maxAttempts: 3,
+      windowSeconds: 10 * 60,
+      blockSeconds: 15 * 60,
+    });
+  } catch (caught) {
+    if (caught instanceof RateLimitError) {
+      return { status: "error", message: rateLimitMessage(caught.retryAfterSeconds) };
+    }
+    throw caught;
+  }
+
   const parsed = joinNowSchema.safeParse({
     name: formData.get("name"),
     phone: formData.get("phone"),

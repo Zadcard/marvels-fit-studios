@@ -174,7 +174,7 @@ export class AdminSubscriptionRepository {
             .from("ClientSubscription")
             .select(
               `
-              id, status, renewsAt, customPrice, startsAt, sessionsTotal,
+              id, status, renewsAt, customPrice, startsAt, sessionsTotal, cycleMonths,
               plan:SubscriptionPlan(id, name, billingCycle, price),
               client:Client(id, fullName, isPaid, sessionsLeft,
                 group:Group(coach:Coach(fullName)),
@@ -296,6 +296,7 @@ export class AdminSubscriptionRepository {
             billingCycle: mapBillingCycleLabel(subscription.plan.billingCycle),
             sessionsLeft: subscription.client.sessionsLeft,
             sessionsTotal: subscription.sessionsTotal ?? undefined,
+            cycleMonths: subscription.cycleMonths ?? 1,
             note:
               paymentStatus === "Paid"
                 ? "Latest payment is recorded."

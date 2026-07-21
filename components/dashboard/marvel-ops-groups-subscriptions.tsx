@@ -1,6 +1,6 @@
 "use client";
 
-import { LoaderCircle, Plus, ReceiptText, Search, X } from "lucide-react";
+import { Download, LoaderCircle, Plus, ReceiptText, Search, X } from "lucide-react";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Dialog } from "radix-ui";
@@ -29,6 +29,23 @@ export type MarvelOpsSubscriptionStat = {
 
 export type MarvelOpsSubscriptionClientOption = { id: string; label: string };
 
+const subscriptionDurations = [
+  { months: 1 as const, label: "1 Month" },
+  { months: 3 as const, label: "Quarter (3 months)" },
+];
+const sessionsPerMonthChoices = [8, 12, 16, 20] as const;
+
+function nearestSessionsChoice(value: number | undefined) {
+  if (!value) return 12;
+  return sessionsPerMonthChoices.reduce((closest, choice) =>
+    Math.abs(choice - value) < Math.abs(closest - value) ? choice : closest,
+  );
+}
+
+function nearestDurationMonths(value: number | undefined) {
+  return value === 3 ? 3 : 1;
+}
+
 export function MarvelOpsSubscriptions({
   stats,
   records,
@@ -47,6 +64,11 @@ export function MarvelOpsSubscriptions({
   const [error, setError] = useState("");
   const [paymentMethod, setPaymentMethod] =
     useState<AdminPaymentMethod>("InstaPay");
+  const [renewAmount, setRenewAmount] = useState("");
+  const [renewSessionsPerMonth, setRenewSessionsPerMonth] =
+    useState<(typeof sessionsPerMonthChoices)[number]>(12);
+  const [renewDurationMonths, setRenewDurationMonths] =
+    useState<(typeof subscriptionDurations)[number]["months"]>(1);
   const [search, setSearch] = useState("");
   const term = search.trim().toLowerCase();
   const visibleRecords = term
@@ -68,6 +90,13 @@ export function MarvelOpsSubscriptions({
           selected.id,
           action,
           action === "renew" ? paymentMethod : undefined,
+          action === "renew"
+            ? {
+                amount: renewAmount,
+                sessionsPerMonth: renewSessionsPerMonth,
+                durationMonths: renewDurationMonths,
+              }
+            : undefined,
         );
         setMessage(result.message);
         setSelected(null);
@@ -139,6 +168,9 @@ export function MarvelOpsSubscriptions({
             onMutate={() => {
               setSelected(record);
               setPaymentMethod("InstaPay");
+              setRenewAmount(record.amountValue);
+              setRenewSessionsPerMonth(nearestSessionsChoice(record.sessionsTotal));
+              setRenewDurationMonths(nearestDurationMonths(record.cycleMonths));
               setError("");
             }}
           />
@@ -166,11 +198,17 @@ export function MarvelOpsSubscriptions({
         <SubscriptionDialog
           record={selected}
           paymentMethod={paymentMethod}
+          renewAmount={renewAmount}
+          renewSessionsPerMonth={renewSessionsPerMonth}
+          renewDurationMonths={renewDurationMonths}
           error={error}
           pending={pending}
           close={() => setSelected(null)}
           confirm={confirmMutation}
           onPaymentMethodChange={setPaymentMethod}
+          onRenewAmountChange={setRenewAmount}
+          onRenewSessionsPerMonthChange={setRenewSessionsPerMonth}
+          onRenewDurationMonthsChange={setRenewDurationMonths}
         />
       ) : null}
       {creating ? (
@@ -188,12 +226,6 @@ export function MarvelOpsSubscriptions({
     </div>
   );
 }
-
-const subscriptionDurations = [
-  { months: 1 as const, label: "1 Month" },
-  { months: 3 as const, label: "Quarter (3 months)" },
-];
-const sessionsPerMonthChoices = [8, 12, 16, 20] as const;
 
 function NewSubscriptionDialog({
   clientOptions,
@@ -429,14 +461,25 @@ function SubscriptionRow({
         <small>{record.renewalDate}</small>
       </span>
       {receiptId ? (
-        <a
-          className={styles.receipt}
-          href={`/api/receipts/${receiptId}`}
-          target="_blank"
-          rel="noreferrer"
-        >
-          <ReceiptText size={13} /> Receipt
-        </a>
+        <span className={styles.receiptActions}>
+          <a
+            className={styles.receipt}
+            href={`/api/receipts/${receiptId}`}
+            target="_blank"
+            rel="noreferrer"
+          >
+            <ReceiptText size={13} /> Receipt
+          </a>
+          <a
+            className={styles.receiptSave}
+            href={`/api/receipts/${receiptId}?download=1`}
+            download
+            aria-label="Save receipt to your computer"
+            title="Save receipt"
+          >
+            <Download size={13} />
+          </a>
+        </span>
       ) : (
         <button type="button" onClick={onMutate} disabled={pending}>
           {pending ? <LoaderCircle size={13} className={styles.spinner} /> : null}
@@ -450,19 +493,31 @@ function SubscriptionRow({
 function SubscriptionDialog({
   record,
   paymentMethod,
+  renewAmount,
+  renewSessionsPerMonth,
+  renewDurationMonths,
   error,
   pending,
   close,
   confirm,
   onPaymentMethodChange,
+  onRenewAmountChange,
+  onRenewSessionsPerMonthChange,
+  onRenewDurationMonthsChange,
 }: {
   record: AdminSubscriptionRecord;
   paymentMethod: AdminPaymentMethod;
+  renewAmount: string;
+  renewSessionsPerMonth: (typeof sessionsPerMonthChoices)[number];
+  renewDurationMonths: (typeof subscriptionDurations)[number]["months"];
   error: string;
   pending: boolean;
   close: () => void;
   confirm: () => void;
   onPaymentMethodChange: (method: AdminPaymentMethod) => void;
+  onRenewAmountChange: (value: string) => void;
+  onRenewSessionsPerMonthChange: (value: (typeof sessionsPerMonthChoices)[number]) => void;
+  onRenewDurationMonthsChange: (value: (typeof subscriptionDurations)[number]["months"]) => void;
 }) {
   const action = subscriptionLabel(record) === "Expired" ? "Reactivate" : "Renew";
 
@@ -494,22 +549,66 @@ function SubscriptionDialog({
               : "This reactivates the existing membership and sets its next renewal date."}
           </p>
           {action === "Renew" ? (
-            <fieldset className={styles.paymentChoices} disabled={pending}>
-              <legend>Paid with</legend>
-              <div className={styles.chips}>
-                {adminPaymentMethods.map((method) => (
-                  <button
-                    key={method}
-                    type="button"
-                    data-active={paymentMethod === method || undefined}
-                    aria-pressed={paymentMethod === method}
-                    onClick={() => onPaymentMethodChange(method)}
-                  >
-                    {method}
-                  </button>
-                ))}
-              </div>
-            </fieldset>
+            <>
+              <label>
+                Amount (EGP)
+                <input
+                  inputMode="decimal"
+                  value={renewAmount}
+                  onChange={(event) => onRenewAmountChange(event.target.value)}
+                  placeholder="0.00"
+                  disabled={pending}
+                />
+              </label>
+              <fieldset className={styles.paymentChoices} disabled={pending}>
+                <legend>Duration</legend>
+                <div className={styles.chips}>
+                  {subscriptionDurations.map((duration) => (
+                    <button
+                      key={duration.months}
+                      type="button"
+                      data-active={renewDurationMonths === duration.months || undefined}
+                      aria-pressed={renewDurationMonths === duration.months}
+                      onClick={() => onRenewDurationMonthsChange(duration.months)}
+                    >
+                      {duration.label}
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+              <fieldset className={styles.paymentChoices} disabled={pending}>
+                <legend>Sessions per month</legend>
+                <div className={styles.chips}>
+                  {sessionsPerMonthChoices.map((choice) => (
+                    <button
+                      key={choice}
+                      type="button"
+                      data-active={renewSessionsPerMonth === choice || undefined}
+                      aria-pressed={renewSessionsPerMonth === choice}
+                      onClick={() => onRenewSessionsPerMonthChange(choice)}
+                    >
+                      {choice}
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+              <fieldset className={styles.paymentChoices} disabled={pending}>
+                <legend>Paid with</legend>
+                <div className={styles.chips}>
+                  {adminPaymentMethods.map((method) => (
+                    <button
+                      key={method}
+                      type="button"
+                      data-active={paymentMethod === method || undefined}
+                      aria-pressed={paymentMethod === method}
+                      onClick={() => onPaymentMethodChange(method)}
+                    >
+                      {method}
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+            </>
           ) : null}
           {error ? (
             <p className={styles.error} role="alert">
@@ -524,7 +623,7 @@ function SubscriptionDialog({
               className={styles.submit}
               type="button"
               onClick={confirm}
-              disabled={pending}
+              disabled={pending || (action === "Renew" && !renewAmount.trim())}
             >
               {pending ? (
                 <>

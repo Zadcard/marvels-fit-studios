@@ -37,9 +37,10 @@ function trainingCategoryLabel(value: string | null | undefined) {
 }
 
 export async function GET(
-  _request: Request,
+  request: Request,
   context: RouteContext<"/api/receipts/[receiptId]">,
 ) {
+  const wantsDownload = new URL(request.url).searchParams.has("download");
   const user = await getRouteUserOrNull();
   if (!user) {
     return new Response("Unauthorized.", {
@@ -120,5 +121,12 @@ export async function GET(
     if (persisted.error) throw persisted.error;
   }
 
-  return new Response(html, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "private, no-store" } });
+  const headers: Record<string, string> = {
+    "content-type": "text/html; charset=utf-8",
+    "cache-control": "private, no-store",
+  };
+  if (wantsDownload) {
+    headers["content-disposition"] = `attachment; filename="${data.receiptNumber}.html"`;
+  }
+  return new Response(html, { headers });
 }

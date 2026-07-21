@@ -8,6 +8,7 @@ import {
   ArrowUpAZ,
   ChevronLeft,
   ChevronRight,
+  Download,
   KeyRound,
   MessageCircle,
   Pencil,
@@ -117,10 +118,15 @@ function ReceiptHistory({ receipts }: { receipts: AdminClientRecord["receipts"] 
   return <section className={styles.dossierSection}>
     <h3>Receipts</h3>
     {receipts.length ? <div className={styles.receiptList}>{receipts.map((receipt) => (
-      <a className={styles.receiptLink} href={receipt.href} key={receipt.id} target="_blank" rel="noreferrer">
-        <span><strong>{receipt.receiptNumber}</strong><small>{receipt.dateLabel} · {receipt.method}</small></span>
-        <b>{receipt.amountLabel}<ReceiptText size={14} /></b>
-      </a>
+      <div className={styles.receiptRow} key={receipt.id}>
+        <a className={styles.receiptLink} href={receipt.href} target="_blank" rel="noreferrer">
+          <span><strong>{receipt.receiptNumber}</strong><small>{receipt.dateLabel} · {receipt.method}</small></span>
+          <b>{receipt.amountLabel}<ReceiptText size={14} /></b>
+        </a>
+        <a className={styles.receiptSave} href={`${receipt.href}?download=1`} download aria-label={`Save receipt ${receipt.receiptNumber} to your computer`} title="Save receipt">
+          <Download size={14} />
+        </a>
+      </div>
     ))}</div> : <p>No receipts recorded yet.</p>}
   </section>;
 }

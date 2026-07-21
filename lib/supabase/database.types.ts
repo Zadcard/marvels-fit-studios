@@ -2267,8 +2267,11 @@ export type Database = {
       admin_mutate_subscription: {
         Args: {
           target_action: string
+          target_amount?: number | null
+          target_duration_months?: number | null
           target_id: string
           target_payment_method: string
+          target_sessions_per_month?: number | null
         }
         Returns: Json
       }
@@ -2310,6 +2313,15 @@ export type Database = {
       consume_password_reset_grant: {
         Args: { p_password_hash: string; p_token_hash: string }
         Returns: boolean
+      }
+      consume_rate_limit: {
+        Args: {
+          p_block_seconds: number
+          p_key_hash: string
+          p_max_attempts: number
+          p_window_seconds: number
+        }
+        Returns: Json
       }
       decide_schedule_change_request: {
         Args: {
