@@ -91,6 +91,10 @@
 .table {
   width: 100%;
   min-width: 900px;
+  display: grid;
+  grid-template-columns: 3px minmax(210px, 240px) max-content max-content max-content minmax(180px, 230px) max-content 40px 40px;
+  column-gap: clamp(6px, .6vw, 10px);
+  justify-content: space-between;
   border: 1px solid var(--ops-line);
   border-radius: 16px;
   background: var(--ops-surface);
@@ -99,9 +103,8 @@
 .head,
 .row {
   display: grid;
-  grid-template-columns: 3px minmax(210px, 240px) max-content max-content max-content minmax(180px, 230px) max-content 40px 40px;
-  column-gap: clamp(6px, .6vw, 10px);
-  justify-content: space-between;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
   align-items: center;
   border-bottom: 1px solid var(--ops-line);
 }
@@ -156,6 +159,7 @@
 }
 .actionLabel { justify-content: center; }
 .empty {
+  grid-column: 1 / -1;
   display: grid;
   justify-items: center;
   gap: 10px;
