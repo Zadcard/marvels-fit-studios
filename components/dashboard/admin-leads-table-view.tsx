@@ -177,7 +177,6 @@ export function AdminLeadsTableView({ leads, pending, onAdd, onProgress, onDelet
           {/* rows */}
           {rows.map((lead) => {
             const stageColor = STAGE_COLOR[lead.stage];
-            const stagePillBg = STAGE_PILL_BG[lead.stage];
             const hasToday = /today/i.test(lead.assigned ?? "");
             const nextStep = lead.assigned || NEXT_STEP_DEFAULT[lead.stage];
             const showLostReason = lead.stage === "Lost" && Boolean(lead.lostReason?.trim());
@@ -235,7 +234,7 @@ export function AdminLeadsTableView({ leads, pending, onAdd, onProgress, onDelet
                 <div className={s.pad}>
                   <span
                     className={s.stagePill}
-                    style={{ background: stagePillBg, color: stageColor }}
+                    style={{ color: stageColor }}
                   >
                     {lead.stage}
                   </span>

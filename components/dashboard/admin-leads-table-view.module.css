@@ -89,9 +89,8 @@
 /* ─── table ──────────────────────────────────────────── */
 .tableScroll { overflow-x: auto; padding-bottom: 4px; }
 .table {
-  width: min(100%, 1000px);
+  width: 100%;
   min-width: 900px;
-  margin-inline: auto;
   border: 1px solid var(--ops-line);
   border-radius: 16px;
   background: var(--ops-surface);
@@ -100,7 +99,9 @@
 .head,
 .row {
   display: grid;
-  grid-template-columns: 3px minmax(190px, 1.6fr) 92px 140px 96px minmax(180px, 1.3fr) 130px 40px 40px;
+  grid-template-columns: 3px minmax(210px, 240px) max-content max-content max-content minmax(180px, 230px) max-content 40px 40px;
+  column-gap: clamp(6px, .6vw, 10px);
+  justify-content: space-between;
   align-items: center;
   border-bottom: 1px solid var(--ops-line);
 }
@@ -118,7 +119,7 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  padding: 11px 12px;
+  padding: 11px 0;
   height: 100%;
   background: transparent;
   border: 0;
@@ -140,13 +141,13 @@
   outline-offset: -2px;
 }
 .sortBtnLead {
-  padding-left: 14px;
+  padding-left: 12px;
 }
 .colLabel {
   display: flex;
   align-items: center;
   height: 100%;
-  padding: 11px 12px;
+  padding: 11px 0;
   font-family: var(--font-ops-mono);
   font-size: .54rem;
   letter-spacing: .14em;
@@ -246,7 +247,7 @@
 
 /* ─── padded cells ───────────────────────────────────── */
 .pad {
-  padding: 0 10px;
+  padding: 0;
   display: flex;
   align-items: center;
   align-self: stretch;
@@ -293,8 +294,6 @@
   font-weight: 700;
   letter-spacing: .06em;
   text-transform: uppercase;
-  padding: 4px 9px;
-  border-radius: 99px;
   line-height: 1;
 }
 .nextStepCell {
@@ -325,7 +324,7 @@
 
 /* ─── action buttons ─────────────────────────────────── */
 .actionPad {
-  padding: 0 6px;
+  padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
