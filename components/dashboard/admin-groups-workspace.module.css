@@ -220,6 +220,13 @@
 .full { grid-column: 1 / -1; }
 .checkbox { display: flex !important; flex-direction: row; align-items: center; gap: 9px; text-transform: none !important; letter-spacing: 0; font-size: 0.82rem; color: #fff; }
 .checkbox input { width: 18px; height: 18px; }
+.clientPicker { margin: 0; padding: 14px; border: 1px solid var(--ops-line); border-radius: 12px; }
+.clientPicker legend { padding: 0 5px; color: var(--ops-muted); font: .52rem var(--font-ops-mono); letter-spacing: .1em; text-transform: uppercase; }
+.clientPicker > p { margin: 0 0 10px; color: var(--ops-muted); font-size: .72rem; }
+.clientPicker > div { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; max-height: 180px; overflow-y: auto; }
+.clientPicker label { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 8px; border: 1px solid var(--ops-line); border-radius: 9px; color: var(--ops-muted-strong); font-family: var(--font-ops-body); font-size: .72rem; letter-spacing: 0; text-transform: none; }
+.clientPicker input { width: 17px; height: 17px; min-height: 0; flex: 0 0 auto; }
+.clientPicker span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .formActions { grid-column: 1 / -1; display: flex; align-items: center; gap: 10px; margin-top: 6px; }
 .formActions > span { flex: 1; }
 .error { grid-column: 1 / -1; color: var(--ops-danger); font-size: 0.8rem; }
@@ -229,4 +236,4 @@
 .memberRow button { padding: 6px 10px; border: 1px solid var(--ops-line-strong); border-radius: 8px; background: transparent; color: var(--ops-muted); font: inherit; font-size: 0.7rem; cursor: pointer; }
 .addRow { display: flex; gap: 8px; margin-top: 16px; }
 .addRow select { flex: 1; }
-@media (max-width: 620px) { .form { grid-template-columns: 1fr; } }
+@media (max-width: 620px) { .form { grid-template-columns: 1fr; } .clientPicker > div { grid-template-columns: 1fr; } }

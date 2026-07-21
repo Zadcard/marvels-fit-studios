@@ -36,7 +36,7 @@ const adminSections: Array<{ label: string; matches: (item: NavItem) => boolean 
   },
   {
     label: "People",
-    matches: (item) => ["/admin/leads", "/admin/clients", "/admin/groups", "/admin/categories", "/admin/coaches"].includes(item.href),
+    matches: (item) => ["/admin/leads", "/admin/clients", "/admin/categories", "/admin/coaches"].includes(item.href),
   },
   { label: "Money", matches: (item) => ["/admin/subscriptions", "/admin/reports"].includes(item.href) },
   { label: "Studio", matches: (item) => ["/admin/notifications", "/admin/settings"].includes(item.href) },

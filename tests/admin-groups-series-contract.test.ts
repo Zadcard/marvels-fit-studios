@@ -14,7 +14,7 @@ describe("admin groups series integration", () => {
     expect(actions).toMatch(/if \(series\)/);
   });
 
-  it("keeps the admin role guard on the group save path", () => {
-    expect(actions.match(/requireRole\(UserRole\.ADMIN\)/g)?.length).toBeGreaterThanOrEqual(3);
+  it("keeps every group mutation behind category-scoped write access", () => {
+    expect(actions.match(/requireCategoryWriteAccess/g)?.length).toBeGreaterThanOrEqual(5);
   });
 });

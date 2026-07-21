@@ -32,7 +32,7 @@ export class DashboardCommandRepository {
         .order("fullName"),
       supabase
         .from("Group")
-        .select("id,name,isActive,category:TrainingCategory(name)")
+        .select("id,name,isActive,categoryId,category:TrainingCategory(name)")
         .order("name"),
     ]);
 
@@ -80,7 +80,7 @@ export class DashboardCommandRepository {
       label: group.name,
       detail: `${group.category.name} · ${group.isActive ? "Active" : "Inactive"}`,
       kind: "Group",
-      href: searchHref("/admin/groups", group.name),
+      href: `/admin/categories?category=${encodeURIComponent(group.categoryId)}`,
       initials: getInitials(group.name),
       tone: toneFor(index),
     }));

@@ -27,6 +27,7 @@ type Props = {
   coachOptions: AdminGroupCoachOption[];
   clientOptions: AdminGroupClientOption[];
   categoryOptions: AdminGroupCategoryOption[];
+  embeddedCategoryId?: string;
 };
 
 type GroupForm = {
@@ -42,6 +43,7 @@ type GroupForm = {
   startsOn: string;
   endsOn: string;
   slots: RecurringSessionTemplateSlot[];
+  clientIds: string[];
 };
 
 const emptyForm: GroupForm = {
@@ -57,6 +59,7 @@ const emptyForm: GroupForm = {
   startsOn: getStudioDateKey(),
   endsOn: "",
   slots: [{ weekday: 1, localStartTime: "18:00" }],
+  clientIds: [],
 };
 
 const AVATAR_GRADIENTS = [
@@ -90,11 +93,12 @@ export function AdminGroupsWorkspace({
   coachOptions,
   clientOptions,
   categoryOptions,
+  embeddedCategoryId,
 }: Props) {
   const router = useRouter();
   const { showToast } = useDashboardToast();
   const [isPending, startTransition] = useTransition();
-  const [categoryFilter, setCategoryFilter] = useState("All");
+  const [categoryFilter, setCategoryFilter] = useState(embeddedCategoryId ?? "All");
   const [activeFilter, setActiveFilter] = useState<"All" | "Active" | "Inactive">(
     "All",
   );
@@ -131,8 +135,9 @@ export function AdminGroupsWorkspace({
 
   function openCreate() {
     setEditingId(null);
-    const firstCategory = categoryOptions.find((category) => category.isActive);
-    setForm({ ...emptyForm, categoryId: firstCategory?.id ?? "" });
+    const firstCategory = categoryOptions.find((category) => category.id === embeddedCategoryId)
+      ?? categoryOptions.find((category) => category.isActive);
+    setForm({ ...emptyForm, categoryId: firstCategory?.id ?? "", clientIds: [] });
     setError("");
     setEditorOpen(true);
   }
@@ -152,6 +157,7 @@ export function AdminGroupsWorkspace({
       startsOn: record.series?.startsOn ?? getStudioDateKey(),
       endsOn: record.series?.endsOn ?? "",
       slots: record.series?.slots ?? [{ weekday: 1, localStartTime: "18:00" }],
+      clientIds: record.members.map((member) => member.id),
     });
     setError("");
     setEditorOpen(true);
@@ -170,6 +176,7 @@ export function AdminGroupsWorkspace({
           coachId: form.coachId,
           isActive: form.isActive,
           notes: form.notes,
+          clientIds: form.clientIds,
           series: form.hasSchedule
             ? {
                 templateId: form.templateId,
@@ -240,20 +247,13 @@ export function AdminGroupsWorkspace({
 
       <div className={styles.toolbar}>
         <div className={styles.filters}>
-          <label>
+          {!embeddedCategoryId ? <label>
             Training
-            <select
-              value={categoryFilter}
-              onChange={(event) =>
-                setCategoryFilter(event.target.value)
-              }
-            >
+            <select value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)}>
               <option value="All">All categories</option>
-              {categoryOptions.map((option) => (
-                <option key={option.id} value={option.id}>{option.name}</option>
-              ))}
+              {categoryOptions.map((option) => <option key={option.id} value={option.id}>{option.name}</option>)}
             </select>
-          </label>
+          </label> : null}
           <label>
             Sort by
             <select value={sortKey} onChange={(event) => setSortKey(event.target.value as typeof sortKey)}>
@@ -352,7 +352,7 @@ export function AdminGroupsWorkspace({
               </label>
               <label>
                 Training category
-                <select required value={form.categoryId} onChange={(event) => setForm((value) => ({ ...value, categoryId: event.target.value, coachId: "" }))}>
+                <select required disabled={Boolean(embeddedCategoryId)} value={form.categoryId} onChange={(event) => setForm((value) => ({ ...value, categoryId: event.target.value, coachId: "" }))}>
                   <option value="">Select a category</option>
                   {categoryOptions.filter((option) => option.isActive || option.id === form.categoryId).map((option) => <option key={option.id} value={option.id}>{option.name}{option.isActive ? "" : " (archived)"}</option>)}
                 </select>
@@ -364,6 +364,24 @@ export function AdminGroupsWorkspace({
                   {coachOptions.filter((coach) => coach.qualifiedCategoryIds.includes(form.categoryId)).map((coach) => <option key={coach.id} value={coach.id}>{coach.fullName}</option>)}
                 </select>
               </label>
+              <fieldset className={`${styles.full} ${styles.clientPicker}`}>
+                <legend>Clients in this group</legend>
+                <p>Select clients now or update membership later. Clients already in another group will be moved.</p>
+                <div>
+                  {clientOptions.length ? clientOptions.map((client) => {
+                    const checked = form.clientIds.includes(client.id);
+                    return <label key={client.id}>
+                      <input type="checkbox" checked={checked} onChange={() => setForm((value) => ({
+                        ...value,
+                        clientIds: checked
+                          ? value.clientIds.filter((id) => id !== client.id)
+                          : [...value.clientIds, client.id],
+                      }))} />
+                      <span>{client.fullName}{client.groupId && !checked ? " · currently in another group" : ""}</span>
+                    </label>;
+                  }) : <p>No clients are available.</p>}
+                </div>
+              </fieldset>
               <label className={`${styles.full} ${styles.checkbox}`}>
                 <input type="checkbox" checked={form.isActive} onChange={(event) => setForm((value) => ({ ...value, isActive: event.target.checked }))} />
                 Group is active

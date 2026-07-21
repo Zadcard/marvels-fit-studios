@@ -223,6 +223,39 @@ export type Database = {
           },
         ]
       }
+      CategorySupervisor: {
+        Row: {
+          categoryId: string
+          coachId: string
+          createdAt: string
+        }
+        Insert: {
+          categoryId: string
+          coachId: string
+          createdAt?: string
+        }
+        Update: {
+          categoryId?: string
+          coachId?: string
+          createdAt?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "CategorySupervisor_categoryId_fkey"
+            columns: ["categoryId"]
+            isOneToOne: false
+            referencedRelation: "TrainingCategory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "CategorySupervisor_coachId_fkey"
+            columns: ["coachId"]
+            isOneToOne: false
+            referencedRelation: "Coach"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       Client: {
         Row: {
           createdAt: string
@@ -2590,6 +2623,14 @@ export type Database = {
           p_type: Database["public"]["Enums"]["GroupType"]
         }
         Returns: string
+      }
+      set_category_supervisors: {
+        Args: { p_category_id: string; p_coach_ids: string[] }
+        Returns: undefined
+      }
+      sync_group_memberships: {
+        Args: { p_client_ids: string[]; p_group_id: string }
+        Returns: undefined
       }
       save_client_settings: {
         Args: {

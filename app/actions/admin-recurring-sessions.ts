@@ -12,7 +12,7 @@ import {
 } from "@/lib/validators/recurring-session";
 
 function revalidateRecurringViews() {
-  revalidatePath("/admin/groups");
+  revalidatePath("/admin/categories");
   revalidatePath("/admin/schedule");
   revalidatePath("/coach/schedule");
 }

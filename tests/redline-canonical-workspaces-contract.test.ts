@@ -8,7 +8,7 @@ const read = (path: string) => readFileSync(resolve(root, path), "utf8");
 describe("Marvel Ops canonical workspaces", () => {
   it("keeps only the designed admin routes in the active navigation", () => {
     const navigation = read("lib/navigation/dashboard-nav.ts");
-    for (const label of ["Today", "Attendance", "Schedule", "Leads & Trials", "Clients", "Groups", "Coaches", "Subscriptions"]) {
+    for (const label of ["Today", "Attendance", "Schedule", "Leads & Trials", "Clients", "Categories & Groups", "Coaches", "Subscriptions"]) {
       expect(navigation).toContain(`label: "${label}"`);
     }
   });
@@ -36,10 +36,13 @@ describe("Marvel Ops canonical workspaces", () => {
     expect(read("components/dashboard/admin-cash-out-dialog.tsx")).toContain("Record cash out");
   });
 
-  it("keeps full group management in the live operations route", () => {
+  it("keeps full group management inside the category route", () => {
     const groupPage = read("app/(dashboard)/admin/groups/page.tsx");
+    const categoryPage = read("app/(dashboard)/admin/categories/page.tsx");
     const groupWorkspace = read("components/dashboard/admin-groups-workspace.tsx");
-    expect(groupPage).toContain("AdminGroupsWorkspace");
+    expect(groupPage).toContain('redirect("/admin/categories")');
+    expect(categoryPage).toContain("AdminTrainingCategoriesWorkspace");
+    expect(categoryPage).toContain("adminGroupRepository.list()");
     expect(groupWorkspace).toContain("saveAdminGroup");
     expect(groupWorkspace).toContain("deleteAdminGroup");
     expect(groupWorkspace).toContain("setAdminGroupMembership");

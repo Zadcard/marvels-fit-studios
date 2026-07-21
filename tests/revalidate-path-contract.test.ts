@@ -28,6 +28,7 @@ const livePaths = new Set([
   "/coach",
   "/coach/alerts",
   "/coach/clients",
+  "/coach/categories",
   "/coach/schedule",
   "/coach/sessions",
   "/coach/settings",
@@ -52,7 +53,7 @@ describe("server-action cache invalidation", () => {
       resolve(actionsDirectory, "admin-recurring-sessions.ts"),
       "utf8",
     );
-    expect(recurring).toContain('revalidatePath("/admin/groups")');
+    expect(recurring).toContain('revalidatePath("/admin/categories")');
 
     for (const file of [
       "admin-attendance.ts",

@@ -96,7 +96,7 @@ export async function saveCoach(input: SaveCoachInput) {
 
   revalidatePath("/admin");
   revalidatePath("/admin/coaches");
-  revalidatePath("/admin/groups");
+  revalidatePath("/admin/categories");
 
   return {
     credentials: temporaryPassword
@@ -126,6 +126,6 @@ export async function deleteCoach(input: DeleteCoachInput) {
 
   revalidatePath("/admin");
   revalidatePath("/admin/coaches");
-  revalidatePath("/admin/groups");
+  revalidatePath("/admin/categories");
   revalidatePath("/admin/schedule");
 }

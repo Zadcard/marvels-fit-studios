@@ -1,18 +1,7 @@
-import { AdminGroupsWorkspace } from "@/components/dashboard/admin-groups-workspace";
-import { adminGroupRepository } from "@/lib/repositories/admin-group-repository";
+import { redirect } from "next/navigation";
 
 export const metadata = { title: "Groups" };
 
 export default async function AdminGroupsPage() {
-  const { records, coachOptions, clientOptions, categoryOptions } =
-    await adminGroupRepository.list();
-
-  return (
-    <AdminGroupsWorkspace
-      records={records}
-      coachOptions={coachOptions}
-      clientOptions={clientOptions}
-      categoryOptions={categoryOptions}
-    />
-  );
+  redirect("/admin/categories");
 }

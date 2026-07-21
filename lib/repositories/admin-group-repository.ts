@@ -72,22 +72,26 @@ function pickPrimarySeries(
 }
 
 export class AdminGroupRepository {
-  async list(): Promise<{
+  async list({ categoryIds }: { categoryIds?: readonly string[] } = {}): Promise<{
     records: AdminGroupRecord[];
     coachOptions: AdminGroupCoachOption[];
     clientOptions: AdminGroupClientOption[];
     categoryOptions: AdminGroupCategoryOption[];
   }> {
+    if (categoryIds && categoryIds.length === 0) {
+      return { records: [], coachOptions: [], clientOptions: [], categoryOptions: [] };
+    }
     const supabase = getSupabaseServerClient();
 
     const [records, coachOptions, clientOptions, categoryOptions] = await Promise.all([
       withSupabaseFallback<AdminGroupRecord[]>(async () => {
-        const { data, error } = await supabase
+        let query = supabase
           .from("Group")
           .select(
             "id,name,type,categoryId,category:TrainingCategory(name),isActive,notes,createdAt,coach:Coach(id,fullName),members:Client(id,fullName),templates:RecurringSessionTemplate(id,createdAt,active,durationMinutes,startsOn,endsOn,slots:RecurringSessionSlot(weekday,localStartTime))",
-          )
-          .order("name");
+          );
+        if (categoryIds) query = query.in("categoryId", [...categoryIds]);
+        const { data, error } = await query.order("name");
         if (error) throw error;
 
         return data.map((group) => {
@@ -127,16 +131,19 @@ export class AdminGroupRepository {
       withSupabaseFallback<AdminGroupClientOption[]>(async () => {
         const { data, error } = await supabase
           .from("Client")
-          .select("id,fullName,groupId")
+          .select("id,fullName,groupId,group:Group(categoryId)")
           .order("fullName");
         if (error) throw error;
-        return data;
+        return data
+          .filter((client) => !categoryIds || !client.groupId || categoryIds.includes(client.group?.categoryId ?? ""))
+          .map((client) => ({ id: client.id, fullName: client.fullName, groupId: client.groupId }));
       }, []),
       withSupabaseFallback<AdminGroupCategoryOption[]>(async () => {
-        const { data, error } = await supabase
+        let query = supabase
           .from("TrainingCategory")
-          .select("id,name,slug,isActive")
-          .order("name");
+          .select("id,name,slug,isActive");
+        if (categoryIds) query = query.in("id", [...categoryIds]);
+        const { data, error } = await query.order("name");
         if (error) throw error;
         return data;
       }, []),

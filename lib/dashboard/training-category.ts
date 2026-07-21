@@ -14,6 +14,7 @@ export type AdminTrainingCategoryRecord = TrainingCategoryOption & {
   legacyValue: string | null;
   groups: Array<TrainingCategoryRelation & { isActive: boolean }>;
   coaches: TrainingCategoryRelation[];
+  supervisors: TrainingCategoryRelation[];
 };
 
 export function slugifyTrainingCategory(name: string) {

@@ -112,7 +112,7 @@ export async function saveAdminClient(input: SaveAdminClientInput) {
 
   revalidatePath("/admin");
   revalidatePath("/admin/clients");
-  revalidatePath("/admin/groups");
+  revalidatePath("/admin/categories");
   revalidatePath("/admin/subscriptions");
   revalidatePath("/admin/schedule");
   revalidatePath("/coach/clients");
@@ -156,7 +156,7 @@ export async function deleteAdminClient(input: DeleteAdminClientInput) {
 
   revalidatePath("/admin");
   revalidatePath("/admin/clients");
-  revalidatePath("/admin/groups");
+  revalidatePath("/admin/categories");
   revalidatePath("/admin/subscriptions");
   revalidatePath("/admin/schedule");
   revalidatePath("/coach/clients");

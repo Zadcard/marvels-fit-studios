@@ -2,9 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 
-import { requireRole } from "@/lib/auth/session";
+import { requireCategoryWriteAccess } from "@/lib/auth/category-access";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
-import { GroupType, TrainingSessionType, UserRole } from "@/lib/supabase/domain";
+import { GroupType, TrainingSessionType } from "@/lib/supabase/domain";
 import { recurringSessionSlotSchema } from "@/lib/validators/recurring-session";
 import { z } from "zod";
 
@@ -25,6 +25,7 @@ type SaveAdminGroupInput = {
   isActive: boolean;
   notes?: string;
   series?: SaveAdminGroupSeriesInput;
+  clientIds?: string[];
 };
 
 const saveAdminGroupSeriesSchema = z
@@ -63,14 +64,25 @@ type GroupMembershipInput = {
 
 function revalidateGroupViews() {
   revalidatePath("/admin");
-  revalidatePath("/admin/groups");
+  revalidatePath("/admin/categories");
   revalidatePath("/admin/clients");
   revalidatePath("/admin/schedule");
   revalidatePath("/coach");
+  revalidatePath("/coach/categories");
+}
+
+async function getGroupCategoryId(groupId: string) {
+  const { data, error } = await getSupabaseServerClient()
+    .from("Group")
+    .select("categoryId")
+    .eq("id", groupId)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) throw new Error("Group record not found.");
+  return data.categoryId;
 }
 
 export async function saveAdminGroup(input: SaveAdminGroupInput) {
-  const user = await requireRole(UserRole.ADMIN);
   const supabase = getSupabaseServerClient();
 
   const name = input.name.trim();
@@ -90,7 +102,16 @@ export async function saveAdminGroup(input: SaveAdminGroupInput) {
     throw new Error("Choose a training category.");
   }
 
+  if (input.groupId) {
+    const existingCategoryId = await getGroupCategoryId(input.groupId);
+    await requireCategoryWriteAccess(existingCategoryId);
+  }
+  const access = await requireCategoryWriteAccess(categoryId);
+
   const series = input.series ? saveAdminGroupSeriesSchema.parse(input.series) : null;
+  const clientIds = input.clientIds
+    ? z.array(z.string().uuid()).max(500).parse([...new Set(input.clientIds)])
+    : null;
 
   const { data: groupId, error } = await supabase.rpc("save_admin_group", {
     p_group_id: input.groupId ?? "",
@@ -117,7 +138,7 @@ export async function saveAdminGroup(input: SaveAdminGroupInput) {
       p_starts_on: series.startsOn,
       p_ends_on: series.endsOn || "",
       p_slots: series.slots,
-      p_created_by_id: user.id,
+      p_created_by_id: access.userId,
       p_through_date: "",
     });
     if (seriesError) {
@@ -130,16 +151,24 @@ export async function saveAdminGroup(input: SaveAdminGroupInput) {
     }
   }
 
+  if (clientIds) {
+    const { error: membershipError } = await supabase.rpc("sync_group_memberships", {
+      p_group_id: groupId as string,
+      p_client_ids: clientIds,
+    });
+    if (membershipError) throw membershipError;
+  }
+
   revalidateGroupViews();
   return { id: groupId as string };
 }
 
 export async function deleteAdminGroup(input: DeleteAdminGroupInput) {
-  await requireRole(UserRole.ADMIN);
-
   if (input.confirmationText.trim() !== "Delete") {
     throw new Error('Type "Delete" to confirm removing this group.');
   }
+
+  await requireCategoryWriteAccess(await getGroupCategoryId(input.groupId));
 
   // Client / template / session foreign keys use ON DELETE SET NULL, so removing
   // a group unassigns its members and recurring templates without deleting them.
@@ -153,13 +182,13 @@ export async function deleteAdminGroup(input: DeleteAdminGroupInput) {
 }
 
 export async function setAdminGroupMembership(input: GroupMembershipInput) {
-  await requireRole(UserRole.ADMIN);
   const groupId = input.groupId.trim();
   const clientId = input.clientId.trim();
 
   if (!groupId || !clientId) {
     throw new Error("Group and client are required.");
   }
+  await requireCategoryWriteAccess(await getGroupCategoryId(groupId));
 
   const { error } = await getSupabaseServerClient().rpc(
     "set_admin_group_membership",

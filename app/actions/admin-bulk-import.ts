@@ -27,7 +27,7 @@ export async function importClientCSV(
 
   revalidatePath("/admin");
   revalidatePath("/admin/clients");
-  revalidatePath("/admin/groups");
+  revalidatePath("/admin/categories");
 
   return report;
 }
