@@ -1,0 +1,64 @@
+.wrap { display: grid; gap: 20px; }
+.tiles { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; background: var(--surface); }
+.tile { padding: 18px 20px; border-right: 1px solid var(--line); }
+.tile:last-child { border-right: 0; }
+.tileLabel { font-family: var(--fm); font-size: .58rem; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+.tileVal { font-family: var(--fs); font-size: 2.1rem; line-height: 1; letter-spacing: -.03em; }
+.tileSub { font-family: var(--fm); font-size: .6rem; color: var(--muted2); margin-top: 8px; }
+
+.section { border: 1px solid var(--line); border-radius: 18px; background: var(--surface); overflow: hidden; }
+.sectionHead { padding: 16px 22px; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; }
+.h2 { margin: 0; font-family: var(--fd); font-size: 1rem; font-weight: 700; }
+.h2sm { margin: 0; font-family: var(--fd); font-size: .95rem; font-weight: 700; }
+.expTag { font-family: var(--fm); font-size: .58rem; padding: 4px 10px; border-radius: 99px; background: rgba(245, 158, 11, .1); border: 1px solid rgba(245, 158, 11, .3); color: var(--warn); }
+
+.colHead, .row { display: grid; grid-template-columns: 1.4fr .9fr 1fr .8fr .9fr auto; gap: 14px; padding: 13px 22px; border-bottom: 1px solid var(--line); align-items: center; }
+.colHead { padding: 11px 22px; font-family: var(--fm); font-size: .54rem; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.right { justify-self: end; }
+.member { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.avatar { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-family: var(--fd); font-weight: 700; font-size: .62rem; color: #fff; flex-shrink: 0; }
+.min { min-width: 0; font-size: .76rem; color: var(--muted2); }
+.name { font-size: .82rem; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.statusPill { display: inline-block; font-family: var(--fm); font-size: .56rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; padding: 1px 6px; border-radius: 4px; margin-top: 2px; }
+.amount { font-family: var(--fm); font-size: .62rem; color: #fff; margin-top: 2px; }
+.remRow { display: flex; align-items: baseline; gap: 5px; }
+.remNum { font-family: var(--fs); font-size: 1rem; }
+.remOf { font-family: var(--fm); font-size: .56rem; color: var(--muted); }
+.remBar { height: 5px; border-radius: 99px; background: var(--surface3); overflow: hidden; margin-top: 5px; max-width: 76px; }
+.remFill { display: block; height: 100%; }
+.methodBadge { font-family: var(--fm); font-size: .56rem; font-weight: 700; letter-spacing: .06em; padding: 3px 8px; border-radius: 6px; }
+.due { font-family: var(--fm); font-size: .68rem; }
+.expiry { font-size: .56rem; color: var(--muted); margin-top: 2px; }
+.actions { justify-self: end; display: flex; align-items: center; gap: 6px; }
+.cta { min-height: 28px; padding: 0 12px; border-radius: 7px; border: 0; cursor: pointer; font-family: var(--fb); font-size: .62rem; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: #fff; background: var(--red); white-space: nowrap; }
+.cta:hover { background: var(--red-deep); }
+.iconBtn { width: 28px; height: 28px; border-radius: 7px; border: 1px solid var(--line2); background: transparent; color: var(--muted); cursor: pointer; font-size: .74rem; }
+.iconBtn:hover { color: #fff; border-color: var(--red); }
+.iconDanger:hover { color: var(--danger); border-color: var(--danger); }
+
+.trio { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; align-items: stretch; }
+.pad { border: 1px solid var(--line); border-radius: 18px; background: var(--surface); padding: 20px; }
+.cashGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0; }
+.cashCard { padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; }
+.cashLabel { font-family: var(--fm); font-size: .54rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.cashIn { font-family: var(--fs); font-size: 1.15rem; color: var(--success); margin-top: 5px; }
+.cashOut { font-family: var(--fs); font-size: 1.15rem; color: var(--danger); margin-top: 5px; }
+.netCard { padding: 14px; border: 1px solid rgba(37, 211, 102, .25); border-radius: 12px; background: rgba(37, 211, 102, .05); margin-bottom: 18px; }
+.net { font-family: var(--fs); font-size: 1.6rem; color: var(--success); margin-top: 5px; }
+.byMethod { font-family: var(--fm); font-size: .56rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
+.methods { display: grid; gap: 9px; }
+.methodRow { display: flex; justify-content: space-between; font-family: var(--fm); font-size: .64rem; color: var(--muted2); margin-bottom: 5px; }
+.methodVal { color: #fff; font-weight: 700; }
+.mbar { height: 7px; border-radius: 99px; background: var(--surface3); overflow: hidden; }
+.mfill { display: block; height: 100%; }
+
+.miniHead { padding: 14px 20px; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; }
+.recordBtn { min-height: 30px; padding: 0 12px; border-radius: 8px; border: 0; cursor: pointer; font-family: var(--fb); font-size: .62rem; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: #fff; background: var(--red); }
+.recordBtn:hover { background: var(--red-deep); }
+.txRow { display: flex; align-items: center; gap: 11px; padding: 12px 20px; border-bottom: 1px solid var(--line); }
+.outIcon { width: 24px; height: 24px; border-radius: 7px; display: grid; place-items: center; font-family: var(--fd); font-weight: 800; font-size: .72rem; background: rgba(239, 68, 68, .14); color: var(--danger); }
+.inIcon { width: 24px; height: 24px; border-radius: 7px; display: grid; place-items: center; font-family: var(--fd); font-weight: 800; font-size: .72rem; }
+.txLabel { font-size: .76rem; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.txMeta { font-family: var(--fm); font-size: .56rem; color: var(--muted); }
+.outAmt { font-family: var(--fm); font-size: .74rem; font-weight: 700; color: var(--danger); }
+.inAmt { font-family: var(--fm); font-size: .74rem; font-weight: 700; }

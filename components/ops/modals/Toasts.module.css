@@ -1,0 +1,4 @@
+.wrap { position: fixed; bottom: 24px; right: 24px; z-index: 120; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+.toast { display: flex; align-items: center; gap: 11px; min-width: 250px; max-width: 360px; padding: 13px 16px; border: 1px solid var(--line2); border-radius: 13px; box-shadow: 0 20px 50px rgba(0, 0, 0, .5); backdrop-filter: blur(8px); }
+.icon { font-size: .9rem; font-weight: 800; }
+.msg { font-family: var(--fb); font-size: .82rem; color: #fff; font-weight: 600; }

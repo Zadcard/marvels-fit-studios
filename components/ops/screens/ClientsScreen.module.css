@@ -1,0 +1,30 @@
+.wrap { display: grid; gap: 18px; }
+.tiles { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; background: var(--surface); }
+.tile { padding: 16px 20px; }
+.tileLabel { font-family: var(--fm); font-size: .54rem; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.tileVal { font-family: var(--fs); font-size: 1.5rem; margin-top: 7px; }
+
+.toolbar { padding: 14px 22px; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.segs { display: flex; gap: 6px; flex-wrap: wrap; }
+.segCount { opacity: .55; margin-left: 6px; font-family: var(--fm); }
+.search { margin-left: auto; display: flex; align-items: center; gap: 8px; min-width: 210px; height: 38px; padding: 0 12px; background: var(--bg2); border: 1px solid var(--line2); border-radius: 10px; }
+
+.colHead, .row { display: grid; grid-template-columns: 1.3fr .9fr .85fr .95fr .6fr .74fr 66px; gap: 12px; padding: 11px 22px; border-bottom: 1px solid var(--line); align-items: center; }
+.colHead { font-family: var(--fm); font-size: .54rem; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.row { padding: 13px 22px; cursor: pointer; }
+.row:hover { background: rgba(255, 255, 255, .02); }
+.cell { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.min { min-width: 0; }
+.avatar { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font-family: var(--fd); font-weight: 700; font-size: .66rem; color: #fff; flex-shrink: 0; }
+.name { font-size: .84rem; font-weight: 600; }
+.injury { font-family: var(--fm); font-size: .56rem; color: var(--warn); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.category { font-size: .78rem; color: var(--muted2); }
+.type { font-family: var(--fm); font-size: .56rem; color: var(--muted); margin-top: 2px; }
+.typePill { font-family: var(--fm); font-size: .5rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; padding: 2px 7px; border-radius: 5px; border: 1px solid var(--line2); background: var(--bg2); color: var(--muted2); }
+.coachAvatar { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-family: var(--fd); font-weight: 700; font-size: .56rem; color: #fff; flex-shrink: 0; }
+.coachName { font-size: .74rem; color: var(--muted2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.remLabel { font-family: var(--fm); font-size: .68rem; color: #fff; margin-bottom: 5px; }
+.statusPill { font-family: var(--fb); font-size: .6rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; padding: 3px 9px; border-radius: 99px; }
+.phone { font-family: var(--fm); font-size: .66rem; color: var(--muted2); }
+.rowTools { justify-self: end; display: flex; gap: 6px; }
+.emptyPad { padding: 48px 24px; text-align: center; }

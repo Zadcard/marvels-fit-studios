@@ -1,9 +1,10 @@
 import "server-only";
 
-import type {
-  AdminCoachRecord,
-  AdminCoachSpecialization,
-  CoachTodayView,
+import {
+  adminCoachRecords,
+  type AdminCoachRecord,
+  type AdminCoachSpecialization,
+  type CoachTodayView,
 } from "@/lib/mocks/admin-coaches";
 import type { Database } from "@/lib/supabase/database.types";
 import { withSupabaseFallback } from "@/lib/supabase/errors";
@@ -170,7 +171,7 @@ export class AdminCoachRepository {
                 : `${coach.fullName} has no assigned clients yet.`,
           };
         });
-    }, []);
+    }, adminCoachRecords);
   }
 }
 

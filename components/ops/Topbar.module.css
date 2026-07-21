@@ -1,0 +1,16 @@
+.bar {
+  flex-shrink: 0; height: 68px; border-bottom: 1px solid var(--line); display: flex; align-items: center;
+  gap: 20px; padding: 0 28px; background: rgba(5, 5, 5, .6); backdrop-filter: blur(8px);
+}
+.titleWrap { min-width: 0; }
+.crumb { font-family: var(--fm); font-size: .58rem; letter-spacing: .2em; text-transform: uppercase; color: var(--red); margin-bottom: 3px; }
+.title { margin: 0; font-family: var(--fd); font-size: 1.28rem; font-weight: 700; letter-spacing: -.02em; white-space: nowrap; }
+.right { margin-left: auto; display: flex; align-items: center; gap: 14px; }
+.search { display: flex; align-items: center; gap: 10px; min-width: 280px; padding: 0 16px; height: 42px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; cursor: pointer; }
+.search:hover { border-color: var(--line2); }
+.searchIcon { color: var(--muted); font-size: .9rem; }
+.searchText { font-size: .82rem; color: #6a6a6a; flex: 1; }
+.kbd { font-family: var(--fm); font-size: .6rem; color: var(--muted); border: 1px solid var(--line2); border-radius: 5px; padding: 2px 6px; }
+.clock { display: flex; align-items: center; gap: 8px; padding: 0 14px; height: 42px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+.pulse { width: 7px; height: 7px; border-radius: 50%; background: var(--red); animation: mvpulse 2s ease-in-out infinite; }
+.now { font-family: var(--fm); font-size: .62rem; letter-spacing: .14em; text-transform: uppercase; color: var(--muted2); }

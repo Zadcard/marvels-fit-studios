@@ -1,0 +1,43 @@
+.wrap { display: flex; gap: 32px; align-items: flex-start; justify-content: center; padding: 10px 0; }
+.phoneCol { width: 340px; flex-shrink: 0; }
+.phone { position: relative; width: 340px; height: 720px; border-radius: 52px; background: #000; border: 10px solid #1a1a1a; box-shadow: 0 40px 90px rgba(0, 0, 0, .6), inset 0 0 0 2px #2a2a2a; overflow: hidden; }
+.notch { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); width: 110px; height: 28px; background: #000; border-radius: 99px; z-index: 5; }
+.screen { position: absolute; inset: 0; overflow-y: auto; background: radial-gradient(ellipse at 50% 0%, rgba(230, 36, 41, .14), transparent 45%), var(--bg); }
+.header { padding: 52px 18px 14px; display: flex; align-items: center; gap: 11px; border-bottom: 1px solid var(--line); }
+.avatar { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font-family: var(--fd); font-weight: 700; font-size: .82rem; color: #fff; }
+.headMeta { flex: 1; }
+.name { font-family: var(--fd); font-size: .98rem; font-weight: 700; }
+.role { font-family: var(--fm); font-size: .56rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.kicker { padding: 16px 18px 8px; font-family: var(--fm); font-size: .58rem; letter-spacing: .16em; text-transform: uppercase; color: var(--red2); }
+.kickerMuted { padding: 8px 18px 8px; font-family: var(--fm); font-size: .58rem; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+.card { margin: 0 14px 14px; border: 1px solid rgba(230, 36, 41, .35); border-radius: 18px; background: radial-gradient(circle at 90% 0%, rgba(230, 36, 41, .16), transparent 60%), var(--surface); padding: 16px; }
+.cardTop { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.cat { font-family: var(--fd); font-size: 1.15rem; font-weight: 700; }
+.meta { font-family: var(--fm); font-size: .6rem; color: var(--muted); margin-top: 3px; }
+.timeR { text-align: right; }
+.time { font-family: var(--fm); font-size: 1.1rem; color: #fff; }
+.dur { font-family: var(--fm); font-size: .54rem; color: var(--muted); }
+.progRow { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+.bar { flex: 1; height: 7px; border-radius: 99px; background: var(--surface3); overflow: hidden; }
+.barFill { display: block; height: 100%; background: linear-gradient(90deg, var(--red), var(--red2)); }
+.count { font-family: var(--fm); font-size: .66rem; color: var(--success); font-weight: 700; }
+.markBtn { width: 100%; min-height: 46px; border-radius: 13px; border: 0; cursor: pointer; font-family: var(--fb); font-size: .76rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: #fff; background: linear-gradient(135deg, var(--red), var(--red2)); box-shadow: 0 12px 24px rgba(230, 36, 41, .3); }
+.injCard { margin: 0 14px 16px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); overflow: hidden; }
+.injRow { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--line); }
+.injDot { width: 7px; height: 7px; border-radius: 50%; background: var(--warn); }
+.injName { font-size: .8rem; font-weight: 600; }
+.injInjury { font-family: var(--fm); font-size: .58rem; color: var(--warn); }
+.spacer { height: 14px; }
+.tabbar { position: absolute; left: 0; right: 0; bottom: 0; height: 64px; display: flex; align-items: center; justify-content: space-around; background: rgba(10, 10, 10, .94); border-top: 1px solid var(--line); backdrop-filter: blur(8px); }
+.tab { display: grid; justify-items: center; gap: 3px; color: var(--muted); }
+.tabActive { color: var(--red); }
+.tabIcon { font-size: 1.05rem; }
+.tabLabel { font-family: var(--fm); font-size: .5rem; letter-spacing: .1em; }
+
+.copy { max-width: 320px; padding-top: 24px; }
+.copyKicker { font-family: var(--fm); font-size: .6rem; letter-spacing: .2em; text-transform: uppercase; color: var(--red2); margin-bottom: 14px; }
+.copyTitle { margin: 0 0 14px; font-family: var(--fd); font-size: 1.6rem; font-weight: 700; letter-spacing: -.02em; line-height: 1.15; }
+.copyLede { color: var(--muted2); font-size: .9rem; line-height: 1.7; }
+.list { list-style: none; padding: 0; margin: 20px 0 0; display: grid; gap: 12px; }
+.list li { display: flex; gap: 11px; align-items: flex-start; font-size: .84rem; color: var(--muted2); }
+.dash { color: var(--red); }

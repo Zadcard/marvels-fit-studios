@@ -1,0 +1,59 @@
+.overlay { position: fixed; inset: 0; z-index: 70; background: rgba(0, 0, 0, .6); backdrop-filter: blur(4px); display: flex; justify-content: flex-end; animation: mvFadeIn .16s ease both; }
+.drawer { width: 440px; max-width: 92vw; height: 100%; overflow-y: auto; background: var(--surface); border-left: 1px solid var(--line2); box-shadow: -30px 0 90px rgba(0, 0, 0, .5); animation: mvDrawerIn .24s cubic-bezier(.2,.8,.2,1) both; }
+.header { position: relative; padding: 26px 26px 22px; border-bottom: 1px solid var(--line); background: radial-gradient(circle at 85% 0%, rgba(230, 36, 41, .14), transparent 60%); }
+.close { position: absolute; top: 18px; right: 18px; width: 30px; height: 30px; border-radius: 9px; border: 1px solid var(--line2); background: transparent; color: var(--muted); cursor: pointer; font-size: 1rem; }
+.close:hover { color: #fff; }
+.idRow { display: flex; align-items: center; gap: 15px; }
+.avatar { width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; font-family: var(--fd); font-weight: 700; font-size: 1.15rem; color: #fff; flex-shrink: 0; }
+.idMeta { min-width: 0; }
+.name { margin: 0; font-family: var(--fd); font-size: 1.4rem; font-weight: 700; letter-spacing: -.02em; }
+.badges { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+.statusPill { font-family: var(--fb); font-size: .6rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; padding: 3px 9px; border-radius: 99px; }
+.catText { font-family: var(--fm); font-size: .6rem; color: var(--muted); letter-spacing: .06em; }
+.actions { display: flex; gap: 8px; margin-top: 18px; }
+.renew { flex: 1; min-height: 40px; border-radius: 11px; border: 0; cursor: pointer; font-family: var(--fb); font-size: .72rem; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: #fff; background: linear-gradient(135deg, var(--red), var(--red2)); }
+.renew:hover { filter: brightness(1.08); }
+.whatsapp { flex: 1; min-height: 40px; border-radius: 11px; border: 1px solid rgba(37, 211, 102, .4); background: rgba(37, 211, 102, .1); color: var(--success); cursor: pointer; font-family: var(--fb); font-size: .72rem; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; }
+.whatsapp:hover { background: rgba(37, 211, 102, .16); }
+.change { min-height: 40px; padding: 0 14px; border-radius: 11px; border: 1px solid var(--line2); background: transparent; color: var(--muted2); cursor: pointer; font-family: var(--fb); font-size: .72rem; font-weight: 700; }
+.change:hover { color: #fff; }
+.actions2 { display: flex; gap: 8px; margin-top: 8px; }
+.editBtn, .removeBtn { flex: 1; min-height: 38px; border-radius: 11px; border: 1px solid var(--line2); background: transparent; color: var(--muted2); cursor: pointer; font-family: var(--fb); font-size: .7rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
+.editBtn:hover { color: #fff; border-color: var(--red); }
+.removeBtn:hover { color: var(--danger); border-color: var(--danger); }
+
+.injuryBanner { margin: 22px 26px 0; padding: 14px 16px; border: 1px solid rgba(245, 158, 11, .35); border-radius: 14px; background: rgba(245, 158, 11, .06); }
+.injuryHead { display: flex; align-items: center; gap: 8px; margin-bottom: 9px; color: var(--warn); }
+.injuryKicker { font-family: var(--fm); font-size: .56rem; letter-spacing: .14em; text-transform: uppercase; color: var(--warn); font-weight: 700; }
+.injuryList { display: grid; gap: 6px; }
+.injuryItem { font-size: .82rem; color: #fff; display: flex; gap: 8px; }
+.injuryDash { color: var(--warn); }
+
+.statsWrap { padding: 22px 26px 0; }
+.stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.statCard { padding: 14px 16px; border: 1px solid var(--line); border-radius: 14px; }
+.statLabel { font-family: var(--fm); font-size: .54rem; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+.statVal { display: flex; align-items: baseline; gap: 6px; font-family: var(--fs); font-size: 1.7rem; }
+.statOf { font-family: var(--fm); font-size: .62rem; color: var(--muted); }
+.bar { height: 6px; border-radius: 99px; background: var(--surface3); overflow: hidden; margin-top: 9px; }
+.barFill { display: block; height: 100%; }
+.streak { font-family: var(--fm); font-size: .6rem; color: var(--success); margin-top: 9px; }
+
+.detailsWrap { padding: 22px 26px 0; }
+.details { border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.detailRow { display: flex; align-items: center; gap: 10px; padding: 13px 16px; border-bottom: 1px solid var(--line); }
+.detailRow:last-child { border-bottom: 0; }
+.detailKey { font-family: var(--fm); font-size: .56rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); width: 78px; }
+.detailMono { font-family: var(--fm); font-size: .82rem; color: #fff; }
+.detailVal { font-size: .82rem; }
+.detailMuted { font-size: .82rem; color: var(--muted2); }
+.coachAvatar { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-family: var(--fd); font-weight: 700; font-size: .56rem; color: #fff; }
+
+.historyWrap { padding: 22px 26px 28px; }
+.historyLabel { font-family: var(--fm); font-size: .56rem; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; }
+.timeline { display: grid; gap: 0; position: relative; }
+.histItem { display: flex; gap: 12px; padding-bottom: 16px; }
+.histRail { display: flex; flex-direction: column; align-items: center; }
+.histDot { width: 9px; height: 9px; border-radius: 50%; margin-top: 4px; }
+.histLine { flex: 1; width: 1px; background: var(--line); }
+.histText { font-size: .8rem; color: var(--muted2); line-height: 1.4; padding-bottom: 2px; }

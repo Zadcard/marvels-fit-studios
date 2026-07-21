@@ -1,0 +1,7 @@
+.head { padding: 24px 24px 8px; }
+.warnIcon { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; font-size: 1.2rem; color: var(--danger); background: rgba(239, 68, 68, .14); margin-bottom: 16px; }
+.title { margin: 0 0 8px; font-family: var(--fd); font-size: 1.15rem; font-weight: 700; letter-spacing: -.01em; }
+.body { margin: 0; font-family: var(--fb); font-size: .84rem; color: var(--muted2); line-height: 1.5; }
+.foot { padding: 20px 24px; display: flex; gap: 10px; }
+.deleteBtn { flex: 1; min-height: 44px; border-radius: 12px; border: 0; cursor: pointer; font-family: var(--fb); font-size: .74rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: #fff; background: var(--danger); }
+.deleteBtn:hover { filter: brightness(1.08); }

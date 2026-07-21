@@ -1,0 +1,16 @@
+.shell {
+  display: flex; height: 100vh; width: 100%; overflow: hidden; color: var(--text); font-family: var(--fb);
+  background:
+    radial-gradient(ellipse at 12% 0%, rgba(230, 36, 41, .10) 0%, transparent 40%),
+    radial-gradient(ellipse at 90% 100%, rgba(200, 20, 28, .07) 0%, transparent 40%),
+    var(--bg);
+}
+.main { flex: 1; display: flex; flex-direction: column; min-width: 0; height: 100%; }
+.content { flex: 1; overflow-y: auto; overflow-x: hidden; }
+.contentInner { max-width: 1180px; margin: 0 auto; padding: 28px; }
+
+@media (max-width: 640px) {
+  .shell { flex-direction: column; }
+  .main { padding-bottom: 64px; }
+  .contentInner { padding: 16px 14px 24px; }
+}

@@ -1,0 +1,17 @@
+.grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.card { border: 1px solid var(--line); border-radius: 18px; background: var(--surface); padding: 22px; position: relative; overflow: hidden; }
+.top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 16px; }
+.titleWrap { min-width: 0; }
+.name { margin: 0; font-family: var(--fd); font-size: 1.15rem; font-weight: 700; letter-spacing: -.02em; }
+.days { font-family: var(--fm); font-size: .6rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-top: 5px; }
+.tools { display: flex; gap: 6px; flex-shrink: 0; }
+.split { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 14px 0; margin-bottom: 16px; }
+.splitL { border-right: 1px solid var(--line); padding-right: 14px; }
+.splitR { padding-left: 14px; }
+.metaKey { font-family: var(--fm); font-size: .54rem; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+.metaVal { font-family: var(--fd); font-weight: 700; font-size: .9rem; }
+.coachRow { display: flex; align-items: center; gap: 12px; }
+.coachAvatar { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font-family: var(--fd); font-weight: 700; font-size: .68rem; color: #fff; flex-shrink: 0; }
+.coachMeta { flex: 1; min-width: 0; }
+.coachName { font-size: .8rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.members { font-family: var(--fm); font-size: .58rem; color: var(--muted); }

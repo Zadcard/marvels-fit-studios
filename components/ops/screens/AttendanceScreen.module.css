@@ -1,0 +1,47 @@
+.wrap { display: grid; gap: 18px; }
+.chips { display: flex; gap: 10px; flex-wrap: wrap; }
+.chip { display: flex; align-items: center; gap: 9px; min-height: 44px; padding: 0 16px; border-radius: 12px; cursor: pointer; font-family: var(--fb); text-align: left; }
+.chipTime { font-family: var(--fm); font-size: .78rem; font-weight: 500; }
+.chipDiv { width: 1px; height: 20px; background: var(--line2); }
+.chipMeta { display: grid; gap: 1px; }
+.chipCat { font-size: .78rem; font-weight: 700; font-family: var(--fd); }
+.chipCount { font-family: var(--fm); font-size: .56rem; color: var(--muted); }
+
+.section { border: 1px solid var(--line); border-radius: 18px; background: var(--surface); overflow: hidden; }
+.head { padding: 18px 24px; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 20px; background: linear-gradient(90deg, rgba(230, 36, 41, .06), transparent); }
+.headL { flex: 1; }
+.titleRow { display: flex; align-items: center; gap: 10px; }
+.title { margin: 0; font-family: var(--fd); font-size: 1.3rem; font-weight: 700; letter-spacing: -.02em; white-space: nowrap; }
+.typeTag { font-family: var(--fm); font-size: .56rem; letter-spacing: .12em; text-transform: uppercase; padding: 2px 8px; border-radius: 5px; border: 1px solid var(--line2); color: var(--muted); }
+.coachLine { display: flex; align-items: center; gap: 8px; margin-top: 6px; font-size: .8rem; color: var(--muted2); }
+.coachAvatar { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-family: var(--fd); font-weight: 700; font-size: .6rem; color: #fff; }
+.headR { text-align: right; }
+.bigCount { font-family: var(--fs); font-size: 2.2rem; line-height: 1; letter-spacing: -.03em; }
+.present { color: var(--success); }
+.total { color: var(--muted); }
+.checkedLabel { font-family: var(--fm); font-size: .6rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-top: 4px; }
+.markAll { min-height: 44px; padding: 0 20px; border-radius: 12px; border: 0; cursor: pointer; font-family: var(--fb); font-size: .74rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: #fff; background: linear-gradient(135deg, var(--red), var(--red2)); box-shadow: 0 12px 24px rgba(230, 36, 41, .28); }
+.markAll:hover { filter: brightness(1.08); }
+.hint { padding: 10px 24px 12px; font-family: var(--fm); font-size: .56rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+
+.row { display: grid; grid-template-columns: 44px 1fr auto; gap: 14px; padding: 12px 24px; border-top: 1px solid var(--line); align-items: center; cursor: pointer; }
+.row:hover { background: rgba(255, 255, 255, .02); }
+.check { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; font-family: var(--fd); font-weight: 700; font-size: .78rem; }
+.min { min-width: 0; }
+.nameRow { display: flex; align-items: center; gap: 8px; }
+.name { font-size: .92rem; font-weight: 600; white-space: nowrap; }
+.injuryTag { font-family: var(--fm); font-size: .54rem; letter-spacing: .08em; text-transform: uppercase; padding: 2px 7px; border-radius: 5px; background: rgba(245, 158, 11, .12); border: 1px solid rgba(245, 158, 11, .35); color: var(--warn); }
+.trialTag { font-family: var(--fm); font-size: .54rem; letter-spacing: .08em; text-transform: uppercase; padding: 2px 7px; border-radius: 5px; background: rgba(230, 36, 41, .12); border: 1px solid rgba(230, 36, 41, .35); color: var(--red2); }
+.meta { font-family: var(--fm); font-size: .62rem; color: var(--muted); margin-top: 2px; }
+.rowBtns { display: flex; gap: 6px; }
+.absentBtn { width: 34px; height: 34px; border-radius: 9px; cursor: pointer; font-family: var(--fb); font-weight: 800; font-size: .8rem; }
+.lateBtn { width: 34px; height: 34px; border-radius: 9px; cursor: pointer; font-family: var(--fb); font-weight: 800; font-size: .66rem; }
+
+.foot { padding: 16px 24px; border-top: 1px solid var(--line2); display: flex; align-items: center; gap: 20px; background: var(--bg2); }
+.footStats { display: flex; gap: 18px; font-family: var(--fm); font-size: .68rem; }
+.sPresent { color: var(--success); }
+.sAbsent { color: var(--danger); }
+.sLate { color: var(--warn); }
+.sPending { color: var(--muted); }
+.summary { margin-left: auto; min-height: 36px; padding: 0 16px; border-radius: 9px; border: 1px solid rgba(37, 211, 102, .4); background: rgba(37, 211, 102, .1); color: var(--success); font-family: var(--fb); font-size: .7rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; cursor: pointer; }
+.summary:hover { background: rgba(37, 211, 102, .16); }

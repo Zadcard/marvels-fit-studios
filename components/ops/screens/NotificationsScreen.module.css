@@ -1,0 +1,15 @@
+.wrap { display: grid; gap: 18px; }
+.filters { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.count { opacity: .55; margin-left: 7px; font-family: var(--fm); }
+.markAll { margin-left: auto; min-height: 34px; padding: 0 14px; border-radius: 9px; border: 1px solid var(--line2); background: transparent; color: var(--muted2); cursor: pointer; font-family: var(--fb); font-size: .72rem; font-weight: 700; }
+.markAll:hover { color: #fff; }
+.section { border: 1px solid var(--line); border-radius: 18px; background: var(--surface); overflow: hidden; }
+.groupLabel { padding: 12px 20px; border-bottom: 1px solid var(--line); font-family: var(--fm); font-size: .56rem; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+.row { display: flex; align-items: flex-start; gap: 14px; padding: 14px 20px; border-bottom: 1px solid var(--line); }
+.icon { width: 34px; height: 34px; border-radius: 11px; display: grid; place-items: center; font-size: .95rem; flex-shrink: 0; }
+.min { flex: 1; min-width: 0; }
+.title { font-size: .86rem; font-weight: 600; line-height: 1.35; }
+.detail { font-size: .76rem; color: var(--muted2); margin-top: 3px; line-height: 1.45; }
+.action { flex-shrink: 0; min-height: 30px; padding: 0 13px; border-radius: 8px; border: 1px solid var(--line2); background: transparent; color: #fff; cursor: pointer; font-family: var(--fb); font-size: .68rem; font-weight: 700; }
+.action:hover { border-color: var(--red); color: var(--red2); }
+.time { flex-shrink: 0; font-family: var(--fm); font-size: .6rem; color: var(--muted); white-space: nowrap; padding-top: 4px; }

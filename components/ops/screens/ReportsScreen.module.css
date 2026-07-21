@@ -1,0 +1,31 @@
+.wrap { display: grid; gap: 20px; }
+.rangeRow { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.ranges { display: flex; gap: 4px; padding: 4px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+.rangeBtn { min-height: 32px; padding: 0 16px; border: 0; border-radius: 9px; cursor: pointer; font-family: var(--fm); font-size: .62rem; letter-spacing: .1em; text-transform: uppercase; font-weight: 700; }
+.period { font-family: var(--fm); font-size: .64rem; letter-spacing: .06em; color: var(--muted); }
+
+.kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.kpi { border: 1px solid var(--line); border-radius: 16px; background: var(--surface); padding: 18px 20px; }
+.kpiLabel { font-family: var(--fm); font-size: .56rem; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.kpiVal { font-family: var(--fs); font-size: 1.65rem; margin: 9px 0 5px; letter-spacing: -.01em; }
+.kpiDelta { font-family: var(--fm); font-size: .64rem; font-weight: 700; }
+
+.row1 { display: grid; grid-template-columns: 1.55fr 1fr; gap: 16px; align-items: start; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+.panel { border: 1px solid var(--line); border-radius: 18px; background: var(--surface); padding: 20px 22px; }
+.panelHead { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 22px; }
+.h2 { margin: 0; font-family: var(--fd); font-size: 1.02rem; font-weight: 700; }
+.hint { font-family: var(--fm); font-size: .62rem; color: var(--muted); }
+.bars { display: flex; align-items: flex-end; gap: 14px; height: 190px; }
+.barCol { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 9px; height: 100%; justify-content: flex-end; }
+.barVal { font-family: var(--fm); font-size: .58rem; color: var(--muted2); }
+.bar { width: 100%; border-radius: 7px 7px 0 0; }
+.barLabel { font-family: var(--fm); font-size: .58rem; color: var(--muted); }
+.funnel { display: grid; gap: 14px; }
+.funnelRow { display: flex; justify-content: space-between; font-family: var(--fm); font-size: .64rem; color: var(--muted2); margin-bottom: 6px; }
+.funnelCount { color: #fff; font-weight: 700; }
+.hbar { height: 8px; border-radius: 99px; background: var(--surface3); overflow: hidden; }
+.hfill { display: block; height: 100%; }
+.utilRow { display: flex; align-items: center; gap: 11px; }
+.utilAvatar { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font-family: var(--fd); font-weight: 700; font-size: .6rem; color: #fff; flex-shrink: 0; }
+.utilBody { flex: 1; }

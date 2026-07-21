@@ -1,0 +1,15 @@
+.stickyHead { position: sticky; top: 0; z-index: 2; padding: 20px 24px; border-bottom: 1px solid var(--line); background: var(--surface); display: flex; align-items: center; justify-content: space-between; }
+.sub { font-family: var(--fm); font-size: .62rem; color: var(--muted); margin-top: 4px; }
+.stickyFoot { position: sticky; bottom: 0; padding: 18px 24px; border-top: 1px solid var(--line); background: var(--surface); display: flex; gap: 10px; }
+.tabs { display: flex; gap: 4px; padding: 4px; background: var(--bg2); border: 1px solid var(--line); border-radius: 12px; }
+.tab { flex: 1; min-height: 36px; border: 0; border-radius: 9px; cursor: pointer; font-family: var(--fm); font-size: .62rem; letter-spacing: .12em; text-transform: uppercase; font-weight: 700; }
+.injuryCard { border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.injuryToggle { width: 100%; display: flex; align-items: center; gap: 11px; padding: 13px 16px; background: transparent; border: 0; cursor: pointer; text-align: left; }
+.injuryTrack { width: 38px; height: 22px; border-radius: 99px; flex-shrink: 0; position: relative; transition: background .15s; }
+.injuryKnob { position: absolute; top: 2px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: left .15s; }
+.injuryText { flex: 1; }
+.injuryTitle { font-family: var(--fb); font-size: .84rem; font-weight: 600; color: #fff; }
+.injurySub { display: block; font-family: var(--fm); font-size: .6rem; color: var(--muted); margin-top: 2px; }
+.injuryBody { padding: 0 16px 14px; }
+.injuryTextarea { width: 100%; padding: 11px 13px; border-radius: 11px; border: 1px solid rgba(245, 158, 11, .4); background: rgba(245, 158, 11, .05); color: #fff; font-family: var(--fb); font-size: .82rem; outline: none; resize: vertical; }
+.injuryTextarea:focus { border-color: var(--warn); }

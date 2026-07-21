@@ -1,0 +1,74 @@
+/* Shared UI primitives reused across screens & modals.
+   Import as: import u from "../ui.module.css" (adjust depth). */
+
+.card { border: 1px solid var(--line); border-radius: 18px; background: var(--surface); overflow: hidden; }
+.sectionHead { padding: 16px 22px; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.h2 { margin: 0; font-family: var(--fd); font-size: 1rem; font-weight: 700; }
+.h2sm { margin: 0; font-family: var(--fd); font-size: .95rem; font-weight: 700; }
+
+/* buttons */
+.primaryBtn {
+  min-height: 40px; padding: 0 18px; border-radius: 11px; border: 0; cursor: pointer; font-family: var(--fb);
+  font-size: .72rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: #fff;
+  background: linear-gradient(135deg, var(--red), var(--red2)); box-shadow: 0 10px 22px rgba(230, 36, 41, .25);
+}
+.primaryBtn:hover { filter: brightness(1.08); }
+.ghostBtn {
+  min-height: 34px; padding: 0 14px; border-radius: 9px; border: 1px solid var(--line2); background: transparent;
+  color: var(--muted2); font-family: var(--fb); font-size: .72rem; font-weight: 700; cursor: pointer;
+}
+.ghostBtn:hover { color: #fff; border-color: var(--line3); }
+.linkBtn { font-family: var(--fm); font-size: .6rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); background: transparent; border: 0; cursor: pointer; }
+.linkBtn:hover { color: #fff; }
+.iconBtn { width: 28px; height: 28px; border-radius: 8px; border: 1px solid var(--line2); background: transparent; color: var(--muted); cursor: pointer; font-size: .74rem; display: grid; place-items: center; }
+.iconBtn:hover { color: #fff; border-color: var(--red); }
+.iconBtnDanger:hover { color: var(--danger); border-color: var(--danger); }
+
+/* search + inputs */
+.search { display: flex; align-items: center; gap: 8px; min-width: 200px; height: 38px; padding: 0 12px; background: var(--bg2); border: 1px solid var(--line2); border-radius: 10px; }
+.searchIcon { color: var(--muted); font-size: .82rem; }
+.searchInput { flex: 1; min-width: 0; background: transparent; border: 0; outline: none; color: #fff; font-family: var(--fb); font-size: .78rem; }
+.fieldLabel { font-family: var(--fm); font-size: .56rem; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 9px; }
+.input { width: 100%; height: 44px; padding: 0 14px; border-radius: 11px; border: 1px solid var(--line2); background: var(--bg2); color: #fff; font-family: var(--fb); font-size: .86rem; outline: none; }
+.input:focus { border-color: var(--red); }
+.inputMono { font-family: var(--fm); font-size: .95rem; }
+.textarea { width: 100%; padding: 11px 13px; border-radius: 11px; border: 1px solid var(--line2); background: var(--bg2); color: #fff; font-family: var(--fb); font-size: .82rem; outline: none; resize: vertical; }
+.textarea:focus { border-color: var(--red); }
+
+/* chips (toggle pills used in editors/filters) */
+.chip { min-height: 34px; padding: 0 14px; border-radius: 9px; border: 1px solid; cursor: pointer; font-family: var(--fb); font-size: .72rem; font-weight: 700; }
+.segChip { min-height: 32px; padding: 0 13px; border-radius: 99px; border: 1px solid; cursor: pointer; font-family: var(--fb); font-size: .7rem; font-weight: 700; }
+
+/* avatar + progress */
+.avatar { border-radius: 50%; display: grid; place-items: center; font-family: var(--fd); font-weight: 700; color: #fff; flex-shrink: 0; }
+.progress { height: 6px; border-radius: 99px; background: var(--surface3); overflow: hidden; }
+.progressFill { display: block; height: 100%; }
+
+/* empty state */
+.empty { border: 1px dashed var(--line2); border-radius: 18px; padding: 48px 24px; text-align: center; }
+.emptyGlyph { font-size: 1.8rem; margin-bottom: 12px; opacity: .5; }
+.emptyTitle { font-family: var(--fd); font-size: 1rem; font-weight: 700; }
+.emptySub { font-size: .8rem; color: var(--muted); margin-top: 5px; }
+
+/* section title row above grids */
+.pageHead { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; gap: 12px; flex-wrap: wrap; }
+.pageHeadTitle { margin: 0; font-family: var(--fd); font-size: 1.1rem; font-weight: 700; }
+.pageHeadSub { margin: 3px 0 0; font-family: var(--fb); font-size: .78rem; color: var(--muted); }
+.toolbar { display: flex; align-items: center; gap: 10px; }
+
+/* modals */
+.overlay { position: fixed; inset: 0; z-index: 80; background: rgba(0, 0, 0, .66); backdrop-filter: blur(4px); display: grid; place-items: center; padding: 24px; animation: mvFadeIn .16s ease both; }
+.modal { width: 100%; border: 1px solid var(--line2); border-radius: 20px; background: var(--surface); box-shadow: 0 40px 90px rgba(0, 0, 0, .6); overflow: hidden; animation: mvModalIn .2s cubic-bezier(.2,.8,.2,1) both; }
+.modalScroll { max-height: 90vh; overflow-y: auto; }
+.modalHead { padding: 20px 24px; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.modalKicker { font-family: var(--fm); font-size: .56rem; letter-spacing: .2em; text-transform: uppercase; color: var(--red2); margin-bottom: 4px; }
+.modalTitle { margin: 0; font-family: var(--fd); font-size: 1.22rem; font-weight: 700; letter-spacing: -.02em; }
+.modalClose { width: 30px; height: 30px; border-radius: 9px; border: 1px solid var(--line2); background: transparent; color: var(--muted); cursor: pointer; font-size: 1rem; }
+.modalClose:hover { color: #fff; }
+.modalBody { padding: 22px 24px; display: grid; gap: 18px; }
+.modalFoot { padding: 18px 24px; border-top: 1px solid var(--line); display: flex; gap: 10px; }
+.cancelBtn { flex: 1; min-height: 44px; border-radius: 12px; border: 1px solid var(--line2); background: transparent; color: var(--muted2); font-family: var(--fb); font-size: .74rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; cursor: pointer; }
+.cancelBtn:hover { color: #fff; }
+.saveBtn { flex: 2; min-height: 44px; border-radius: 12px; border: 0; cursor: pointer; font-family: var(--fb); font-size: .74rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: #fff; background: linear-gradient(135deg, var(--red), var(--red2)); box-shadow: 0 12px 24px rgba(230, 36, 41, .28); }
+.chipRow { display: flex; flex-wrap: wrap; gap: 8px; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }

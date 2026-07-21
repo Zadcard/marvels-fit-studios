@@ -1,0 +1,8 @@
+.head { padding: 20px 24px; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 14px; }
+.avatar { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; font-family: var(--fd); font-weight: 700; font-size: .9rem; color: #fff; flex-shrink: 0; }
+.headText { flex: 1; min-width: 0; }
+.toggleRow { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg2); }
+.toggleTitle { font-size: .84rem; font-weight: 600; }
+.toggleSub { font-family: var(--fm); font-size: .6rem; color: var(--muted); margin-top: 2px; }
+.track { position: relative; width: 40px; height: 22px; border: 0; border-radius: 99px; cursor: pointer; flex-shrink: 0; }
+.knob { position: absolute; top: 2px; width: 18px; height: 18px; border-radius: 50%; background: #fff; }

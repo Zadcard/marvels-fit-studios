@@ -1,0 +1,45 @@
+.wrap { display: grid; gap: 20px; }
+.hero { display: flex; align-items: center; gap: 16px; padding: 22px 24px; border: 1px solid var(--line); border-radius: 18px; background: radial-gradient(circle at 92% 0%, rgba(230, 36, 41, .12), transparent 55%), var(--surface); }
+.heroAvatar { width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; font-family: var(--fd); font-weight: 700; font-size: 1.05rem; color: #fff; }
+.heroText { flex: 1; }
+.heroTitle { margin: 0; font-family: var(--fd); font-size: 1.35rem; font-weight: 700; letter-spacing: -.02em; }
+.heroSub { font-family: var(--fm); font-size: .64rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-top: 4px; }
+.heroStat { text-align: center; }
+.statNum { font-family: var(--fs); font-size: 1.5rem; color: var(--red2); }
+.statLabel { font-family: var(--fm); font-size: .54rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+
+.cols { display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px; align-items: start; }
+.section { border: 1px solid var(--line); border-radius: 18px; background: var(--surface); overflow: hidden; }
+.head { padding: 16px 22px; border-bottom: 1px solid var(--line); }
+.h2 { margin: 0; font-family: var(--fd); font-size: 1rem; font-weight: 700; }
+.h2sm { margin: 0; font-family: var(--fd); font-size: .95rem; font-weight: 700; }
+.min { flex: 1; min-width: 0; }
+
+.sessionBlock { padding: 18px 22px; }
+.sessionTop { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+.time { font-family: var(--fm); }
+.timeVal { font-size: 1.1rem; color: #fff; }
+.dur { font-size: .56rem; letter-spacing: .14em; color: var(--muted); margin-top: 2px; }
+.sessionTitle { flex: 1; display: flex; align-items: center; gap: 8px; }
+.cat { font-family: var(--fd); font-size: 1.1rem; font-weight: 700; }
+.live { font-family: var(--fm); font-size: .54rem; letter-spacing: .12em; text-transform: uppercase; padding: 2px 7px; border-radius: 5px; background: rgba(230, 36, 41, .15); border: 1px solid rgba(230, 36, 41, .4); color: var(--red2); animation: mvblink 1.6s infinite; }
+.markBtn { min-height: 40px; padding: 0 18px; border-radius: 11px; border: 0; cursor: pointer; font-family: var(--fb); font-size: .72rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: #fff; background: linear-gradient(135deg, var(--red), var(--red2)); }
+.markBtn:hover { filter: brightness(1.08); }
+.roster { border-top: 1px solid var(--line); padding-top: 12px; display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 99px; border: 1px solid var(--line2); font-size: .72rem; color: var(--muted2); }
+.chipWarn { color: var(--warn); font-size: .62rem; }
+
+.side { display: grid; gap: 20px; }
+.injSection { border: 1px solid rgba(245, 158, 11, .3); border-radius: 18px; background: var(--surface); overflow: hidden; }
+.injHead { padding: 15px 20px; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 8px; }
+.warn { color: var(--warn); }
+.injRow { display: flex; align-items: center; gap: 11px; padding: 13px 20px; border-bottom: 1px solid var(--line); }
+.injDot { width: 8px; height: 8px; border-radius: 50%; background: var(--warn); flex-shrink: 0; }
+.injName { font-size: .82rem; font-weight: 600; }
+.injInjury { font-family: var(--fm); font-size: .6rem; color: var(--warn); }
+.injCat { font-family: var(--fm); font-size: .56rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.chgRow { padding: 14px 20px; }
+.chgTop { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.chgName { font-size: .82rem; font-weight: 600; }
+.chgKind { font-family: var(--fm); font-size: .52rem; letter-spacing: .1em; text-transform: uppercase; padding: 2px 7px; border-radius: 5px; background: rgba(255, 255, 255, .05); border: 1px solid var(--line2); color: var(--muted2); }
+.chgDetail { font-size: .76rem; color: var(--muted2); }
