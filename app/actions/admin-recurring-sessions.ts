@@ -30,19 +30,18 @@ export async function saveRecurringSessionTemplate(
     : null;
 
   const { data, error } = await getSupabaseServerClient().rpc("sync_recurring_session_template", {
-    p_template_id: templateId,
+    p_template_id: templateId ?? "",
     p_title: value.title,
-    p_description: value.description || null,
+    p_description: value.description || "",
     p_type: value.type,
     p_coach_id: value.coachId,
-    p_group_id: value.groupId || null,
-    p_capacity: value.type === "PRIVATE" ? 1 : null,
+    p_group_id: value.groupId || "",
     p_duration_minutes: value.durationMinutes,
     p_starts_on: value.startsOn,
-    p_ends_on: value.endsOn || null,
+    p_ends_on: value.endsOn || "",
     p_slots: value.slots,
     p_created_by_id: user.id,
-    p_through_date: null,
+    p_through_date: "",
   });
   if (error) {
     if (error.code === "23P01") {

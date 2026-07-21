@@ -313,9 +313,9 @@ export async function mutateAdminSubscriptionLifecycle(
       action === "renew" && paymentMethod
         ? toStoredPaymentMethod(paymentMethod)
         : "",
-    target_amount: amount,
-    target_sessions_per_month: renewalDetails?.sessionsPerMonth ?? null,
-    target_duration_months: renewalDetails?.durationMonths ?? null,
+    target_amount: amount ?? undefined,
+    target_sessions_per_month: renewalDetails?.sessionsPerMonth ?? undefined,
+    target_duration_months: renewalDetails?.durationMonths ?? undefined,
   });
   if (error) throw error;
   if (!data || typeof data !== "object" || Array.isArray(data)) {

@@ -66,9 +66,9 @@ export async function createAdminLead(input: {
     email: input.email?.trim() || null,
     source: input.source.trim() || "Other",
     message: input.message?.trim() || null,
-    interestedCategory: input.interestedCategory
+    interestedCategory: (input.interestedCategory
       ? trainingCategoryFromLabel(input.interestedCategory)
-      : null,
+      : null) as any,
     preferredAvailability: input.preferredAvailability?.trim() || null,
     status: LeadStatus.NEW,
   });

@@ -9,6 +9,7 @@ import { adminReportRepository } from "@/lib/repositories/admin-report-repositor
 import { adminScheduleRepository } from "@/lib/repositories/admin-schedule-repository";
 import { adminSettingsRepository } from "@/lib/repositories/admin-settings-repository";
 import { adminSubscriptionRepository } from "@/lib/repositories/admin-subscription-repository";
+import { AdminTrainingCategoryRepository } from "@/lib/repositories/admin-training-category-repository";
 import { adminTodayOperationsRepository } from "@/lib/repositories/admin-today-operations-repository";
 import { listNotifications } from "@/lib/repositories/notification-repository";
 import type { AdminScheduleSessionRecord } from "@/lib/dashboard/admin-schedule-data";
@@ -134,6 +135,7 @@ export async function loadOpsData(): Promise<OpsData> {
     leadData,
     clientData,
     settings,
+    categoryOptions,
   ] = await Promise.all([
     adminCoachRepository.list(),
     adminTodayOperationsRepository.getToday(),
@@ -145,9 +147,10 @@ export async function loadOpsData(): Promise<OpsData> {
     adminLeadRepository.list(),
     adminClientRepository.list(),
     adminSettingsRepository.get(),
+    new AdminTrainingCategoryRepository().options(),
   ]);
 
-  const coachRecords = coachData.records;
+  const coachRecords = coachData;
 
   const monthStartKey = todayKey.slice(0, 8) + "01";
   const report = await adminReportRepository
@@ -161,8 +164,8 @@ export async function loadOpsData(): Promise<OpsData> {
     id: coach.id,
     name: coach.fullName,
     initials: initialsOf(coach.fullName),
-    role: coach.qualifiedCategories[0]?.name ?? "Coach",
-    cats: coach.qualifiedCategories.map((category) => category.name).join(" · ") || "No qualifications set",
+    role: coach.specialization ?? "Coach",
+    cats: coach.specialization ?? "General Fitness",
     grad: GRADS[gradKeyFor(coach.fullName)],
     active: true,
   }));
@@ -176,7 +179,7 @@ export async function loadOpsData(): Promise<OpsData> {
     coachStatus[coach.id] = {
       now: coach.detail,
       status: coach.status,
-      k: coach.status === "Live" ? "live" : coach.status === "Later" ? "later" : "off",
+      k: (coach.status as string) === "On floor" || (coach.status as string) === "Live" ? "live" : coach.status === "Later" ? "later" : "off",
     };
   }
   for (const coach of coachRecords) {
@@ -187,9 +190,10 @@ export async function loadOpsData(): Promise<OpsData> {
 
   const coachSlots: OpsData["coachSlots"] = {};
   for (const coach of coachRecords) {
+    const todayCount = coach.today.slots.reduce((sum, count) => sum + count, 0);
     coachSlots[coach.id] = {
       blocks: coach.weeklyLoad.map((day) => [day.day, day.sessions]),
-      today: coach.sessionsToday ? `${coach.sessionsToday} session${coach.sessionsToday === 1 ? "" : "s"} today` : "No sessions today",
+      today: todayCount > 0 ? `${todayCount} session${todayCount === 1 ? "" : "s"} today` : "No sessions today",
       week: coach.sessionsThisWeek,
       clients: coach.activeClients,
     };
@@ -370,11 +374,11 @@ export async function loadOpsData(): Promise<OpsData> {
     group.coachId,
     group.scheduleSummary || "Set schedule",
     group.series?.slots?.[0]?.localStartTime ?? "—",
-    group.categoryName,
+    group.trainingCategory,
     group.memberCount,
   ]);
   const groupIds = Object.fromEntries(groupData.records.map((group) => [group.name, group.id]));
-  const categoryIds = Object.fromEntries(groupData.categoryOptions.map((category) => [category.name, category.id]));
+  const categoryIds = Object.fromEntries(categoryOptions.map((category) => [category.name, category.id]));
 
   // ── clients ──
   const clientsRaw: ClientRow[] = [];
@@ -502,7 +506,7 @@ export async function loadOpsData(): Promise<OpsData> {
   }));
 
   const utilVals = Object.fromEntries(
-    (report?.coaches ?? []).map((coach) => [coach.id, coach.averageAttendance]),
+    (report?.coaches ?? []).map((coach) => [coach.id, coach.attendedSeats]),
   );
 
   const recentOut = (report?.recentExpenses ?? [])

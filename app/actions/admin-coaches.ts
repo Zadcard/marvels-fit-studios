@@ -14,7 +14,7 @@ type SaveCoachInput = {
   fullName: string;
   email: string;
   phone?: string;
-  specialization:
+  specialization?:
     | "Strength"
     | "Conditioning"
     | "Mobility"
@@ -88,6 +88,7 @@ export async function saveCoach(input: SaveCoachInput) {
     p_password_hash: password,
     p_phone: phone,
     p_specialization: specialization,
+    p_category_ids: input.qualifiedCategoryIds ?? [],
   });
   if (error?.code === "P0002") throw new Error("Coach record not found.");
   if (error?.code === "23505") throw new Error("Another user already uses this email.");

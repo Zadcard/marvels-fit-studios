@@ -511,6 +511,9 @@ function SubscriptionRow({
 function SubscriptionDialog({
   record,
   paymentMethod,
+  groupOptions = [],
+  selectedCategory = "",
+  renewGroupId = "",
   renewAmount,
   renewSessionsPerMonth,
   renewDurationMonths,
@@ -518,6 +521,8 @@ function SubscriptionDialog({
   pending,
   close,
   confirm,
+  onSelectedCategoryChange = () => {},
+  onRenewGroupIdChange = () => {},
   onPaymentMethodChange,
   onRenewAmountChange,
   onRenewSessionsPerMonthChange,
