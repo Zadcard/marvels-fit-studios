@@ -21,8 +21,7 @@ import { useDashboardToast } from "./dashboard-toast-provider";
 import styles from "./marvel-ops-admin-view.module.css";
 
 type View = "leads";
-const stages = ["New", "Trial booked", "Trial done", "Won", "Lost"] as const;
-type Stage = (typeof stages)[number];
+type Stage = "New" | "Trial booked" | "Trial done" | "Won" | "Lost";
 export type MarvelOpsLead = {
   id: string;
   stage: Stage;
