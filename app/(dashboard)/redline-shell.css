@@ -106,7 +106,8 @@ body:has(.ops-viewport) [role="dialog"] :focus-visible {
 
 .ops-brand img {
   width: 40px;
-  height: 40px;
+  height: auto;
+  max-height: 40px;
   flex: 0 0 auto;
   object-fit: contain;
   filter: brightness(0) invert(1);
@@ -489,7 +490,6 @@ body:has(.ops-viewport) [role="dialog"] :focus-visible {
   [class*="__scheduler"],
   [class*="__directory"],
   [class*="__queue"],
-  [class*="__board"],
   [class*="__card"],
   [class*="__panel"],
   [class*="__agenda"],
@@ -553,21 +553,11 @@ body:has(.ops-viewport) [role="dialog"] :focus-visible {
   background-color: var(--ops-surface) !important;
 }
 
-.ops-content :is(
-  [class*="admin-clients-workspace-module__"][class*="__header"],
-  [class*="admin-schedule-workspace-module__"][class*="__header"],
-  [class*="admin-leads-workspace-module__"][class*="__hero"],
-  [class*="admin-coaches-command-center-module__"][class*="__hero"]
-) {
+.ops-content [class*="admin-schedule-workspace-module__"][class*="__header"] {
   display: none !important;
 }
 
-.ops-content :is(
-  [class*="admin-clients-workspace-module__"][class*="__summary"],
-  [class*="admin-schedule-workspace-module__"][class*="__stats"],
-  [class*="admin-leads-workspace-module__"][class*="__scoreboard"],
-  [class*="admin-coaches-command-center-module__"][class*="__scoreboard"]
-) {
+.ops-content [class*="admin-schedule-workspace-module__"][class*="__stats"] {
   display: none !important;
 }
 

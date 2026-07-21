@@ -1,5 +1,10 @@
 import type { TrainingCategoryOption } from "@/lib/dashboard/training-category";
 
+export type AdminCoachSpecialization =
+  | "Strength" | "Conditioning" | "Mobility" | "Private Coaching"
+  | "Football" | "Tennis" | "Calisthenics" | "Rehab"
+  | "Athletic Performance" | "General Fitness";
+
 export type AdminCoachAssignedGroup = {
   id: string;
   name: string;
@@ -10,6 +15,7 @@ export type AdminCoachAssignedGroup = {
 export type AdminCoachRecord = {
   id: string;
   fullName: string;
+  specialization: AdminCoachSpecialization;
   qualifiedCategories: TrainingCategoryOption[];
   assignedGroups: AdminCoachAssignedGroup[];
   activeClients: number;

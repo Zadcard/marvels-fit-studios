@@ -29,6 +29,9 @@ const eslintConfig = defineConfig([
     "coverage/**",
     "Marvel Fitness Studios operations system/**",
     "docs/archived/design-handoff/**",
+    "app/ops/**",
+    "components/ops/**",
+    "lib/ops/**",
   ]),
 ]);
 

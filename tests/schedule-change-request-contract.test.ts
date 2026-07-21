@@ -22,10 +22,9 @@ describe("schedule change request action wiring", () => {
     expect(action).toContain("p_to_group_id: value.toGroupId");
   });
 
-  it("knows about the new PERMANENT_GROUP_CHANGE error strings", () => {
+  it("knows about the PERMANENT_GROUP_CHANGE validation errors", () => {
     expect(action).toContain("A current group, a new group, and an effective date are required.");
     expect(action).toContain("The new group must be different from the current group.");
-    expect(action).toContain("The new group is already at capacity.");
     expect(action).toContain("The target session has already happened or is no longer active.");
   });
 });

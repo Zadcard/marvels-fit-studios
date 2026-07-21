@@ -274,6 +274,7 @@ type RenewSubscriptionDetails = {
   sessionsPerMonth: (typeof subscriptionSessionChoices)[number];
   durationMonths: (typeof subscriptionDurations)[number];
   newGroupId?: string;
+  note?: string;
 };
 
 export async function mutateAdminSubscriptionLifecycle(

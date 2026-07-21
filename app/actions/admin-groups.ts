@@ -3,7 +3,6 @@
 import { revalidatePath } from "next/cache";
 
 import { requireRole } from "@/lib/auth/session";
-import { trainingCategoryFromLabel } from "@/lib/dashboard/client-domain-labels";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { GroupType, TrainingSessionType, UserRole } from "@/lib/supabase/domain";
 import { recurringSessionSlotSchema } from "@/lib/validators/recurring-session";
@@ -21,10 +20,8 @@ type SaveAdminGroupInput = {
   groupId?: string | null;
   name: string;
   groupType: "Group" | "Private";
-  trainingCategory?: string;
-  categoryId?: string; // categoryId foreign key
+  categoryId: string;
   coachId: string;
-  capacity?: string;
   isActive: boolean;
   notes?: string;
   series?: SaveAdminGroupSeriesInput;
@@ -64,14 +61,6 @@ type GroupMembershipInput = {
   action: "add" | "remove";
 };
 
-function parseCapacity(value: string | undefined): number | null {
-  if (!value) {
-    return null;
-  }
-  const parsed = Number.parseInt(value.replace(/[^0-9]/g, ""), 10);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
-}
-
 function revalidateGroupViews() {
   revalidatePath("/admin");
   revalidatePath("/admin/groups");
@@ -86,9 +75,8 @@ export async function saveAdminGroup(input: SaveAdminGroupInput) {
 
   const name = input.name.trim();
   const coachId = input.coachId.trim();
-  const capacity = parseCapacity(input.capacity);
   const notes = input.notes?.trim() || null;
-  const trainingCategory = trainingCategoryFromLabel(input.trainingCategory);
+  const categoryId = input.categoryId.trim();
   const type = input.groupType === "Private" ? GroupType.PRIVATE : GroupType.GROUP;
 
   if (!name) {
@@ -98,6 +86,9 @@ export async function saveAdminGroup(input: SaveAdminGroupInput) {
   if (!coachId) {
     throw new Error("Assign a coach to the group.");
   }
+  if (!categoryId) {
+    throw new Error("Choose a training category.");
+  }
 
   const series = input.series ? saveAdminGroupSeriesSchema.parse(input.series) : null;
 
@@ -105,15 +96,12 @@ export async function saveAdminGroup(input: SaveAdminGroupInput) {
     p_group_id: input.groupId ?? "",
     p_name: name,
     p_type: type,
-    p_category_id: input.categoryId ?? "",
+    p_category_id: categoryId,
     p_coach_id: coachId,
     p_is_active: input.isActive,
     p_notes: notes ?? "",
   });
   if (error) {
-    if (error.message.includes("lower than current membership")) {
-      throw new Error("Group capacity cannot be lower than current membership.");
-    }
     throw error;
   }
 
@@ -181,12 +169,7 @@ export async function setAdminGroupMembership(input: GroupMembershipInput) {
       p_action: input.action,
     },
   );
-  if (error) {
-    if (error.message.includes("already at capacity")) {
-      throw new Error("Group is already at capacity.");
-    }
-    throw error;
-  }
+  if (error) throw error;
 
   revalidateGroupViews();
 }

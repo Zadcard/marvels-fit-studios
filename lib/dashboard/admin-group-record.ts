@@ -1,5 +1,5 @@
-import type { TrainingCategoryLabel } from "@/lib/dashboard/client-domain-labels";
 import type { RecurringSessionTemplateSlot } from "@/lib/dashboard/recurring-session-template";
+import type { TrainingCategoryOption } from "@/lib/dashboard/training-category";
 
 export type AdminGroupType = "Group" | "Private";
 
@@ -20,23 +20,25 @@ export type AdminGroupRecord = {
   id: string;
   name: string;
   groupType: AdminGroupType;
-  trainingCategory: TrainingCategoryLabel;
+  categoryId: string;
+  categoryName: string;
   coachId: string;
   coachName: string;
-  capacity: number | null;
   isActive: boolean;
   notes: string;
   memberCount: number;
   members: AdminGroupMember[];
   scheduleSummary: string;
-  capacityLabel: string;
   series: AdminGroupSeries | null;
 };
 
 export type AdminGroupCoachOption = {
   id: string;
   fullName: string;
+  qualifiedCategoryIds: string[];
 };
+
+export type AdminGroupCategoryOption = TrainingCategoryOption;
 
 export type AdminGroupClientOption = {
   id: string;

@@ -18,6 +18,7 @@ const livePaths = new Set([
   "/admin/coaches",
   "/admin/groups",
   "/admin/join-requests",
+  "/admin/leads",
   "/admin/notifications",
   "/admin/reports",
   "/admin/schedule",

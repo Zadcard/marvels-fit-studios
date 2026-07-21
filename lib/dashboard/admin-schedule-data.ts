@@ -1,5 +1,4 @@
 import type { DashboardStatIconKey } from "@/lib/dashboard/workspace-definition";
-import type { TrainingCategoryLabel } from "@/lib/dashboard/client-domain-labels";
 
 export type AdminScheduleSessionType = "Group" | "Private";
 export type AdminScheduleSessionStatus =
@@ -33,7 +32,7 @@ export type AdminScheduleSessionRecord = {
   coachId: string;
   groupId: string | null;
   coachName: string;
-  trainingCategory: TrainingCategoryLabel | null;
+  trainingCategory: string | null;
   injuryAlertCount: number;
   trialCount: number;
   rosterCount: number;

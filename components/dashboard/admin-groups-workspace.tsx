@@ -3,7 +3,7 @@
 import { useMemo, useState, useTransition, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Dialog } from "radix-ui";
-import { Pencil, Plus, Search, Trash2, Users, UsersRound, X } from "lucide-react";
+import { Pencil, Plus, Trash2, Users, UsersRound, X } from "lucide-react";
 
 import {
   deleteAdminGroup,
@@ -13,12 +13,9 @@ import {
 import type {
   AdminGroupClientOption,
   AdminGroupCoachOption,
+  AdminGroupCategoryOption,
   AdminGroupRecord,
 } from "@/lib/dashboard/admin-group-record";
-import {
-  adminTrainingCategoryFilters,
-} from "@/lib/dashboard/admin-dashboard-data";
-import { trainingCategoryLabels } from "@/lib/dashboard/client-domain-labels";
 import { useDashboardToast } from "./dashboard-toast-provider";
 import { SeriesSlotsEditor } from "./series-slots-editor";
 import type { RecurringSessionTemplateSlot } from "@/lib/dashboard/recurring-session-template";
@@ -29,14 +26,14 @@ type Props = {
   records: AdminGroupRecord[];
   coachOptions: AdminGroupCoachOption[];
   clientOptions: AdminGroupClientOption[];
+  categoryOptions: AdminGroupCategoryOption[];
 };
 
 type GroupForm = {
   name: string;
   groupType: AdminGroupRecord["groupType"];
-  trainingCategory: AdminGroupRecord["trainingCategory"];
+  categoryId: string;
   coachId: string;
-  capacity: string;
   isActive: boolean;
   notes: string;
   hasSchedule: boolean;
@@ -50,9 +47,8 @@ type GroupForm = {
 const emptyForm: GroupForm = {
   name: "",
   groupType: "Group",
-  trainingCategory: "General fitness",
+  categoryId: "",
   coachId: "",
-  capacity: "",
   isActive: true,
   notes: "",
   hasSchedule: false,
@@ -93,16 +89,16 @@ export function AdminGroupsWorkspace({
   records,
   coachOptions,
   clientOptions,
+  categoryOptions,
 }: Props) {
   const router = useRouter();
   const { showToast } = useDashboardToast();
   const [isPending, startTransition] = useTransition();
-  const [search, setSearch] = useState("");
-  const [categoryFilter, setCategoryFilter] =
-    useState<(typeof adminTrainingCategoryFilters)[number]>("All");
+  const [categoryFilter, setCategoryFilter] = useState("All");
   const [activeFilter, setActiveFilter] = useState<"All" | "Active" | "Inactive">(
     "All",
   );
+  const [sortKey, setSortKey] = useState<"name" | "coach" | "members">("name");
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<GroupForm>(emptyForm);
@@ -113,20 +109,19 @@ export function AdminGroupsWorkspace({
   const [error, setError] = useState("");
 
   const filtered = useMemo(() => {
-    const term = search.trim().toLowerCase();
-    return records.filter(
+    const matches = records.filter(
       (record) =>
         (categoryFilter === "All" ||
-          record.trainingCategory === categoryFilter) &&
+          record.categoryId === categoryFilter) &&
         (activeFilter === "All" ||
-          (activeFilter === "Active" ? record.isActive : !record.isActive)) &&
-        (!term ||
-          [record.name, record.coachName, record.trainingCategory]
-            .join(" ")
-            .toLowerCase()
-            .includes(term)),
+          (activeFilter === "Active" ? record.isActive : !record.isActive)),
     );
-  }, [records, search, categoryFilter, activeFilter]);
+    return [...matches].sort((a, b) => {
+      if (sortKey === "coach") return a.coachName.localeCompare(b.coachName);
+      if (sortKey === "members") return b.memberCount - a.memberCount;
+      return a.name.localeCompare(b.name);
+    });
+  }, [records, categoryFilter, activeFilter, sortKey]);
 
   const managingGroup = records.find((record) => record.id === membersId) ?? null;
   const editingGroup = records.find((record) => record.id === editingId) ?? null;
@@ -136,7 +131,8 @@ export function AdminGroupsWorkspace({
 
   function openCreate() {
     setEditingId(null);
-    setForm(emptyForm);
+    const firstCategory = categoryOptions.find((category) => category.isActive);
+    setForm({ ...emptyForm, categoryId: firstCategory?.id ?? "" });
     setError("");
     setEditorOpen(true);
   }
@@ -146,9 +142,8 @@ export function AdminGroupsWorkspace({
     setForm({
       name: record.name,
       groupType: record.groupType,
-      trainingCategory: record.trainingCategory,
+      categoryId: record.categoryId,
       coachId: record.coachId,
-      capacity: record.capacity != null ? String(record.capacity) : "",
       isActive: record.isActive,
       notes: record.notes,
       hasSchedule: record.series != null,
@@ -171,9 +166,8 @@ export function AdminGroupsWorkspace({
           groupId: editingId,
           name: form.name,
           groupType: form.groupType,
-          trainingCategory: form.trainingCategory,
+          categoryId: form.categoryId,
           coachId: form.coachId,
-          capacity: form.capacity,
           isActive: form.isActive,
           notes: form.notes,
           series: form.hasSchedule
@@ -239,39 +233,33 @@ export function AdminGroupsWorkspace({
   return (
     <div className={styles.page} aria-busy={isPending}>
       <header className={styles.header}>
-        <div>
-          <span className={styles.kicker}><UsersRound size={14} /> Training groups</span>
-          <h1>Run every group.</h1>
-          <p>Coach, training category, recurring times, and membership for each recurring group.</p>
-        </div>
         <button type="button" className="mv-btn mv-btn-primary" onClick={openCreate}>
           <Plus size={17} /> New group
         </button>
       </header>
 
       <div className={styles.toolbar}>
-        <div className={styles.search}>
-          <Search size={18} />
-          <label className="sr-only" htmlFor="group-search">Search groups</label>
-          <input
-            id="group-search"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Group, coach, or training category"
-          />
-        </div>
         <div className={styles.filters}>
           <label>
             Training
             <select
               value={categoryFilter}
               onChange={(event) =>
-                setCategoryFilter(event.target.value as typeof categoryFilter)
+                setCategoryFilter(event.target.value)
               }
             >
-              {adminTrainingCategoryFilters.map((option) => (
-                <option key={option}>{option}</option>
+              <option value="All">All categories</option>
+              {categoryOptions.map((option) => (
+                <option key={option.id} value={option.id}>{option.name}</option>
               ))}
+            </select>
+          </label>
+          <label>
+            Sort by
+            <select value={sortKey} onChange={(event) => setSortKey(event.target.value as typeof sortKey)}>
+              <option value="name">Name</option>
+              <option value="coach">Coach</option>
+              <option value="members">Members</option>
             </select>
           </label>
           <label>
@@ -306,7 +294,7 @@ export function AdminGroupsWorkspace({
                 </div>
 
                 <dl className={styles.statRow}>
-                  <div><dt>Category</dt><dd>{record.trainingCategory}</dd></div>
+                  <div><dt>Category</dt><dd>{record.categoryName}</dd></div>
                   <div><dt>Type</dt><dd>{record.groupType}</dd></div>
                 </dl>
 
@@ -349,7 +337,7 @@ export function AdminGroupsWorkspace({
           <Dialog.Overlay className={styles.overlay} />
           <Dialog.Content className={styles.editor}>
             <Dialog.Title asChild><h2>{editingId ? "Edit group" : "New group"}</h2></Dialog.Title>
-            <Dialog.Description>Set the coach, training category, capacity, and status.</Dialog.Description>
+            <Dialog.Description>Set the coach, training category, schedule, and status.</Dialog.Description>
             <Dialog.Close className={styles.close} aria-label="Close"><X size={18} /></Dialog.Close>
             <form className={styles.form} onSubmit={submitGroup}>
               <label className={styles.full}>
@@ -364,20 +352,17 @@ export function AdminGroupsWorkspace({
               </label>
               <label>
                 Training category
-                <select value={form.trainingCategory} onChange={(event) => setForm((value) => ({ ...value, trainingCategory: event.target.value as GroupForm["trainingCategory"] }))}>
-                  {trainingCategoryLabels.map((option) => <option key={option}>{option}</option>)}
+                <select required value={form.categoryId} onChange={(event) => setForm((value) => ({ ...value, categoryId: event.target.value, coachId: "" }))}>
+                  <option value="">Select a category</option>
+                  {categoryOptions.filter((option) => option.isActive || option.id === form.categoryId).map((option) => <option key={option.id} value={option.id}>{option.name}{option.isActive ? "" : " (archived)"}</option>)}
                 </select>
               </label>
               <label>
                 Coach
                 <select required value={form.coachId} onChange={(event) => setForm((value) => ({ ...value, coachId: event.target.value }))}>
                   <option value="">Select a coach</option>
-                  {coachOptions.map((coach) => <option key={coach.id} value={coach.id}>{coach.fullName}</option>)}
+                  {coachOptions.filter((coach) => coach.qualifiedCategoryIds.includes(form.categoryId)).map((coach) => <option key={coach.id} value={coach.id}>{coach.fullName}</option>)}
                 </select>
-              </label>
-              <label>
-                Capacity (optional)
-                <input inputMode="numeric" value={form.capacity} onChange={(event) => setForm((value) => ({ ...value, capacity: event.target.value }))} placeholder="To be determined" />
               </label>
               <label className={`${styles.full} ${styles.checkbox}`}>
                 <input type="checkbox" checked={form.isActive} onChange={(event) => setForm((value) => ({ ...value, isActive: event.target.checked }))} />

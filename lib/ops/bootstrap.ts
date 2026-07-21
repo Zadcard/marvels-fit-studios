@@ -150,7 +150,7 @@ export async function loadOpsData(): Promise<OpsData> {
     new AdminTrainingCategoryRepository().options(),
   ]);
 
-  const coachRecords = coachData;
+  const coachRecords = coachData.records;
 
   const monthStartKey = todayKey.slice(0, 8) + "01";
   const report = await adminReportRepository
@@ -165,7 +165,7 @@ export async function loadOpsData(): Promise<OpsData> {
     name: coach.fullName,
     initials: initialsOf(coach.fullName),
     role: coach.specialization ?? "Coach",
-    cats: coach.specialization ?? "General Fitness",
+    cats: coach.qualifiedCategories.map((category) => category.name).join(", ") || "No categories",
     grad: GRADS[gradKeyFor(coach.fullName)],
     active: true,
   }));
@@ -190,7 +190,7 @@ export async function loadOpsData(): Promise<OpsData> {
 
   const coachSlots: OpsData["coachSlots"] = {};
   for (const coach of coachRecords) {
-    const todayCount = coach.today.slots.reduce((sum, count) => sum + count, 0);
+    const todayCount = coach.sessionsToday;
     coachSlots[coach.id] = {
       blocks: coach.weeklyLoad.map((day) => [day.day, day.sessions]),
       today: todayCount > 0 ? `${todayCount} session${todayCount === 1 ? "" : "s"} today` : "No sessions today",
@@ -374,7 +374,7 @@ export async function loadOpsData(): Promise<OpsData> {
     group.coachId,
     group.scheduleSummary || "Set schedule",
     group.series?.slots?.[0]?.localStartTime ?? "—",
-    group.trainingCategory,
+    group.categoryName,
     group.memberCount,
   ]);
   const groupIds = Object.fromEntries(groupData.records.map((group) => [group.name, group.id]));

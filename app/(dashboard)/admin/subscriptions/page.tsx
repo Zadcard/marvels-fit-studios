@@ -11,10 +11,11 @@ export default async function AdminSubscriptionsPage() {
       adminGroupRepository.list(),
     ]);
 
-  const groupOptions = groupRecords.map((g) => ({
+  const groupOptions = groupRecords.filter((g) => g.isActive).map((g) => ({
     id: g.id,
     name: g.name,
-    category: g.trainingCategory,
+    trainingCategory: g.categoryName,
+    coachName: g.coachName,
     scheduleSummary: g.scheduleSummary,
   }));
 

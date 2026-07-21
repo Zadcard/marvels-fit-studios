@@ -24,7 +24,6 @@ const knownErrors = [
   "New group not found.",
   "The target session has already happened or is no longer active.",
   "The target session does not match the source session's training category.",
-  "The new group is already at capacity.",
   "Unknown change request kind.",
   "Change request not found.",
   "This request was already decided.",
@@ -32,7 +31,6 @@ const knownErrors = [
   "Session record not found.",
   "Bookings can only be changed for active sessions.",
   "This client is already assigned to the session.",
-  "This session is already at capacity.",
 ];
 
 function mapError(error: { message: string }): never {

@@ -8,7 +8,6 @@ import type {
 import {
   injuryStatusHasAlert,
   injuryStatusLabelFor,
-  trainingCategoryLabelFor,
 } from "@/lib/dashboard/client-domain-labels";
 import type { BookingStatus } from "@/lib/supabase/domain";
 import { withSupabaseFallback } from "@/lib/supabase/errors";
@@ -52,7 +51,7 @@ export class AdminAttendanceRepository {
       const { data, error } = await getSupabaseServerClient()
         .from("TrainingSession")
         .select(
-          "id,title,type,status,startsAt,coach:Coach(fullName),group:Group(trainingCategory),bookings:SessionBooking(status,client:Client(id,fullName,status,injuryStatus,injuryNotes))",
+          "id,title,type,status,startsAt,coach:Coach(fullName),group:Group(category:TrainingCategory(name)),bookings:SessionBooking(status,client:Client(id,fullName,status,injuryStatus,injuryNotes))",
         )
         .neq("status", "CANCELED")
         .gte("startsAt", startOfDay.toISOString())
@@ -79,9 +78,7 @@ export class AdminAttendanceRepository {
           timeLabel: timeFormatter.format(new Date(session.startsAt)),
           coachName: session.coach?.fullName ?? "Unassigned",
           sessionType: session.type === "PRIVATE" ? "Private" : "Group",
-          trainingCategory: session.group?.trainingCategory
-            ? trainingCategoryLabelFor(session.group.trainingCategory)
-            : null,
+          trainingCategory: session.group?.category?.name ?? null,
           attendees,
         };
       });

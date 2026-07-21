@@ -17,19 +17,29 @@ function searchHref(pathname: string, query: string) {
 export class DashboardCommandRepository {
   async listForAdmin(): Promise<DashboardCommandItem[]> {
     const supabase = getSupabaseServerClient();
-    const [clientsResult, coachesResult] = await Promise.all([
+    const [clientsResult, coachesResult, leadsResult, groupsResult] = await Promise.all([
       supabase
         .from("Client")
         .select("id,fullName,status,trainingCategory")
         .order("fullName"),
       supabase
         .from("Coach")
-        .select("id,fullName,specialization,user:User(email)")
+        .select("id,fullName,specialization,user:User(email),qualifications:CoachTrainingCategory(category:TrainingCategory(name))")
         .order("fullName"),
+      supabase
+        .from("Lead")
+        .select("id,fullName,status,source")
+        .order("fullName"),
+      supabase
+        .from("Group")
+        .select("id,name,isActive,category:TrainingCategory(name)")
+        .order("name"),
     ]);
 
     if (clientsResult.error) throw clientsResult.error;
     if (coachesResult.error) throw coachesResult.error;
+    if (leadsResult.error) throw leadsResult.error;
+    if (groupsResult.error) throw groupsResult.error;
 
     const clients: DashboardCommandItem[] = clientsResult.data.map(
       (client, index) => ({
@@ -49,14 +59,33 @@ export class DashboardCommandRepository {
       .map((coach, index) => ({
         id: `coach-${coach.id}`,
         label: coach.fullName,
-        detail: coach.specialization.replaceAll("_", " "),
+        detail: coach.qualifications.map((item) => item.category.name).join(", ") || coach.specialization.replaceAll("_", " "),
         kind: "Coach",
         href: searchHref("/admin/coaches", coach.fullName),
         initials: getInitials(coach.fullName),
         tone: toneFor(index),
       }));
 
-    return [...clients, ...coaches];
+    const leads: DashboardCommandItem[] = leadsResult.data.map((lead, index) => ({
+      id: `lead-${lead.id}`,
+      label: lead.fullName,
+      detail: `${lead.source} · ${lead.status.replaceAll("_", " ")}`,
+      kind: "Lead",
+      href: searchHref("/admin/leads", lead.fullName),
+      initials: getInitials(lead.fullName),
+      tone: toneFor(index),
+    }));
+    const groups: DashboardCommandItem[] = groupsResult.data.map((group, index) => ({
+      id: `group-${group.id}`,
+      label: group.name,
+      detail: `${group.category.name} · ${group.isActive ? "Active" : "Inactive"}`,
+      kind: "Group",
+      href: searchHref("/admin/groups", group.name),
+      initials: getInitials(group.name),
+      tone: toneFor(index),
+    }));
+
+    return [...clients, ...coaches, ...leads, ...groups];
   }
 
   async listForCoachUserId(userId: string): Promise<DashboardCommandItem[]> {

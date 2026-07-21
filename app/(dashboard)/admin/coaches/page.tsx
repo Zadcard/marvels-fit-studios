@@ -4,7 +4,7 @@ import { adminCoachRepository } from "@/lib/repositories/admin-coach-repository"
 export const metadata = { title: "Coaches" };
 
 export default async function AdminCoachesPage() {
-  const records = await adminCoachRepository.list();
+  const { records, categoryOptions } = await adminCoachRepository.list();
 
-  return <AdminCoachesCommandCenter records={records} />;
+  return <AdminCoachesCommandCenter records={records} categoryOptions={categoryOptions} />;
 }

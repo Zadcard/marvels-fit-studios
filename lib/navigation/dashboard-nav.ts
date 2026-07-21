@@ -22,14 +22,14 @@ type OpsRole = Exclude<DashboardRole, "client">;
 
 const dashboardNavConfig: Record<OpsRole, DashboardNavItem[]> = {
   admin: [
-    { label: "Today", href: "/admin", icon: LayoutDashboard, description: "Who's on the floor", section: "primary", available: true, exact: true },
+    { label: "Today", href: "/admin", icon: LayoutDashboard, description: "Live studio operations", section: "primary", available: true, exact: true },
     { label: "Attendance", href: "/admin/attendance", icon: ClipboardCheck, description: "Mark check-ins fast", section: "primary", available: true },
     { label: "Schedule", href: "/admin/schedule", icon: CalendarRange, description: "Recurring & changes", section: "primary", available: true },
-    { label: "Leads & Trials", href: "/admin/join-requests", icon: ClipboardList, description: "Follow-up pipeline", section: "primary", available: true },
+    { label: "Leads & Trials", href: "/admin/leads", icon: ClipboardList, description: "Follow-up pipeline", section: "primary", available: true },
     { label: "Clients", href: "/admin/clients", icon: Users, description: "Roster & profiles", section: "primary", available: true },
     { label: "Groups", href: "/admin/groups", icon: UsersRound, description: "Recurring classes", section: "primary", available: true },
     { label: "Categories", href: "/admin/categories", icon: CalendarDays, description: "Training categories", section: "primary", available: true },
-    { label: "Coaches", href: "/admin/coaches", icon: ShieldUser, description: "Load & free slots", section: "primary", available: true },
+    { label: "Coaches", href: "/admin/coaches", icon: ShieldUser, description: "Qualifications & groups", section: "primary", available: true },
     { label: "Subscriptions", href: "/admin/subscriptions", icon: CreditCard, description: "Renewals & cash flow", section: "secondary", available: true },
     { label: "Reports", href: "/admin/reports", icon: ChartNoAxesCombined, description: "Revenue & performance", section: "secondary", available: true },
     { label: "Notifications", href: "/admin/notifications", icon: Bell, description: "Studio alerts", section: "secondary", available: true },

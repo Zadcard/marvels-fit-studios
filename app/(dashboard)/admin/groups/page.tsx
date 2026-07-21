@@ -4,7 +4,7 @@ import { adminGroupRepository } from "@/lib/repositories/admin-group-repository"
 export const metadata = { title: "Groups" };
 
 export default async function AdminGroupsPage() {
-  const { records, coachOptions, clientOptions } =
+  const { records, coachOptions, clientOptions, categoryOptions } =
     await adminGroupRepository.list();
 
   return (
@@ -12,6 +12,7 @@ export default async function AdminGroupsPage() {
       records={records}
       coachOptions={coachOptions}
       clientOptions={clientOptions}
+      categoryOptions={categoryOptions}
     />
   );
 }

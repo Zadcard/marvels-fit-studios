@@ -3,7 +3,7 @@ import { requireRole } from "@/lib/auth/session";
 import { coachSessionRepository } from "@/lib/repositories/coach-session-repository";
 import { UserRole } from "@/lib/supabase/domain";
 
-export const metadata = { title: "Today on the floor" };
+export const metadata = { title: "Today's sessions" };
 
 export default async function CoachOverviewPage() {
   const coach = await requireRole(UserRole.COACH);

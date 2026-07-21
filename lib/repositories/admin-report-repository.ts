@@ -43,7 +43,7 @@ export class AdminReportRepository {
     const [paymentsResult, expensesResult, sessionsResult, ledgerResult] = await Promise.all([
       supabase.from("Payment").select("id,amount,date,method").gte("date", range.startIso).lt("date", range.endExclusiveIso).order("date"),
       supabase.from("StudioExpense").select("id,expenseNumber,amount,category,paymentMethod,description,reference,status,occurredAt,voidReason,createdBy:User!StudioExpense_createdById_fkey(name,email)").gte("occurredAt", range.startIso).lt("occurredAt", range.endExclusiveIso).order("occurredAt", { ascending: false }),
-      supabase.from("TrainingSession").select("id,startsAt,endsAt,status,capacity,coach:Coach(id,fullName),bookings:SessionBooking(status)").gte("startsAt", range.startIso).lt("startsAt", range.endExclusiveIso).neq("status", "CANCELED").order("startsAt"),
+      supabase.from("TrainingSession").select("id,startsAt,endsAt,status,coach:Coach(id,fullName),bookings:SessionBooking(status)").gte("startsAt", range.startIso).lt("startsAt", range.endExclusiveIso).neq("status", "CANCELED").order("startsAt"),
       supabase.from("BillingLedgerEntry").select("amount,paymentId,occurredAt").eq("type", "PAYMENT").eq("status", "POSTED").gte("occurredAt", range.startIso).lt("occurredAt", range.endExclusiveIso),
     ]);
     if (paymentsResult.error) throw paymentsResult.error;
@@ -72,12 +72,10 @@ export class AdminReportRepository {
 
     const coachMap = new Map<string, { id: string; fullName: string; sessionCount: number; minutes: number; attendedSeats: number; occupancyTotal: number }>();
     for (const session of sessions) {
-      const activeSeats = session.bookings.filter((booking) => ["BOOKED", "ATTENDED"].includes(booking.status)).length;
       const current = coachMap.get(session.coach.id) ?? { id: session.coach.id, fullName: session.coach.fullName, sessionCount: 0, minutes: 0, attendedSeats: 0, occupancyTotal: 0 };
       current.sessionCount += 1;
       current.minutes += Math.max(0, (new Date(session.endsAt).getTime() - new Date(session.startsAt).getTime()) / 60_000);
       current.attendedSeats += session.bookings.filter((booking) => booking.status === "ATTENDED").length;
-      current.occupancyTotal += session.capacity ? Math.min(100, activeSeats / session.capacity * 100) : 0;
       coachMap.set(session.coach.id, current);
     }
 
@@ -97,7 +95,7 @@ export class AdminReportRepository {
         id: coach.id, fullName: coach.fullName, sessionCount: coach.sessionCount,
         scheduledHours: Math.round(coach.minutes / 6) / 10,
         attendedSeats: coach.attendedSeats,
-        occupancyPercent: Math.round(coach.occupancyTotal / coach.sessionCount),
+        occupancyPercent: 0,
       })).sort((a, b) => b.sessionCount - a.sessionCount || a.fullName.localeCompare(b.fullName)),
       recentExpenses: expenses.map((expense) => ({
         id: expense.id, expenseNumber: expense.expenseNumber, amount: expense.amount,

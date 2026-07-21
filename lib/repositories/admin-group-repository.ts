@@ -2,11 +2,11 @@ import "server-only";
 
 import type {
   AdminGroupClientOption,
+  AdminGroupCategoryOption,
   AdminGroupCoachOption,
   AdminGroupRecord,
   AdminGroupSeries,
 } from "@/lib/dashboard/admin-group-record";
-import { trainingCategoryLabelFor } from "@/lib/dashboard/client-domain-labels";
 import { withSupabaseFallback } from "@/lib/supabase/errors";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -76,15 +76,16 @@ export class AdminGroupRepository {
     records: AdminGroupRecord[];
     coachOptions: AdminGroupCoachOption[];
     clientOptions: AdminGroupClientOption[];
+    categoryOptions: AdminGroupCategoryOption[];
   }> {
     const supabase = getSupabaseServerClient();
 
-    const [records, coachOptions, clientOptions] = await Promise.all([
+    const [records, coachOptions, clientOptions, categoryOptions] = await Promise.all([
       withSupabaseFallback<AdminGroupRecord[]>(async () => {
         const { data, error } = await supabase
           .from("Group")
           .select(
-            "id,name,type,category:TrainingCategory(name),isActive,notes,createdAt,coach:Coach(id,fullName),members:Client(id,fullName),templates:RecurringSessionTemplate(id,createdAt,active,durationMinutes,startsOn,endsOn,slots:RecurringSessionSlot(weekday,localStartTime))",
+            "id,name,type,categoryId,category:TrainingCategory(name),isActive,notes,createdAt,coach:Coach(id,fullName),members:Client(id,fullName),templates:RecurringSessionTemplate(id,createdAt,active,durationMinutes,startsOn,endsOn,slots:RecurringSessionSlot(weekday,localStartTime))",
           )
           .order("name");
         if (error) throw error;
@@ -98,16 +99,15 @@ export class AdminGroupRepository {
             id: group.id,
             name: group.name,
             groupType: group.type === "PRIVATE" ? "Private" : "Group",
-            trainingCategory: group.category?.name ?? "General Fitness",
+            categoryId: group.categoryId,
+            categoryName: group.category?.name ?? "Unknown category",
             coachId: group.coach?.id ?? "",
             coachName: group.coach?.fullName ?? "Unassigned",
-            capacity: null,
             isActive: group.isActive,
             notes: group.notes?.trim() ?? "",
             memberCount: members.length,
             members,
             scheduleSummary: buildScheduleSummary(group.templates),
-            capacityLabel: `${members.length}`,
             series: pickPrimarySeries(group.templates),
           } satisfies AdminGroupRecord;
         });
@@ -115,10 +115,14 @@ export class AdminGroupRepository {
       withSupabaseFallback<AdminGroupCoachOption[]>(async () => {
         const { data, error } = await supabase
           .from("Coach")
-          .select("id,fullName")
+          .select("id,fullName,qualifications:CoachTrainingCategory(categoryId)")
           .order("fullName");
         if (error) throw error;
-        return data;
+        return data.map((coach) => ({
+          id: coach.id,
+          fullName: coach.fullName,
+          qualifiedCategoryIds: coach.qualifications.map((item) => item.categoryId),
+        }));
       }, []),
       withSupabaseFallback<AdminGroupClientOption[]>(async () => {
         const { data, error } = await supabase
@@ -128,9 +132,17 @@ export class AdminGroupRepository {
         if (error) throw error;
         return data;
       }, []),
+      withSupabaseFallback<AdminGroupCategoryOption[]>(async () => {
+        const { data, error } = await supabase
+          .from("TrainingCategory")
+          .select("id,name,slug,isActive")
+          .order("name");
+        if (error) throw error;
+        return data;
+      }, []),
     ]);
 
-    return { records, coachOptions, clientOptions };
+    return { records, coachOptions, clientOptions, categoryOptions };
   }
 }
 

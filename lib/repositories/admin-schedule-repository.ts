@@ -13,7 +13,6 @@ import type {
 import type { AdminSessionCoachOption } from "@/lib/repositories/admin-session-repository";
 import {
   injuryStatusHasAlert,
-  trainingCategoryLabelFor,
 } from "@/lib/dashboard/client-domain-labels";
 import { withSupabaseFallback } from "@/lib/supabase/errors";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
@@ -123,7 +122,7 @@ export class AdminScheduleRepository {
           id, title, description, type, status, startsAt, endsAt,
           coachId, groupId, sourceTemplateId, isTemplateException,
           coach:Coach(fullName),
-          group:Group(name, trainingCategory, clients:Client(id)),
+          group:Group(name, category:TrainingCategory(name), clients:Client(id)),
           bookings:SessionBooking(id, status, client:Client(id, fullName, status, injuryStatus)),
           changes:ScheduleChangeLog(id, changeType, createdAt)
         `,
@@ -189,9 +188,7 @@ export class AdminScheduleRepository {
             coachId: session.coachId,
             groupId: session.groupId,
             coachName: session.coach.fullName,
-            trainingCategory: session.group?.trainingCategory
-              ? trainingCategoryLabelFor(session.group.trainingCategory)
-              : null,
+            trainingCategory: session.group?.category?.name ?? null,
             injuryAlertCount,
             trialCount,
             rosterCount: session.group?.clients.length ?? 0,
@@ -208,7 +205,7 @@ export class AdminScheduleRepository {
                 : "Group training session."),
             highlight:
               scheduleStatus === "Waitlist"
-                ? "Session is at capacity"
+                ? "Members are waiting for this session"
                 : scheduleStatus === "Attention"
                   ? "Needs review before it runs"
                   : "Manual session",

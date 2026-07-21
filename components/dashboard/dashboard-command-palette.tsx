@@ -19,7 +19,7 @@ import styles from "./dashboard-command-palette.module.css";
 type PaletteCommandItem = {
   label: string;
   detail?: string;
-  kind: "Action" | "Page" | "Client" | "Coach";
+  kind: "Action" | "Page" | "Client" | "Coach" | "Lead" | "Group";
   href: string;
   icon: LucideIcon | string;
   tone?: "red" | "green" | "violet" | "neutral" | "avatar-red" | "avatar-violet" | "avatar-blue";
@@ -55,7 +55,7 @@ export function DashboardCommandPalette({
       ? [
           { label: "Mark attendance", detail: "Jump to the live session", kind: "Action", href: "/admin/attendance", icon: CheckCircle2, tone: "green" },
           { label: "New member", kind: "Action", href: "/admin/clients?new=1", icon: UserRoundPlus, tone: "red" },
-          { label: "Add lead", kind: "Action", href: "/admin/join-requests?new=1", icon: Flag, tone: "violet" },
+          { label: "Add lead", kind: "Action", href: "/admin/leads?new=1", icon: Flag, tone: "violet" },
         ]
       : [];
     const people: PaletteCommandItem[] = commandItems
@@ -64,11 +64,19 @@ export function DashboardCommandPalette({
     const coaches: PaletteCommandItem[] = commandItems
       .filter((item) => item.kind === "Coach")
       .map((item) => ({ ...item, icon: item.initials }));
+    const leads: PaletteCommandItem[] = commandItems
+      .filter((item) => item.kind === "Lead")
+      .map((item) => ({ ...item, icon: item.initials }));
+    const studioGroups: PaletteCommandItem[] = commandItems
+      .filter((item) => item.kind === "Group")
+      .map((item) => ({ ...item, icon: item.initials }));
     const all: CommandGroup[] = [
       { label: "Actions", items: actions },
       { label: "Go to", items: pages },
       { label: "People", items: people },
       ...(role === "admin" ? [{ label: "Coaches", items: coaches }] : []),
+      ...(role === "admin" ? [{ label: "Leads", items: leads }] : []),
+      ...(role === "admin" ? [{ label: "Groups", items: studioGroups }] : []),
     ].filter((group) => group.items.length > 0);
     const value = query.trim().toLowerCase();
     if (!value) return all;

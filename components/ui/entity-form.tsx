@@ -33,7 +33,9 @@ export function EntityDialog({
         <Dialog.Overlay className={styles.overlay} />
         <Dialog.Content className={cn(styles.dialog, size === "small" && styles.dialogSmall)}>
           <Dialog.Title className={styles.title}>{title}</Dialog.Title>
-          {description ? <Dialog.Description className={styles.description}>{description}</Dialog.Description> : null}
+          <Dialog.Description className={description ? styles.description : "sr-only"}>
+            {description ?? "Create or update this record."}
+          </Dialog.Description>
           <Dialog.Close className={styles.close} aria-label={closeLabel}>
             <X size={18} />
           </Dialog.Close>

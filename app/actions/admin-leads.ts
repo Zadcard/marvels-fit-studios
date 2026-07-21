@@ -6,6 +6,7 @@ import { LeadStatus, UserRole } from "@/lib/supabase/domain";
 import { requireRole } from "@/lib/auth/session";
 import { trainingCategoryFromLabel } from "@/lib/dashboard/client-domain-labels";
 import { promoteLeadsToClients } from "@/lib/leads/promote-leads-to-clients";
+import type { Database } from "@/lib/supabase/database.types";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 export async function approveLeadAsClient(leadId: string) {
@@ -21,6 +22,7 @@ export async function approveLeadAsClient(leadId: string) {
 
   revalidatePath("/admin");
   revalidatePath("/admin/join-requests");
+  revalidatePath("/admin/leads");
   revalidatePath("/admin/clients");
 
   return summary;
@@ -37,11 +39,13 @@ export async function deleteLead(leadId: string) {
 
   revalidatePath("/admin");
   revalidatePath("/admin/join-requests");
+  revalidatePath("/admin/leads");
 }
 
 function revalidateLeadWorkflow() {
   revalidatePath("/admin");
   revalidatePath("/admin/join-requests");
+  revalidatePath("/admin/leads");
   revalidatePath("/admin/clients");
 }
 
@@ -66,9 +70,9 @@ export async function createAdminLead(input: {
     email: input.email?.trim() || null,
     source: input.source.trim() || "Other",
     message: input.message?.trim() || null,
-    interestedCategory: (input.interestedCategory
-      ? trainingCategoryFromLabel(input.interestedCategory)
-      : null) as any,
+    interestedCategory: input.interestedCategory
+      ? trainingCategoryFromLabel(input.interestedCategory) as Database["public"]["Enums"]["LegacyTrainingCategory"]
+      : null,
     preferredAvailability: input.preferredAvailability?.trim() || null,
     status: LeadStatus.NEW,
   });
