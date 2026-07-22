@@ -1,7 +1,26 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { generateReceiptPDF, type ReceiptSnapshot } from "../lib/receipts/pdf-generator";
 
 describe("Subscriptions, Renewals, Payments & Receipts Unit Tests", () => {
+  describe("Renewal database contract", () => {
+    it("declares the queued renewal status with the database enum type", () => {
+      const migration = readFileSync(
+        resolve(
+          process.cwd(),
+          "supabase/migrations/20260726130000_fix_subscription_renewal_status_enum.sql",
+        ),
+        "utf8",
+      );
+
+      expect(migration).toContain('new_status public."SubscriptionStatus";');
+      expect(migration).toContain(
+        "public.admin_mutate_subscription(text,text,text,numeric,integer,integer,text)",
+      );
+    });
+  });
+
   describe("Early Renewal Calculation Logic", () => {
     it("preserves 15 remaining days when renewing an active time-based subscription", () => {
       const now = new Date("2026-07-21T12:00:00.000Z");
