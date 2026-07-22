@@ -372,7 +372,7 @@ export function OpsProvider({ children, initial }: { children: React.ReactNode; 
         phone: s.clPhone || undefined,
         status: s.clStatus,
         paymentStatus: meta.paymentStatus,
-        groupId: meta.groupId ?? undefined,
+        groupId: meta.groupId,
         categoryId: s.data.categoryIds[s.clCat] ?? Object.values(s.data.categoryIds)[0] ?? "",
       }));
     }

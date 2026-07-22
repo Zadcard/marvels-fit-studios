@@ -297,7 +297,7 @@ export class AdminSubscriptionRepository {
             sessionsLeft: subscription.client.sessionsLeft,
             sessionsTotal: subscription.sessionsTotal ?? undefined,
             cycleMonths: subscription.cycleMonths ?? 1,
-            groupId: subscription.client.groupId ?? subscription.client.group?.id,
+            groupId: subscription.client.group?.id,
             groupName: subscription.client.group?.name,
             category: subscription.client.group?.category?.name,
             note:

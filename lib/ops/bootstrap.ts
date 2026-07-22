@@ -408,7 +408,7 @@ export async function loadOpsData(): Promise<OpsData> {
       clientId: client.id,
       email: client.email,
       paymentStatus: client.paymentStatus,
-      groupId: client.primaryGroupId,
+      groupId: client.groups[0]?.id ?? "",
     };
     const used = Math.max(0, client.sessionsTotal - client.sessionsLeft);
     clientProfiles[client.fullName] = {

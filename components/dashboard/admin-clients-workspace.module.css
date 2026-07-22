@@ -700,3 +700,25 @@
   color: #ff4f54;
 }
 
+/* ── Group chips (roster row + drawer) ───────────────────── */
+.groupChipRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+.groupChip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border: 1px solid var(--ops-line-strong);
+  border-radius: 99px;
+  background: var(--ops-surface-2);
+  color: var(--ops-muted-strong);
+  font-family: var(--font-ops-mono);
+  font-size: .56rem;
+  font-weight: 600;
+  letter-spacing: .02em;
+  line-height: 1.5;
+  white-space: nowrap;
+}

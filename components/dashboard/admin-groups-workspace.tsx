@@ -130,7 +130,7 @@ export function AdminGroupsWorkspace({
   const managingGroup = records.find((record) => record.id === membersId) ?? null;
   const editingGroup = records.find((record) => record.id === editingId) ?? null;
   const assignableClients = clientOptions.filter(
-    (client) => client.groupId !== membersId,
+    (client) => !managingGroup?.members.some((member) => member.id === client.id),
   );
 
   function openCreate() {
@@ -360,7 +360,7 @@ export function AdminGroupsWorkspace({
               </label>
               <fieldset className={`${styles.full} ${styles.clientPicker}`}>
                 <legend>Clients in this group</legend>
-                <p>Select clients now or update membership later. Clients already in another group will be moved.</p>
+                <p>Select clients now or update membership later. Clients can belong to more than one group.</p>
                 <div>
                   {clientOptions.length ? clientOptions.map((client) => {
                     const checked = form.clientIds.includes(client.id);
@@ -371,7 +371,7 @@ export function AdminGroupsWorkspace({
                           ? value.clientIds.filter((id) => id !== client.id)
                           : [...value.clientIds, client.id],
                       }))} />
-                      <span>{client.fullName}{client.groupId && !checked ? " · currently in another group" : ""}</span>
+                      <span>{client.fullName}</span>
                     </label>;
                   }) : <p>No clients are available.</p>}
                 </div>
@@ -433,7 +433,7 @@ export function AdminGroupsWorkspace({
                     <option value="">Add a client…</option>
                     {assignableClients.map((client) => (
                       <option key={client.id} value={client.id}>
-                        {client.fullName}{client.groupId ? " (in another group)" : ""}
+                        {client.fullName}
                       </option>
                     ))}
                   </select>

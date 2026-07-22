@@ -297,6 +297,9 @@ export function buildInitialOptions(
 export function mapAdminClientRecord(client: AdminClientListRecord): AdminClientRecord {
   const nextBooking = client.bookings[0];
   const membership = inferMembership(client);
+  const groups = client.group
+    ? [{ id: client.group.id, name: client.group.name, coachName: client.group.coach.fullName }]
+    : [];
   const assignedCoach =
     client.group?.coach.fullName ??
       nextBooking?.trainingSession.coach.fullName ??
@@ -329,8 +332,7 @@ export function mapAdminClientRecord(client: AdminClientListRecord): AdminClient
     sessionsLeft: client.sessionsLeft,
     sessionsTotal: client.subscriptions[0]?.sessionsTotal ?? client.sessionsLeft,
     joinedDate: formatDate(client.createdAt),
-    primaryGroupId: client.group?.id ?? null,
-    primaryGroup: client.group?.name ?? "No group",
+    groups,
     assignedCoach,
     nextSession: nextBooking
       ? formatDateTime(nextBooking.trainingSession.startsAt)

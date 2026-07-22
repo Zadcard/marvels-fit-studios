@@ -85,7 +85,7 @@ export function MarvelOpsCoachClients({ clients, initialClientId = null }: { cli
           <Dialog.Close asChild><button className={styles.clientDialogClose} type="button" aria-label="Close client details"><X size={18} /></button></Dialog.Close>
           {selected ? <>
             <Dialog.Title>{selected.fullName}</Dialog.Title>
-            <Dialog.Description>{selected.planType} &middot; {selected.groupName} &middot; {selected.trainingCategory}</Dialog.Description>
+            <Dialog.Description>{selected.planType} &middot; {selected.groups.length ? selected.groups.map((group) => group.name).join(", ") : "No group"} &middot; {selected.trainingCategory}</Dialog.Description>
             {error ? <p className={styles.clientError} role="alert">{error}</p> : null}
             {message ? <p className={styles.clientSuccess} role="status">{message}</p> : null}
             <section className={styles.clientContext}><h3>Current context</h3><p>{selected.currentFocus}</p><strong>{selected.progressNote}</strong>{selected.hasInjuryAlert ? <span><AlertTriangle size={13} /> {selected.injuryNotes || selected.restrictions}</span> : null}</section>

@@ -22,6 +22,8 @@ export async function approveLeadAsClient(leadId: string) {
   revalidatePath("/admin");
   revalidatePath("/admin/join-requests");
   revalidatePath("/admin/leads");
+  revalidatePath("/admin/lapsed-trials");
+  revalidatePath("/admin/inactive-leads");
   revalidatePath("/admin/clients");
 
   return summary;
@@ -39,12 +41,16 @@ export async function deleteLead(leadId: string) {
   revalidatePath("/admin");
   revalidatePath("/admin/join-requests");
   revalidatePath("/admin/leads");
+  revalidatePath("/admin/lapsed-trials");
+  revalidatePath("/admin/inactive-leads");
 }
 
 function revalidateLeadWorkflow() {
   revalidatePath("/admin");
   revalidatePath("/admin/join-requests");
   revalidatePath("/admin/leads");
+  revalidatePath("/admin/lapsed-trials");
+  revalidatePath("/admin/inactive-leads");
   revalidatePath("/admin/clients");
   revalidatePath("/admin/schedule");
   revalidatePath("/ops");

@@ -10,7 +10,6 @@ const permanentGroupChangeMigration = readFileSync(
   "supabase/migrations/20260721120000_permanent_group_change_requests.sql",
   "utf8",
 );
-
 describe("schedule change request action wiring", () => {
   it("routes both mutations through the admin-only RPCs", () => {
     expect(action).toContain('rpc("log_schedule_change_request"');

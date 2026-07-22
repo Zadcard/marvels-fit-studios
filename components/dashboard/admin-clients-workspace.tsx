@@ -135,6 +135,11 @@ export function AdminClientsWorkspace({
   const [form, setForm] = useState<ClientForm>(emptyForm);
   const [error, setError] = useState("");
 
+  const groupsInFormCategory = useMemo(
+    () => groupOptions.filter((group) => group.categoryId === form.categoryId),
+    [groupOptions, form.categoryId],
+  );
+
   const filtered = useMemo(() => {
     return records.filter((record) => {
       const matchesSegment =
@@ -192,8 +197,8 @@ export function AdminClientsWorkspace({
       trialOutcome: record.trialOutcome,
       paymentStatus: record.paymentStatus,
       paymentAmount: record.paymentAmountLabel.replace(/[^0-9.]/g, ""),
-      groupId: record.primaryGroupId ?? "",
-      categoryId: record.categoryId ?? groupOptions.find((group) => group.id === record.primaryGroupId)?.categoryId ?? categoryOptions[0]?.id ?? "",
+      groupId: record.groups[0]?.id ?? "",
+      categoryId: record.categoryId ?? categoryOptions[0]?.id ?? "",
       sport: record.sport,
       injuryStatus: record.injuryStatus,
       injuryNotes: record.injuryNotes,
@@ -336,6 +341,16 @@ export function AdminClientsWorkspace({
                     <span className={styles.avatar}>{initials(record.fullName)}</span>
                     <span className={styles.nameCol}>
                       <span className={styles.clientName}>{record.fullName}</span>
+                      {record.groups.length ? (
+                        <span className={styles.groupChipRow}>
+                          {record.groups.slice(0, 2).map((group) => (
+                            <span key={group.id} className={styles.groupChip}>{group.name}</span>
+                          ))}
+                          {record.groups.length > 2 ? (
+                            <span className={styles.groupChip}>+{record.groups.length - 2}</span>
+                          ) : null}
+                        </span>
+                      ) : null}
                       {record.hasInjuryAlert || injuryText ? (
                         <span className={styles.injuryBadge}>
                           <TriangleAlert size={12} /> {injuryText || record.injuryStatus}
@@ -472,7 +487,18 @@ export function AdminClientsWorkspace({
                     <div><dt>Training</dt><dd>{detail.trainingCategory}</dd></div>
                     <div><dt>Sport</dt><dd>{detail.sport || "—"}</dd></div>
                     <div><dt>Trial outcome</dt><dd>{detail.trialOutcome}</dd></div>
-                    <div><dt>Group</dt><dd>{detail.primaryGroup}</dd></div>
+                    <div>
+                      <dt>Groups</dt>
+                      <dd>
+                        {detail.groups.length ? (
+                          <span className={styles.groupChipRow}>
+                            {detail.groups.map((group) => (
+                              <span key={group.id} className={styles.groupChip} title={`Coach: ${group.coachName}`}>{group.name}</span>
+                            ))}
+                          </span>
+                        ) : "No group"}
+                      </dd>
+                    </div>
                     <div><dt>Coach</dt><dd>{detail.assignedCoach}</dd></div>
                     <div><dt>Payment</dt><dd>{detail.paymentAmountLabel}</dd></div>
                   </dl>
@@ -531,7 +557,7 @@ export function AdminClientsWorkspace({
                       durationMonths: 1,
                       sessionsIncluded: detail.sessionsTotal || 12,
                       coachName: detail.assignedCoach,
-                      groupName: detail.primaryGroup,
+                      groupName: detail.groups[0]?.name ?? "No group",
                       paymentStatus: "PAID",
                     }))}
                   />
@@ -610,7 +636,7 @@ export function AdminClientsWorkspace({
           <FormField label="Group">
             <select value={form.groupId} onChange={(event) => setForm((value) => ({ ...value, groupId: event.target.value }))}>
               <option value="">No group</option>
-              {groupOptions.filter((group) => group.categoryId === form.categoryId).map((group) => <option key={group.id} value={group.id}>{group.name}</option>)}
+              {groupsInFormCategory.map((group) => <option key={group.id} value={group.id}>{group.name}</option>)}
             </select>
           </FormField>
           <FormField label="Sport (optional)">

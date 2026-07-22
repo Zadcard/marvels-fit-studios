@@ -45,8 +45,7 @@ export type AdminClientRecord = {
   restrictions: string;
   hasInjuryAlert: boolean;
   joinedDate: string;
-  primaryGroupId: string | null;
-  primaryGroup: string;
+  groups: Array<{ id: string; name: string; coachName: string }>;
   assignedCoach: string;
   nextSession: string;
   nextSessions: string[];
@@ -113,3 +112,50 @@ export const adminLeadStatusFilters: Array<"All" | AdminLeadStatus> = [
   "Converted",
   "Closed",
 ];
+
+export type InactiveLeadOutcome = "Lost" | "Converted";
+
+export type InactiveLeadRecord = {
+  id: string;
+  fullName: string;
+  email: string | null;
+  phone: string;
+  source: string;
+  outcome: InactiveLeadOutcome;
+  createdAtLabel: string;
+  createdAtIso: string;
+  message: string;
+  interestedCategory: string | null;
+  preferredAvailability: string | null;
+  lostReason: string | null;
+};
+
+export type InactiveLeadDirectory = {
+  records: InactiveLeadRecord[];
+  totalCount: number;
+  lostCount: number;
+  convertedCount: number;
+};
+
+// A lead whose trial was marked complete (they attended) but who hasn't
+// converted or been marked lost since -- i.e. gone quiet after showing up.
+export type LapsedTrialRecord = {
+  id: string;
+  fullName: string;
+  email: string | null;
+  phone: string;
+  source: string;
+  categoryId: string | null;
+  interestedCategory: string | null;
+  trialGroupId: string | null;
+  trialGroupName: string | null;
+  daysSinceTrial: number;
+  trialCompletedLabel: string;
+  message: string;
+  preferredAvailability: string | null;
+};
+
+export type LapsedTrialDirectory = {
+  records: LapsedTrialRecord[];
+  totalCount: number;
+};

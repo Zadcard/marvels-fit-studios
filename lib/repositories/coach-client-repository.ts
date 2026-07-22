@@ -236,7 +236,8 @@ export class SupabaseCoachClientRepository implements CoachClientRepository {
         }))
         .filter(
           (client) =>
-            client.group?.coach.userId === userId || client.bookings.length > 0,
+            client.group?.coach.userId === userId ||
+            client.bookings.length > 0,
         );
 
       return clients.map((client) => {
@@ -269,8 +270,7 @@ export class SupabaseCoachClientRepository implements CoachClientRepository {
               ? { bookings: [upcomingBooking] }
               : { bookings: [] },
           ),
-          groupId: client.group?.id ?? null,
-          groupName: client.group?.name ?? "No group",
+          groups: client.group ? [{ id: client.group.id, name: client.group.name }] : [],
           privateNotes: client.workoutNotes.map((note) => ({
             id: note.id,
             content: note.content,

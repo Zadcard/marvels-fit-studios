@@ -8,27 +8,27 @@
 --   admin@marvelfitness.demo / MarvelAdmin2026!
 --   ahmed.waheed@marvelfitness.demo / MarvelCoach2026!
 
-insert into public."User" ("id", "name", "clientId", "email", "password", "mustChangePassword", "role") values
-  ('demo-user-admin', 'Marvel Admin', 'MFS-ADMIN-01', 'admin@marvelfitness.demo', '$2b$12$0OGM4ZCYXGgTgpUpihXGB.XWRQZGhkrnGWhG3A5u9w6xxGWDts4XS', false, 'ADMIN'),
-  ('demo-user-ahmed', 'Ahmed Waheed', 'MFS-COACH-01', 'ahmed.waheed@marvelfitness.demo', '$2b$12$sMY5A.g.E77mnHQS6vkZ.uyUuMplN2ObwrrlgYoZI3TpanLC1sv8O', false, 'COACH'),
-  ('demo-user-omar', 'Omar Tarek', 'MFS-2605001', 'omar.tarek@marvelfitness.demo', null, false, 'CLIENT'),
-  ('demo-user-sara', 'Sara Nabil', 'MFS-2605002', 'sara.nabil@marvelfitness.demo', null, false, 'CLIENT'),
-  ('demo-user-ali', 'Ali Hassan', 'MFS-2605003', 'ali.hassan@marvelfitness.demo', null, false, 'CLIENT'),
-  ('demo-user-tamer', 'Tamer Fouad', 'MFS-2605004', 'tamer.fouad@marvelfitness.demo', null, false, 'CLIENT'),
-  ('demo-user-hazem', 'Hazem Salah', 'MFS-2605005', 'hazem.salah@marvelfitness.demo', null, false, 'CLIENT'),
-  ('demo-user-mohab', 'Mohab Ehab', 'MFS-2605006', 'mohab.ehab@marvelfitness.demo', null, false, 'CLIENT'),
-  ('demo-user-nour', 'Nour Rashad', 'MFS-COACH-02', 'nour.rashad@marvelfitness.demo', '$2b$12$sMY5A.g.E77mnHQS6vkZ.uyUuMplN2ObwrrlgYoZI3TpanLC1sv8O', false, 'COACH'),
-  ('demo-user-mariam', 'Mariam Soliman', 'MFS-COACH-03', 'mariam.soliman@marvelfitness.demo', '$2b$12$sMY5A.g.E77mnHQS6vkZ.uyUuMplN2ObwrrlgYoZI3TpanLC1sv8O', false, 'COACH'),
-  ('demo-user-youssef', 'Youssef Abdelatif', 'MFS-COACH-04', 'youssef.abdelatif@marvelfitness.demo', '$2b$12$sMY5A.g.E77mnHQS6vkZ.uyUuMplN2ObwrrlgYoZI3TpanLC1sv8O', false, 'COACH'),
-  ('demo-user-khaled', 'Khaled Habib', 'MFS-COACH-05', 'khaled.habib@marvelfitness.demo', '$2b$12$sMY5A.g.E77mnHQS6vkZ.uyUuMplN2ObwrrlgYoZI3TpanLC1sv8O', false, 'COACH'),
-  ('demo-user-nada', 'Nada Sherif', 'MFS-2605007', 'nada.sherif@marvelfitness.demo', null, false, 'CLIENT'),
-  ('demo-user-reham', 'Reham Badawy', 'MFS-2605008', 'reham.badawy@marvelfitness.demo', null, false, 'CLIENT'),
-  ('demo-user-habiba', 'Habiba Wael', 'MFS-2605009', 'habiba.wael@marvelfitness.demo', null, false, 'CLIENT'),
-  ('demo-user-yassin', 'Yassin Adel', 'MFS-2605010', 'yassin.adel@marvelfitness.demo', null, false, 'CLIENT'),
-  ('demo-user-ziad', 'Ziad Khaled', 'MFS-2605011', 'ziad.khaled@marvelfitness.demo', null, false, 'CLIENT'),
-  ('demo-user-karim', 'Karim Samir', 'MFS-2605012', 'karim.samir@marvelfitness.demo', null, false, 'CLIENT'),
-  ('demo-user-laila', 'Laila Mansour', 'MFS-2605013', 'laila.mansour@marvelfitness.demo', null, false, 'CLIENT'),
-  ('demo-user-menna', 'Menna Tarek', 'MFS-2605014', 'menna.tarek@marvelfitness.demo', null, false, 'CLIENT')
+insert into public."User" ("id", "name", "email", "password", "mustChangePassword", "role") values
+  ('demo-user-admin', 'Marvel Admin', 'admin@marvelfitness.demo', '$2b$12$0OGM4ZCYXGgTgpUpihXGB.XWRQZGhkrnGWhG3A5u9w6xxGWDts4XS', false, 'ADMIN'),
+  ('demo-user-ahmed', 'Ahmed Waheed', 'ahmed.waheed@marvelfitness.demo', '$2b$12$sMY5A.g.E77mnHQS6vkZ.uyUuMplN2ObwrrlgYoZI3TpanLC1sv8O', false, 'COACH'),
+  ('demo-user-omar', 'Omar Tarek', 'omar.tarek@marvelfitness.demo', null, false, 'CLIENT'),
+  ('demo-user-sara', 'Sara Nabil', 'sara.nabil@marvelfitness.demo', null, false, 'CLIENT'),
+  ('demo-user-ali', 'Ali Hassan', 'ali.hassan@marvelfitness.demo', null, false, 'CLIENT'),
+  ('demo-user-tamer', 'Tamer Fouad', 'tamer.fouad@marvelfitness.demo', null, false, 'CLIENT'),
+  ('demo-user-hazem', 'Hazem Salah', 'hazem.salah@marvelfitness.demo', null, false, 'CLIENT'),
+  ('demo-user-mohab', 'Mohab Ehab', 'mohab.ehab@marvelfitness.demo', null, false, 'CLIENT'),
+  ('demo-user-nour', 'Nour Rashad', 'nour.rashad@marvelfitness.demo', '$2b$12$sMY5A.g.E77mnHQS6vkZ.uyUuMplN2ObwrrlgYoZI3TpanLC1sv8O', false, 'COACH'),
+  ('demo-user-mariam', 'Mariam Soliman', 'mariam.soliman@marvelfitness.demo', '$2b$12$sMY5A.g.E77mnHQS6vkZ.uyUuMplN2ObwrrlgYoZI3TpanLC1sv8O', false, 'COACH'),
+  ('demo-user-youssef', 'Youssef Abdelatif', 'youssef.abdelatif@marvelfitness.demo', '$2b$12$sMY5A.g.E77mnHQS6vkZ.uyUuMplN2ObwrrlgYoZI3TpanLC1sv8O', false, 'COACH'),
+  ('demo-user-khaled', 'Khaled Habib', 'khaled.habib@marvelfitness.demo', '$2b$12$sMY5A.g.E77mnHQS6vkZ.uyUuMplN2ObwrrlgYoZI3TpanLC1sv8O', false, 'COACH'),
+  ('demo-user-nada', 'Nada Sherif', 'nada.sherif@marvelfitness.demo', null, false, 'CLIENT'),
+  ('demo-user-reham', 'Reham Badawy', 'reham.badawy@marvelfitness.demo', null, false, 'CLIENT'),
+  ('demo-user-habiba', 'Habiba Wael', 'habiba.wael@marvelfitness.demo', null, false, 'CLIENT'),
+  ('demo-user-yassin', 'Yassin Adel', 'yassin.adel@marvelfitness.demo', null, false, 'CLIENT'),
+  ('demo-user-ziad', 'Ziad Khaled', 'ziad.khaled@marvelfitness.demo', null, false, 'CLIENT'),
+  ('demo-user-karim', 'Karim Samir', 'karim.samir@marvelfitness.demo', null, false, 'CLIENT'),
+  ('demo-user-laila', 'Laila Mansour', 'laila.mansour@marvelfitness.demo', null, false, 'CLIENT'),
+  ('demo-user-menna', 'Menna Tarek', 'menna.tarek@marvelfitness.demo', null, false, 'CLIENT')
 on conflict do nothing;
 
 insert into public."Coach" ("id", "fullName", "phone", "specialization", "userId") values
@@ -173,19 +173,19 @@ on conflict do nothing;
 
 -- Additional teams, groups, and operational records used by the remaining
 -- Marvel screens. These stay fixture-only and preserve every non-demo row.
-insert into public."User" ("id", "name", "clientId", "email", "password", "mustChangePassword", "role") values
-  ('demo-user-nour', 'Nour Rashad', 'MFS-COACH-02', 'nour.rashad@marvelfitness.demo', '$2b$12$sMY5A.g.E77mnHQS6vkZ.uyUuMplN2ObwrrlgYoZI3TpanLC1sv8O', false, 'COACH'),
-  ('demo-user-mariam', 'Mariam Soliman', 'MFS-COACH-03', 'mariam.soliman@marvelfitness.demo', '$2b$12$sMY5A.g.E77mnHQS6vkZ.uyUuMplN2ObwrrlgYoZI3TpanLC1sv8O', false, 'COACH'),
-  ('demo-user-youssef', 'Youssef Abdelatif', 'MFS-COACH-04', 'youssef.abdelatif@marvelfitness.demo', '$2b$12$sMY5A.g.E77mnHQS6vkZ.uyUuMplN2ObwrrlgYoZI3TpanLC1sv8O', false, 'COACH'),
-  ('demo-user-khaled', 'Khaled Habib', 'MFS-COACH-05', 'khaled.habib@marvelfitness.demo', '$2b$12$sMY5A.g.E77mnHQS6vkZ.uyUuMplN2ObwrrlgYoZI3TpanLC1sv8O', false, 'COACH'),
-  ('demo-user-nada', 'Nada Sherif', 'MFS-2605007', 'nada.sherif@marvelfitness.demo', null, false, 'CLIENT'),
-  ('demo-user-reham', 'Reham Badawy', 'MFS-2605008', 'reham.badawy@marvelfitness.demo', null, false, 'CLIENT'),
-  ('demo-user-habiba', 'Habiba Wael', 'MFS-2605009', 'habiba.wael@marvelfitness.demo', null, false, 'CLIENT'),
-  ('demo-user-yassin', 'Yassin Adel', 'MFS-2605010', 'yassin.adel@marvelfitness.demo', null, false, 'CLIENT'),
-  ('demo-user-ziad', 'Ziad Khaled', 'MFS-2605011', 'ziad.khaled@marvelfitness.demo', null, false, 'CLIENT'),
-  ('demo-user-karim', 'Karim Samir', 'MFS-2605012', 'karim.samir@marvelfitness.demo', null, false, 'CLIENT'),
-  ('demo-user-laila', 'Laila Mansour', 'MFS-2605013', 'laila.mansour@marvelfitness.demo', null, false, 'CLIENT'),
-  ('demo-user-menna', 'Menna Tarek', 'MFS-2605014', 'menna.tarek@marvelfitness.demo', null, false, 'CLIENT')
+insert into public."User" ("id", "name", "email", "password", "mustChangePassword", "role") values
+  ('demo-user-nour', 'Nour Rashad', 'nour.rashad@marvelfitness.demo', '$2b$12$sMY5A.g.E77mnHQS6vkZ.uyUuMplN2ObwrrlgYoZI3TpanLC1sv8O', false, 'COACH'),
+  ('demo-user-mariam', 'Mariam Soliman', 'mariam.soliman@marvelfitness.demo', '$2b$12$sMY5A.g.E77mnHQS6vkZ.uyUuMplN2ObwrrlgYoZI3TpanLC1sv8O', false, 'COACH'),
+  ('demo-user-youssef', 'Youssef Abdelatif', 'youssef.abdelatif@marvelfitness.demo', '$2b$12$sMY5A.g.E77mnHQS6vkZ.uyUuMplN2ObwrrlgYoZI3TpanLC1sv8O', false, 'COACH'),
+  ('demo-user-khaled', 'Khaled Habib', 'khaled.habib@marvelfitness.demo', '$2b$12$sMY5A.g.E77mnHQS6vkZ.uyUuMplN2ObwrrlgYoZI3TpanLC1sv8O', false, 'COACH'),
+  ('demo-user-nada', 'Nada Sherif', 'nada.sherif@marvelfitness.demo', null, false, 'CLIENT'),
+  ('demo-user-reham', 'Reham Badawy', 'reham.badawy@marvelfitness.demo', null, false, 'CLIENT'),
+  ('demo-user-habiba', 'Habiba Wael', 'habiba.wael@marvelfitness.demo', null, false, 'CLIENT'),
+  ('demo-user-yassin', 'Yassin Adel', 'yassin.adel@marvelfitness.demo', null, false, 'CLIENT'),
+  ('demo-user-ziad', 'Ziad Khaled', 'ziad.khaled@marvelfitness.demo', null, false, 'CLIENT'),
+  ('demo-user-karim', 'Karim Samir', 'karim.samir@marvelfitness.demo', null, false, 'CLIENT'),
+  ('demo-user-laila', 'Laila Mansour', 'laila.mansour@marvelfitness.demo', null, false, 'CLIENT'),
+  ('demo-user-menna', 'Menna Tarek', 'menna.tarek@marvelfitness.demo', null, false, 'CLIENT')
 on conflict do nothing;
 
 insert into public."Coach" ("id", "fullName", "phone", "specialization", "userId") values
@@ -205,7 +205,7 @@ on conflict do nothing;
 insert into public."Client" ("id", "fullName", "phone", "userId", "membershipType", "sessionsLeft", "isPaid", "paymentStatus", "status", "groupId", "trainingCategory", "injuryStatus", "injuryNotes", "restrictions") values
   ('demo-client-nada', 'Nada Sherif', '+20 114 522 9087', 'demo-user-nada', 'monthly', 9, true, 'PAID', 'ACTIVE', 'demo-group-ladies', 'GENERAL_FITNESS', 'NONE', null, null),
   ('demo-client-reham', 'Reham Badawy', '+20 111 409 3388', 'demo-user-reham', 'monthly', 0, false, 'UNPAID', 'PAUSED', 'demo-group-ladies', 'GENERAL_FITNESS', 'NONE', null, null),
-  ('demo-client-habiba', 'Habiba Wael', '+20 115 662 7740', 'demo-user-habiba', 'monthly', 15, true, 'PAID', 'ACTIVE', 'demo-group-ladies', 'GENERAL_FITNESS', 'NONE', null, null),
+  ('demo-client-habiba', 'Habiba Wael', '+20 115 662 7740', 'demo-user-habiba', 'monthly', 15, true, 'PAID', 'ACTIVE', 'demo-group-ladies', 'GENERAL_FITNESS', 'CURRENT', 'Lower back strain - no heavy deadlifts', 'Avoid heavy deadlifts.'),
   ('demo-client-yassin', 'Yassin Adel', '+20 100 553 8842', 'demo-user-yassin', 'trial', 0, false, 'DUE_SOON', 'TRIAL', 'demo-group-athlete', 'FOOTBALL', 'CURRENT', 'Wrist - tape for heavy pulling', 'Keep heavy pulling pain-free.'),
   ('demo-client-ziad', 'Ziad Khaled', '+20 103 847 6690', 'demo-user-ziad', 'monthly', 13, true, 'PAID', 'ACTIVE', 'demo-group-athlete', 'FOOTBALL', 'NONE', null, null),
   ('demo-client-karim', 'Karim Samir', '+20 101 334 5512', 'demo-user-karim', 'monthly', 1, false, 'DUE_SOON', 'ACTIVE', 'demo-group-burning', 'FAT_LOSS', 'NONE', null, null),

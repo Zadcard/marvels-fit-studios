@@ -2,7 +2,12 @@ import "server-only";
 
 import { LeadStatus } from "@/lib/supabase/domain";
 
-import type { AdminLeadRecord, AdminLeadStatus } from "@/lib/dashboard/admin-dashboard-data";
+import type {
+  AdminLeadRecord,
+  AdminLeadStatus,
+  InactiveLeadDirectory,
+  LapsedTrialDirectory,
+} from "@/lib/dashboard/admin-dashboard-data";
 
 const LEGACY_JOIN_CREDENTIALS_PREFIX = "__join_credentials__:";
 import { withSupabaseFallback } from "@/lib/supabase/errors";
@@ -147,6 +152,96 @@ export class AdminLeadRepository {
       filteredCount: 0,
       initialOptions: [],
     });
+  }
+
+  // Leads that have left the active pipeline: closed as lost or already
+  // converted into a client. Ordered most-recent first.
+  async listInactive(): Promise<InactiveLeadDirectory> {
+    return withSupabaseFallback(async () => {
+      const { data, error } = await getSupabaseServerClient()
+        .from("Lead")
+        .select("id,fullName,email,phone,source,status,createdAt,message,categoryId,category:TrainingCategory(name),preferredAvailability,lostReason");
+      if (error) throw error;
+
+      const inactive = data
+        .filter(
+          (lead) =>
+            lead.status === LeadStatus.CLOSED ||
+            lead.status === LeadStatus.CONVERTED,
+        )
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+
+      const records = inactive.map((lead) => ({
+        id: lead.id,
+        fullName: lead.fullName,
+        email: lead.email,
+        phone: lead.phone,
+        source: lead.source,
+        outcome: (lead.status === LeadStatus.CONVERTED ? "Converted" : "Lost") as "Lost" | "Converted",
+        createdAtLabel: formatDate(new Date(lead.createdAt)),
+        createdAtIso: lead.createdAt,
+        message: normalizeMessage(lead.message),
+        interestedCategory: lead.category?.name ?? null,
+        preferredAvailability: lead.preferredAvailability,
+        lostReason: lead.lostReason,
+      }));
+
+      return {
+        records,
+        totalCount: records.length,
+        lostCount: records.filter((lead) => lead.outcome === "Lost").length,
+        convertedCount: records.filter((lead) => lead.outcome === "Converted")
+          .length,
+      };
+    }, {
+      records: [],
+      totalCount: 0,
+      lostCount: 0,
+      convertedCount: 0,
+    });
+  }
+
+  // Leads whose trial was marked complete (they showed up) but who haven't
+  // converted or been marked lost since -- attended, then went quiet.
+  // Ordered by longest-since-trial first (most overdue for a follow-up).
+  async listLapsedTrials(): Promise<LapsedTrialDirectory> {
+    return withSupabaseFallback(async () => {
+      const { data, error } = await getSupabaseServerClient()
+        .from("Lead")
+        .select(
+          "id,fullName,email,phone,source,updatedAt,message,categoryId,category:TrainingCategory(name),trialGroupId,trialGroup:Group!Lead_trialGroupId_fkey(name),preferredAvailability",
+        )
+        .eq("status", LeadStatus.TRIAL_DONE);
+      if (error) throw error;
+
+      const now = Date.now();
+      const records = data
+        .map((lead) => {
+          const updatedAt = new Date(lead.updatedAt);
+          const daysSinceTrial = Math.max(
+            0,
+            Math.floor((now - updatedAt.getTime()) / (24 * 60 * 60 * 1000)),
+          );
+          return {
+            id: lead.id,
+            fullName: lead.fullName,
+            email: lead.email,
+            phone: lead.phone,
+            source: lead.source,
+            categoryId: lead.categoryId,
+            interestedCategory: lead.category?.name ?? null,
+            trialGroupId: lead.trialGroupId,
+            trialGroupName: lead.trialGroup?.name ?? null,
+            daysSinceTrial,
+            trialCompletedLabel: formatDate(updatedAt),
+            message: normalizeMessage(lead.message),
+            preferredAvailability: lead.preferredAvailability,
+          };
+        })
+        .sort((a, b) => b.daysSinceTrial - a.daysSinceTrial);
+
+      return { records, totalCount: records.length };
+    }, { records: [], totalCount: 0 });
   }
 }
 

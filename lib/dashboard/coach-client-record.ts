@@ -23,8 +23,7 @@ export type CoachClientRecord = {
   lastTouchpoint: string;
   currentFocus: string;
   progressNote: string;
-  groupId: string | null;
-  groupName: string;
+  groups: Array<{ id: string; name: string }>;
   privateNotes: Array<{
     id: string;
     content: string;

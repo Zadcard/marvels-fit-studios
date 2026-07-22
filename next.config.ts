@@ -24,6 +24,15 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   turbopack: {
     root: appRoot,
+    // jsPDF's optional .svg()/.html() plugins pull in canvg/dompurify/
+    // html2canvas, which we don't install (see lib/receipts/pdf-stubs).
+    // Alias them to an empty stub so Turbopack can resolve the bundled
+    // jsPDF code without requiring those packages.
+    resolveAlias: {
+      canvg: "./lib/receipts/pdf-stubs/unused-jspdf-plugin.ts",
+      dompurify: "./lib/receipts/pdf-stubs/unused-jspdf-plugin.ts",
+      html2canvas: "./lib/receipts/pdf-stubs/unused-jspdf-plugin.ts",
+    },
   },
   async headers() {
     return [{ source: "/(.*)", headers: securityHeaders }];

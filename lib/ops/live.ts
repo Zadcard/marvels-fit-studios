@@ -67,7 +67,7 @@ export interface OpsClientMeta {
   clientId: string;
   email: string;
   paymentStatus: "Paid" | "Unpaid" | "Due soon";
-  groupId: string | null;
+  groupId: string;
 }
 
 export interface OpsReportBundle {

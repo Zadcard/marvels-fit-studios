@@ -39,8 +39,7 @@ const client = {
   lastTouchpoint: "Today",
   currentFocus: "Stable progression",
   progressNote: "Next session tomorrow.",
-  groupId: "group-1",
-  groupName: "Strength A",
+  groups: [{ id: "group-1", name: "Strength A" }],
   privateNotes: [],
   activeFiles: [],
 };
