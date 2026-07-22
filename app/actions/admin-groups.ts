@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { requireCategoryWriteAccess } from "@/lib/auth/category-access";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { GroupType, TrainingSessionType } from "@/lib/supabase/domain";
+import { databaseTextIdSchema } from "@/lib/validators/database-id";
 import { recurringSessionSlotSchema } from "@/lib/validators/recurring-session";
 import { z } from "zod";
 
@@ -110,7 +111,7 @@ export async function saveAdminGroup(input: SaveAdminGroupInput) {
 
   const series = input.series ? saveAdminGroupSeriesSchema.parse(input.series) : null;
   const clientIds = input.clientIds
-    ? z.array(z.string().uuid()).max(500).parse([...new Set(input.clientIds)])
+    ? z.array(databaseTextIdSchema).max(500).parse([...new Set(input.clientIds)])
     : null;
 
   const { data: groupId, error } = await supabase.rpc("save_admin_group", {

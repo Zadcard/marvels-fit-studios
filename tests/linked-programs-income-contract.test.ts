@@ -12,6 +12,7 @@ const subscriptionsPage = read("app/(dashboard)/admin/subscriptions/page.tsx");
 const clientActions = read("app/actions/admin-clients.ts");
 const leadActions = read("app/actions/admin-leads.ts");
 const paymentActions = read("app/actions/admin-payments.ts");
+const groupActions = read("app/actions/admin-groups.ts");
 const todayWorkspace = read("components/dashboard/marvel-ops-today.tsx");
 const programsWorkspace = read("components/dashboard/admin-training-categories-workspace.tsx");
 const entityForm = read("components/ui/entity-form.tsx");
@@ -35,6 +36,11 @@ describe("linked programs and studio income contract", () => {
     expect(leadActions).toContain("group.categoryId !== lead.categoryId");
     expect(migration).toContain("The group does not belong to the lead interested category.");
     expect(migration).toContain('new."categoryId" := group_category_id');
+  });
+
+  it("accepts the database text IDs used by existing group members", () => {
+    expect(groupActions).toContain("z.array(databaseTextIdSchema)");
+    expect(groupActions).not.toContain("z.array(z.string().uuid())");
   });
 
   it("feeds user-facing selectors only active programs and active groups", () => {
