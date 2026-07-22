@@ -34,7 +34,7 @@ export const TODAY_SESSIONS: Session[] = [
   { id: "t1", time: "7:00 AM", dur: "60 MIN", category: "Burning Class", type: "Group", coachId: "c5", location: "Main studio", state: "done",
     roster: [R("Kareem Adel", "", false, "Member · 4th session"), R("Mostafa Nabil", "", false, "Member"), R("Seif Amr", "", false, "Member"), R("Amr Gamal", "Ankle sprain (healing)", false, "Member"), R("Ziad Khaled", "", false, "Member"), R("Marwan Sherif", "", false, "Member")] },
   { id: "t2", time: "9:00 AM", dur: "60 MIN", category: "Ladies Class", type: "Group", coachId: "c3", location: "Main studio", state: "done",
-    roster: [R("Nada Sherif", "", false, "Member"), R("Salma Ayman", "Lower back — disc", false, "Member"), R("Menna Tarek", "", false, "Member"), R("Habiba Wael", "", false, "Member · new"), R("Reem Osama", "", false, "Member")] },
+    roster: [R("Nada Sherif", "", false, "Member"), R("Salma Ayman", "Lower back — disc", false, "Member"), R("Menna Tarek", "", false, "Member"), R("Habiba Wael", "Lower back strain — no heavy deadlifts", false, "Member · new"), R("Reem Osama", "", false, "Member")] },
   { id: "t3", time: "11:30 AM", dur: "45 MIN", category: "Rehab", type: "Private", coachId: "c3", location: "Rehab corner", state: "done",
     roster: [R("Malak Sameh", "Right shoulder impingement", false, "Private · knee + shoulder rehab")] },
   { id: "t4", time: "5:00 PM", dur: "60 MIN", category: "Strength Class", type: "Group", coachId: "c1", location: "Main studio", state: "live",
@@ -120,7 +120,7 @@ export const CLIENTS_RAW: ClientRow[] = [
   ["Ziad Khaled", "ZK", "blue", "Athlete Conditioning", "Group", "c2", "Active", "+20 103 847 6690", "Football · U18"],
   ["Yassin Adel", "YA", "blue", "Athlete Conditioning", "Group", "c2", "Trial", "+20 100 553 8842", "Wrist — tapes it"],
   ["Mostafa Nabil", "MN", "amber", "Burning Class", "Group", "c5", "Inactive", "+20 101 334 5512", ""],
-  ["Habiba Wael", "HW", "violet", "Ladies Class", "Group", "c3", "Active", "+20 115 662 7740", ""],
+  ["Habiba Wael", "HW", "violet", "Ladies Class", "Group", "c3", "Active", "+20 115 662 7740", "Lower back strain — no heavy deadlifts"],
 ];
 
 export const CLIENT_PROFILES: Record<string, ClientProfile> = {

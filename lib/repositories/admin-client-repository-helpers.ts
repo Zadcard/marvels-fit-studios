@@ -315,7 +315,7 @@ export function mapAdminClientRecord(client: AdminClientListRecord): AdminClient
     injuryStatus: injuryStatusLabelFor(client.injuryStatus),
     injuryNotes: client.injuryNotes?.trim() ?? "",
     restrictions: client.restrictions?.trim() ?? "",
-    hasInjuryAlert: injuryStatusHasAlert(client.injuryStatus),
+    hasInjuryAlert: injuryStatusHasAlert(client.injuryStatus, client.injuryNotes),
     paymentAmountLabel: client.payments[0]
       ? currencyFormatter.format(client.payments[0].amount)
       : "No payment yet",

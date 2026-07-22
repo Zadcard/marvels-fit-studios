@@ -88,10 +88,23 @@ export function injuryStatusFromLabel(label: string): InjuryStatus {
   return labelToInjuryStatus[label as InjuryStatusLabel] ?? "NONE";
 }
 
-// A client needs an at-a-glance safety alert when they are actively injured or
-// still going through rehab. Previous (healed) injuries stay informational.
-export function injuryStatusHasAlert(value: InjuryStatus): boolean {
-  return value === "CURRENT" || value === "REHAB";
+// A client needs an at-a-glance safety alert when they are actively injured,
+// in rehab, or have an active injury note recorded on their profile.
+export function injuryStatusHasAlert(
+  status: InjuryStatus | string | null | undefined,
+  notes?: string | null | undefined,
+): boolean {
+  const hasNotes = Boolean(notes && notes.trim().length > 0);
+  if (!status) return hasNotes;
+  const statusStr = String(status).toUpperCase();
+  const isAlertStatus =
+    statusStr === "CURRENT" ||
+    statusStr === "REHAB" ||
+    statusStr === "PREVIOUS" ||
+    statusStr === "CURRENT INJURY" ||
+    statusStr === "IN REHAB" ||
+    statusStr === "PREVIOUS INJURY";
+  return isAlertStatus || hasNotes;
 }
 
 // Client lifecycle -----------------------------------------------------------

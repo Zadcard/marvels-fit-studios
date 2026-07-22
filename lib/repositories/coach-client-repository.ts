@@ -260,7 +260,7 @@ export class SupabaseCoachClientRepository implements CoachClientRepository {
           injuryStatus: injuryStatusLabelFor(client.injuryStatus),
           injuryNotes: client.injuryNotes?.trim() ?? "",
           restrictions: client.restrictions?.trim() ?? "",
-          hasInjuryAlert: injuryStatusHasAlert(client.injuryStatus),
+          hasInjuryAlert: injuryStatusHasAlert(client.injuryStatus, client.injuryNotes),
           nextSession: nextSessionLabel,
           lastTouchpoint: describeLastTouchpoint(client),
           currentFocus: describeCurrentFocus(client),

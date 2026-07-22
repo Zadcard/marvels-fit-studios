@@ -19,6 +19,10 @@ export type AttendanceLabel =
 export type AdminAttendanceAttendee = {
   clientId: string;
   fullName: string;
+  email?: string | null;
+  phone?: string | null;
+  groupName?: string | null;
+  categoryName?: string | null;
   status: AttendanceLabel;
   isTrial: boolean;
   hasInjuryAlert: boolean;
@@ -30,6 +34,7 @@ export type AdminAttendanceSession = {
   id: string;
   title: string;
   timeLabel: string;
+  startsAt?: string;
   coachName: string;
   sessionType: "Group" | "Private";
   trainingCategory: string | null;

@@ -11,6 +11,7 @@ import {
 import { Dialog } from "radix-ui";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
+  CalendarCheck,
   CalendarClock,
   CalendarPlus2,
   Check,
@@ -18,6 +19,9 @@ import {
   ChevronRight,
   Clock3,
   Dumbbell,
+  PanelRightClose,
+  PanelRightOpen,
+  Plus,
   Repeat2,
   Search,
   ShieldUser,
@@ -234,6 +238,36 @@ export function AdminScheduleWorkspace({
   const [requestForm, setRequestForm] = useState<RequestForm>(emptyRequestForm);
   const [requestError, setRequestError] = useState("");
   const [requestNotice, setRequestNotice] = useState("");
+  const [requestsCollapsed, setRequestsCollapsed] = useState(false);
+
+  function openCreateAtCell(dayKey: string, minutes: number) {
+    setEditingId(null);
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    const hoursStr = String(hours).padStart(2, "0");
+    const minsStr = String(mins).padStart(2, "0");
+    const startsAt = `${dayKey}T${hoursStr}:${minsStr}`;
+
+    const endMinutes = minutes + defaultDurationMinutes;
+    const endHours = Math.floor(endMinutes / 60);
+    const endMins = endMinutes % 60;
+    const endHoursStr = String(endHours).padStart(2, "0");
+    const endMinsStr = String(endMins).padStart(2, "0");
+    const endsAt = `${dayKey}T${endHoursStr}:${endMinsStr}`;
+
+    setForm({
+      title: "",
+      description: "",
+      type: "GROUP",
+      status: "SCHEDULED",
+      coachId: coachOptions[0]?.id ?? "",
+      groupId: "",
+      startsAt,
+      endsAt,
+    });
+    setError("");
+    setEditorOpen(true);
+  }
 
   const filtered = useMemo(() => {
     const query = deferredSearch.trim().toLowerCase();
@@ -254,14 +288,25 @@ export function AdminScheduleWorkspace({
     addStudioDays(weekStartDate, index),
   );
 
+function formatHourLabel(hour: number) {
+  const period = hour >= 12 ? "PM" : "AM";
+  const displayHour = hour % 12 === 0 ? 12 : hour % 12;
+  return `${displayHour}:00 ${period}`;
+}
+
   const timeRows = useMemo(() => {
-    const map = new Map<number, string>();
-    for (const record of filtered) {
-      const minutes = getCairoMinutes(record.startsAt);
-      if (!map.has(minutes)) map.set(minutes, record.startsAt);
+    const hours: number[] = [];
+    for (let h = 8; h <= 23; h += 1) {
+      hours.push(h);
     }
-    return Array.from(map.entries()).sort((left, right) => left[0] - right[0]);
-  }, [filtered]);
+    hours.push(0); // 12:00 AM Midnight
+
+    return hours.map((hour) => ({
+      hour,
+      minutes: hour * 60,
+      label: formatHourLabel(hour),
+    }));
+  }, []);
 
   const moveTargetOptions = useMemo(() => {
     if (!logRequestFor?.groupId) return [];
@@ -300,6 +345,7 @@ export function AdminScheduleWorkspace({
 
   function openEdit(record: AdminScheduleSessionRecord) {
     if (record.rawStatus === "CANCELED") return;
+    setDetailsOpen(false);
     setEditingId(record.id);
     setForm({
       title: record.title,
@@ -452,14 +498,13 @@ export function AdminScheduleWorkspace({
     <div className={styles.page} aria-busy={isPending}>
       <header className={styles.header}>
         <div><span className={styles.kicker}>Studio calendar</span><h1>Program the week.</h1><p>Create occurrences, link groups, manage rosters, and review coach coverage.</p></div>
-        <div className={styles.headerActions}><button type="button" className="mv-btn mv-btn-primary" onClick={openCreate}><CalendarPlus2 size={17} /> New session</button></div>
       </header>
 
       <section className={styles.stats} aria-label="Schedule summary">
         {stats.map((stat) => <article key={stat.id}><span>{stat.label}</span><strong>{stat.value}</strong><p>{stat.change}</p></article>)}
       </section>
 
-      <section className={styles.reviewLayout}>
+      <section className={styles.reviewLayout} data-requests-collapsed={requestsCollapsed || changeRequests.length === 0 || undefined}>
         <div className={styles.scheduler}>
           <div className={styles.schedulerTop}>
             <div className={styles.monthNav}><button type="button" aria-label="Previous week" onClick={() => navigateWeek(-1)} disabled={isPending}><ChevronLeft size={18} /></button><div><button type="button" className={styles.todayButton} onClick={navigateToday} disabled={isPending}>Today</button><strong>{monthFormatter.format(weekStart)}</strong></div><button type="button" aria-label="Next week" onClick={() => navigateWeek(1)} disabled={isPending}><ChevronRight size={18} /></button></div>
@@ -480,33 +525,54 @@ export function AdminScheduleWorkspace({
               <p className={styles.gridEmpty}>No sessions match these filters.</p>
             ) : (
               <div className={styles.grid}>
-                <div className={styles.gridCorner}>Cairo</div>
+                <div className={styles.gridCorner}><Clock3 size={13} /> Time (EGT)</div>
                 {weekDays.map((dayKey) => {
                   const day = studioDateKeyAnchor(dayKey);
                   return <div className={styles.gridDayHeader} key={dayKey} data-today={dayKey === getStudioDateKey() || undefined}><span>{dayHeaderFormatter.format(day).split(",")[0]}</span><strong>{day.getUTCDate()}</strong></div>;
                 })}
-                {timeRows.map(([minutes, representativeIso]) => (
-                  <Fragment key={minutes}>
-                    <div className={styles.gridTimeLabel}>{timeFormatter.format(new Date(representativeIso))}</div>
+                {timeRows.map(({ hour, minutes, label }) => (
+                  <Fragment key={hour}>
+                    <div className={styles.gridTimeLabel}>{label}</div>
                     {weekDays.map((dayKey) => {
                       const cellRecords = filtered.filter(
-                        (record) => record.dayKey === dayKey && getCairoMinutes(record.startsAt) === minutes,
+                        (record) =>
+                          record.dayKey === dayKey &&
+                          Math.floor(getCairoMinutes(record.startsAt) / 60) === hour,
                       );
                       return (
-                        <div className={styles.gridCell} key={`${dayKey}-${minutes}`}>
-                          {cellRecords.map((record) => (
+                        <div className={styles.gridCell} key={`${dayKey}-${hour}`} data-today={dayKey === getStudioDateKey() || undefined}>
+                          {cellRecords.length === 0 ? (
                             <button
                               type="button"
-                              key={record.id}
-                              className={styles.gridBlock}
-                              style={{ borderLeftColor: coachColor(record.coachId) }}
-                              data-canceled={record.rawStatus === "CANCELED" || undefined}
-                              onClick={() => openDetails(record)}
+                              className={styles.emptySlotButton}
+                              onClick={() => openCreateAtCell(dayKey, minutes)}
+                              aria-label={`Add session on ${dayKey} at ${label}`}
                             >
-                              <span className={styles.gridBlockTitle}>{record.title}</span>
-                              <span className={styles.gridBlockCoach}>{record.coachName}</span>
+                              <Plus size={13} /> Add
                             </button>
-                          ))}
+                          ) : (
+                            <div className={styles.gridCellBlockGroup}>
+                              {cellRecords.map((record) => (
+                                <button
+                                  type="button"
+                                  key={record.id}
+                                  className={styles.gridBlock}
+                                  style={{ borderLeftColor: coachColor(record.coachId) }}
+                                  data-canceled={record.rawStatus === "CANCELED" || undefined}
+                                  data-draft={record.rawStatus === "DRAFT" || undefined}
+                                  data-completed={record.rawStatus === "COMPLETED" || undefined}
+                                  onClick={() => openDetails(record)}
+                                >
+                                  <span className={styles.gridBlockTime}>{record.timeRange}</span>
+                                  <span className={styles.gridBlockTitle}>{record.title}</span>
+                                  <span className={styles.gridBlockCoach}>{record.coachName}</span>
+                                  <span className={styles.gridBlockCapacity}>
+                                    <Users size={10} /> {record.bookedCount} booked
+                                  </span>
+                                </button>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       );
                     })}
@@ -518,54 +584,246 @@ export function AdminScheduleWorkspace({
         </div>
 
         <aside className={styles.requestsCard}>
-          <div className={styles.sectionHeading}><div><span>Change requests</span><h2>Waiting</h2></div><small>{changeRequests.length} waiting</small></div>
-          {requestNotice ? <p className={styles.summaryNotice} role="status">{requestNotice}</p> : null}
-          {changeRequests.length === 0 ? (
-            <p className={styles.noRequests}>No pending requests.</p>
-          ) : (
-            <div className={styles.requestList}>
-              {changeRequests.map((request) => (
-                <div className={styles.requestItem} key={request.id}>
-                  <div className={styles.requestItemHead}>
-                    <div><strong>{request.clientName}</strong><small>{request.reason}</small></div>
-                    <span
-                      className={styles.requestBadge}
-                      data-recurring={
-                        request.kind === "RECURRING_WEEKDAYS" || request.kind === "PERMANENT_GROUP_CHANGE"
-                          ? true
-                          : undefined
-                      }
-                    >
-                      {request.kindLabel}
-                    </span>
-                  </div>
-                  <p className={styles.requestDescription}>{request.description}</p>
-                  <div className={styles.requestActions}>
-                    <button type="button" className={styles.approveButton} disabled={isPending} onClick={() => decideRequest(request.id, "APPROVED")}><Check size={14} /> Approve</button>
-                    <button type="button" className={styles.declineButton} disabled={isPending} onClick={() => decideRequest(request.id, "DECLINED")}>Decline</button>
-                  </div>
-                </div>
-              ))}
+          <div className={styles.sectionHeading}>
+            <div><span>Change requests</span><h2>Waiting</h2></div>
+            <div className={styles.requestHeadingRight}>
+              <small>{changeRequests.length} waiting</small>
+              <button
+                type="button"
+                className={styles.toggleRequestsButton}
+                onClick={() => setRequestsCollapsed(!requestsCollapsed)}
+                aria-label={requestsCollapsed ? "Expand requests panel" : "Collapse requests panel"}
+                title={requestsCollapsed ? "Expand requests panel" : "Collapse requests panel"}
+              >
+                {requestsCollapsed ? <PanelRightOpen size={16} /> : <PanelRightClose size={16} />}
+              </button>
             </div>
+          </div>
+          {!requestsCollapsed && (
+            <>
+              {requestNotice ? <p className={styles.summaryNotice} role="status">{requestNotice}</p> : null}
+              {changeRequests.length === 0 ? (
+                <p className={styles.noRequests}>No pending requests.</p>
+              ) : (
+                <div className={styles.requestList}>
+                  {changeRequests.map((request) => (
+                    <div className={styles.requestItem} key={request.id}>
+                      <div className={styles.requestItemHead}>
+                        <div><strong>{request.clientName}</strong><small>{request.reason}</small></div>
+                        <span
+                          className={styles.requestBadge}
+                          data-recurring={
+                            request.kind === "RECURRING_WEEKDAYS" || request.kind === "PERMANENT_GROUP_CHANGE"
+                              ? true
+                              : undefined
+                          }
+                        >
+                          {request.kindLabel}
+                        </span>
+                      </div>
+                      <p className={styles.requestDescription}>{request.description}</p>
+                      <div className={styles.requestActions}>
+                        <button type="button" className={styles.approveButton} disabled={isPending} onClick={() => decideRequest(request.id, "APPROVED")}><Check size={14} /> Approve</button>
+                        <button type="button" className={styles.declineButton} disabled={isPending} onClick={() => decideRequest(request.id, "DECLINED")}>Decline</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </aside>
       </section>
 
-      <Dialog.Root open={detailsOpen && !!selected} onOpenChange={setDetailsOpen}><Dialog.Portal><Dialog.Overlay className={styles.overlay} /><Dialog.Content className={styles.editor}>{selected ? <>
-        <Dialog.Title asChild><h2>{selected.title}</h2></Dialog.Title>
-        <Dialog.Description>{selected.dayLabel}, {selected.dateLabel} · {selected.timeRange}</Dialog.Description>
-        <Dialog.Close className={styles.close} aria-label="Close session details"><X size={18} /></Dialog.Close>
-        <div className={styles.inspectorStatus}><span className={statusClass(selected.status)}>{selected.rawStatus === "CANCELED" ? "Canceled" : selected.status}</span><span>{selected.sessionType}</span></div>
-        <dl><div><dt><Clock3 size={15} /> Time</dt><dd>{selected.dayLabel}, {selected.dateLabel}<br />{selected.timeRange}</dd></div><div><dt><ShieldUser size={15} /> Coach</dt><dd>{selected.coachName}</dd></div><div><dt><Users size={15} /> Booked</dt><dd>{selected.bookedCount} booked<br />{selected.waitlistCount} waitlisted</dd></div><div><dt><Dumbbell size={15} /> Group</dt><dd>{selected.groupName}</dd></div></dl>
-        <div className={styles.inspectorNote}><strong>Roster</strong>{selected.bookedClients.length ? <ul>{selected.bookedClients.map((client) => <li key={client.id}><span>{client.fullName} · {client.status}</span>{selected.rawStatus === "SCHEDULED" || selected.rawStatus === "DRAFT" ? <div><button type="button" onClick={() => openLogRequest(client)}><CalendarClock size={13} /> Log request</button><button type="button" disabled={isPending} onClick={() => setConfirmation({ kind: "remove-booking", sessionId: selected.id, clientId: client.id, label: client.fullName })}>Remove</button></div> : null}</li>)}</ul> : <p>No clients booked.</p>}{selected.rawStatus === "SCHEDULED" || selected.rawStatus === "DRAFT" ? <div><select aria-label="Client to add" value={bookingClientId} onChange={(event) => setBookingClientId(event.target.value)}><option value="">Select client</option>{availableClients.map((client) => <option key={client.id} value={client.id}>{client.fullName}</option>)}</select><button type="button" disabled={!bookingClientId || isPending} onClick={addBooking}><UserPlus size={14} /> Add</button></div> : null}</div>
-        <div className={styles.inspectorNote}><strong>Training focus</strong><p>{selected.focus}</p></div>
-        {selected.sourceTemplateId ? <div className={styles.inspectorNote}><strong><Repeat2 size={14} /> {selected.isTemplateException ? "Recurring exception" : "Recurring occurrence"}</strong><p>{selected.isTemplateException ? "This occurrence has an intentional day or time override." : "Editing or cancelling here changes this occurrence only."}</p></div> : null}
-        <div className={styles.inspectorActions}>
-          {selected.rawStatus !== "CANCELED" ? <button type="button" className="mv-btn mv-btn-primary" onClick={() => openEdit(selected)}>Edit session</button> : null}
-          {selected.rawStatus === "DRAFT" || selected.rawStatus === "SCHEDULED" ? <button type="button" className={styles.cancelButton} onClick={() => setConfirmation({ kind: "cancel", sessionId: selected.id, label: selected.title, withinCancellationWindow: cancellationWindowMinutes > 0 && Date.parse(selected.startsAt) - Date.now() < cancellationWindowMinutes * 60_000 })} disabled={isPending}><XCircle size={16} /> Cancel session</button> : null}
-          {selected.rawStatus === "DRAFT" && selected.bookedClients.length === 0 ? <button type="button" className={styles.cancelButton} onClick={() => setConfirmation({ kind: "delete", sessionId: selected.id, label: selected.title })} disabled={isPending}><Trash2 size={16} /> Delete draft</button> : null}
-        </div>
-      </> : null}</Dialog.Content></Dialog.Portal></Dialog.Root>
+      <Dialog.Root open={detailsOpen && !!selected} onOpenChange={setDetailsOpen}>
+        <Dialog.Portal>
+          <Dialog.Overlay className={styles.overlay} />
+          <Dialog.Content className={styles.inspectorModal}>
+            {selected ? (
+              <>
+                <div className={styles.inspectorHeader}>
+                  <div>
+                    <div className={styles.inspectorBadges}>
+                      <span className={styles.typeBadge}>{selected.sessionType}</span>
+                      <span className={statusClass(selected.status)}>
+                        {selected.rawStatus === "CANCELED" ? "Canceled" : selected.status}
+                      </span>
+                    </div>
+                    <Dialog.Title className={styles.inspectorTitle}>{selected.title}</Dialog.Title>
+                    <Dialog.Description className={styles.inspectorSubtitle}>
+                      {selected.dayLabel}, {selected.dateLabel} · {selected.timeRange}
+                    </Dialog.Description>
+                  </div>
+                  <Dialog.Close className={styles.close} aria-label="Close session details">
+                    <X size={18} />
+                  </Dialog.Close>
+                </div>
+
+                <div className={styles.inspectorGrid}>
+                  <div className={styles.inspectorGridCard}>
+                    <div className={styles.inspectorCardHead}>
+                      <Clock3 size={14} />
+                      <span>Time & Date</span>
+                    </div>
+                    <strong>{selected.dayLabel}, {selected.dateLabel}</strong>
+                    <small>{selected.timeRange}</small>
+                  </div>
+
+                  <div className={styles.inspectorGridCard}>
+                    <div className={styles.inspectorCardHead}>
+                      <ShieldUser size={14} />
+                      <span>Coach</span>
+                    </div>
+                    <strong>{selected.coachName}</strong>
+                    <small>Session Lead</small>
+                  </div>
+
+                  <div className={styles.inspectorGridCard}>
+                    <div className={styles.inspectorCardHead}>
+                      <Users size={14} />
+                      <span>Bookings</span>
+                    </div>
+                    <strong>{selected.bookedCount} Booked</strong>
+                    <small>{selected.waitlistCount} Waitlisted</small>
+                  </div>
+
+                  <div className={styles.inspectorGridCard}>
+                    <div className={styles.inspectorCardHead}>
+                      <Dumbbell size={14} />
+                      <span>Group</span>
+                    </div>
+                    <strong>{selected.groupName}</strong>
+                    <small>Category</small>
+                  </div>
+                </div>
+
+                <div className={styles.inspectorSectionCard}>
+                  <h3>Client Roster ({selected.bookedClients.length})</h3>
+                  {selected.bookedClients.length ? (
+                    <ul className={styles.rosterList}>
+                      {selected.bookedClients.map((client) => (
+                        <li key={client.id} className={styles.rosterListItem}>
+                          <div className={styles.rosterClientInfo}>
+                            <span className={styles.clientName}>{client.fullName}</span>
+                            {client.status !== "BOOKED" ? (
+                              <span className={styles.clientStatusBadge} data-status={client.status}>
+                                {client.status === "ATTENDED"
+                                  ? "Attended"
+                                  : client.status === "MISSED"
+                                    ? "Absent"
+                                    : client.status === "WAITLIST"
+                                      ? "Waitlist"
+                                      : client.status}
+                              </span>
+                            ) : null}
+                          </div>
+                          {selected.rawStatus === "SCHEDULED" || selected.rawStatus === "DRAFT" ? (
+                            <div className={styles.clientActions}>
+                              <button type="button" onClick={() => openLogRequest(client)}>
+                                <CalendarClock size={13} /> Request
+                              </button>
+                              <button
+                                type="button"
+                                disabled={isPending}
+                                onClick={() => setConfirmation({ kind: "remove-booking", sessionId: selected.id, clientId: client.id, label: client.fullName })}
+                              >
+                                Remove
+                              </button>
+                            </div>
+                          ) : null}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className={styles.emptyRosterText}>No clients booked for this session.</p>
+                  )}
+
+                  {selected.rawStatus === "SCHEDULED" || selected.rawStatus === "DRAFT" ? (
+                    <div className={styles.addClientRow}>
+                      <select
+                        aria-label="Client to add"
+                        value={bookingClientId}
+                        onChange={(event) => setBookingClientId(event.target.value)}
+                      >
+                        <option value="">Select client to add...</option>
+                        {availableClients.map((client) => (
+                          <option key={client.id} value={client.id}>
+                            {client.fullName}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        disabled={!bookingClientId || isPending}
+                        onClick={addBooking}
+                        className="mv-btn mv-btn-primary"
+                      >
+                        <UserPlus size={14} /> Add
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
+
+                {selected.focus ? (
+                  <div className={styles.inspectorSectionCard}>
+                    <h3>Training Focus</h3>
+                    <p className={styles.emptyRosterText}>{selected.focus}</p>
+                  </div>
+                ) : null}
+
+                {selected.sourceTemplateId ? (
+                  <div className={styles.inspectorSectionCard}>
+                    <h3 style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                      <Repeat2 size={14} />{" "}
+                      {selected.isTemplateException ? "Recurring exception" : "Recurring occurrence"}
+                    </h3>
+                    <p className={styles.emptyRosterText}>
+                      {selected.isTemplateException
+                        ? "This occurrence has an intentional day or time override."
+                        : "Editing or cancelling here changes this occurrence only."}
+                    </p>
+                  </div>
+                ) : null}
+
+                <div className={styles.inspectorFooter}>
+                  <a
+                    href={`/admin/attendance?session=${selected.id}`}
+                    className="mv-btn mv-btn-secondary"
+                    style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
+                  >
+                    <CalendarCheck size={16} /> Attendance →
+                  </a>
+                  {selected.rawStatus !== "CANCELED" ? (
+                    <button type="button" className="mv-btn mv-btn-primary" onClick={() => openEdit(selected)}>
+                      Edit session
+                    </button>
+                  ) : null}
+                  {selected.rawStatus === "DRAFT" || selected.rawStatus === "SCHEDULED" ? (
+                    <button
+                      type="button"
+                      className={styles.cancelButton}
+                      onClick={() => setConfirmation({ kind: "cancel", sessionId: selected.id, label: selected.title, withinCancellationWindow: cancellationWindowMinutes > 0 && Date.parse(selected.startsAt) - Date.now() < cancellationWindowMinutes * 60_000 })}
+                      disabled={isPending}
+                    >
+                      <XCircle size={16} /> Cancel
+                    </button>
+                  ) : null}
+                  {selected.rawStatus === "DRAFT" && selected.bookedClients.length === 0 ? (
+                    <button
+                      type="button"
+                      className={styles.cancelButton}
+                      onClick={() => setConfirmation({ kind: "delete", sessionId: selected.id, label: selected.title })}
+                      disabled={isPending}
+                    >
+                      <Trash2 size={16} /> Delete draft
+                    </button>
+                  ) : null}
+                </div>
+              </>
+            ) : null}
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
 
       <Dialog.Root open={editorOpen} onOpenChange={setEditorOpen}><Dialog.Portal><Dialog.Overlay className={styles.overlay} /><Dialog.Content className={styles.editor}><Dialog.Title>{editingId ? "Edit session" : "Create a session"}</Dialog.Title><Dialog.Description>Define the occurrence, linked group, coach, and timing.</Dialog.Description><Dialog.Close className={styles.close} aria-label="Close session editor"><X size={18} /></Dialog.Close><form onSubmit={submitSession} className={styles.form}>
         <label className={styles.full}>Session title<input required value={form.title} onChange={(event) => setForm((value) => ({ ...value, title: event.target.value }))} /></label>

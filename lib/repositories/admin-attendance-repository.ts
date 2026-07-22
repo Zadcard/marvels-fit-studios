@@ -38,20 +38,23 @@ function toAttendanceLabel(status: BookingStatus): AttendanceLabel {
 }
 
 export class AdminAttendanceRepository {
-  async getToday(): Promise<AdminAttendanceSession[]> {
+  async getForDate(dateKey?: string): Promise<AdminAttendanceSession[]> {
     return withSupabaseFallback<AdminAttendanceSession[]>(async () => {
       const now = new Date();
+      const dayAnchor = dateKey
+        ? new Date(dateKey.includes("T") ? dateKey : `${dateKey}T00:00:00Z`)
+        : now;
       const startOfDay = new Date(
-        now.getFullYear(),
-        now.getMonth(),
-        now.getDate(),
+        dayAnchor.getUTCFullYear(),
+        dayAnchor.getUTCMonth(),
+        dayAnchor.getUTCDate(),
       );
       const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000);
 
       const { data, error } = await getSupabaseServerClient()
         .from("TrainingSession")
         .select(
-          "id,title,type,status,startsAt,coach:Coach(fullName),group:Group(category:TrainingCategory(name)),bookings:SessionBooking(status,client:Client(id,fullName,status,injuryStatus,injuryNotes))",
+          "id,title,type,status,startsAt,coach:Coach(fullName),group:Group(category:TrainingCategory(name)),bookings:SessionBooking(status,client:Client(id,fullName,phone,status,injuryStatus,injuryNotes,user:User(email),group:Group(id,name,category:TrainingCategory(name))))",
         )
         .neq("status", "CANCELED")
         .gte("startsAt", startOfDay.toISOString())
@@ -61,21 +64,29 @@ export class AdminAttendanceRepository {
 
       return data.map((session) => {
         const attendees: AdminAttendanceAttendee[] = session.bookings
-          .map((booking) => ({
-            clientId: booking.client.id,
-            fullName: booking.client.fullName,
-            status: toAttendanceLabel(booking.status),
-            isTrial: booking.client.status === "TRIAL",
-            hasInjuryAlert: injuryStatusHasAlert(booking.client.injuryStatus),
-            injuryStatus: injuryStatusLabelFor(booking.client.injuryStatus),
-            injuryNotes: booking.client.injuryNotes?.trim() ?? "",
-          }))
+          .map((booking) => {
+            const client = booking.client;
+            return {
+              clientId: client.id,
+              fullName: client.fullName,
+              email: client.user?.email ?? null,
+              phone: client.phone ?? null,
+              groupName: client.group?.name ?? session.group?.category?.name ?? null,
+              categoryName: client.group?.category?.name ?? session.group?.category?.name ?? null,
+              status: toAttendanceLabel(booking.status),
+              isTrial: client.status === "TRIAL",
+              hasInjuryAlert: injuryStatusHasAlert(client.injuryStatus, client.injuryNotes),
+              injuryStatus: injuryStatusLabelFor(client.injuryStatus),
+              injuryNotes: client.injuryNotes?.trim() ?? "",
+            };
+          })
           .sort((left, right) => left.fullName.localeCompare(right.fullName));
 
         return {
           id: session.id,
           title: session.title,
           timeLabel: timeFormatter.format(new Date(session.startsAt)),
+          startsAt: session.startsAt,
           coachName: session.coach?.fullName ?? "Unassigned",
           sessionType: session.type === "PRIVATE" ? "Private" : "Group",
           trainingCategory: session.group?.category?.name ?? null,
@@ -83,6 +94,10 @@ export class AdminAttendanceRepository {
         };
       });
     }, []);
+  }
+
+  async getToday(): Promise<AdminAttendanceSession[]> {
+    return this.getForDate();
   }
 }
 

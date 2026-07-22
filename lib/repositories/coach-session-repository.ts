@@ -123,7 +123,7 @@ export class CoachSessionRepository {
             injuryStatus: injuryStatusLabelFor(booking.client.injuryStatus),
             injuryNotes: booking.client.injuryNotes?.trim() ?? "",
             restrictions: booking.client.restrictions?.trim() ?? "",
-            hasInjuryAlert: injuryStatusHasAlert(booking.client.injuryStatus),
+            hasInjuryAlert: injuryStatusHasAlert(booking.client.injuryStatus, booking.client.injuryNotes),
           };
         })
         .filter((booking): booking is CoachSessionBookingRecord => booking !== null);

@@ -5,13 +5,24 @@ export const metadata = {
   title: "Attendance",
 };
 
-export default async function AdminAttendancePage() {
-  const liveSessions = await adminAttendanceRepository.getToday();
+function singleValue(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+export default async function AdminAttendancePage(
+  props: PageProps<"/admin/attendance">,
+) {
+  const searchParams = await props.searchParams;
+  const sessionId = singleValue(searchParams?.session);
+  const dateKey = singleValue(searchParams?.date);
+  const liveSessions = await adminAttendanceRepository.getForDate(dateKey);
 
   return (
     <AdminAttendanceWorkspace
       sessions={liveSessions}
       dataSource="live"
+      initialSessionId={sessionId}
+      initialDateKey={dateKey}
     />
   );
 }

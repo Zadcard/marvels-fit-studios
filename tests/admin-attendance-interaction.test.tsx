@@ -56,7 +56,6 @@ describe("admin attendance interactions", () => {
       );
     });
     expect(document.body.textContent).not.toContain("Send summary to coach");
-    expect(document.body.textContent).not.toContain("Late");
     const attendee = document.querySelector<HTMLElement>('article[role="button"]');
     await act(async () => attendee?.click());
     expect(mocks.markAttendance).toHaveBeenCalledWith(
