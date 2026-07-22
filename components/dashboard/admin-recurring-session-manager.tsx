@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useTransition, type FormEvent } from "react";
-import { CalendarRange, Pause, Play, Plus, Repeat2, Trash2, X } from "lucide-react";
+import { CalendarRange, Pause, Play, Plus, Repeat2, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { Dialog } from "radix-ui";
 
 import {
   deleteRecurringSessionTemplate,
@@ -21,6 +20,7 @@ import type {
 import type { AdminSessionCoachOption } from "@/lib/repositories/admin-session-repository";
 import { addStudioDays, getStudioDateKey } from "@/lib/time/studio-time";
 import { SeriesSlotsEditor } from "./series-slots-editor";
+import { EntityDialog } from "@/components/ui/entity-form";
 import styles from "./admin-recurring-session-manager.module.css";
 
 type FormState = {
@@ -182,14 +182,9 @@ export function AdminRecurringSessionManager({
   }
 
   return (
-    <Dialog.Root open={open} onOpenChange={setOpen}>
-      <Dialog.Trigger asChild><button type="button" className="mv-btn mv-btn-secondary"><Repeat2 size={16} /> Recurring series</button></Dialog.Trigger>
-      <Dialog.Portal>
-        <Dialog.Overlay className={styles.overlay} />
-        <Dialog.Content className={styles.dialog}>
-          <Dialog.Title>Recurring series</Dialog.Title>
-          <Dialog.Description>Create and manage series with one or more weekly slots. Edits sync upcoming sessions automatically.</Dialog.Description>
-          <Dialog.Close className={styles.close} aria-label="Close recurring series"><X size={18} /></Dialog.Close>
+    <>
+      <button type="button" className="mv-btn mv-btn-secondary" onClick={() => setOpen(true)}><Repeat2 size={16} /> Recurring series</button>
+      <EntityDialog open={open} onOpenChange={setOpen} title="Recurring series" description="Create and manage series with one or more weekly slots. Edits sync upcoming sessions automatically." closeLabel="Close recurring series" size="wide">
           <div className={styles.layout} aria-busy={pending}>
             <aside className={styles.list}>
               <button type="button" className={styles.newButton} onClick={createNew}><Plus size={15} /> New series</button>
@@ -213,8 +208,7 @@ export function AdminRecurringSessionManager({
               <footer className={styles.full}><button type="button" className="mv-btn mv-btn-secondary" onClick={() => setOpen(false)}>Close</button><button type="submit" className="mv-btn mv-btn-primary" disabled={pending}>{pending ? "Saving…" : selectedId ? "Save series" : "Create series"}</button></footer>
             </form>
           </div>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+      </EntityDialog>
+    </>
   );
 }

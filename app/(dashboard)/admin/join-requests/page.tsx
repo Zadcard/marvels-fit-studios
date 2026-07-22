@@ -2,6 +2,7 @@ import { MarvelOpsAdminView } from "@/components/dashboard/marvel-ops-admin-view
 import type { MarvelOpsLead } from "@/components/dashboard/marvel-ops-admin-view";
 import { adminGroupRepository } from "@/lib/repositories/admin-group-repository";
 import { adminLeadRepository } from "@/lib/repositories/admin-lead-repository";
+import { adminTrainingCategoryRepository } from "@/lib/repositories/admin-training-category-repository";
 import { normalizeLeadSource } from "@/lib/dashboard/lead-source";
 
 export const metadata = { title: "Leads & Trials" };
@@ -21,10 +22,15 @@ function stageFor(status: string): MarvelOpsLead["stage"] {
 }
 
 export default async function AdminJoinRequestsPage() {
-  const [{ records }, { records: groups }] = await Promise.all([
+  const [{ records }, groupData, categories] = await Promise.all([
     adminLeadRepository.list(),
     adminGroupRepository.list(),
+    adminTrainingCategoryRepository.options({ activeOnly: true }),
   ]);
+  const activeCategoryIds = new Set(categories.map((category) => category.id));
+  const groups = groupData.records.filter(
+    (group) => group.isActive && activeCategoryIds.has(group.categoryId),
+  );
   const initialLeads: MarvelOpsLead[] = records.map((record, index) => ({
     id: record.id,
     stage: stageFor(record.status),
@@ -34,6 +40,7 @@ export default async function AdminJoinRequestsPage() {
     source: normalizeLeadSource(record.source),
     phone: record.phone,
     wants: record.interestedCategory ?? "Trial consultation",
+    categoryId: record.categoryId ?? undefined,
     note: record.message,
     assigned: record.trialGroupId ? `Trial: ${groups.find((group) => group.id === record.trialGroupId)?.name ?? "Assigned group"}` : undefined,
     trialGroupId: record.trialGroupId ?? undefined,
@@ -41,5 +48,5 @@ export default async function AdminJoinRequestsPage() {
     lostReason: record.lostReason ?? undefined,
   }));
 
-  return <MarvelOpsAdminView view="leads" initialLeads={initialLeads} trialGroups={groups.filter((group) => group.isActive).map((group) => ({ id: group.id, name: group.name }))} />;
+  return <MarvelOpsAdminView view="leads" initialLeads={initialLeads} categoryOptions={categories} trialGroups={groups.map((group) => ({ id: group.id, name: group.name, categoryId: group.categoryId }))} />;
 }

@@ -2,8 +2,7 @@
 
 import { useMemo, useState, useTransition, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { Dialog } from "radix-ui";
-import { Pencil, Plus, Trash2, Users, UsersRound, X } from "lucide-react";
+import { Pencil, Plus, Trash2, Users, UsersRound } from "lucide-react";
 
 import {
   deleteAdminGroup,
@@ -20,6 +19,7 @@ import { useDashboardToast } from "./dashboard-toast-provider";
 import { SeriesSlotsEditor } from "./series-slots-editor";
 import type { RecurringSessionTemplateSlot } from "@/lib/dashboard/recurring-session-template";
 import { getStudioDateKey } from "@/lib/time/studio-time";
+import { ConfirmDeleteDialog, EntityDialog } from "@/components/ui/entity-form";
 import styles from "./admin-groups-workspace.module.css";
 
 type Props = {
@@ -294,7 +294,7 @@ export function AdminGroupsWorkspace({
                 </div>
 
                 <dl className={styles.statRow}>
-                  <div><dt>Category</dt><dd>{record.categoryName}</dd></div>
+                  {!embeddedCategoryId ? <div><dt>Program</dt><dd>{record.categoryName}</dd></div> : null}
                   <div><dt>Type</dt><dd>{record.groupType}</dd></div>
                 </dl>
 
@@ -332,13 +332,7 @@ export function AdminGroupsWorkspace({
       )}
 
       {/* Editor */}
-      <Dialog.Root open={editorOpen} onOpenChange={setEditorOpen}>
-        <Dialog.Portal>
-          <Dialog.Overlay className={styles.overlay} />
-          <Dialog.Content className={styles.editor}>
-            <Dialog.Title asChild><h2>{editingId ? "Edit group" : "New group"}</h2></Dialog.Title>
-            <Dialog.Description>Set the coach, training category, schedule, and status.</Dialog.Description>
-            <Dialog.Close className={styles.close} aria-label="Close"><X size={18} /></Dialog.Close>
+      <EntityDialog open={editorOpen} onOpenChange={setEditorOpen} title={editingId ? "Edit group" : "New group"} description="Set the coach, program, members, recurring schedule, and status." closeLabel="Close group editor">
             <form className={styles.form} onSubmit={submitGroup}>
               <label className={styles.full}>
                 Group name
@@ -351,7 +345,7 @@ export function AdminGroupsWorkspace({
                 </select>
               </label>
               <label>
-                Training category
+                Program
                 <select required disabled={Boolean(embeddedCategoryId)} value={form.categoryId} onChange={(event) => setForm((value) => ({ ...value, categoryId: event.target.value, coachId: "" }))}>
                   <option value="">Select a category</option>
                   {categoryOptions.filter((option) => option.isActive || option.id === form.categoryId).map((option) => <option key={option.id} value={option.id}>{option.name}{option.isActive ? "" : " (archived)"}</option>)}
@@ -419,18 +413,10 @@ export function AdminGroupsWorkspace({
                 <button type="submit" className="mv-btn mv-btn-primary" disabled={isPending}>{isPending ? "Saving…" : "Save group"}</button>
               </div>
             </form>
-          </Dialog.Content>
-        </Dialog.Portal>
-      </Dialog.Root>
+      </EntityDialog>
 
       {/* Members */}
-      <Dialog.Root open={!!managingGroup} onOpenChange={(open) => !open && setMembersId(null)}>
-        <Dialog.Portal>
-          <Dialog.Overlay className={styles.overlay} />
-          <Dialog.Content className={styles.editor}>
-            <Dialog.Title asChild><h2>{managingGroup?.name ?? "Group"} members</h2></Dialog.Title>
-            <Dialog.Description>Add or remove clients in this group.</Dialog.Description>
-            <Dialog.Close className={styles.close} aria-label="Close"><X size={18} /></Dialog.Close>
+      <EntityDialog open={!!managingGroup} onOpenChange={(open) => !open && setMembersId(null)} title={`${managingGroup?.name ?? "Group"} members`} description="Add or remove clients in this group." closeLabel="Close group members" size="small">
             {managingGroup ? (
               <>
                 <div className={styles.memberList}>
@@ -456,30 +442,10 @@ export function AdminGroupsWorkspace({
                 {error ? <p className={styles.error} role="alert">{error}</p> : null}
               </>
             ) : null}
-          </Dialog.Content>
-        </Dialog.Portal>
-      </Dialog.Root>
+      </EntityDialog>
 
       {/* Delete confirm */}
-      <Dialog.Root open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <Dialog.Portal>
-          <Dialog.Overlay className={styles.overlay} />
-          <Dialog.Content className={styles.confirm}>
-            <Dialog.Title asChild><h2>Delete this group?</h2></Dialog.Title>
-            <Dialog.Description>Members are unassigned but not deleted. Type Delete to confirm.</Dialog.Description>
-            <label className={styles.full}>
-              Confirmation
-              <input value={deleteText} onChange={(event) => setDeleteText(event.target.value)} placeholder="Delete" />
-            </label>
-            {error ? <p className={styles.error} role="alert">{error}</p> : null}
-            <div className={styles.formActions}>
-              <span />
-              <button type="button" className="mv-btn mv-btn-secondary" onClick={() => setDeleteOpen(false)}>Cancel</button>
-              <button type="button" className={styles.deleteButton} disabled={deleteText !== "Delete" || isPending} onClick={confirmDelete}>Delete permanently</button>
-            </div>
-          </Dialog.Content>
-        </Dialog.Portal>
-      </Dialog.Root>
+      <ConfirmDeleteDialog open={deleteOpen} onOpenChange={setDeleteOpen} title="Delete this group?" description="Members are unassigned but not deleted. Type Delete to confirm." confirmationValue={deleteText} onConfirmationChange={setDeleteText} error={error} pending={isPending} onConfirm={confirmDelete} closeLabel="Close group deletion" />
     </div>
   );
 }

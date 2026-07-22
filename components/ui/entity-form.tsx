@@ -13,7 +13,7 @@ type EntityDialogProps = {
   title: ReactNode;
   description?: ReactNode;
   closeLabel: string;
-  size?: "default" | "small";
+  size?: "default" | "small" | "wide";
   children: ReactNode;
 };
 
@@ -31,7 +31,7 @@ export function EntityDialog({
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay className={styles.overlay} />
-        <Dialog.Content className={cn(styles.dialog, size === "small" && styles.dialogSmall)}>
+        <Dialog.Content className={cn(styles.dialog, size === "small" && styles.dialogSmall, size === "wide" && styles.dialogWide)}>
           <Dialog.Title className={styles.title}>{title}</Dialog.Title>
           <Dialog.Description className={description ? styles.description : "sr-only"}>
             {description ?? "Create or update this record."}
@@ -87,6 +87,7 @@ type FormActionsProps = {
   submitLabel: string;
   pendingLabel?: string;
   pending?: boolean;
+  disabled?: boolean;
 };
 
 /** Standard Delete / Cancel / Save row for entity editor forms. */
@@ -97,6 +98,7 @@ export function FormActions({
   submitLabel,
   pendingLabel,
   pending,
+  disabled,
 }: FormActionsProps) {
   return (
     <div className={styles.actions}>
@@ -110,7 +112,7 @@ export function FormActions({
       <button type="button" className="mv-btn mv-btn-secondary" onClick={onCancel}>
         Cancel
       </button>
-      <button type="submit" className="mv-btn mv-btn-primary" disabled={pending}>
+      <button type="submit" className="mv-btn mv-btn-primary" disabled={pending || disabled}>
         {pending && pendingLabel ? pendingLabel : submitLabel}
       </button>
     </div>

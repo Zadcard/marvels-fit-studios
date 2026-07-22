@@ -2,10 +2,10 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Dialog } from "radix-ui";
-import { BanknoteArrowDown, X } from "lucide-react";
+import { BanknoteArrowDown } from "lucide-react";
 
 import { recordStudioExpense } from "@/app/actions/admin-expenses";
+import { EntityDialog, EntityForm, FormActions, FormField } from "@/components/ui/entity-form";
 import { useDashboardToast } from "./dashboard-toast-provider";
 import styles from "./admin-cash-out-dialog.module.css";
 
@@ -35,14 +35,10 @@ export function AdminCashOutDialog() {
     setCategory("SUPPLIES");
   }
 
-  return <Dialog.Root open={open} onOpenChange={(next) => { setOpen(next); if (next) reset(); }}>
-    <Dialog.Trigger asChild><button className={styles.trigger} type="button">+ Record cash out</button></Dialog.Trigger>
-    <Dialog.Portal>
-      <Dialog.Overlay className={styles.overlay} />
-      <Dialog.Content className={styles.content}>
-        <header><span><BanknoteArrowDown size={18} /><Dialog.Title>Record cash out</Dialog.Title></span><Dialog.Close asChild><button type="button" aria-label="Close cash out"><X size={18} /></button></Dialog.Close></header>
-        <Dialog.Description className="sr-only">Record an auditable operating expense in the studio ledger.</Dialog.Description>
-        {saved ? <div className={styles.confirmation}><strong>Cash out recorded</strong><p>The expense is posted to the studio ledger and included in reports.</p><Dialog.Close asChild><button type="button">Done</button></Dialog.Close></div> : <form onSubmit={(event) => {
+  return <>
+    <button className="mv-btn mv-btn-secondary" type="button" onClick={() => { reset(); setOpen(true); }}><BanknoteArrowDown size={16} /> Record cash out</button>
+    <EntityDialog open={open} onOpenChange={setOpen} title="Record cash out" description="Record an auditable operating expense in the studio ledger." closeLabel="Close cash out" size="small">
+        {saved ? <div className={styles.confirmation}><strong>Cash out recorded</strong><p>The expense is posted to the studio ledger and included in reports.</p><button className="mv-btn mv-btn-primary" type="button" onClick={() => setOpen(false)}>Done</button></div> : <EntityForm onSubmit={(event) => {
           event.preventDefault();
           setError("");
           const data = new FormData(event.currentTarget);
@@ -66,15 +62,14 @@ export function AdminCashOutDialog() {
             }
           });
         }}>
-          <label>Amount (EGP)<input name="amount" type="number" inputMode="decimal" min="0.01" max="10000000" step="0.01" placeholder="0.00" required /></label>
-          <label>Category <span className={styles.chips}>{categories.map(([value, label]) => <button key={value} type="button" data-active={category === value || undefined} onClick={() => setCategory(value)}>{label}</button>)}</span></label>
-          <label>Occurred at<input name="occurredAt" type="datetime-local" max={localDateTimeValue()} defaultValue={localDateTimeValue()} required /></label>
-          <label>Description<textarea name="description" maxLength={300} placeholder="What was this payment for?" rows={3} required /></label>
-          <label>Receipt / reference<input name="reference" maxLength={120} placeholder="Optional paper receipt or transfer reference" /></label>
+          <FormField label="Amount (EGP)" required full><input name="amount" type="number" inputMode="decimal" min="0.01" max="10000000" step="0.01" placeholder="0.00" required /></FormField>
+          <FormField label="Category" full><span className={styles.chips}>{categories.map(([value, label]) => <button key={value} type="button" data-active={category === value || undefined} onClick={() => setCategory(value)}>{label}</button>)}</span></FormField>
+          <FormField label="Occurred at" required full><input name="occurredAt" type="datetime-local" max={localDateTimeValue()} defaultValue={localDateTimeValue()} required /></FormField>
+          <FormField label="Description" required full><textarea name="description" maxLength={300} placeholder="What was this payment for?" rows={3} required /></FormField>
+          <FormField label="Receipt / reference" full><input name="reference" maxLength={120} placeholder="Optional paper receipt or transfer reference" /></FormField>
           {error ? <p className={styles.error} role="alert">{error}</p> : null}
-          <button className={styles.submit} type="submit" disabled={pending}>{pending ? "Recording..." : "Record cash out"}</button>
-        </form>}
-      </Dialog.Content>
-    </Dialog.Portal>
-  </Dialog.Root>;
+          <FormActions onCancel={() => setOpen(false)} submitLabel="Record cash out" pendingLabel="Recording…" pending={pending} />
+        </EntityForm>}
+    </EntityDialog>
+  </>;
 }

@@ -2,7 +2,7 @@ import { AdminTrainingCategoriesWorkspace } from "@/components/dashboard/admin-t
 import { adminTrainingCategoryRepository } from "@/lib/repositories/admin-training-category-repository";
 import { adminGroupRepository } from "@/lib/repositories/admin-group-repository";
 
-export const metadata = { title: "Training Categories" };
+export const metadata = { title: "Programs" };
 
 export default async function AdminTrainingCategoriesPage() {
   const [records, groupData] = await Promise.all([

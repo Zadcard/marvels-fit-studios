@@ -8,7 +8,7 @@ const read = (path: string) => readFileSync(resolve(root, path), "utf8");
 describe("Marvel Ops canonical workspaces", () => {
   it("keeps only the designed admin routes in the active navigation", () => {
     const navigation = read("lib/navigation/dashboard-nav.ts");
-    for (const label of ["Today", "Attendance", "Schedule", "Leads & Trials", "Clients", "Categories & Groups", "Coaches", "Subscriptions"]) {
+    for (const label of ["Today", "Attendance", "Schedule", "Leads & Trials", "Clients", "Programs", "Coaches", "Subscriptions"]) {
       expect(navigation).toContain(`label: "${label}"`);
     }
   });

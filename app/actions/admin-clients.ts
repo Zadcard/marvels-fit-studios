@@ -9,7 +9,6 @@ import { COACH_FILES_BUCKET } from "@/lib/storage/coach-files";
 import {
   injuryStatusFromLabel,
   lifecycleStatusFromLabel,
-  trainingCategoryFromLabel,
   trialOutcomeFromLabel,
 } from "@/lib/dashboard/client-domain-labels";
 
@@ -22,7 +21,7 @@ type SaveAdminClientInput = {
   paymentStatus: "Paid" | "Unpaid" | "Due soon";
   paymentAmount?: string;
   groupId?: string;
-  trainingCategory?: string;
+  categoryId?: string;
   sport?: string;
   injuryStatus?: string;
   injuryNotes?: string;
@@ -72,7 +71,7 @@ export async function saveAdminClient(input: SaveAdminClientInput) {
   const paymentStatus = toPaymentStatus(input.paymentStatus);
   const amount = parseAmount(input.paymentAmount);
   const groupId = input.groupId?.trim() || null;
-  const trainingCategory = trainingCategoryFromLabel(input.trainingCategory ?? "");
+  const categoryId = input.categoryId?.trim() || null;
   const sport = input.sport?.trim() || null;
   const injuryStatus = injuryStatusFromLabel(input.injuryStatus ?? "");
   const injuryNotes = input.injuryNotes?.trim() || null;
@@ -81,6 +80,30 @@ export async function saveAdminClient(input: SaveAdminClientInput) {
 
   if (!fullName) {
     throw new Error("Client full name is required.");
+  }
+  if (!categoryId) {
+    throw new Error("Choose an active training category.");
+  }
+
+  const { data: category, error: categoryError } = await supabase
+    .from("TrainingCategory")
+    .select("id,legacyValue,isActive")
+    .eq("id", categoryId)
+    .maybeSingle();
+  if (categoryError) throw categoryError;
+  if (!category?.isActive) throw new Error("That training category is no longer active.");
+
+  if (groupId) {
+    const { data: group, error: groupError } = await supabase
+      .from("Group")
+      .select("id,categoryId,isActive")
+      .eq("id", groupId)
+      .maybeSingle();
+    if (groupError) throw groupError;
+    if (!group?.isActive) throw new Error("That group is no longer active.");
+    if (group.categoryId !== categoryId) {
+      throw new Error("Choose a group from the selected training category.");
+    }
   }
 
   const { data: savedClientId, error } = await supabase.rpc(
@@ -95,7 +118,7 @@ export async function saveAdminClient(input: SaveAdminClientInput) {
         paymentStatus,
         amount,
         groupId,
-        trainingCategory,
+        trainingCategory: category.legacyValue ?? "GENERAL_FITNESS",
         sport,
         injuryStatus,
         injuryNotes,
@@ -109,6 +132,12 @@ export async function saveAdminClient(input: SaveAdminClientInput) {
   if (!savedClientId) {
     throw new Error("Client record could not be resolved after save.");
   }
+
+  const { error: relationError } = await supabase
+    .from("Client")
+    .update({ categoryId })
+    .eq("id", savedClientId);
+  if (relationError) throw relationError;
 
   revalidatePath("/admin");
   revalidatePath("/admin/clients");

@@ -57,8 +57,8 @@ describe("admin reports workspace", () => {
     expect(document.querySelector<HTMLAnchorElement>('a[href*="/api/reports/operations"]')?.href).toContain("from=2026-07-01");
 
     const buttons = () => Array.from(document.querySelectorAll("button"));
-    expect(buttons().some((button) => button.textContent === "+ Record cash in")).toBe(true);
-    expect(buttons().some((button) => button.textContent === "+ Record cash out")).toBe(true);
+    expect(buttons().some((button) => button.textContent?.includes("Record cash in"))).toBe(true);
+    expect(buttons().some((button) => button.textContent?.includes("Record cash out"))).toBe(true);
 
     // Green cash-in and red cash-out lines are rendered for the range.
     const chart = document.querySelector('svg[aria-label="Cash in and cash out per day"]');

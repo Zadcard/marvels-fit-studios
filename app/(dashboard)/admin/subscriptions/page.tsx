@@ -5,13 +5,14 @@ import { adminSubscriptionRepository } from "@/lib/repositories/admin-subscripti
 export const metadata = { title: "Subscriptions" };
 
 export default async function AdminSubscriptionsPage() {
-  const [{ stats, records, clientOptions }, { records: groupRecords }] =
+  const [{ stats, records, clientOptions }, { records: groupRecords, categoryOptions }] =
     await Promise.all([
       adminSubscriptionRepository.list(),
       adminGroupRepository.list(),
     ]);
 
-  const groupOptions = groupRecords.filter((g) => g.isActive).map((g) => ({
+  const activeCategoryIds = new Set(categoryOptions.filter((category) => category.isActive).map((category) => category.id));
+  const groupOptions = groupRecords.filter((g) => g.isActive && activeCategoryIds.has(g.categoryId)).map((g) => ({
     id: g.id,
     name: g.name,
     trainingCategory: g.categoryName,

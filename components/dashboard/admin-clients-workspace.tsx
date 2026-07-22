@@ -23,9 +23,9 @@ import { deleteAdminClient, saveAdminClient } from "@/app/actions/admin-clients"
 import type { AdminClientInitialOption, AdminClientRecord } from "@/lib/dashboard/admin-dashboard-data";
 import {
   injuryStatusLabels,
-  trainingCategoryLabels,
   trialOutcomeLabels,
 } from "@/lib/dashboard/client-domain-labels";
+import type { TrainingCategoryOption } from "@/lib/dashboard/training-category";
 import { paginateDashboardItems } from "@/lib/dashboard/pagination";
 import { formatPhoneNumber } from "@/lib/phone-format";
 import { buildWhatsAppHref } from "@/lib/whatsapp";
@@ -53,7 +53,8 @@ type Props = {
   totalCount: number;
   filteredCount: number;
   initialOptions: AdminClientInitialOption[];
-  groupOptions: Array<{ id: string; name: string }>;
+  groupOptions: Array<{ id: string; name: string; categoryId: string }>;
+  categoryOptions: TrainingCategoryOption[];
 };
 
 type ClientForm = {
@@ -65,7 +66,7 @@ type ClientForm = {
   paymentStatus: AdminClientRecord["paymentStatus"];
   paymentAmount: string;
   groupId: string;
-  trainingCategory: AdminClientRecord["trainingCategory"];
+  categoryId: string;
   sport: string;
   injuryStatus: AdminClientRecord["injuryStatus"];
   injuryNotes: string;
@@ -81,7 +82,7 @@ const emptyForm: ClientForm = {
   paymentStatus: "Unpaid",
   paymentAmount: "",
   groupId: "",
-  trainingCategory: "General fitness",
+  categoryId: "",
   sport: "",
   injuryStatus: "None",
   injuryNotes: "",
@@ -121,6 +122,7 @@ export function AdminClientsWorkspace({
   totalCount,
   filteredCount,
   groupOptions,
+  categoryOptions,
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
@@ -159,7 +161,7 @@ export function AdminClientsWorkspace({
   useEffect(() => {
     if (searchParams.get("new") !== "1") return;
     setEditingId(null);
-    setForm(emptyForm);
+    setForm({ ...emptyForm, categoryId: categoryOptions[0]?.id ?? "" });
     setError("");
     setEditorOpen(true);
     const params = new URLSearchParams(searchParams.toString());
@@ -169,7 +171,7 @@ export function AdminClientsWorkspace({
       "",
       params.size ? `${pathname}?${params.toString()}` : pathname,
     );
-  }, [pathname, router, searchParams]);
+  }, [categoryOptions, pathname, router, searchParams]);
 
   function setQuery(key: string, value?: string) {
     const params = new URLSearchParams(searchParams.toString());
@@ -180,7 +182,7 @@ export function AdminClientsWorkspace({
 
   function openCreate() {
     setEditingId(null);
-    setForm(emptyForm);
+    setForm({ ...emptyForm, categoryId: categoryOptions[0]?.id ?? "" });
     setError("");
     setEditorOpen(true);
   }
@@ -196,7 +198,7 @@ export function AdminClientsWorkspace({
       paymentStatus: record.paymentStatus,
       paymentAmount: record.paymentAmountLabel.replace(/[^0-9.]/g, ""),
       groupId: record.primaryGroupId ?? "",
-      trainingCategory: record.trainingCategory,
+      categoryId: record.categoryId ?? groupOptions.find((group) => group.id === record.primaryGroupId)?.categoryId ?? categoryOptions[0]?.id ?? "",
       sport: record.sport,
       injuryStatus: record.injuryStatus,
       injuryNotes: record.injuryNotes,
@@ -221,7 +223,7 @@ export function AdminClientsWorkspace({
           paymentStatus: form.paymentStatus,
           paymentAmount: form.paymentAmount ? form.paymentAmount : undefined,
           groupId: form.groupId || undefined,
-          trainingCategory: form.trainingCategory,
+          categoryId: form.categoryId,
           sport: form.sport || undefined,
           injuryStatus: form.injuryStatus,
           injuryNotes: form.injuryNotes || undefined,
@@ -589,11 +591,17 @@ export function AdminClientsWorkspace({
           <FormField label="Amount">
             <input inputMode="decimal" value={form.paymentAmount} onChange={(event) => setForm((value) => ({ ...value, paymentAmount: event.target.value }))} />
           </FormField>
-          <FormField label="Group">
-            <select value={form.groupId} onChange={(event) => setForm((value) => ({ ...value, groupId: event.target.value }))}><option value="">No group</option>{groupOptions.map((group) => <option key={group.id} value={group.id}>{group.name}</option>)}</select>
-          </FormField>
           <FormField label="Training category">
-            <select value={form.trainingCategory} onChange={(event) => setForm((value) => ({ ...value, trainingCategory: event.target.value as ClientForm["trainingCategory"] }))}>{trainingCategoryLabels.map((item) => <option key={item}>{item}</option>)}</select>
+            <select required value={form.categoryId} onChange={(event) => setForm((value) => ({ ...value, categoryId: event.target.value, groupId: "" }))}>
+              <option value="" disabled>Choose a category</option>
+              {categoryOptions.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
+            </select>
+          </FormField>
+          <FormField label="Group">
+            <select value={form.groupId} onChange={(event) => setForm((value) => ({ ...value, groupId: event.target.value }))}>
+              <option value="">No group</option>
+              {groupOptions.filter((group) => group.categoryId === form.categoryId).map((group) => <option key={group.id} value={group.id}>{group.name}</option>)}
+            </select>
           </FormField>
           <FormField label="Sport (optional)">
             <input value={form.sport} onChange={(event) => setForm((value) => ({ ...value, sport: event.target.value }))} placeholder="e.g. Football" />

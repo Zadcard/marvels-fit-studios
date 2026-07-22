@@ -20,7 +20,7 @@ export class DashboardCommandRepository {
     const [clientsResult, coachesResult, leadsResult, groupsResult] = await Promise.all([
       supabase
         .from("Client")
-        .select("id,fullName,status,trainingCategory")
+        .select("id,fullName,status,category:TrainingCategory(name)")
         .order("fullName"),
       supabase
         .from("Coach")
@@ -33,6 +33,7 @@ export class DashboardCommandRepository {
       supabase
         .from("Group")
         .select("id,name,isActive,categoryId,category:TrainingCategory(name)")
+        .eq("isActive", true)
         .order("name"),
     ]);
 
@@ -45,7 +46,7 @@ export class DashboardCommandRepository {
       (client, index) => ({
         id: `client-${client.id}`,
         label: client.fullName,
-        detail: `${client.trainingCategory.replaceAll("_", " ")} · ${client.status}`,
+        detail: `${client.category?.name ?? "Program not set"} · ${client.status}`,
         kind: "Client",
         href: searchHref("/admin/clients", client.fullName),
         initials: getInitials(client.fullName),
@@ -92,7 +93,7 @@ export class DashboardCommandRepository {
     const { data, error } = await getSupabaseServerClient()
       .from("Client")
       .select(
-        "id,fullName,trainingCategory,group:Group(coach:Coach(userId)),bookings:SessionBooking(status,trainingSession:TrainingSession(status,coach:Coach(userId)))",
+        "id,fullName,category:TrainingCategory(name),group:Group(coach:Coach(userId)),bookings:SessionBooking(status,trainingSession:TrainingSession(status,coach:Coach(userId)))",
       )
       .order("fullName");
     if (error) throw error;
@@ -113,7 +114,7 @@ export class DashboardCommandRepository {
       .map((client, index) => ({
         id: `client-${client.id}`,
         label: client.fullName,
-        detail: client.trainingCategory.replaceAll("_", " "),
+        detail: client.category?.name ?? "Program not set",
         kind: "Client" as const,
         href: `/coach/clients?client=${encodeURIComponent(client.id)}`,
         initials: getInitials(client.fullName),

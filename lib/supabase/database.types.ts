@@ -1,4 +1,4 @@
-﻿export type Json =
+export type Json =
   | string
   | number
   | boolean
@@ -11,31 +11,6 @@ export type Database = {
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "14.5"
-  }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
   }
   public: {
     Tables: {
@@ -258,6 +233,7 @@ export type Database = {
       }
       Client: {
         Row: {
+          categoryId: string | null
           createdAt: string
           dateOfBirth: string | null
           fullName: string
@@ -279,6 +255,7 @@ export type Database = {
           userId: string
         }
         Insert: {
+          categoryId?: string | null
           createdAt?: string
           dateOfBirth?: string | null
           fullName: string
@@ -300,6 +277,7 @@ export type Database = {
           userId: string
         }
         Update: {
+          categoryId?: string | null
           createdAt?: string
           dateOfBirth?: string | null
           fullName?: string
@@ -321,6 +299,13 @@ export type Database = {
           userId?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "Client_categoryId_fkey"
+            columns: ["categoryId"]
+            isOneToOne: false
+            referencedRelation: "TrainingCategory"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "Client_groupId_fkey"
             columns: ["groupId"]
@@ -880,6 +865,7 @@ export type Database = {
       }
       Lead: {
         Row: {
+          categoryId: string | null
           consentAccepted: boolean
           createdAt: string
           email: string | null
@@ -899,6 +885,7 @@ export type Database = {
           updatedAt: string
         }
         Insert: {
+          categoryId?: string | null
           consentAccepted?: boolean
           createdAt?: string
           email?: string | null
@@ -918,6 +905,7 @@ export type Database = {
           updatedAt?: string
         }
         Update: {
+          categoryId?: string | null
           consentAccepted?: boolean
           createdAt?: string
           email?: string | null
@@ -937,6 +925,13 @@ export type Database = {
           updatedAt?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "Lead_categoryId_fkey"
+            columns: ["categoryId"]
+            isOneToOne: false
+            referencedRelation: "TrainingCategory"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "Lead_trialGroupId_fkey"
             columns: ["trialGroupId"]
@@ -1829,6 +1824,53 @@ export type Database = {
           },
         ]
       }
+      StudioIncome: {
+        Row: {
+          amount: number
+          createdAt: string
+          createdById: string
+          currency: string
+          id: string
+          incomeNumber: string
+          method: string
+          note: string | null
+          occurredAt: string
+          sourceLabel: string
+        }
+        Insert: {
+          amount: number
+          createdAt?: string
+          createdById: string
+          currency?: string
+          id?: string
+          incomeNumber: string
+          method: string
+          note?: string | null
+          occurredAt: string
+          sourceLabel: string
+        }
+        Update: {
+          amount?: number
+          createdAt?: string
+          createdById?: string
+          currency?: string
+          id?: string
+          incomeNumber?: string
+          method?: string
+          note?: string | null
+          occurredAt?: string
+          sourceLabel?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "StudioIncome_createdById_fkey"
+            columns: ["createdById"]
+            isOneToOne: false
+            referencedRelation: "User"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       StudioSettings: {
         Row: {
           cancellationWindow: string
@@ -2580,6 +2622,18 @@ export type Database = {
         }
         Returns: string
       }
+      record_studio_income: {
+        Args: {
+          p_amount: number
+          p_created_by_id: string
+          p_currency: string
+          p_method: string
+          p_note: string
+          p_occurred_at: string
+          p_source_label: string
+        }
+        Returns: string
+      }
       record_workout_performance: {
         Args: {
           p_client_id: string
@@ -2623,14 +2677,6 @@ export type Database = {
           p_type: Database["public"]["Enums"]["GroupType"]
         }
         Returns: string
-      }
-      set_category_supervisors: {
-        Args: { p_category_id: string; p_coach_ids: string[] }
-        Returns: undefined
-      }
-      sync_group_memberships: {
-        Args: { p_client_ids: string[]; p_group_id: string }
-        Returns: undefined
       }
       save_client_settings: {
         Args: {
@@ -2682,12 +2728,20 @@ export type Database = {
         Args: { p_action: string; p_client_id: string; p_group_id: string }
         Returns: undefined
       }
+      set_category_supervisors: {
+        Args: { p_category_id: string; p_coach_ids: string[] }
+        Returns: undefined
+      }
       set_client_payment_status: {
         Args: {
           p_amount: number
           p_client_id: string
           p_status: Database["public"]["Enums"]["ClientPaymentStatus"]
         }
+        Returns: undefined
+      }
+      sync_group_memberships: {
+        Args: { p_client_ids: string[]; p_group_id: string }
         Returns: undefined
       }
       sync_recurring_session_template: {
@@ -2940,9 +2994,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
       AssessmentStatus: ["DRAFT", "COMPLETE"],
@@ -3030,4 +3081,3 @@ export const Constants = {
     },
   },
 } as const
-

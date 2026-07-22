@@ -2,10 +2,10 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Dialog } from "radix-ui";
-import { BanknoteArrowUp, X } from "lucide-react";
+import { BanknoteArrowUp } from "lucide-react";
 
 import { recordCashIn } from "@/app/actions/admin-payments";
+import { EntityDialog, EntityForm, FormActions, FormField } from "@/components/ui/entity-form";
 import { useDashboardToast } from "./dashboard-toast-provider";
 import styles from "./admin-cash-out-dialog.module.css";
 
@@ -25,6 +25,7 @@ export function AdminCashInDialog({
   const { showToast } = useDashboardToast();
   const [open, setOpen] = useState(false);
   const [method, setMethod] = useState<(typeof methods)[number]>("Cash");
+  const [sourceType, setSourceType] = useState<"client" | "other">("client");
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
   const [pending, startTransition] = useTransition();
@@ -33,16 +34,13 @@ export function AdminCashInDialog({
     setSaved(false);
     setError("");
     setMethod("Cash");
+    setSourceType("client");
   }
 
-  return <Dialog.Root open={open} onOpenChange={(next) => { setOpen(next); if (next) reset(); }}>
-    <Dialog.Trigger asChild><button className={styles.trigger} type="button">+ Record cash in</button></Dialog.Trigger>
-    <Dialog.Portal>
-      <Dialog.Overlay className={styles.overlay} />
-      <Dialog.Content className={styles.content}>
-        <header><span><BanknoteArrowUp size={18} /><Dialog.Title>Record cash in</Dialog.Title></span><Dialog.Close asChild><button type="button" aria-label="Close cash in"><X size={18} /></button></Dialog.Close></header>
-        <Dialog.Description className="sr-only">Record money received from a client.</Dialog.Description>
-        {saved ? <div className={styles.confirmation}><strong>Cash in recorded</strong><p>The payment is posted to the ledger and included in reports.</p><Dialog.Close asChild><button type="button">Done</button></Dialog.Close></div> : <form onSubmit={(event) => {
+  return <>
+    <button className="mv-btn mv-btn-primary" type="button" onClick={() => { reset(); setOpen(true); }}><BanknoteArrowUp size={16} /> Record cash in</button>
+    <EntityDialog open={open} onOpenChange={setOpen} title="Record cash in" description="Record client income or money received from another source." closeLabel="Close cash in" size="small">
+        {saved ? <div className={styles.confirmation}><strong>Cash in recorded</strong><p>The income is included in Today and Reports.</p><button className="mv-btn mv-btn-primary" type="button" onClick={() => setOpen(false)}>Done</button></div> : <EntityForm onSubmit={(event) => {
           event.preventDefault();
           setError("");
           const data = new FormData(event.currentTarget);
@@ -50,7 +48,9 @@ export function AdminCashInDialog({
           startTransition(async () => {
             try {
               await recordCashIn({
-                clientId: String(data.get("clientId") ?? ""),
+                sourceType,
+                clientId: sourceType === "client" ? String(data.get("clientId") ?? "") : undefined,
+                sourceLabel: sourceType === "other" ? String(data.get("sourceLabel") ?? "") : undefined,
                 amount: Number(data.get("amount")),
                 method,
                 note: String(data.get("note") ?? ""),
@@ -66,15 +66,15 @@ export function AdminCashInDialog({
             }
           });
         }}>
-          <label>Client<select name="clientId" required defaultValue=""><option value="" disabled>Select a client</option>{clientOptions.map((client) => <option key={client.id} value={client.id}>{client.fullName}</option>)}</select></label>
-          <label>Amount (EGP)<input name="amount" type="number" inputMode="decimal" min="0.01" max="10000000" step="0.01" placeholder="0.00" required /></label>
-          <label>Paid with <span className={styles.chips}>{methods.map((option) => <button key={option} type="button" data-active={method === option || undefined} onClick={() => setMethod(option)}>{option}</button>)}</span></label>
-          <label>Occurred at<input name="occurredAt" type="datetime-local" max={localDateTimeValue()} defaultValue={localDateTimeValue()} required /></label>
-          <label>Note<input name="note" maxLength={300} placeholder="What is this payment for?" /></label>
+          <FormField label="Cash source" full><select value={sourceType} onChange={(event) => setSourceType(event.target.value as "client" | "other")}><option value="client">Client</option><option value="other">Other</option></select></FormField>
+          {sourceType === "client" ? <FormField label="Client" required full><select name="clientId" required defaultValue=""><option value="" disabled>Select a client</option>{clientOptions.map((client) => <option key={client.id} value={client.id}>{client.fullName}</option>)}</select></FormField> : <FormField label="Where did it come from?" required full><input name="sourceLabel" minLength={2} maxLength={120} placeholder="e.g. Equipment rental" required /></FormField>}
+          <FormField label="Amount (EGP)" required full><input name="amount" type="number" inputMode="decimal" min="0.01" max="10000000" step="0.01" placeholder="0.00" required /></FormField>
+          <FormField label="Paid with" full><span className={styles.chips}>{methods.map((option) => <button key={option} type="button" data-active={method === option || undefined} onClick={() => setMethod(option)}>{option}</button>)}</span></FormField>
+          <FormField label="Occurred at" required full><input name="occurredAt" type="datetime-local" max={localDateTimeValue()} defaultValue={localDateTimeValue()} required /></FormField>
+          <FormField label="Note" full><input name="note" maxLength={300} placeholder="What is this income for?" /></FormField>
           {error ? <p className={styles.error} role="alert">{error}</p> : null}
-          <button className={styles.submit} type="submit" disabled={pending}>{pending ? "Recording..." : "Record cash in"}</button>
-        </form>}
-      </Dialog.Content>
-    </Dialog.Portal>
-  </Dialog.Root>;
+          <FormActions onCancel={() => setOpen(false)} submitLabel="Record cash in" pendingLabel="Recording…" pending={pending} />
+        </EntityForm>}
+    </EntityDialog>
+  </>;
 }

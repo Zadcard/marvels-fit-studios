@@ -52,7 +52,7 @@ export class AdminTodayOperationsRepository {
     const { start, endExclusive } = getStudioDayRange(getStudioDateKey(now));
     const inSevenDays = new Date(now.getTime() + 7 * 86_400_000);
 
-    const [sessions, trials, renewals, payments] = await Promise.all([
+    const [sessions, trials, renewals, payments, studioIncome] = await Promise.all([
       withSupabaseFallback(async () => {
         const { data, error } = await supabase
           .from("TrainingSession")
@@ -97,6 +97,16 @@ export class AdminTodayOperationsRepository {
           .gte("date", start)
           .lt("date", endExclusive)
           .order("date", { ascending: false });
+        if (error) throw error;
+        return data;
+      }, []),
+      withSupabaseFallback(async () => {
+        const { data, error } = await supabase
+          .from("StudioIncome")
+          .select("id,amount,currency,occurredAt,note,sourceLabel")
+          .gte("occurredAt", start)
+          .lt("occurredAt", endExclusive)
+          .order("occurredAt", { ascending: false });
         if (error) throw error;
         return data;
       }, []),
@@ -151,7 +161,24 @@ export class AdminTodayOperationsRepository {
       });
     }
 
-    const totalCash = payments.reduce((sum, payment) => sum + payment.amount, 0);
+    const totalCash = payments.reduce((sum, payment) => sum + payment.amount, 0)
+      + studioIncome.reduce((sum, entry) => sum + entry.amount, 0);
+    const recentIncome = [
+      ...payments.map((payment) => ({
+        id: payment.id,
+        description: payment.note?.trim() || `${payment.client.fullName} payment`,
+        amount: payment.amount,
+        currency: payment.currency,
+        occurredAt: payment.date,
+      })),
+      ...studioIncome.map((entry) => ({
+        id: entry.id,
+        description: entry.note?.trim() || entry.sourceLabel,
+        amount: entry.amount,
+        currency: entry.currency,
+        occurredAt: entry.occurredAt,
+      })),
+    ].sort((left, right) => right.occurredAt.localeCompare(left.occurredAt));
 
     return {
       sessions: mappedSessions.map(({ startsAt, endsAt, coach, ...session }) => {
@@ -191,20 +218,20 @@ export class AdminTodayOperationsRepository {
           methodLabel: paymentMethodLabel(latestPayment?.method),
         };
       }),
-      recentPayments: payments.slice(0, 5).map((payment) => ({
+      recentPayments: recentIncome.slice(0, 5).map((payment) => ({
         id: payment.id,
-        description: payment.note?.trim() || `${payment.client.fullName} payment`,
+        description: payment.description,
         amountLabel: new Intl.NumberFormat("en-US", {
           style: "currency",
           currency: payment.currency,
           maximumFractionDigits: 0,
         }).format(payment.amount),
-        timeLabel: timeFormatter.format(new Date(payment.date)),
+        timeLabel: timeFormatter.format(new Date(payment.occurredAt)),
       })),
       liveCount: mappedSessions.filter((session) => session.isLive).length,
       expectedClients: mappedSessions.reduce((sum, session) => sum + session.bookedCount, 0),
       cashTodayLabel: currencyFormatter.format(totalCash),
-      cashTodayCount: payments.length,
+      cashTodayCount: payments.length + studioIncome.length,
     };
   }
 }

@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache";
 import { LeadStatus, UserRole } from "@/lib/supabase/domain";
 
 import { requireRole } from "@/lib/auth/session";
-import { trainingCategoryFromLabel } from "@/lib/dashboard/client-domain-labels";
 import { promoteLeadsToClients } from "@/lib/leads/promote-leads-to-clients";
 import type { Database } from "@/lib/supabase/database.types";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
@@ -55,7 +54,7 @@ export async function createAdminLead(input: {
   email?: string;
   source: string;
   message?: string;
-  interestedCategory?: string;
+  categoryId: string;
   preferredAvailability?: string;
 }) {
   await requireRole(UserRole.ADMIN);
@@ -64,15 +63,24 @@ export async function createAdminLead(input: {
   const phone = input.phone.trim();
   if (!fullName || !phone) throw new Error("Name and phone are required.");
 
-  const { error } = await getSupabaseServerClient().from("Lead").insert({
+  const categoryId = input.categoryId.trim();
+  const supabase = getSupabaseServerClient();
+  const { data: category, error: categoryError } = await supabase
+    .from("TrainingCategory")
+    .select("id,legacyValue,isActive")
+    .eq("id", categoryId)
+    .maybeSingle();
+  if (categoryError) throw categoryError;
+  if (!category?.isActive) throw new Error("Choose an active interested category.");
+
+  const { error } = await supabase.from("Lead").insert({
     fullName,
     phone,
     email: input.email?.trim() || null,
     source: input.source.trim() || "Other",
     message: input.message?.trim() || null,
-    interestedCategory: input.interestedCategory
-      ? trainingCategoryFromLabel(input.interestedCategory) as Database["public"]["Enums"]["LegacyTrainingCategory"]
-      : null,
+    categoryId,
+    interestedCategory: category.legacyValue as Database["public"]["Enums"]["LegacyTrainingCategory"] | null,
     preferredAvailability: input.preferredAvailability?.trim() || null,
     status: LeadStatus.NEW,
   });
@@ -123,6 +131,19 @@ export async function subscribeLeadFromTrial(input: SubscribeLeadInput) {
   const groupId = input.groupId.trim();
   if (!leadId) throw new Error("Lead is required.");
   if (!groupId) throw new Error("Choose a group.");
+  const { data: leadGroup, error: leadGroupError } = await supabase
+    .from("Lead")
+    .select("categoryId,trialGroupId,trialGroup:Group!Lead_trialGroupId_fkey(id,categoryId,isActive)")
+    .eq("id", leadId)
+    .maybeSingle();
+  if (leadGroupError) throw leadGroupError;
+  if (!leadGroup) throw new Error("Lead not found.");
+  if (!leadGroup.trialGroup?.isActive || leadGroup.trialGroup.id !== groupId) {
+    throw new Error("Use the active trial group assigned to this lead.");
+  }
+  if (!leadGroup.categoryId || leadGroup.trialGroup.categoryId !== leadGroup.categoryId) {
+    throw new Error("The trial group no longer matches the lead interested category.");
+  }
   const price = Number(input.price.replace(/[^0-9.]/g, ""));
   if (!Number.isFinite(price) || price <= 0) {
     throw new Error("Enter a valid subscription price.");
@@ -236,12 +257,23 @@ export async function assignLeadTrial(input: { leadId: string; groupId: string }
   const supabase = getSupabaseServerClient();
   const { data: group, error: groupError } = await supabase
     .from("Group")
-    .select("id")
+    .select("id,categoryId,isActive")
     .eq("id", input.groupId)
     .eq("isActive", true)
     .maybeSingle();
   if (groupError) throw groupError;
   if (!group) throw new Error("That group is no longer available.");
+
+  const { data: lead, error: leadError } = await supabase
+    .from("Lead")
+    .select("categoryId")
+    .eq("id", input.leadId)
+    .maybeSingle();
+  if (leadError) throw leadError;
+  if (!lead?.categoryId) throw new Error("Choose an interested category for this lead first.");
+  if (group.categoryId !== lead.categoryId) {
+    throw new Error("Choose a group from the lead interested category.");
+  }
 
   const { data, error } = await supabase
     .from("Lead")

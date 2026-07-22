@@ -65,6 +65,8 @@ export type AdminClientListRecord = {
   paymentStatus: "PAID" | "UNPAID" | "DUE_SOON";
   status: ClientLifecycleStatus;
   trialOutcome: TrialOutcome | null;
+  categoryId: string | null;
+  category: { id: string; name: string } | null;
   trainingCategory: TrainingCategory;
   sport: string | null;
   injuryStatus: InjuryStatus;
@@ -302,7 +304,8 @@ export function mapAdminClientRecord(client: AdminClientListRecord): AdminClient
     email: client.user.email ?? "No email",
     phone: client.phone ?? "No phone",
     membership,
-    trainingCategory: trainingCategoryLabelFor(client.trainingCategory),
+    categoryId: client.categoryId,
+    trainingCategory: client.category?.name ?? trainingCategoryLabelFor(client.trainingCategory),
     sport: client.sport?.trim() ?? "",
     status: mapClientStatus(client.status),
     trialOutcome: trialOutcomeLabelFor(client.trialOutcome),

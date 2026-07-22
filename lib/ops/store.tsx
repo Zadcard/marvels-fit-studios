@@ -18,18 +18,6 @@ import type { AttState, ConfirmReq, Toast } from "./types";
 
 // Ops class labels (intake UI) → domain training-category labels the backend
 // actions accept.
-const OPS_CAT_TO_DOMAIN: Record<string, string> = {
-  "Strength Class": "Muscle gain",
-  "Burning Class": "Fat loss",
-  "Ladies Class": "General fitness",
-  "Athlete Conditioning": "Other sport",
-  Calisthenics: "Calisthenics",
-  Rehab: "Rehab",
-  PT: "General fitness",
-};
-const domainCategory = (label: string) =>
-  OPS_CAT_TO_DOMAIN[label] ?? (label || "General fitness");
-
 const EXPENSE_CATEGORY: Record<string, "SUPPLIES" | "MAINTENANCE" | "COACH_PAYMENT" | "RENT_UTILITIES" | "MARKETING" | "OTHER"> = {
   Salaries: "COACH_PAYMENT",
   "Studio needs": "SUPPLIES",
@@ -225,7 +213,7 @@ export function OpsProvider({ children, initial }: { children: React.ReactNode; 
         fullName: name,
         phone: s.inPhone || "—",
         source: s.inSource,
-        interestedCategory: domainCategory(s.inCat),
+        categoryId: s.data.categoryIds[s.inCat] ?? Object.values(s.data.categoryIds)[0] ?? "",
         message: s.inHasInjury ? "Flagged an injury at intake" : undefined,
       }));
       setState((p) => ({ userLeads: [row, ...p.userLeads], intakeOpen: false, inName: "", inPhone: "", inHasInjury: false, view: "leads" }));
@@ -239,7 +227,7 @@ export function OpsProvider({ children, initial }: { children: React.ReactNode; 
         phone: s.inPhone || undefined,
         status: "Active",
         paymentStatus: "Unpaid",
-        trainingCategory: domainCategory(s.inCat),
+        categoryId: s.data.categoryIds[s.inCat] ?? Object.values(s.data.categoryIds)[0] ?? "",
         injuryStatus: s.inHasInjury ? "Current injury" : "None",
         injuryNotes: s.inHasInjury ? "Flagged at intake — see notes" : undefined,
       }));
@@ -383,7 +371,7 @@ export function OpsProvider({ children, initial }: { children: React.ReactNode; 
         status: s.clStatus,
         paymentStatus: meta.paymentStatus,
         groupId: meta.groupId ?? undefined,
-        trainingCategory: domainCategory(s.clCat),
+        categoryId: s.data.categoryIds[s.clCat] ?? Object.values(s.data.categoryIds)[0] ?? "",
       }));
     }
     setState((p) => ({ clientEdits: { ...p.clientEdits, [name]: { category: p.clCat, coachId: p.clCoach, status: p.clStatus, phone: p.clPhone } }, clientEditOpen: false }));

@@ -28,3 +28,4 @@
 .spinner{animation:leadSpin .8s linear infinite}
 @keyframes leadSpin{to{transform:rotate(360deg)}}
 @media(prefers-reduced-motion:reduce){.spinner{animation:none}}
+.deleteConfirmActions{display:flex;justify-content:flex-end;gap:8px;margin-top:20px}.deleteConfirmActions button{display:inline-flex;align-items:center;gap:6px}

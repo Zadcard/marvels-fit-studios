@@ -3,7 +3,6 @@ import "server-only";
 import { LeadStatus } from "@/lib/supabase/domain";
 
 import type { AdminLeadRecord, AdminLeadStatus } from "@/lib/dashboard/admin-dashboard-data";
-import { trainingCategoryLabelFor } from "@/lib/dashboard/client-domain-labels";
 
 const LEGACY_JOIN_CREDENTIALS_PREFIX = "__join_credentials__:";
 import { withSupabaseFallback } from "@/lib/supabase/errors";
@@ -100,7 +99,7 @@ export class AdminLeadRepository {
     return withSupabaseFallback(async () => {
       const { data, error } = await getSupabaseServerClient()
         .from("Lead")
-        .select("id,fullName,email,phone,source,status,createdAt,message,trialGroupId,interestedCategory,preferredAvailability,lostReason");
+        .select("id,fullName,email,phone,source,status,createdAt,message,trialGroupId,categoryId,category:TrainingCategory(name),preferredAvailability,lostReason");
       if (error) throw error;
 
       const search = filters.search.toLowerCase();
@@ -133,9 +132,8 @@ export class AdminLeadRepository {
           createdAt: formatDate(new Date(lead.createdAt)),
           message: normalizeMessage(lead.message),
           trialGroupId: lead.trialGroupId,
-          interestedCategory: lead.interestedCategory
-            ? trainingCategoryLabelFor(lead.interestedCategory)
-            : null,
+          categoryId: lead.categoryId,
+          interestedCategory: lead.category?.name ?? null,
           preferredAvailability: lead.preferredAvailability,
           lostReason: lead.lostReason,
         })),

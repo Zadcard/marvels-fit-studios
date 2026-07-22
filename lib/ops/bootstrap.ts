@@ -147,7 +147,7 @@ export async function loadOpsData(): Promise<OpsData> {
     adminLeadRepository.list(),
     adminClientRepository.list(),
     adminSettingsRepository.get(),
-    new AdminTrainingCategoryRepository().options(),
+    new AdminTrainingCategoryRepository().options({ activeOnly: true }),
   ]);
 
   const coachRecords = coachData.records;
@@ -369,7 +369,11 @@ export async function loadOpsData(): Promise<OpsData> {
   }
 
   // ── groups ──
-  const groupsRaw: OpsData["groupsRaw"] = groupData.records.map((group) => [
+  const activeCategoryIds = new Set(categoryOptions.map((category) => category.id));
+  const activeGroupRecords = groupData.records.filter(
+    (group) => group.isActive && activeCategoryIds.has(group.categoryId),
+  );
+  const groupsRaw: OpsData["groupsRaw"] = activeGroupRecords.map((group) => [
     group.name,
     group.coachId,
     group.scheduleSummary || "Set schedule",
@@ -377,7 +381,7 @@ export async function loadOpsData(): Promise<OpsData> {
     group.categoryName,
     group.memberCount,
   ]);
-  const groupIds = Object.fromEntries(groupData.records.map((group) => [group.name, group.id]));
+  const groupIds = Object.fromEntries(activeGroupRecords.map((group) => [group.name, group.id]));
   const categoryIds = Object.fromEntries(categoryOptions.map((category) => [category.name, category.id]));
 
   // ── clients ──

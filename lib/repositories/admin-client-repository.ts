@@ -32,7 +32,7 @@ export class AdminClientRepository {
         supabase
           .from("Client")
           .select(
-            "id,fullName,phone,sessionsLeft,paymentStatus,status,trialOutcome,trainingCategory,sport,injuryStatus,injuryNotes,restrictions,createdAt,user:User(email),group:Group(id,name,coach:Coach(fullName)),subscriptions:ClientSubscription(id,status,startsAt,renewsAt,sessionsTotal,plan:SubscriptionPlan(name),payments:Payment(date)),payments:Payment(id,amount,currency,date,method),bookings:SessionBooking(status,trainingSession:TrainingSession(startsAt,title,type,status,coach:Coach(fullName)))"
+            "id,fullName,phone,sessionsLeft,paymentStatus,status,trialOutcome,categoryId,category:TrainingCategory(id,name),trainingCategory,sport,injuryStatus,injuryNotes,restrictions,createdAt,user:User(email),group:Group(id,name,coach:Coach(fullName)),subscriptions:ClientSubscription(id,status,startsAt,renewsAt,sessionsTotal,plan:SubscriptionPlan(name),payments:Payment(date)),payments:Payment(id,amount,currency,date,method),bookings:SessionBooking(status,trainingSession:TrainingSession(startsAt,title,type,status,coach:Coach(fullName)))"
           ),
         supabase
           .from("BillingLedgerEntry")
@@ -75,6 +75,8 @@ export class AdminClientRepository {
         paymentStatus: client.paymentStatus,
         status: client.status,
         trialOutcome: client.trialOutcome,
+        categoryId: client.categoryId,
+        category: client.category,
         trainingCategory: client.trainingCategory,
         sport: client.sport,
         injuryStatus: client.injuryStatus,

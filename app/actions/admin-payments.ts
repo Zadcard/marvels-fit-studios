@@ -22,7 +22,9 @@ function parseAmount(value: string | undefined) {
 }
 
 type RecordCashInInput = {
-  clientId: string;
+  sourceType: "client" | "other";
+  clientId?: string;
+  sourceLabel?: string;
   amount: number;
   method: "Cash" | "Visa" | "InstaPay";
   note?: string;
@@ -30,10 +32,12 @@ type RecordCashInInput = {
 };
 
 export async function recordCashIn(input: RecordCashInInput) {
-  await requireRole(UserRole.ADMIN);
+  const user = await requireRole(UserRole.ADMIN);
 
-  const clientId = input.clientId.trim();
-  if (!clientId) throw new Error("Choose a client for the cash in.");
+  const clientId = input.clientId?.trim() || "";
+  const sourceLabel = input.sourceLabel?.trim() || "";
+  if (input.sourceType === "client" && !clientId) throw new Error("Choose a client for the cash in.");
+  if (input.sourceType === "other" && sourceLabel.length < 2) throw new Error("Write where this cash came from.");
   if (!Number.isFinite(input.amount) || input.amount <= 0) {
     throw new Error("Enter a valid cash in amount.");
   }
@@ -44,14 +48,25 @@ export async function recordCashIn(input: RecordCashInInput) {
   const method =
     input.method === "InstaPay" ? "INSTA_PAY" : input.method === "Visa" ? "VISA" : "CASH";
 
-  const { error } = await getSupabaseServerClient().from("Payment").insert({
-    amount: input.amount,
-    currency: "EGP",
-    date: occurredAt.toISOString(),
-    note: input.note?.trim() || "Cash in recorded from the reports dashboard.",
-    clientId,
-    method,
-  });
+  const supabase = getSupabaseServerClient();
+  const { error } = input.sourceType === "client"
+    ? await supabase.from("Payment").insert({
+        amount: input.amount,
+        currency: "EGP",
+        date: occurredAt.toISOString(),
+        note: input.note?.trim() || "Cash in recorded from the reports dashboard.",
+        clientId,
+        method,
+      })
+    : await supabase.rpc("record_studio_income", {
+        p_amount: input.amount,
+        p_created_by_id: user.id,
+        p_currency: "EGP",
+        p_method: method,
+        p_note: input.note?.trim() || "",
+        p_occurred_at: occurredAt.toISOString(),
+        p_source_label: sourceLabel,
+      });
   if (error) throw error;
 
   revalidatePath("/admin");

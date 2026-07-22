@@ -507,8 +507,8 @@
   display: grid;
   place-items: center;
   padding: 24px;
-  background: rgba(0, 0, 0, 0.66);
-  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(6px);
 }
 .modal {
   position: fixed;
@@ -518,46 +518,41 @@
   transform: translate(-50%, -50%);
   display: grid;
   gap: 12px;
-  width: min(540px, calc(100vw - 32px));
-  max-height: 90dvh;
+  width: min(610px, calc(100vw - 24px));
+  max-height: calc(100dvh - 24px);
   overflow: auto;
   padding: 24px;
-  border: 1px solid #3a3a3a;
+  border: 1px solid var(--rl-line-strong);
   border-radius: 20px;
-  background: #111;
-  box-shadow: 0 40px 90px rgba(0, 0, 0, 0.6);
+  background: var(--rl-canvas);
+  box-shadow: var(--rl-shadow-float);
 }
-.modal > span {
-  color: #ff4f54;
-  font: 0.58rem var(--font-ops-mono);
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-}
+.modal > span { display: none; }
 .modal h2 {
   margin: 0;
   color: #fff;
-  font: 700 1.25rem var(--font-ops-display);
+  padding-right: 42px;
+  font: 700 1.3rem var(--font-ops-display);
 }
 .modal p {
   margin: 0;
-  color: #c4c4c4;
-  font-size: 0.75rem;
+  color: var(--rl-muted);
+  font-size: 0.68rem;
 }
 .modal label {
   display: grid;
-  gap: 8px;
-  color: #8f8f8f;
-  font: 0.54rem var(--font-ops-mono);
-  letter-spacing: 0.12em;
+  gap: 5px;
+  color: var(--rl-muted);
+  font: 0.51rem var(--font-ops-mono);
   text-transform: uppercase;
 }
 .modal input,
 .modal select {
-  min-height: 44px;
-  padding: 0 14px;
-  border: 1px solid #3a3a3a;
-  border-radius: 11px;
-  background: #0a0a0a;
+  min-height: 42px;
+  padding: 0 11px;
+  border: 1px solid var(--rl-line-strong);
+  border-radius: 9px;
+  background: var(--rl-surface-2);
   color: #fff;
   font: 0.75rem var(--font-ops-body);
 }
@@ -582,40 +577,42 @@
 }
 .modal footer {
   display: flex;
+  justify-content: flex-end;
   gap: 10px;
   padding-top: 6px;
 }
 .modal footer button,
 .submit {
-  flex: 1;
-  min-height: 44px;
-  border: 1px solid #3a3a3a;
-  border-radius: 12px;
+  flex: 0 0 auto;
+  min-height: 42px;
+  padding: 0 14px;
+  border: 1px solid var(--rl-line-strong);
+  border-radius: 9px;
   background: transparent;
   color: #c4c4c4;
-  font: 0.6rem var(--font-ops-mono);
+  font: 0.72rem var(--font-ops-body);
   font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  letter-spacing: 0;
+  text-transform: none;
 }
 .modal .submit {
-  flex: 2;
+  flex: 0 0 auto;
   border: 0;
-  background: linear-gradient(135deg, #e62429, #ff4f54);
+  background: var(--rl-red);
   color: #fff;
 }
 .close {
   position: absolute;
-  top: 15px;
-  right: 15px;
+  top: 16px;
+  right: 16px;
   display: grid;
-  width: 30px;
-  height: 30px;
+  width: 36px;
+  height: 36px;
   place-items: center;
-  border: 1px solid #3a3a3a;
+  border: 1px solid var(--rl-line-strong);
   border-radius: 9px;
-  background: transparent;
-  color: #8f8f8f;
+  background: var(--rl-surface-2);
+  color: #fff;
 }
 @media (max-width: 900px) {
   .money {

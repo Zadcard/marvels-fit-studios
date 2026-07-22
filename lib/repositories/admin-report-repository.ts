@@ -40,28 +40,33 @@ function breakdown<T>(items: T[], keyFor: (item: T) => string, amountFor: (item:
 export class AdminReportRepository {
   async getReport(range: ReportRange): Promise<AdminReportData> {
     const supabase = getSupabaseServerClient();
-    const [paymentsResult, expensesResult, sessionsResult, ledgerResult] = await Promise.all([
+    const [paymentsResult, studioIncomeResult, expensesResult, sessionsResult, ledgerResult] = await Promise.all([
       supabase.from("Payment").select("id,amount,date,method").gte("date", range.startIso).lt("date", range.endExclusiveIso).order("date"),
+      supabase.from("StudioIncome").select("id,amount,occurredAt,method").gte("occurredAt", range.startIso).lt("occurredAt", range.endExclusiveIso).order("occurredAt"),
       supabase.from("StudioExpense").select("id,expenseNumber,amount,category,paymentMethod,description,reference,status,occurredAt,voidReason,createdBy:User!StudioExpense_createdById_fkey(name,email)").gte("occurredAt", range.startIso).lt("occurredAt", range.endExclusiveIso).order("occurredAt", { ascending: false }),
       supabase.from("TrainingSession").select("id,startsAt,endsAt,status,coach:Coach(id,fullName),bookings:SessionBooking(status)").gte("startsAt", range.startIso).lt("startsAt", range.endExclusiveIso).neq("status", "CANCELED").order("startsAt"),
       supabase.from("BillingLedgerEntry").select("amount,paymentId,occurredAt").eq("type", "PAYMENT").eq("status", "POSTED").gte("occurredAt", range.startIso).lt("occurredAt", range.endExclusiveIso),
     ]);
     if (paymentsResult.error) throw paymentsResult.error;
+    if (studioIncomeResult.error) throw studioIncomeResult.error;
     if (expensesResult.error) throw expensesResult.error;
     if (sessionsResult.error) throw sessionsResult.error;
     if (ledgerResult.error) throw ledgerResult.error;
 
     const payments = paymentsResult.data;
+    const studioIncome = studioIncomeResult.data;
     const expenses = expensesResult.data;
     const postedExpenses = expenses.filter((expense) => expense.status === "POSTED");
     const sessions = sessionsResult.data;
-    const income = sumBy(payments, (payment) => payment.amount);
+    const clientIncome = sumBy(payments, (payment) => payment.amount);
+    const income = clientIncome + sumBy(studioIncome, (entry) => entry.amount);
     const expenseTotal = sumBy(postedExpenses, (expense) => expense.amount);
     const attended = sumBy(sessions, (session) => session.bookings.filter((booking) => booking.status === "ATTENDED").length);
     const missed = sumBy(sessions, (session) => session.bookings.filter((booking) => ["MISSED", "NO_SHOW"].includes(booking.status)).length);
 
     const dailyMap = new Map(datesInRange(range.from, range.to).map((date) => [date, { date, income: 0, expenses: 0, attended: 0, missed: 0 }]));
     for (const payment of payments) dailyMap.get(dateKey(payment.date, range.timezone))!.income += payment.amount;
+    for (const entry of studioIncome) dailyMap.get(dateKey(entry.occurredAt, range.timezone))!.income += entry.amount;
     for (const expense of postedExpenses) dailyMap.get(dateKey(expense.occurredAt, range.timezone))!.expenses += expense.amount;
     for (const session of sessions) {
       const point = dailyMap.get(dateKey(session.startsAt, range.timezone));
@@ -85,11 +90,14 @@ export class AdminReportRepository {
       range,
       summary: {
         income, expenses: expenseTotal, net: income - expenseTotal,
-        paymentCount: payments.length, sessionCount: sessions.length,
+        paymentCount: payments.length + studioIncome.length, sessionCount: sessions.length,
         attended, missed, attendanceRate: attended + missed ? Math.round(attended / (attended + missed) * 100) : 0,
       },
       daily: [...dailyMap.values()],
-      paymentMethods: breakdown(payments, (payment) => payment.method ?? "OTHER", (payment) => payment.amount, methodLabels),
+      paymentMethods: breakdown([
+        ...payments.map((payment) => ({ method: payment.method ?? "OTHER", amount: payment.amount })),
+        ...studioIncome.map((entry) => ({ method: entry.method, amount: entry.amount })),
+      ], (entry) => entry.method, (entry) => entry.amount, methodLabels),
       expenseCategories: breakdown(postedExpenses, (expense) => expense.category, (expense) => expense.amount, categoryLabels),
       coaches: [...coachMap.values()].map((coach) => ({
         id: coach.id, fullName: coach.fullName, sessionCount: coach.sessionCount,
@@ -107,8 +115,8 @@ export class AdminReportRepository {
         voidReason: expense.voidReason ?? "",
       })),
       reconciliation: {
-        paymentTotal: income, ledgerPaymentTotal,
-        difference: income - ledgerPaymentTotal,
+        paymentTotal: clientIncome, ledgerPaymentTotal,
+        difference: clientIncome - ledgerPaymentTotal,
         missingLedgerCount: payments.filter((payment) => !ledgerPaymentIds.has(payment.id)).length,
       },
     };

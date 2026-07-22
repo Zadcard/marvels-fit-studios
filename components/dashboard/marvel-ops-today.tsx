@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 
 import type { AdminTodayOperations } from "@/lib/dashboard/admin-today-operations";
 import { STUDIO_TIME_ZONE } from "@/lib/time/studio-time";
-import { AdminCashOutDialog } from "./admin-cash-out-dialog";
 import styles from "./marvel-ops-today.module.css";
 
 const tones = ["red", "green", "violet", "blue", "amber"] as const;
@@ -53,7 +52,7 @@ export function MarvelOpsToday({ data }: { data: AdminTodayOperations }) {
       <aside className={styles.aside}>
         <section className={styles.panel}><header><div><span>LEADS</span><h2>Trials to close</h2></div><button type="button" onClick={() => router.push("/admin/leads")}>Open <ArrowRight size={15} /></button></header>{data.trials.map((trial, index) => <button className={styles.person} type="button" key={trial.id} onClick={() => router.push("/admin/leads")}><i data-tone={tones[index % tones.length]}>{trial.initials}</i><span><b>{trial.fullName}</b><small>{trial.groupName}</small></span><ArrowRight size={14} /></button>)}{!data.trials.length ? <p className={styles.panelEmpty}>No trials to close.</p> : null}</section>
         <section className={styles.panel}><header><div><span>MONEY</span><h2>Renew this week</h2></div><button type="button" onClick={() => router.push("/admin/subscriptions")}>All <ArrowRight size={15} /></button></header>{data.renewals.map((renewal, index) => <button className={styles.person} type="button" key={renewal.id} onClick={() => router.push("/admin/subscriptions")}><i data-tone={tones[index % tones.length]}>{renewal.initials}</i><span><b>{renewal.fullName}</b><small>{renewal.planName} · {renewal.amountLabel}{renewal.methodLabel ? ` · Paid by ${renewal.methodLabel}` : ""}</small></span><em>{renewal.dueLabel}</em></button>)}{!data.renewals.length ? <p className={styles.panelEmpty}>No renewals this week.</p> : null}</section>
-        <section className={styles.cash}><header><div><span><CircleDollarSign size={14} /> CASH TODAY</span><h2>{data.cashTodayLabel}</h2></div><button type="button" onClick={() => router.push("/admin/reports")}>Cash flow <ArrowRight size={15} /></button></header><p><Users size={14} /> {data.cashTodayCount} {data.cashTodayCount === 1 ? "payment" : "payments"} recorded</p><AdminCashOutDialog /></section>
+        <section className={styles.cash}><header><div><span><CircleDollarSign size={14} /> CASH TODAY</span><h2>{data.cashTodayLabel}</h2></div><button type="button" onClick={() => router.push("/admin/reports")}>Cash flow <ArrowRight size={15} /></button></header><p><Users size={14} /> {data.cashTodayCount} {data.cashTodayCount === 1 ? "entry" : "entries"} recorded</p></section>
       </aside>
     </div>
   </div>;

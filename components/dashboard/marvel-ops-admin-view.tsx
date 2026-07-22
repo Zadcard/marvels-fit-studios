@@ -1,6 +1,6 @@
 "use client";
 
-import { LoaderCircle, Trash2, X } from "lucide-react";
+import { Trash2, X } from "lucide-react";
 import { useEffect, useState, useTransition, type FormEvent } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Dialog } from "radix-ui";
@@ -14,11 +14,12 @@ import {
   subscribeLeadFromTrial,
 } from "@/app/actions/admin-leads";
 import { adminLeadSources, type AdminLeadSource } from "@/lib/dashboard/lead-source";
-import { trainingCategoryLabels } from "@/lib/dashboard/client-domain-labels";
+import type { TrainingCategoryOption } from "@/lib/dashboard/training-category";
 import { adminPaymentMethods } from "@/lib/mocks/admin-subscriptions";
 import { formatPhoneNumber } from "@/lib/phone-format";
 import { AdminLeadsTableView } from "./admin-leads-table-view";
 import { useDashboardToast } from "./dashboard-toast-provider";
+import { EntityDialog, EntityForm, FormActions, FormField } from "@/components/ui/entity-form";
 import styles from "./marvel-ops-admin-view.module.css";
 
 type View = "leads";
@@ -32,6 +33,7 @@ export type MarvelOpsLead = {
   source: AdminLeadSource;
   phone: string;
   wants: string;
+  categoryId?: string;
   note: string;
   injury?: string;
   assigned?: string;
@@ -40,13 +42,13 @@ export type MarvelOpsLead = {
   lostReason?: string;
 };
 const sessionChoices = [8, 12, 16, 20] as const;
-type LeadGroup = { id: string; name: string };
+type LeadGroup = { id: string; name: string; categoryId: string };
 
-export function MarvelOpsAdminView({ initialLeads = [], trialGroups = [] }: { view: View; initialLeads?: MarvelOpsLead[]; trialGroups?: LeadGroup[] }) {
-  return <LeadsWorkspace records={initialLeads} trialGroups={trialGroups} />;
+export function MarvelOpsAdminView({ initialLeads = [], trialGroups = [], categoryOptions = [] }: { view: View; initialLeads?: MarvelOpsLead[]; trialGroups?: LeadGroup[]; categoryOptions?: TrainingCategoryOption[] }) {
+  return <LeadsWorkspace records={initialLeads} trialGroups={trialGroups} categoryOptions={categoryOptions} />;
 }
 
-function LeadsWorkspace({ records, trialGroups }: { records: MarvelOpsLead[]; trialGroups: LeadGroup[] }) {
+function LeadsWorkspace({ records, trialGroups, categoryOptions }: { records: MarvelOpsLead[]; trialGroups: LeadGroup[]; categoryOptions: TrainingCategoryOption[] }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -202,7 +204,7 @@ function LeadsWorkspace({ records, trialGroups }: { records: MarvelOpsLead[]; tr
           email: String(values.get("email") ?? ""),
           source: String(values.get("source") ?? "Other"),
           message: String(values.get("message") ?? ""),
-          interestedCategory: String(values.get("interestedCategory") ?? "") || undefined,
+          categoryId: String(values.get("categoryId") ?? ""),
           preferredAvailability: String(values.get("preferredAvailability") ?? "") || undefined,
         });
         setCreating(false);
@@ -226,7 +228,7 @@ function LeadsWorkspace({ records, trialGroups }: { records: MarvelOpsLead[]; tr
     />
     {selected ? <LeadDrawer lead={selected} close={() => setSelected(null)} /> : null}
     {leadForGroup ? <TrialGroupModal lead={leadForGroup} groups={trialGroups} pending={pending} close={() => setLeadForGroup(null)} submit={assignGroup} /> : null}
-    {creating ? <CreateLeadModal pending={pending} close={() => setCreating(false)} submit={addLead} /> : null}
+    {creating ? <CreateLeadModal categories={categoryOptions} pending={pending} close={() => setCreating(false)} submit={addLead} /> : null}
     {deleting ? <DeleteLeadModal lead={deleting} pending={pending} close={() => setDeleting(null)} confirm={removeLead} /> : null}
     {subscribing ? <SubscribeLeadModal lead={subscribing} groups={trialGroups} pending={pending} close={() => setSubscribing(null)} submit={subscribeLead} /> : null}
     {losing ? <LostReasonModal lead={losing} pending={pending} close={() => setLosing(null)} submit={markLost} /> : null}
@@ -234,12 +236,13 @@ function LeadsWorkspace({ records, trialGroups }: { records: MarvelOpsLead[]; tr
 }
 
 function TrialGroupModal({ lead, groups, pending, close, submit }: { lead: MarvelOpsLead; groups: LeadGroup[]; pending: boolean; close: () => void; submit: (groupId: string) => void }) {
-  const [groupId, setGroupId] = useState(groups[0]?.id ?? "");
-  return <Dialog.Root open onOpenChange={(open) => !open && close()}><Dialog.Portal><Dialog.Overlay className={styles.overlay} /><Dialog.Content className={styles.modal}><form onSubmit={(event) => { event.preventDefault(); submit(groupId); }}><Dialog.Close className={styles.close} aria-label="Close"><X size={17} /></Dialog.Close><span>Trial booking</span><Dialog.Title asChild><h2>Assign {lead.name} to a group</h2></Dialog.Title><Dialog.Description className="sr-only">Choose which trial group to book {lead.name} into.</Dialog.Description><label>Trial group<select value={groupId} onChange={(event) => setGroupId(event.target.value)} required><option value="" disabled>Choose a group</option>{groups.map((group) => <option value={group.id} key={group.id}>{group.name}</option>)}</select></label><footer><Dialog.Close asChild><button type="button">Cancel</button></Dialog.Close><button className={styles.primary} disabled={pending || !groupId}>{pending ? "Saving…" : "Book trial"}</button></footer></form></Dialog.Content></Dialog.Portal></Dialog.Root>;
+  const availableGroups = groups.filter((group) => group.categoryId === lead.categoryId);
+  const [groupId, setGroupId] = useState(availableGroups[0]?.id ?? "");
+  return <EntityDialog open onOpenChange={(open) => !open && close()} title={`Assign ${lead.name} to a group`} description="Only active groups in the lead's interested category are available." closeLabel="Close trial booking" size="small"><EntityForm onSubmit={(event) => { event.preventDefault(); submit(groupId); }}><FormField label="Trial group" full><select value={groupId} onChange={(event) => setGroupId(event.target.value)} required><option value="" disabled>{availableGroups.length ? "Choose a group" : "No active groups in this category"}</option>{availableGroups.map((group) => <option value={group.id} key={group.id}>{group.name}</option>)}</select></FormField><FormActions onCancel={close} submitLabel="Book trial" pendingLabel="Saving…" pending={pending} disabled={!groupId} /></EntityForm></EntityDialog>;
 }
 
-function CreateLeadModal({ pending, close, submit }: { pending: boolean; close: () => void; submit: (event: FormEvent<HTMLFormElement>) => void }) {
-  return <Dialog.Root open onOpenChange={(open) => !open && close()}><Dialog.Portal><Dialog.Overlay className={styles.overlay} /><Dialog.Content className={styles.modal}><form onSubmit={submit}><Dialog.Close className={styles.close} aria-label="Close"><X size={17} /></Dialog.Close><span>New intake</span><Dialog.Title asChild><h2>Add a lead</h2></Dialog.Title><Dialog.Description className="sr-only">Add a new lead to the intake queue.</Dialog.Description><label>Full name<input name="fullName" required /></label><label>Phone<input name="phone" type="tel" placeholder="+20 100 000 0000" required /></label><label>Email<input name="email" type="email" /></label><label>Source<select name="source" defaultValue="Other">{adminLeadSources.map((item) => <option key={item}>{item}</option>)}</select></label><label>Interested category<select name="interestedCategory" defaultValue="">{trainingCategoryLabels.map((item) => <option key={item}>{item}</option>)}</select></label><label>Preferred availability<input name="preferredAvailability" placeholder="e.g. Weekday evenings" /></label><label>Note<input name="message" /></label><footer><Dialog.Close asChild><button type="button">Cancel</button></Dialog.Close><button className={styles.primary} disabled={pending}>{pending ? "Adding…" : "Add lead"}</button></footer></form></Dialog.Content></Dialog.Portal></Dialog.Root>;
+function CreateLeadModal({ categories, pending, close, submit }: { categories: TrainingCategoryOption[]; pending: boolean; close: () => void; submit: (event: FormEvent<HTMLFormElement>) => void }) {
+  return <EntityDialog open onOpenChange={(open) => !open && close()} title="Add a lead" description="Create an intake record using the studio's active programs." closeLabel="Close lead form"><EntityForm onSubmit={submit}><FormField label="Full name" required full><input name="fullName" required /></FormField><FormField label="Phone" required><input name="phone" type="tel" placeholder="+20 100 000 0000" required /></FormField><FormField label="Email"><input name="email" type="email" /></FormField><FormField label="Source"><select name="source" defaultValue="Other">{adminLeadSources.map((item) => <option key={item}>{item}</option>)}</select></FormField><FormField label="Interested category" required><select name="categoryId" defaultValue={categories[0]?.id ?? ""} required><option value="" disabled>Choose a category</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></FormField><FormField label="Preferred availability" full><input name="preferredAvailability" placeholder="e.g. Weekday evenings" /></FormField><FormField label="Note" full><input name="message" /></FormField><FormActions onCancel={close} submitLabel="Add lead" pendingLabel="Adding…" pending={pending} /></EntityForm></EntityDialog>;
 }
 
 function SubscribeLeadModal({ lead, groups, pending, close, submit }: {
@@ -255,44 +258,32 @@ function SubscribeLeadModal({ lead, groups, pending, close, submit }: {
     paymentMethod: (typeof adminPaymentMethods)[number];
   }) => void;
 }) {
-  const [groupId, setGroupId] = useState(lead.trialGroupId ?? groups[0]?.id ?? "");
+  const availableGroups = groups.filter((group) => group.categoryId === lead.categoryId);
+  const [groupId, setGroupId] = useState(lead.trialGroupId ?? availableGroups[0]?.id ?? "");
   const [durationMonths, setDurationMonths] = useState<1 | 3>(1);
   const [sessionsPerMonth, setSessionsPerMonth] = useState<(typeof sessionChoices)[number]>(8);
   const [price, setPrice] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<(typeof adminPaymentMethods)[number]>("Cash");
 
-  return <Dialog.Root open onOpenChange={(open) => !open && !pending && close()}><Dialog.Portal><Dialog.Overlay className={styles.overlay} /><Dialog.Content className={`${styles.modal} ${styles.membershipModal}`}>
-    <form onSubmit={(event) => { event.preventDefault(); submit({ groupId, durationMonths, sessionsPerMonth, price, paymentMethod }); }}>
-      <Dialog.Close className={styles.close} aria-label="Close" disabled={pending}><X size={17} /></Dialog.Close>
-      <span>Membership</span>
-      <Dialog.Title asChild><h2>Subscribe {lead.name}</h2></Dialog.Title>
-      <Dialog.Description className={styles.modalIntro}>Convert {lead.name} into an active member, record the payment, and create the first subscription receipt.</Dialog.Description>
-      <label>Amount (EGP)<input inputMode="decimal" value={price} onChange={(event) => setPrice(event.target.value)} placeholder="0.00" disabled={pending} required /></label>
+  return <EntityDialog open onOpenChange={(open) => !open && !pending && close()} title={`Subscribe ${lead.name}`} description={`Convert ${lead.name} into an active member, record the payment, and create the first subscription receipt.`} closeLabel="Close subscription form">
+    <EntityForm onSubmit={(event) => { event.preventDefault(); submit({ groupId, durationMonths, sessionsPerMonth, price, paymentMethod }); }}>
+      <FormField label="Amount (EGP)" full><input inputMode="decimal" value={price} onChange={(event) => setPrice(event.target.value)} placeholder="0.00" disabled={pending} required /></FormField>
       <fieldset className={styles.paymentChoices} disabled={pending}><legend>Duration</legend><div className={styles.choiceChips}>{([{ months: 1, label: "1 month" }, { months: 3, label: "3 months" }] as const).map((duration) => <button key={duration.months} type="button" data-active={durationMonths === duration.months || undefined} aria-pressed={durationMonths === duration.months} onClick={() => setDurationMonths(duration.months)}>{duration.label}</button>)}</div></fieldset>
       <fieldset className={styles.paymentChoices} disabled={pending}><legend>Sessions per month</legend><div className={styles.choiceChips}>{sessionChoices.map((value) => <button key={value} type="button" data-active={sessionsPerMonth === value || undefined} aria-pressed={sessionsPerMonth === value} onClick={() => setSessionsPerMonth(value)}>{value}</button>)}</div></fieldset>
       <fieldset className={styles.paymentChoices} disabled={pending}><legend>Paid with</legend><div className={styles.choiceChips}>{adminPaymentMethods.map((method) => <button key={method} type="button" data-active={paymentMethod === method || undefined} aria-pressed={paymentMethod === method} onClick={() => setPaymentMethod(method)}>{method}</button>)}</div></fieldset>
-      <fieldset className={styles.paymentChoices} disabled={pending}><legend>Group</legend><div className={styles.groupChoices}>{groups.map((group) => <button key={group.id} type="button" data-active={groupId === group.id || undefined} aria-pressed={groupId === group.id} onClick={() => setGroupId(group.id)}><span>{group.name}</span>{group.id === lead.trialGroupId ? <small>Trial group</small> : null}</button>)}</div></fieldset>
-      <footer><Dialog.Close asChild><button type="button" disabled={pending}>Cancel</button></Dialog.Close><button className={styles.primary} disabled={pending || !groupId || !price.trim()}>{pending ? <><LoaderCircle size={14} className={styles.spinner} /> Saving</> : "Subscribe"}</button></footer>
-    </form>
-  </Dialog.Content></Dialog.Portal></Dialog.Root>;
+      <fieldset className={styles.paymentChoices} disabled={pending}><legend>Group</legend><div className={styles.groupChoices}>{availableGroups.map((group) => <button key={group.id} type="button" data-active={groupId === group.id || undefined} aria-pressed={groupId === group.id} onClick={() => setGroupId(group.id)}><span>{group.name}</span>{group.id === lead.trialGroupId ? <small>Trial group</small> : null}</button>)}</div></fieldset>
+      <FormActions onCancel={close} submitLabel="Subscribe" pendingLabel="Saving…" pending={pending} disabled={!groupId || !price.trim()} />
+    </EntityForm>
+  </EntityDialog>;
 }
 
 function LostReasonModal({ lead, pending, close, submit }: { lead: MarvelOpsLead; pending: boolean; close: () => void; submit: (reason: string) => void }) {
   const [reason, setReason] = useState("");
-  return <Dialog.Root open onOpenChange={(open) => !open && close()}><Dialog.Portal><Dialog.Overlay className={styles.overlay} /><Dialog.Content className={styles.modal}>
-    <form onSubmit={(event) => { event.preventDefault(); submit(reason); }}>
-      <Dialog.Close className={styles.close} aria-label="Close"><X size={17} /></Dialog.Close>
-      <span>Mark lost</span>
-      <Dialog.Title asChild><h2>Mark {lead.name} as lost?</h2></Dialog.Title>
-      <Dialog.Description>The lead record is kept for reporting; this closes the pipeline card.</Dialog.Description>
-      <label>Reason (optional)<input value={reason} onChange={(event) => setReason(event.target.value)} placeholder="e.g. Chose another gym" /></label>
-      <footer><Dialog.Close asChild><button type="button">Cancel</button></Dialog.Close><button className={styles.primary} disabled={pending}>{pending ? "Saving…" : "Mark lost"}</button></footer>
-    </form>
-  </Dialog.Content></Dialog.Portal></Dialog.Root>;
+  return <EntityDialog open onOpenChange={(open) => !open && close()} title={`Mark ${lead.name} as lost?`} description="The lead record is kept for reporting; this closes the pipeline card." closeLabel="Close lost lead form" size="small"><EntityForm onSubmit={(event) => { event.preventDefault(); submit(reason); }}><FormField label="Reason (optional)" full><input value={reason} onChange={(event) => setReason(event.target.value)} placeholder="e.g. Chose another gym" /></FormField><FormActions onCancel={close} submitLabel="Mark lost" pendingLabel="Saving…" pending={pending} /></EntityForm></EntityDialog>;
 }
 
 function DeleteLeadModal({ lead, pending, close, confirm }: { lead: MarvelOpsLead; pending: boolean; close: () => void; confirm: () => void }) {
-  return <Dialog.Root open onOpenChange={(open) => !open && !pending && close()}><Dialog.Portal><Dialog.Overlay className={styles.overlay} /><Dialog.Content className={styles.modal}><Dialog.Close className={styles.close} aria-label="Close" disabled={pending}><X size={17} /></Dialog.Close><span>Remove lead</span><Dialog.Title asChild><h2>Delete {lead.name}?</h2></Dialog.Title><Dialog.Description>This permanently removes the lead from the pipeline.</Dialog.Description><footer><button type="button" onClick={close} disabled={pending}>Cancel</button><button className={styles.primary} type="button" onClick={confirm} disabled={pending}>{pending ? "Deleting…" : "Delete lead"}<Trash2 size={14} /></button></footer></Dialog.Content></Dialog.Portal></Dialog.Root>;
+  return <EntityDialog open onOpenChange={(open) => !open && !pending && close()} title={`Delete ${lead.name}?`} description="This permanently removes the lead from the pipeline." closeLabel="Close delete lead confirmation" size="small"><div className={styles.deleteConfirmActions}><button type="button" className="mv-btn mv-btn-secondary" onClick={close} disabled={pending}>Cancel</button><button className="mv-btn mv-btn-primary" type="button" onClick={confirm} disabled={pending}>{pending ? "Deleting…" : "Delete lead"}<Trash2 size={14} /></button></div></EntityDialog>;
 }
 
 function LeadDrawer({ lead, close }: { lead: MarvelOpsLead; close: () => void }) {

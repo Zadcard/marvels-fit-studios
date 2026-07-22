@@ -1,6 +1,7 @@
 import { AdminClientsWorkspace } from "@/components/dashboard/admin-clients-workspace";
 import { adminClientRepository } from "@/lib/repositories/admin-client-repository";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { adminGroupRepository } from "@/lib/repositories/admin-group-repository";
+import { adminTrainingCategoryRepository } from "@/lib/repositories/admin-training-category-repository";
 
 export const metadata = { title: "Clients" };
 
@@ -20,16 +21,15 @@ export default async function AdminClientsPage(
     1,
     Number(getSingleValue(searchParams.page) ?? "1") || 1,
   );
-  const clientDirectory = await adminClientRepository.list({
-    search,
-    initial: initial || null,
-    sort,
-  });
-  const { data: groupOptions, error } = await getSupabaseServerClient()
-    .from("Group")
-    .select("id,name")
-    .order("name");
-  if (error) throw error;
+  const [clientDirectory, groupData, categoryOptions] = await Promise.all([
+    adminClientRepository.list({ search, initial: initial || null, sort }),
+    adminGroupRepository.list(),
+    adminTrainingCategoryRepository.options({ activeOnly: true }),
+  ]);
+  const activeCategoryIds = new Set(categoryOptions.map((category) => category.id));
+  const groupOptions = groupData.records
+    .filter((group) => group.isActive && activeCategoryIds.has(group.categoryId))
+    .map((group) => ({ id: group.id, name: group.name, categoryId: group.categoryId }));
 
   return (
     <AdminClientsWorkspace
@@ -41,7 +41,8 @@ export default async function AdminClientsPage(
       totalCount={clientDirectory.totalCount}
       filteredCount={clientDirectory.filteredCount}
       initialOptions={clientDirectory.initialOptions}
-      groupOptions={groupOptions ?? []}
+      groupOptions={groupOptions}
+      categoryOptions={categoryOptions}
     />
   );
 }

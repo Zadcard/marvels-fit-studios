@@ -28,15 +28,6 @@ function billingCycleLabel(value: string | null | undefined, cycleMonths: number
   return "Monthly";
 }
 
-function trainingCategoryLabel(value: string | null | undefined) {
-  if (!value) return "Not set";
-  return value
-    .toLowerCase()
-    .split("_")
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ");
-}
-
 export async function GET(
   request: Request,
   context: RouteContext<"/api/receipts/[receiptId]">,
@@ -56,7 +47,7 @@ export async function GET(
   const supabase = getSupabaseServerClient();
   const { data, error } = await supabase
     .from("BillingLedgerEntry")
-    .select("id, receiptNumber, type, status, amount, currency, description, occurredAt, payment:Payment(method), createdBy:User!BillingLedgerEntry_createdById_fkey(name), client:Client(id,fullName,phone,userId,trainingCategory,group:Group(name,coach:Coach(fullName))), subscription:ClientSubscription(startsAt,renewsAt,sessionsTotal,cycleMonths,plan:SubscriptionPlan(name,billingCycle))")
+    .select("id, receiptNumber, type, status, amount, currency, description, occurredAt, payment:Payment(method), createdBy:User!BillingLedgerEntry_createdById_fkey(name), client:Client(id,fullName,phone,userId,category:TrainingCategory(name),group:Group(name,coach:Coach(fullName))), subscription:ClientSubscription(startsAt,renewsAt,sessionsTotal,cycleMonths,plan:SubscriptionPlan(name,billingCycle))")
     .eq("id", receiptId)
     .maybeSingle();
   if (error) throw error;
@@ -86,7 +77,7 @@ export async function GET(
     const subscriptionEnd = subscription?.renewsAt ? dateFormatter.format(new Date(subscription.renewsAt)) : "—";
     const group = data.client.group?.name ?? "No group";
     const coach = data.client.group?.coach?.fullName ?? "Unassigned";
-    const category = trainingCategoryLabel(data.client.trainingCategory);
+    const category = data.client.category?.name ?? "Not set";
     const creator = data.createdBy?.name ?? "System";
     const rows: Array<[string, string]> = [
       ["Receipt", data.receiptNumber],

@@ -5,7 +5,7 @@ import { adminGroupRepository } from "@/lib/repositories/admin-group-repository"
 import { adminTrainingCategoryRepository } from "@/lib/repositories/admin-training-category-repository";
 import { UserRole } from "@/lib/supabase/domain";
 
-export const metadata = { title: "Supervised categories" };
+export const metadata = { title: "Programs" };
 
 export default async function CoachCategoriesPage() {
   const user = await requireRole(UserRole.COACH);

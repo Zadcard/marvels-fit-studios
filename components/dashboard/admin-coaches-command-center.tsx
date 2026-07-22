@@ -189,7 +189,7 @@ export function AdminCoachesCommandCenter({
               Qualified category
               <select value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)}>
                 <option value="All">All categories</option>
-                {categoryOptions.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
+                {categoryOptions.filter((category) => category.isActive).map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
               </select>
             </label>
           </div>

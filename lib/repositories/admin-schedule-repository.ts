@@ -135,7 +135,7 @@ export class AdminScheduleRepository {
           [
             sessionsPromise,
             supabase.from("Coach").select("id, fullName").order("fullName"),
-            supabase.from("Group").select("id, name").order("name"),
+            supabase.from("Group").select("id, name").eq("isActive", true).order("name"),
             supabase.from("Client").select("id, fullName").order("fullName"),
           ],
         );

@@ -2,8 +2,7 @@
 
 import { useMemo, useState, useTransition, type FormEvent } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Archive, ChevronRight, FolderTree, Pencil, Plus, ShieldUser, Trash2, UsersRound, X } from "lucide-react";
-import { Dialog } from "radix-ui";
+import { Archive, ChevronRight, FolderTree, Pencil, Plus, ShieldUser, Trash2 } from "lucide-react";
 
 import {
   deleteTrainingCategory,
@@ -20,6 +19,7 @@ import type {
 import type { AdminTrainingCategoryRecord } from "@/lib/dashboard/training-category";
 import { AdminGroupsWorkspace } from "./admin-groups-workspace";
 import { useDashboardToast } from "./dashboard-toast-provider";
+import { ConfirmDeleteDialog, EntityDialog, EntityForm, FormActions, FormErrorBanner, FormField } from "@/components/ui/entity-form";
 import styles from "./admin-training-categories-workspace.module.css";
 
 type Props = {
@@ -92,7 +92,7 @@ export function AdminTrainingCategoriesWorkspace({
       try {
         const result = await saveTrainingCategory({ categoryId: editing === "new" ? null : editing?.id, name, isActive });
         setEditing(null);
-        showToast(editing === "new" ? "Category created." : "Category updated.");
+        showToast(editing === "new" ? "Program created." : "Program updated.");
         if (editing === "new" && result?.id) selectCategory(result.id);
         router.refresh();
       } catch (caught) {
@@ -107,7 +107,7 @@ export function AdminTrainingCategoriesWorkspace({
     startTransition(async () => {
       try {
         await setTrainingCategoryActive(record.id, !record.isActive);
-        showToast(record.isActive ? "Category archived." : "Category activated.");
+        showToast(record.isActive ? "Program archived." : "Program activated.");
         router.refresh();
       } catch (caught) {
         showToast(caught instanceof Error ? caught.message : "Could not update the category.", "warning");
@@ -123,7 +123,7 @@ export function AdminTrainingCategoriesWorkspace({
         await deleteTrainingCategory({ categoryId: deleting.id, confirmationText: confirmation });
         setDeleting(null);
         setConfirmation("");
-        showToast("Category deleted.");
+        showToast("Program deleted.");
         router.refresh();
       } catch (caught) {
         const message = caught instanceof Error ? caught.message : "Could not delete the category.";
@@ -145,7 +145,7 @@ export function AdminTrainingCategoriesWorkspace({
       try {
         await setTrainingCategorySupervisors(supervisorCategory.id, supervisorIds);
         setSupervisorCategory(null);
-        showToast("Category supervisors updated.");
+        showToast("Program supervisors updated.");
         router.refresh();
       } catch (caught) {
         const message = caught instanceof Error ? caught.message : "Could not update supervisors.";
@@ -160,8 +160,8 @@ export function AdminTrainingCategoriesWorkspace({
 
   return <div className={styles.page} aria-busy={pending}>
     <header className={styles.header}>
-      <div><span>Programs</span><h1>Categories &amp; groups</h1><p>Select a training category to manage its supervisors, groups, members, coaches, and recurring sessions.</p></div>
-      {mode === "admin" ? <button type="button" className="mv-btn mv-btn-primary" onClick={openCreate}><Plus size={16} /> New category</button> : null}
+      <div><span>Studio structure</span><h1>Programs</h1><p>Choose a program to manage its groups, coaches, members, and recurring sessions.</p></div>
+      {mode === "admin" ? <button type="button" className="mv-btn mv-btn-primary" onClick={openCreate}><Plus size={16} /> New program</button> : null}
     </header>
 
     <div className={styles.filters}>
@@ -169,11 +169,11 @@ export function AdminTrainingCategoriesWorkspace({
     </div>
 
     {visible.length ? <div className={styles.hub}>
-      <aside className={styles.categoryRail} aria-label="Training categories">
+      <aside className={styles.categoryRail} aria-label="Training programs">
         {visible.map((record) => <article className={styles.railCard} data-selected={selected?.id === record.id || undefined} key={record.id}>
           <button type="button" className={styles.categorySelect} onClick={() => selectCategory(record.id)}>
             <span className={styles.icon}><FolderTree size={18} /></span>
-            <span><strong>{record.name}</strong><small>{record.groups.length} groups · {record.supervisors.length} supervisors</small></span>
+            <span><strong>{record.name}</strong><small>{record.groups.length} {record.groups.length === 1 ? "group" : "groups"}</small></span>
             <ChevronRight size={17} />
           </button>
         </article>)}
@@ -181,7 +181,7 @@ export function AdminTrainingCategoriesWorkspace({
 
       {selected ? <section className={styles.detail}>
         <header className={styles.detailHeader}>
-          <div><span className={styles.icon}><FolderTree size={20} /></span><div><h2>{selected.name}</h2><p>{selected.isActive ? "Active training category" : "Archived training category"}</p></div></div>
+          <div><span className={styles.icon}><FolderTree size={20} /></span><div><h2>{selected.name}</h2><p>{selected.isActive ? "Active program" : "Archived program"}</p></div></div>
           <div className={styles.detailActions}>
             <button type="button" onClick={() => openEdit(selected)}><Pencil size={14} /> Edit</button>
             {mode === "admin" ? <>
@@ -192,11 +192,7 @@ export function AdminTrainingCategoriesWorkspace({
           </div>
         </header>
 
-        <div className={styles.summaryGrid}>
-          <div><span><UsersRound size={15} /> Groups</span><strong>{selectedGroups.length}</strong></div>
-          <div><span><UsersRound size={15} /> Clients</span><strong>{selectedGroups.reduce((sum, group) => sum + group.memberCount, 0)}</strong></div>
-          <div><span><ShieldUser size={15} /> Qualified coaches</span><strong>{selected.coaches.length}</strong></div>
-        </div>
+        <p className={styles.programMeta}>{selectedGroups.length} {selectedGroups.length === 1 ? "group" : "groups"} · {selectedGroups.reduce((sum, group) => sum + group.memberCount, 0)} members · {selected.coaches.length} qualified coaches</p>
         <section className={styles.peopleStrip}><h3>Supervisors</h3><p>{selected.supervisors.length ? selected.supervisors.map((supervisor) => supervisor.name).join(" · ") : "No supervisors assigned"}</p></section>
 
         <AdminGroupsWorkspace
@@ -208,21 +204,15 @@ export function AdminTrainingCategoriesWorkspace({
           embeddedCategoryId={selected.id}
         />
       </section> : null}
-    </div> : <div className={styles.empty}><FolderTree size={30} /><h2>No categories found</h2><p>{mode === "admin" ? "Create a training category or change the status filter." : "You are not supervising a category yet."}</p></div>}
+    </div> : <div className={styles.empty}><FolderTree size={30} /><h2>No programs found</h2><p>{mode === "admin" ? "Create a program or change the status filter." : "You are not supervising a program yet."}</p></div>}
 
-    <Dialog.Root open={editing !== null} onOpenChange={(open) => !open && !pending && setEditing(null)}><Dialog.Portal><Dialog.Overlay className={styles.overlay} /><Dialog.Content className={styles.modal}>
-      <Dialog.Close className={styles.close} disabled={pending} aria-label="Close"><X size={17} /></Dialog.Close><Dialog.Title asChild><h2>{editing === "new" ? "New category" : "Edit category"}</h2></Dialog.Title><Dialog.Description>Category names identify programs and contain their scheduled groups.</Dialog.Description>
-      <form onSubmit={submit}><label>Category name<input autoFocus required maxLength={80} value={name} onChange={(event) => setName(event.target.value)} placeholder="e.g. Burning Class" /></label>{mode === "admin" ? <label className={styles.check}><input type="checkbox" checked={isActive} onChange={(event) => setIsActive(event.target.checked)} /> Category is active</label> : null}{error ? <p role="alert" className={styles.error}>{error}</p> : null}<footer><button type="button" onClick={() => setEditing(null)} disabled={pending}>Cancel</button><button type="submit" className="mv-btn mv-btn-primary" disabled={pending}>{pending ? "Saving…" : "Save category"}</button></footer></form>
-    </Dialog.Content></Dialog.Portal></Dialog.Root>
+    <EntityDialog open={editing !== null} onOpenChange={(open) => !open && !pending && setEditing(null)} title={editing === "new" ? "New program" : "Edit program"} description="Programs organize the studio's active groups." closeLabel="Close program editor" size="small"><EntityForm onSubmit={submit}><FormField label="Program name" required full><input autoFocus required maxLength={80} value={name} onChange={(event) => setName(event.target.value)} placeholder="e.g. Burning Class" /></FormField>{mode === "admin" ? <label className={styles.check}><input type="checkbox" checked={isActive} onChange={(event) => setIsActive(event.target.checked)} /> Program is active</label> : null}{error ? <FormErrorBanner>{error}</FormErrorBanner> : null}<FormActions onCancel={() => setEditing(null)} submitLabel="Save program" pendingLabel="Saving…" pending={pending} /></EntityForm></EntityDialog>
 
-    <Dialog.Root open={supervisorCategory !== null} onOpenChange={(open) => !open && !pending && setSupervisorCategory(null)}><Dialog.Portal><Dialog.Overlay className={styles.overlay} /><Dialog.Content className={styles.modal}>
-      <Dialog.Close className={styles.close} disabled={pending} aria-label="Close"><X size={17} /></Dialog.Close><Dialog.Title asChild><h2>{supervisorCategory?.name} supervisors</h2></Dialog.Title><Dialog.Description>Supervisors can read and write groups, clients, coaches, and schedules in this category.</Dialog.Description>
+    <EntityDialog open={supervisorCategory !== null} onOpenChange={(open) => !open && !pending && setSupervisorCategory(null)} title={`${supervisorCategory?.name ?? "Program"} supervisors`} description="Supervisors can read and write groups, clients, coaches, and schedules in this program." closeLabel="Close supervisor editor" size="small">
       <div className={styles.supervisorPicker}>{coachOptions.map((coach) => { const checked = supervisorIds.includes(coach.id); return <label key={coach.id}><input type="checkbox" checked={checked} onChange={() => setSupervisorIds((current) => checked ? current.filter((id) => id !== coach.id) : [...current, coach.id])} /><span>{coach.fullName}</span></label>; })}</div>
-      {error ? <p role="alert" className={styles.error}>{error}</p> : null}<footer><button type="button" onClick={() => setSupervisorCategory(null)} disabled={pending}>Cancel</button><button type="button" className="mv-btn mv-btn-primary" onClick={saveSupervisors} disabled={pending}>{pending ? "Saving…" : "Save supervisors"}</button></footer>
-    </Dialog.Content></Dialog.Portal></Dialog.Root>
+      {error ? <FormErrorBanner>{error}</FormErrorBanner> : null}<div className={styles.dialogActions}><button type="button" className="mv-btn mv-btn-secondary" onClick={() => setSupervisorCategory(null)} disabled={pending}>Cancel</button><button type="button" className="mv-btn mv-btn-primary" onClick={saveSupervisors} disabled={pending}>{pending ? "Saving…" : "Save supervisors"}</button></div>
+    </EntityDialog>
 
-    <Dialog.Root open={deleting !== null} onOpenChange={(open) => !open && !pending && setDeleting(null)}><Dialog.Portal><Dialog.Overlay className={styles.overlay} /><Dialog.Content className={styles.modal}>
-      <Dialog.Close className={styles.close} disabled={pending} aria-label="Close"><X size={17} /></Dialog.Close><Dialog.Title asChild><h2>Delete {deleting?.name}?</h2></Dialog.Title><Dialog.Description>This is only allowed when no group, coach qualification, or supervisor references the category.</Dialog.Description><label>Type Delete<input value={confirmation} onChange={(event) => setConfirmation(event.target.value)} placeholder="Delete" /></label>{error ? <p role="alert" className={styles.error}>{error}</p> : null}<footer><button type="button" onClick={() => setDeleting(null)} disabled={pending}>Cancel</button><button type="button" className={styles.dangerButton} disabled={pending || confirmation !== "Delete"} onClick={confirmDelete}>Delete permanently</button></footer>
-    </Dialog.Content></Dialog.Portal></Dialog.Root>
+    <ConfirmDeleteDialog open={deleting !== null} onOpenChange={(open) => !open && !pending && setDeleting(null)} title={`Delete ${deleting?.name ?? "this program"}?`} description="This is only allowed when no group, coach qualification, or supervisor references the program." confirmationValue={confirmation} onConfirmationChange={setConfirmation} error={error} pending={pending} onConfirm={confirmDelete} closeLabel="Close program deletion" />
   </div>;
 }
