@@ -402,9 +402,8 @@ export function MarvelOpsToday({ data }: { data: AdminTodayOperations }) {
                 type="button"
                 className="mv-btn mv-btn-primary"
                 onClick={() => {
-                  const id = selectedSession.id;
                   setSelectedSession(null);
-                  router.push(`/admin/attendance?session=${encodeURIComponent(id)}`);
+                  router.push(`/admin/schedule`);
                 }}
               >
                 <UserCheck size={15} /> Open Attendance & Rosters

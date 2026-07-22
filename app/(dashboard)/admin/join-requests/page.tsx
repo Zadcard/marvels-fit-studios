@@ -31,22 +31,42 @@ export default async function AdminJoinRequestsPage() {
   const groups = groupData.records.filter(
     (group) => group.isActive && activeCategoryIds.has(group.categoryId),
   );
-  const initialLeads: MarvelOpsLead[] = records.map((record, index) => ({
-    id: record.id,
-    stage: stageFor(record.status),
-    name: record.fullName,
-    initials: initials(record.fullName),
-    tone: tones[index % tones.length],
-    source: normalizeLeadSource(record.source),
-    phone: record.phone,
-    wants: record.interestedCategory ?? "Trial consultation",
-    categoryId: record.categoryId ?? undefined,
-    note: record.message,
-    assigned: record.trialGroupId ? `Trial: ${groups.find((group) => group.id === record.trialGroupId)?.name ?? "Assigned group"}` : undefined,
-    trialGroupId: record.trialGroupId ?? undefined,
-    preferredAvailability: record.preferredAvailability ?? undefined,
-    lostReason: record.lostReason ?? undefined,
-  }));
+  const initialLeads: MarvelOpsLead[] = records.map((record, index) => {
+    const matchedCategory = categories.find((c) => c.id === record.categoryId);
+    const categoryName = matchedCategory?.name || record.interestedCategory || "Unspecified Category";
 
-  return <MarvelOpsAdminView view="leads" initialLeads={initialLeads} categoryOptions={categories} trialGroups={groups.map((group) => ({ id: group.id, name: group.name, categoryId: group.categoryId }))} />;
+    return {
+      id: record.id,
+      stage: stageFor(record.status),
+      name: record.fullName,
+      initials: initials(record.fullName),
+      tone: tones[index % tones.length],
+      source: normalizeLeadSource(record.source),
+      phone: record.phone,
+      wants: categoryName,
+      categoryId: record.categoryId ?? undefined,
+      note: record.message ?? "",
+      assigned: record.trialGroupId ? `Trial: ${groups.find((group) => group.id === record.trialGroupId)?.name ?? "Assigned group"}` : undefined,
+      trialGroupId: record.trialGroupId ?? undefined,
+      preferredAvailability: record.preferredAvailability ?? undefined,
+      lostReason: record.lostReason ?? undefined,
+    };
+  });
+
+
+
+  return (
+    <MarvelOpsAdminView
+      view="leads"
+      initialLeads={initialLeads}
+      categoryOptions={categories}
+      trialGroups={groups.map((group) => ({
+        id: group.id,
+        name: group.name,
+        categoryId: group.categoryId,
+        scheduleSummary: group.scheduleSummary,
+      }))}
+    />
+  );
 }
+

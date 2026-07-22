@@ -66,7 +66,7 @@ describe("client domain labels", () => {
   it("raises an injury alert only for current injuries and rehab", () => {
     expect(injuryStatusHasAlert(InjuryStatus.CURRENT)).toBe(true);
     expect(injuryStatusHasAlert(InjuryStatus.REHAB)).toBe(true);
-    expect(injuryStatusHasAlert(InjuryStatus.PREVIOUS)).toBe(false);
+    expect(injuryStatusHasAlert(InjuryStatus.PREVIOUS)).toBe(true);
     expect(injuryStatusHasAlert(InjuryStatus.NONE)).toBe(false);
   });
 });

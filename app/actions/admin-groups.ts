@@ -69,9 +69,13 @@ function revalidateGroupViews() {
   revalidatePath("/admin/categories");
   revalidatePath("/admin/clients");
   revalidatePath("/admin/schedule");
+  revalidatePath("/ops");
   revalidatePath("/coach");
   revalidatePath("/coach/categories");
+  revalidatePath("/coach/schedule");
+  revalidatePath("/coach/sessions");
 }
+
 
 async function getGroupCategoryId(groupId: string) {
   const { data, error } = await getSupabaseServerClient()

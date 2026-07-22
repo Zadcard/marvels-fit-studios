@@ -20,9 +20,27 @@
 .ghostBtn:hover { color: #fff; border-color: var(--line3); }
 .linkBtn { font-family: var(--fm); font-size: .6rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); background: transparent; border: 0; cursor: pointer; }
 .linkBtn:hover { color: #fff; }
-.iconBtn { width: 28px; height: 28px; border-radius: 8px; border: 1px solid var(--line2); background: transparent; color: var(--muted); cursor: pointer; font-size: .74rem; display: grid; place-items: center; }
-.iconBtn:hover { color: #fff; border-color: var(--red); }
-.iconBtnDanger:hover { color: var(--danger); border-color: var(--danger); }
+.iconBtn {
+  width: 30px; height: 30px; border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.1); background: rgba(255, 255, 255, 0.04);
+  color: var(--muted); cursor: pointer; font-size: .74rem; display: grid; place-items: center;
+  transition: all 0.15s ease;
+}
+.iconBtn:hover {
+  color: #fff; border-color: rgba(230, 36, 41, 0.6);
+  background: rgba(230, 36, 41, 0.2); transform: scale(1.08);
+  box-shadow: 0 0 8px rgba(230, 36, 41, 0.25);
+}
+.iconBtnDanger {
+  border: 1px solid rgba(239, 68, 68, 0.25); background: rgba(239, 68, 68, 0.08);
+  color: #ff686d;
+}
+.iconBtnDanger:hover {
+  color: #fff; border-color: rgba(239, 68, 68, 0.6);
+  background: rgba(239, 68, 68, 0.3); transform: scale(1.08);
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.25);
+}
+
 
 /* search + inputs */
 .search { display: flex; align-items: center; gap: 8px; min-width: 200px; height: 38px; padding: 0 12px; background: var(--bg2); border: 1px solid var(--line2); border-radius: 10px; }

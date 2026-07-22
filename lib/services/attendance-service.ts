@@ -86,7 +86,10 @@ export async function updateSessionAttendance(input: UpdateSessionAttendanceInpu
       },
       data: {
         status: input.status,
-        attendedAt: input.status === BookingStatus.ATTENDED ? new Date() : null,
+        attendedAt:
+          input.status === BookingStatus.ATTENDED || input.status === BookingStatus.LATE
+            ? new Date()
+            : null,
         canceledAt: input.status === BookingStatus.CANCELED ? new Date() : null,
       },
       select: {
@@ -118,7 +121,7 @@ export async function updateSessionAttendance(input: UpdateSessionAttendanceInpu
       const sessionsUsed = await tx.sessionBooking.count({
         where: {
           clientId: booking.clientId,
-          status: BookingStatus.ATTENDED,
+          status: { in: [BookingStatus.ATTENDED, BookingStatus.LATE] },
           trainingSession: {
             status: {
               not: TrainingSessionStatus.CANCELED,

@@ -23,7 +23,7 @@ describe("withSupabaseFallback", () => {
     ).rejects.toBeInstanceOf(OperationalDataUnavailableError);
     expect(consoleError).toHaveBeenCalledWith(
       "[withSupabaseFallback] database operation unavailable:",
-      error,
+      expect.objectContaining({ message: "database unavailable" }),
     );
 
     consoleError.mockRestore();

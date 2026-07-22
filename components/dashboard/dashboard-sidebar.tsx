@@ -32,7 +32,7 @@ type NavItem = ReturnType<typeof getDashboardNav>[number];
 const adminSections: Array<{ label: string; matches: (item: NavItem) => boolean }> = [
   {
     label: "Operations",
-    matches: (item) => ["/admin", "/admin/attendance", "/admin/schedule"].includes(item.href),
+    matches: (item) => ["/admin", "/admin/schedule"].includes(item.href),
   },
   {
     label: "People",
@@ -85,7 +85,6 @@ export function DashboardSidebar({ role, account, navBadges, onClose }: Dashboar
         <Icon size={17} strokeWidth={1.8} aria-hidden="true" />
         <span>
           <strong>{item.label}</strong>
-          <small>{item.description}</small>
         </span>
         {badge ? <b>{badge}</b> : null}
       </Link>

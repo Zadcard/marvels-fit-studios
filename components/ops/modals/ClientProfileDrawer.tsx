@@ -62,7 +62,37 @@ export default function ClientProfileDrawer() {
 
         <div className={s.detailsWrap}>
           <div className={s.details}>
-            <div className={s.detailRow}><span className={s.detailKey}>Phone</span><span className={s.detailMono}>{formatPhoneNumber(p.phone)}</span></div>
+            <div className={s.detailRow}>
+              <span className={s.detailKey}>Phone</span>
+              <span className={s.detailMono} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                {formatPhoneNumber(p.phone)}
+                {p.phone && (
+                  <a
+                    href={`https://wa.me/${(p.phone || "").replace(/\D/g, "")}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      width: 22,
+                      height: 22,
+                      borderRadius: 6,
+                      background: "rgba(37, 211, 102, 0.14)",
+                      border: "1px solid rgba(37, 211, 102, 0.3)",
+                      color: "var(--success)",
+                      textDecoration: "none",
+                      fontSize: ".68rem",
+                    }}
+                    title="Send WhatsApp message"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    💬
+                  </a>
+                )}
+              </span>
+            </div>
+
             <div className={s.detailRow}><span className={s.detailKey}>Coach</span><span className={s.coachAvatar} style={{ background: p.coachGrad }}>{p.coachInitials}</span><span className={s.detailVal}>{p.coach}</span></div>
             <div className={s.detailRow}><span className={s.detailKey}>Schedule</span><span className={s.detailMuted}>{p.days}</span></div>
             <div className={s.detailRow}><span className={s.detailKey}>Plan</span><span className={s.detailVal}>{p.plan}</span></div>

@@ -11,14 +11,18 @@ import {
 import { Dialog } from "radix-ui";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
+  AlertTriangle,
   CalendarCheck,
   CalendarClock,
   CalendarPlus2,
   Check,
   ChevronLeft,
   ChevronRight,
+  Clock,
   Clock3,
   Dumbbell,
+  FileText,
+  MessageCircle,
   PanelRightClose,
   PanelRightOpen,
   Plus,
@@ -45,6 +49,11 @@ import {
   assignClientToSession,
   removeClientFromSession,
 } from "@/app/actions/admin-session-bookings";
+import {
+  markAllAttendance,
+  markAttendance,
+} from "@/app/actions/admin-attendance";
+import { formatPhoneNumber } from "@/lib/phone-format";
 import { AdminRecurringSessionManager } from "@/components/dashboard/admin-recurring-session-manager";
 import type {
   AdminScheduleChangeRequestRecord,
@@ -125,6 +134,10 @@ const weekdayOptions = [
 
 const coachColorPalette = ["#e62429", "#2f8f5b", "#3b6fe0", "#8b5cf6", "#d97706", "#0891b2"];
 
+function initials(name: string) {
+  return name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
+}
+
 const dayHeaderFormatter = new Intl.DateTimeFormat("en-US", {
   timeZone: STUDIO_TIME_ZONE,
   weekday: "short",
@@ -136,12 +149,6 @@ const monthFormatter = new Intl.DateTimeFormat("en-US", {
   month: "long",
   year: "numeric",
 });
-const timeFormatter = new Intl.DateTimeFormat("en-US", {
-  timeZone: STUDIO_TIME_ZONE,
-  hour: "numeric",
-  minute: "2-digit",
-});
-
 function toDateTimeLocal(value: string) {
   return instantToStudioDateTimeLocal(value);
 }
@@ -176,10 +183,10 @@ function emptyRequestForm(): RequestForm {
 }
 
 function statusClass(status: AdminScheduleSessionRecord["status"]) {
-  if (status === "Confirmed") return styles.confirmed;
-  if (status === "Waitlist") return styles.waitlist;
+  if (status === "Live") return styles.statusLive;
+  if (status === "Upcoming") return styles.upcoming;
   if (status === "Completed") return styles.completed;
-  return styles.attention;
+  return styles.upcoming;
 }
 
 function getCairoMinutes(value: string) {
@@ -220,6 +227,15 @@ export function AdminScheduleWorkspace({
   const [isPending, startTransition] = useTransition();
   const [search, setSearch] = useState("");
   const deferredSearch = useDeferredValue(search);
+  const [viewMode, setViewMode] = useState<"agenda" | "week" | "grid">("agenda");
+  const todayKey = getStudioDateKey();
+  const weekDays = useMemo(
+    () => Array.from({ length: 7 }, (_, index) => addStudioDays(weekStartDate, index)),
+    [weekStartDate],
+  );
+  const [selectedDayKey, setSelectedDayKey] = useState<string>(() =>
+    weekDays.includes(todayKey) ? todayKey : weekDays[0],
+  );
   const [status, setStatus] = useState<AdminScheduleSessionRecord["status"] | "All">("All");
   const [type, setType] = useState<AdminScheduleSessionRecord["sessionType"] | "All">("All");
   const [coach, setCoach] = useState("all");
@@ -239,6 +255,44 @@ export function AdminScheduleWorkspace({
   const [requestError, setRequestError] = useState("");
   const [requestNotice, setRequestNotice] = useState("");
   const [requestsCollapsed, setRequestsCollapsed] = useState(false);
+  const [attendanceModalSessionId, setAttendanceModalSessionId] = useState<string | null>(null);
+  const [attendanceSearchQuery, setAttendanceSearchQuery] = useState("");
+  const [attendanceFilterTab, setAttendanceFilterTab] = useState<
+    "all" | "pending" | "attended" | "late" | "absent" | "excused"
+  >("all");
+
+  function handleMarkAttendance(
+    sessionId: string,
+    clientId: string,
+    attendanceStatus: "BOOKED" | "ATTENDED" | "LATE" | "MISSED" | "EXCUSED" | "WAITLIST" | "CANCELED" | "NO_SHOW" | "RESCHEDULED",
+  ) {
+    setError("");
+    startTransition(async () => {
+      try {
+        await markAttendance(sessionId, clientId, attendanceStatus);
+        router.refresh();
+      } catch (caught) {
+        setError(caught instanceof Error ? caught.message : "Could not update attendance.");
+      }
+    });
+  }
+
+  function handleMarkAllAttended(sessionId: string, clientIds: string[]) {
+    if (!clientIds.length) return;
+    setError("");
+    startTransition(async () => {
+      try {
+        await markAllAttendance(sessionId, clientIds, "ATTENDED");
+        router.refresh();
+      } catch (caught) {
+        setError(caught instanceof Error ? caught.message : "Could not update attendance.");
+      }
+    });
+  }
+
+  function handleToggleLate(sessionId: string, clientId: string) {
+    handleMarkAttendance(sessionId, clientId, "LATE");
+  }
 
   function openCreateAtCell(dayKey: string, minutes: number) {
     setEditingId(null);
@@ -269,6 +323,28 @@ export function AdminScheduleWorkspace({
     setEditorOpen(true);
   }
 
+  function openCreateForDay(dayKey: string, hour = 9) {
+    setEditingId(null);
+    const hoursStr = String(hour).padStart(2, "0");
+    const startsAt = `${dayKey}T${hoursStr}:00`;
+    const endHour = hour + Math.ceil(defaultDurationMinutes / 60);
+    const endHoursStr = String(endHour % 24).padStart(2, "0");
+    const endsAt = `${dayKey}T${endHoursStr}:00`;
+
+    setForm({
+      title: "",
+      description: "",
+      type: "GROUP",
+      status: "SCHEDULED",
+      coachId: coachOptions[0]?.id ?? "",
+      groupId: "",
+      startsAt,
+      endsAt,
+    });
+    setError("");
+    setEditorOpen(true);
+  }
+
   const filtered = useMemo(() => {
     const query = deferredSearch.trim().toLowerCase();
     return records.filter((record) =>
@@ -279,14 +355,30 @@ export function AdminScheduleWorkspace({
       (group === "all" || (group === "none" ? !record.groupId : record.groupId === group)),
     );
   }, [coach, deferredSearch, group, records, status, type]);
+
+  const sessionsByDay = useMemo(() => {
+    const map: Record<string, AdminScheduleSessionRecord[]> = {};
+    for (const dayKey of weekDays) {
+      map[dayKey] = [];
+    }
+    for (const record of filtered) {
+      if (map[record.dayKey]) {
+        map[record.dayKey].push(record);
+      }
+    }
+    for (const dayKey of Object.keys(map)) {
+      map[dayKey].sort(
+        (left, right) => new Date(left.startsAt).getTime() - new Date(right.startsAt).getTime(),
+      );
+    }
+    return map;
+  }, [filtered, weekDays]);
+
   const selected = filtered.find((record) => record.id === selectedId) ?? null;
   const availableClients = selected
     ? clientOptions.filter((client) => !selected.bookedClients.some((booked) => booked.id === client.id))
     : [];
   const weekStart = studioDateKeyAnchor(weekStartDate);
-  const weekDays = Array.from({ length: 7 }, (_, index) =>
-    addStudioDays(weekStartDate, index),
-  );
 
 function formatHourLabel(hour: number) {
   const period = hour >= 12 ? "PM" : "AM";
@@ -508,11 +600,42 @@ function formatHourLabel(hour: number) {
         <div className={styles.scheduler}>
           <div className={styles.schedulerTop}>
             <div className={styles.monthNav}><button type="button" aria-label="Previous week" onClick={() => navigateWeek(-1)} disabled={isPending}><ChevronLeft size={18} /></button><div><button type="button" className={styles.todayButton} onClick={navigateToday} disabled={isPending}>Today</button><strong>{monthFormatter.format(weekStart)}</strong></div><button type="button" aria-label="Next week" onClick={() => navigateWeek(1)} disabled={isPending}><ChevronRight size={18} /></button></div>
+
+            <div className={styles.viewToggleStrip}>
+              <button
+                type="button"
+                className={styles.viewToggleButton}
+                data-active={viewMode === "agenda" || undefined}
+                onClick={() => setViewMode("agenda")}
+                title="Agenda timeline view"
+              >
+                Agenda
+              </button>
+              <button
+                type="button"
+                className={styles.viewToggleButton}
+                data-active={viewMode === "week" || undefined}
+                onClick={() => setViewMode("week")}
+                title="Week columns view"
+              >
+                Week Cards
+              </button>
+              <button
+                type="button"
+                className={styles.viewToggleButton}
+                data-active={viewMode === "grid" || undefined}
+                onClick={() => setViewMode("grid")}
+                title="Hourly matrix grid"
+              >
+                Hourly Grid
+              </button>
+            </div>
+
             <div className={styles.search}><Search size={17} /><label className="sr-only" htmlFor="schedule-search">Search schedule</label><input id="schedule-search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Session, coach or group" /></div>
             <div className={styles.schedulerActions}><AdminRecurringSessionManager templates={recurringTemplates} coachOptions={coachOptions} groupOptions={groupOptions} defaultDurationMinutes={defaultDurationMinutes} /><button type="button" className="mv-btn mv-btn-primary" onClick={openCreate}><CalendarPlus2 size={17} /> New session</button></div>
           </div>
           <div className={styles.filterStrip}>
-            <label>Status<select value={status} onChange={(event) => setStatus(event.target.value as typeof status)}><option>All</option><option>Confirmed</option><option>Waitlist</option><option>Attention</option><option>Completed</option></select></label>
+            <label>Status<select value={status} onChange={(event) => setStatus(event.target.value as typeof status)}><option>All</option><option>Upcoming</option><option>Live</option><option>Completed</option></select></label>
             <label>Type<select value={type} onChange={(event) => setType(event.target.value as typeof type)}><option>All</option><option>Group</option><option>Private</option></select></label>
             <label>Coach<select value={coach} onChange={(event) => setCoach(event.target.value)}><option value="all">All coaches</option>{coachOptions.map((item) => <option value={item.id} key={item.id}>{item.fullName}</option>)}</select></label>
             <label>Group<select value={group} onChange={(event) => setGroup(event.target.value)}><option value="all">All groups</option><option value="none">No group</option>{groupOptions.map((item) => <option value={item.id} key={item.id}>{item.name}</option>)}</select></label>
@@ -520,67 +643,267 @@ function formatHourLabel(hour: number) {
           </div>
           {error ? <p className={styles.error} role="alert">{error}</p> : null}
 
-          <div className={styles.weekScroll}>
-            {timeRows.length === 0 ? (
-              <p className={styles.gridEmpty}>No sessions match these filters.</p>
-            ) : (
-              <div className={styles.grid}>
-                <div className={styles.gridCorner}><Clock3 size={13} /> Time (EGT)</div>
+          {/* Render Active View Mode */}
+          {viewMode === "agenda" ? (
+            <>
+              {/* 7-Day Date Ribbon */}
+              <div className={styles.dateRibbon}>
                 {weekDays.map((dayKey) => {
                   const day = studioDateKeyAnchor(dayKey);
-                  return <div className={styles.gridDayHeader} key={dayKey} data-today={dayKey === getStudioDateKey() || undefined}><span>{dayHeaderFormatter.format(day).split(",")[0]}</span><strong>{day.getUTCDate()}</strong></div>;
+                  const count = sessionsByDay[dayKey]?.length ?? 0;
+                  const isSelected = selectedDayKey === dayKey;
+                  const isToday = dayKey === todayKey;
+                  const dayName = dayHeaderFormatter.format(day).split(",")[0];
+                  const dayNum = day.getUTCDate();
+                  return (
+                    <button
+                      key={dayKey}
+                      type="button"
+                      className={styles.dateChip}
+                      data-active={isSelected || undefined}
+                      data-today={isToday || undefined}
+                      onClick={() => setSelectedDayKey(dayKey)}
+                    >
+                      {isToday && <span className={styles.todayDot} title="Today" />}
+                      <span className={styles.dateChipName}>{dayName}</span>
+                      <span className={styles.dateChipNum}>{dayNum}</span>
+                      <span className={styles.dateChipBadge}>
+                        {count} {count === 1 ? "session" : "sessions"}
+                      </span>
+                    </button>
+                  );
                 })}
-                {timeRows.map(({ hour, minutes, label }) => (
-                  <Fragment key={hour}>
-                    <div className={styles.gridTimeLabel}>{label}</div>
-                    {weekDays.map((dayKey) => {
-                      const cellRecords = filtered.filter(
-                        (record) =>
-                          record.dayKey === dayKey &&
-                          Math.floor(getCairoMinutes(record.startsAt) / 60) === hour,
-                      );
-                      return (
-                        <div className={styles.gridCell} key={`${dayKey}-${hour}`} data-today={dayKey === getStudioDateKey() || undefined}>
-                          {cellRecords.length === 0 ? (
-                            <button
-                              type="button"
-                              className={styles.emptySlotButton}
-                              onClick={() => openCreateAtCell(dayKey, minutes)}
-                              aria-label={`Add session on ${dayKey} at ${label}`}
-                            >
-                              <Plus size={13} /> Add
-                            </button>
-                          ) : (
-                            <div className={styles.gridCellBlockGroup}>
-                              {cellRecords.map((record) => (
+              </div>
+
+              {/* Agenda Chronological List */}
+              {(() => {
+                const activeDayDate = studioDateKeyAnchor(selectedDayKey);
+                const activeSessions = sessionsByDay[selectedDayKey] ?? [];
+                return (
+                  <div className={styles.agendaContainer}>
+                    <div className={styles.agendaHeader}>
+                      <div className={styles.agendaTitleGroup}>
+                        <h2>{dayHeaderFormatter.format(activeDayDate)}</h2>
+                        <p>
+                          {activeSessions.length}{" "}
+                          {activeSessions.length === 1 ? "scheduled session" : "scheduled sessions"} ordered chronologically
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        className="mv-btn mv-btn-primary"
+                        onClick={() => openCreateForDay(selectedDayKey)}
+                      >
+                        <Plus size={15} /> Add Session on {dayHeaderFormatter.format(activeDayDate).split(",")[0]}
+                      </button>
+                    </div>
+
+                    {activeSessions.length === 0 ? (
+                      <div className={styles.emptyAgenda}>
+                        <CalendarClock size={32} style={{ opacity: 0.5, color: "var(--rl-muted)" }} />
+                        <h3>No Sessions Scheduled</h3>
+                        <p>There are no sessions scheduled for this day yet. Click below to add a session.</p>
+                        <button
+                          type="button"
+                          className="mv-btn mv-btn-primary"
+                          onClick={() => openCreateForDay(selectedDayKey)}
+                        >
+                          <Plus size={15} /> Schedule Session for {dayHeaderFormatter.format(activeDayDate).split(",")[0]}
+                        </button>
+                      </div>
+                    ) : (
+                      <div className={styles.agendaTimeline}>
+                        {activeSessions.map((record) => (
+                          <article
+                            key={record.id}
+                            className={styles.agendaCard}
+                            style={{ borderLeftColor: coachColor(record.coachId) }}
+                          >
+                            <div className={styles.agendaTimeCol}>
+                              <span className={styles.agendaTimeRange}>{record.timeRange}</span>
+                            </div>
+                            <div className={styles.agendaMainCol}>
+                              <span className={styles.agendaSessionTitle}>{record.title}</span>
+                              <div className={styles.agendaMetaRow}>
+                                <span className={styles.coachTag}>
+                                  <ShieldUser size={12} /> {record.coachName}
+                                </span>
+                                {record.groupName && record.groupName !== "No linked group" && (
+                                  <span className={styles.groupTag}>{record.groupName}</span>
+                                )}
+                                <span className={styles.capacityPill}>
+                                  <Users size={12} /> {record.bookedCount} booked
+                                </span>
+                              </div>
+                            </div>
+                            <span className={statusClass(record.status)}>
+                              {record.rawStatus === "CANCELED" ? "Canceled" : record.status === "Live" ? "🔴 Live now" : record.status === "Upcoming" ? "Upcoming" : record.status === "Completed" ? "Ended" : record.status}
+                            </span>
+                            <div className={styles.agendaActions}>
+                              <button
+                                type="button"
+                                onClick={() => setAttendanceModalSessionId(record.id)}
+                                title="Take or view attendance for this session"
+                                style={{ color: "#22c55e", borderColor: "rgba(34, 197, 94, 0.3)" }}
+                              >
+                                <CalendarCheck size={14} />
+                                Attendance ({record.bookedClients.filter((c) => c.status === "ATTENDED").length}/{record.bookedClients.length})
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => openDetails(record)}
+                                title="View roster & session details"
+                              >
+                                Details
+                              </button>
+                              {record.rawStatus !== "CANCELED" && (
                                 <button
                                   type="button"
-                                  key={record.id}
-                                  className={styles.gridBlock}
-                                  style={{ borderLeftColor: coachColor(record.coachId) }}
-                                  data-canceled={record.rawStatus === "CANCELED" || undefined}
-                                  data-draft={record.rawStatus === "DRAFT" || undefined}
-                                  data-completed={record.rawStatus === "COMPLETED" || undefined}
-                                  onClick={() => openDetails(record)}
+                                  onClick={() => openEdit(record)}
+                                  title="Edit session details"
                                 >
-                                  <span className={styles.gridBlockTime}>{record.timeRange}</span>
-                                  <span className={styles.gridBlockTitle}>{record.title}</span>
-                                  <span className={styles.gridBlockCoach}>{record.coachName}</span>
-                                  <span className={styles.gridBlockCapacity}>
-                                    <Users size={10} /> {record.bookedCount} booked
-                                  </span>
+                                  Edit
                                 </button>
-                              ))}
+                              )}
                             </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </Fragment>
-                ))}
-              </div>
-            )}
-          </div>
+                          </article>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+            </>
+          ) : viewMode === "week" ? (
+            /* Week Columns View */
+            <div className={styles.weekColumnsGrid}>
+              {weekDays.map((dayKey) => {
+                const day = studioDateKeyAnchor(dayKey);
+                const daySessions = sessionsByDay[dayKey] ?? [];
+                const isToday = dayKey === todayKey;
+                return (
+                  <div key={dayKey} className={styles.weekColumnCard} data-today={isToday || undefined}>
+                    <div className={styles.weekColumnHeader}>
+                      <div className={styles.weekColumnTitle}>
+                        <span className={styles.weekColumnDayName}>{dayHeaderFormatter.format(day).split(",")[0]}</span>
+                        <span className={styles.weekColumnDateNum}>{day.getUTCDate()}</span>
+                      </div>
+                      <button
+                        type="button"
+                        className={styles.weekColumnAddButton}
+                        title={`Add session on ${dayKey}`}
+                        onClick={() => openCreateForDay(dayKey)}
+                      >
+                        <Plus size={14} />
+                      </button>
+                    </div>
+                    <div className={styles.weekColumnStack}>
+                      {daySessions.length === 0 ? (
+                        <span className={styles.noSessionsText}>No sessions</span>
+                      ) : (
+                        daySessions.map((record) => (
+                          <div
+                            key={record.id}
+                            className={styles.weekSessionBlock}
+                            style={{ borderLeftColor: coachColor(record.coachId) }}
+                            onClick={() => openDetails(record)}
+                          >
+                            <span className={styles.weekSessionTime}>{record.timeRange}</span>
+                            <span className={styles.weekSessionTitle}>{record.title}</span>
+                            <span className={styles.weekSessionCoach}>{record.coachName}</span>
+                            {record.groupName && record.groupName !== "No linked group" && (
+                              <span className={styles.weekSessionGroupTag}>{record.groupName}</span>
+                            )}
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            /* Hourly Matrix Grid View */
+            <div className={styles.weekScroll}>
+              {timeRows.length === 0 ? (
+                <p className={styles.gridEmpty}>No sessions match these filters.</p>
+              ) : (
+                <div className={styles.grid}>
+                  <div className={styles.gridCorner}><Clock3 size={13} /></div>
+                  {weekDays.map((dayKey) => {
+                    const day = studioDateKeyAnchor(dayKey);
+                    return <div className={styles.gridDayHeader} key={dayKey} data-today={dayKey === getStudioDateKey() || undefined}><span>{dayHeaderFormatter.format(day).split(",")[0]}</span><strong>{day.getUTCDate()}</strong></div>;
+                  })}
+                  {timeRows.map(({ hour, minutes, label }) => (
+                    <Fragment key={hour}>
+                      <div className={styles.gridTimeLabel}>{label}</div>
+                      {weekDays.map((dayKey) => {
+                        const cellRecords = filtered.filter(
+                          (record) =>
+                            record.dayKey === dayKey &&
+                            Math.floor(getCairoMinutes(record.startsAt) / 60) === hour,
+                        );
+                        return (
+                          <div className={styles.gridCell} key={`${dayKey}-${hour}`} data-today={dayKey === getStudioDateKey() || undefined}>
+                            {cellRecords.length === 0 ? (
+                              <button
+                                type="button"
+                                className={styles.emptySlotButton}
+                                onClick={() => openCreateAtCell(dayKey, minutes)}
+                                aria-label={`Add session on ${dayKey} at ${label}`}
+                              >
+                                <Plus size={13} /> Add
+                              </button>
+                            ) : (
+                              <div className={styles.gridCellBlockGroup}>
+                                {cellRecords.length > 1 && (
+                                  <div className={styles.multiSessionBadge}>
+                                    <Repeat2 size={10} /> {cellRecords.length} Sessions at {label}
+                                  </div>
+                                )}
+                                {cellRecords.map((record) => (
+                                  <button
+                                    type="button"
+                                    key={record.id}
+                                    className={styles.gridBlock}
+                                    style={{ borderLeftColor: coachColor(record.coachId) }}
+                                    data-canceled={record.rawStatus === "CANCELED" || undefined}
+                                    data-draft={record.rawStatus === "DRAFT" || undefined}
+                                    data-completed={record.rawStatus === "COMPLETED" || undefined}
+                                    onClick={() => openDetails(record)}
+                                  >
+                                    <span className={styles.gridBlockTime}>{record.timeRange}</span>
+                                    <span className={styles.gridBlockTitle}>{record.title}</span>
+                                    {record.groupName && record.groupName !== "No linked group" && (
+                                      <span className={styles.gridBlockGroupTag}>{record.groupName}</span>
+                                    )}
+                                    <span className={styles.gridBlockCoach}>{record.coachName}</span>
+                                    <span className={styles.gridBlockCapacity}>
+                                      <Users size={10} /> {record.bookedCount} booked
+                                    </span>
+                                  </button>
+                                ))}
+                                <button
+                                  type="button"
+                                  className={styles.addMoreSlotButton}
+                                  onClick={() => openCreateAtCell(dayKey, minutes)}
+                                  aria-label={`Add another session on ${dayKey} at ${label}`}
+                                  title="Add another session to this time slot"
+                                >
+                                  <Plus size={11} /> Add session
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        );
+
+                      })}
+                    </Fragment>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <aside className={styles.requestsCard}>
@@ -786,13 +1109,14 @@ function formatHourLabel(hour: number) {
                 ) : null}
 
                 <div className={styles.inspectorFooter}>
-                  <a
-                    href={`/admin/attendance?session=${selected.id}`}
+                  <button
+                    type="button"
                     className="mv-btn mv-btn-secondary"
                     style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
+                    onClick={() => setAttendanceModalSessionId(selected.id)}
                   >
                     <CalendarCheck size={16} /> Attendance →
-                  </a>
+                  </button>
                   {selected.rawStatus !== "CANCELED" ? (
                     <button type="button" className="mv-btn mv-btn-primary" onClick={() => openEdit(selected)}>
                       Edit session
@@ -873,6 +1197,272 @@ function formatHourLabel(hour: number) {
         {requestError ? <p className={`${styles.error} ${styles.full}`} role="alert">{requestError}</p> : null}
         <div className={`${styles.formActions} ${styles.full}`}><button type="button" className="mv-btn mv-btn-secondary" onClick={() => setLogRequestFor(null)}>Cancel</button><button type="submit" className="mv-btn mv-btn-primary" disabled={isPending}>{isPending ? "Logging…" : "Log request"}</button></div>
       </form></Dialog.Content></Dialog.Portal></Dialog.Root>
+
+      {/* Attendance Roster Table Modal */}
+      {(() => {
+        const attendanceSession = records.find((r) => r.id === attendanceModalSessionId);
+        if (!attendanceSession) return null;
+
+        const allClients = attendanceSession.bookedClients;
+        const totalCount = allClients.length;
+        const attendedCount = allClients.filter((c) => c.status === "ATTENDED").length;
+        const pendingCount = allClients.filter((c) => c.status === "BOOKED" || c.status === "WAITLIST").length;
+        const lateCount = allClients.filter((c) => c.status === "LATE").length;
+        const absentCount = allClients.filter((c) => c.status === "MISSED" || c.status === "NO_SHOW").length;
+        const excusedCount = allClients.filter((c) => c.status === "EXCUSED").length;
+
+        const pendingClientIds = allClients
+          .filter((c) => c.status === "BOOKED" || c.status === "WAITLIST")
+          .map((c) => c.id);
+
+        const filteredRoster = allClients.filter((client) => {
+          const query = attendanceSearchQuery.trim().toLowerCase();
+          const matchesQuery =
+            !query ||
+            client.fullName.toLowerCase().includes(query) ||
+            (client.phone && client.phone.includes(query));
+
+          if (!matchesQuery) return false;
+
+          if (attendanceFilterTab === "pending") return client.status === "BOOKED" || client.status === "WAITLIST";
+          if (attendanceFilterTab === "attended") return client.status === "ATTENDED";
+          if (attendanceFilterTab === "late") return client.status === "LATE";
+          if (attendanceFilterTab === "absent") return client.status === "MISSED" || client.status === "NO_SHOW";
+          if (attendanceFilterTab === "excused") return client.status === "EXCUSED";
+          return true;
+        });
+
+        return (
+          <Dialog.Root open={!!attendanceModalSessionId} onOpenChange={(open) => !open && setAttendanceModalSessionId(null)}>
+            <Dialog.Portal>
+              <Dialog.Overlay className={styles.overlay} />
+              <Dialog.Content className={styles.attendanceModal}>
+                <div className={styles.attendanceHeader}>
+                  <div>
+                    <Dialog.Title className={styles.attendanceTitle}>
+                      Session Attendance Roster
+                    </Dialog.Title>
+                    <Dialog.Description className={styles.attendanceSub}>
+                      {attendanceSession.title} · {attendanceSession.coachName} · {attendanceSession.dayLabel}, {attendanceSession.dateLabel} ({attendanceSession.timeRange})
+                    </Dialog.Description>
+                  </div>
+                  <Dialog.Close className={styles.close} aria-label="Close attendance dialog">
+                    <X size={18} />
+                  </Dialog.Close>
+                </div>
+
+                <div className={styles.attendanceToolbar}>
+                  <div className={styles.attendanceSearchBox}>
+                    <Search size={15} style={{ color: "var(--rl-muted)" }} />
+                    <input
+                      type="text"
+                      placeholder="Search client by name or phone..."
+                      value={attendanceSearchQuery}
+                      onChange={(e) => setAttendanceSearchQuery(e.target.value)}
+                    />
+                    {attendanceSearchQuery ? (
+                      <button
+                        type="button"
+                        onClick={() => setAttendanceSearchQuery("")}
+                        style={{ border: 0, background: "transparent", cursor: "pointer", color: "var(--rl-muted)" }}
+                      >
+                        <X size={14} />
+                      </button>
+                    ) : null}
+                  </div>
+
+                  <div className={styles.attendanceFilterPills}>
+                    <button
+                      type="button"
+                      data-active={attendanceFilterTab === "all" || undefined}
+                      onClick={() => setAttendanceFilterTab("all")}
+                    >
+                      All ({totalCount})
+                    </button>
+                    <button
+                      type="button"
+                      data-active={attendanceFilterTab === "pending" || undefined}
+                      onClick={() => setAttendanceFilterTab("pending")}
+                    >
+                      Pending ({pendingCount})
+                    </button>
+                    <button
+                      type="button"
+                      data-active={attendanceFilterTab === "attended" || undefined}
+                      onClick={() => setAttendanceFilterTab("attended")}
+                    >
+                      Attended ({attendedCount})
+                    </button>
+                    <button
+                      type="button"
+                      data-active={attendanceFilterTab === "late" || undefined}
+                      onClick={() => setAttendanceFilterTab("late")}
+                    >
+                      Late ({lateCount})
+                    </button>
+                    <button
+                      type="button"
+                      data-active={attendanceFilterTab === "absent" || undefined}
+                      onClick={() => setAttendanceFilterTab("absent")}
+                    >
+                      Absent ({absentCount})
+                    </button>
+                    <button
+                      type="button"
+                      data-active={attendanceFilterTab === "excused" || undefined}
+                      onClick={() => setAttendanceFilterTab("excused")}
+                    >
+                      Excused ({excusedCount})
+                    </button>
+                  </div>
+                </div>
+
+                <div className={styles.attendanceBulkBar}>
+                  <div>
+                    <strong>Attendance Progress ({attendedCount} / {totalCount} Attended)</strong>
+                  </div>
+                  {pendingClientIds.length > 0 && (
+                    <button
+                      type="button"
+                      className={styles.markAllButton}
+                      disabled={isPending}
+                      onClick={() => handleMarkAllAttended(attendanceSession.id, pendingClientIds)}
+                    >
+                      <Check size={14} /> Mark All Attended ({pendingClientIds.length})
+                    </button>
+                  )}
+                </div>
+
+                {filteredRoster.length === 0 ? (
+                  <p className={styles.emptyRosterText}>No clients match the current filter.</p>
+                ) : (
+                  <div className={styles.rosterTable}>
+                    <div className={styles.rosterHead}>
+                      <span>State</span>
+                      <span>Client</span>
+                      <span>Contact</span>
+                      <span>Actions</span>
+                    </div>
+                    {filteredRoster.map((client) => {
+                      const isAttended = client.status === "ATTENDED";
+                      const isMissed = client.status === "MISSED" || client.status === "NO_SHOW";
+                      const isLate = client.status === "LATE";
+                      const isExcused = client.status === "EXCUSED";
+                      const formattedPhone = formatPhoneNumber(client.phone);
+
+                      return (
+                        <div key={client.id} className={styles.rosterRowTable}>
+                          <div className={styles.stateCell}>
+                            <span
+                              className={styles.stateGlyph}
+                              data-status={client.status}
+                              title={client.status}
+                            >
+                              {isExcused ? <FileText size={15} /> : isLate ? <Clock size={15} /> : isAttended ? <Check size={15} /> : isMissed ? <X size={15} /> : "—"}
+                            </span>
+                          </div>
+
+                          <div className={styles.clientCol}>
+                            <div className={styles.avatarCircle}>{initials(client.fullName)}</div>
+                            <div className={styles.clientTextCol}>
+                              <div className={styles.clientNameLine}>
+                                <strong className={styles.clientName}>{client.fullName}</strong>
+                                {client.isTrial ? (
+                                  <span className={styles.badgeTrial}>Lead</span>
+                                ) : (
+                                  <span className={styles.badgeMember}>Member</span>
+                                )}
+                                {client.hasInjuryAlert && (
+                                  <span className={styles.badgeInjury} title={client.injuryStatus ?? "Active Injury Alert"}>
+                                    <AlertTriangle size={10} /> Injury Alert
+                                  </span>
+                                )}
+                              </div>
+                              {client.hasInjuryAlert && client.injuryStatus && (
+                                <span className={styles.injuryBannerText}>
+                                  <AlertTriangle size={11} /> Injury: {client.injuryStatus}
+                                </span>
+                              )}
+                              {isExcused && (
+                                <span className={styles.excusedBannerText}>
+                                  <FileText size={11} /> Excused
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className={styles.phoneCol}>
+                            <span className={styles.phoneText}>{formattedPhone}</span>
+                            {client.phone && !client.phone.includes("No phone") && (
+                              <a
+                                href={`https://wa.me/${client.phone.replace(/\D/g, "")}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={styles.waBtn}
+                                title="Chat on WhatsApp"
+                              >
+                                <MessageCircle size={13} />
+                              </a>
+                            )}
+                          </div>
+
+                          <div className={styles.attendanceActionsGroup}>
+                            <button
+                              type="button"
+                              className={styles.checkinBtn}
+                              data-active={isAttended || undefined}
+                              data-tone="attended"
+                              disabled={isPending}
+                              onClick={() => handleMarkAttendance(attendanceSession.id, client.id, "ATTENDED")}
+                              title="Mark Attended"
+                            >
+                              <Check size={13} /> Attended
+                            </button>
+                            <button
+                              type="button"
+                              className={styles.checkinBtn}
+                              data-active={isLate || undefined}
+                              data-tone="late"
+                              disabled={isPending}
+                              onClick={() => handleToggleLate(attendanceSession.id, client.id)}
+                              title="Mark Attended (Late)"
+                            >
+                              <Clock size={13} /> Late
+                            </button>
+                            <button
+                              type="button"
+                              className={styles.checkinBtn}
+                              data-active={isMissed || undefined}
+                              data-tone="missed"
+                              disabled={isPending}
+                              onClick={() => handleMarkAttendance(attendanceSession.id, client.id, "MISSED")}
+                              title="Mark Absent / Missed"
+                            >
+                              <X size={13} /> Absent
+                            </button>
+                            <button
+                              type="button"
+                              className={styles.checkinBtn}
+                              data-active={isExcused || undefined}
+                              data-tone="excused"
+                              disabled={isPending}
+                              onClick={() => handleMarkAttendance(attendanceSession.id, client.id, "EXCUSED")}
+                              title="Mark Excused"
+                            >
+                              <FileText size={13} /> Excused
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </Dialog.Content>
+            </Dialog.Portal>
+          </Dialog.Root>
+        );
+      })()}
+
     </div>
   );
 }

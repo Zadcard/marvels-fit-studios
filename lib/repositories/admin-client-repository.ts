@@ -32,7 +32,7 @@ export class AdminClientRepository {
         supabase
           .from("Client")
           .select(
-            "id,fullName,phone,sessionsLeft,paymentStatus,status,trialOutcome,categoryId,category:TrainingCategory(id,name),trainingCategory,sport,injuryStatus,injuryNotes,restrictions,createdAt,user:User(email),group:Group(id,name,coach:Coach(fullName)),subscriptions:ClientSubscription(id,status,startsAt,renewsAt,sessionsTotal,plan:SubscriptionPlan(name),payments:Payment(date)),payments:Payment(id,amount,currency,date,method),bookings:SessionBooking(status,trainingSession:TrainingSession(startsAt,title,type,status,coach:Coach(fullName)))"
+            "id,fullName,phone,sessionsLeft,paymentStatus,status,trialOutcome,categoryId,category:TrainingCategory(id,name),trainingCategory,sport,injuryStatus,injuryNotes,restrictions,createdAt,user:User(email),group:Group(id,name,coach:Coach(fullName)),subscriptions:ClientSubscription(id,status,startsAt,renewsAt,sessionsTotal,plan:SubscriptionPlan(name),payments:Payment(date)),payments:Payment(id,amount,currency,date,method),bookings:SessionBooking(id,status,trainingSession:TrainingSession(startsAt,title,type,status,coach:Coach(fullName)))"
           ),
         supabase
           .from("BillingLedgerEntry")
@@ -100,17 +100,13 @@ export class AdminClientRepository {
         payments,
         receipts,
         bookings: client.bookings
-          .filter(
-            (booking) =>
-              ["BOOKED", "ATTENDED", "MISSED", "WAITLIST"].includes(
-                booking.status
-              ) && booking.trainingSession.status !== "CANCELED"
-          )
+          .filter((booking) => booking.trainingSession.status !== "CANCELED")
           .sort((a, b) =>
-            a.trainingSession.startsAt.localeCompare(b.trainingSession.startsAt)
+            b.trainingSession.startsAt.localeCompare(a.trainingSession.startsAt)
           )
-          .slice(0, 3)
           .map((booking) => ({
+            id: booking.id,
+            status: booking.status as "ATTENDED" | "LATE" | "MISSED" | "EXCUSED" | "BOOKED" | "WAITLIST" | "NO_SHOW" | "CANCELED",
             trainingSession: {
               ...booking.trainingSession,
               startsAt: new Date(booking.trainingSession.startsAt),

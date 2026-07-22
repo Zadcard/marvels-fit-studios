@@ -49,7 +49,7 @@ export function DashboardTopbar({ role, isMenuOpen, onOpenMenu, onOpenCommand }:
       </button>
       <div className="ops-page-title">
         <span>{routeMeta.eyebrow}</span>
-        <h1>{routeMeta.title}</h1>
+        <h1>{routeMeta.subtitle}</h1>
       </div>
       <div className="ops-topbar-tools">
         <button

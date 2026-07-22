@@ -32,9 +32,9 @@ const EXPENSE_METHOD: Record<string, "CASH" | "CARD" | "BANK_TRANSFER" | "INSTAP
   Cash: "CASH",
 };
 
-const ATT_STATUS: Record<Exclude<AttState, "none">, "ATTENDED" | "MISSED" | "NO_SHOW"> = {
+const ATT_STATUS: Record<Exclude<AttState, "none">, "ATTENDED" | "LATE" | "MISSED" | "NO_SHOW"> = {
   present: "ATTENDED",
-  late: "ATTENDED",
+  late: "LATE",
   absent: "MISSED",
   noshow: "NO_SHOW",
 };
@@ -180,6 +180,8 @@ export function OpsProvider({ children, initial }: { children: React.ReactNode; 
     api(() => markAllAttendance(sid, roster.map((p) => p.id), "ATTENDED"));
     pushToast("Everyone marked present");
   }, [api, pushToast]);
+
+
 
   // ── submits ──
   const submitCashOut = useCallback(() => {

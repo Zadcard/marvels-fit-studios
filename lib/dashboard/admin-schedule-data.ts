@@ -2,9 +2,8 @@ import type { DashboardStatIconKey } from "@/lib/dashboard/workspace-definition"
 
 export type AdminScheduleSessionType = "Group" | "Private";
 export type AdminScheduleSessionStatus =
-  | "Confirmed"
-  | "Waitlist"
-  | "Attention"
+  | "Upcoming"
+  | "Live"
   | "Completed";
 
 export type AdminScheduleStat = {
@@ -48,7 +47,18 @@ export type AdminScheduleSessionRecord = {
   bookedClients: Array<{
     id: string;
     fullName: string;
-    status: "BOOKED" | "ATTENDED" | "MISSED" | "WAITLIST";
+    phone?: string | null;
+    isTrial?: boolean;
+    injuryStatus?: string | null;
+    hasInjuryAlert?: boolean;
+    status:
+      | "BOOKED"
+      | "ATTENDED"
+      | "LATE"
+      | "MISSED"
+      | "EXCUSED"
+      | "NO_SHOW"
+      | "WAITLIST";
   }>;
   recentChanges: Array<{ id: string; label: string; dateLabel: string }>;
 };
@@ -77,7 +87,7 @@ export const adminScheduleDayFilters = [
 
 export const adminScheduleStatusFilters: Array<
   "All statuses" | AdminScheduleSessionStatus
-> = ["All statuses", "Confirmed", "Waitlist", "Attention", "Completed"];
+> = ["All statuses", "Upcoming", "Live", "Completed"];
 
 export const adminScheduleSessionTypeFilters: Array<
   "All types" | AdminScheduleSessionType

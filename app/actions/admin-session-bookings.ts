@@ -15,7 +15,6 @@ import {
 
 function revalidateBookingViews() {
   revalidatePath("/admin");
-  revalidatePath("/admin/attendance");
   revalidatePath("/admin/clients");
   revalidatePath("/admin/schedule");
   revalidatePath("/coach");

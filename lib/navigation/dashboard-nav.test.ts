@@ -10,23 +10,22 @@ import {
 describe("dashboard navigation", () => {
   it("keeps the admin sidebar focused on primary studio workflows", () => {
     expect(getDashboardSidebarNav("admin").map((item) => item.label)).toEqual([
-      "Today",
-      "Attendance",
+      "Overview",
       "Schedule",
-      "Leads & Trials",
+      "Leads",
       "Clients",
       "Programs",
       "Coaches",
       "Subscriptions",
-      "Reports",
-      "Notifications",
+      "Analytics",
+      "Alerts",
       "Settings",
     ]);
   });
 
   it("exposes the new admin insights and coach workspace routes", () => {
-    expect(getDashboardRouteMeta("/admin/reports", "admin").title).toBe("Reports");
-    expect(getDashboardRouteMeta("/admin/notifications", "admin").title).toBe("Notifications");
+    expect(getDashboardRouteMeta("/admin/reports", "admin").title).toBe("Analytics");
+    expect(getDashboardRouteMeta("/admin/notifications", "admin").title).toBe("Alerts");
     expect(getDashboardRouteMeta("/admin/settings", "admin").title).toBe("Settings");
     expect(getDashboardRouteMeta("/coach/schedule", "coach").title).toBe("Schedule");
     expect(getDashboardRouteMeta("/coach/clients", "coach").title).toBe("Clients");
@@ -36,13 +35,13 @@ describe("dashboard navigation", () => {
 
   it("does not retain route metadata for removed admin tools", () => {
     expect(getDashboardRouteMeta("/admin/sessions", "admin").title).toBe(
-      "Today"
+      "Overview"
     );
     expect(getDashboardRouteMeta("/admin/bulk-import", "admin").title).toBe(
-      "Today"
+      "Overview"
     );
     expect(getDashboardRouteMeta("/admin/profile", "admin").title).toBe(
-      "Today"
+      "Overview"
     );
   });
 

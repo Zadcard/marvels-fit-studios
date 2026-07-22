@@ -12,7 +12,6 @@ const actionFiles = readdirSync(actionsDirectory)
 
 const livePaths = new Set([
   "/admin",
-  "/admin/attendance",
   "/admin/categories",
   "/admin/clients",
   "/admin/coaches",
@@ -32,6 +31,7 @@ const livePaths = new Set([
   "/coach/schedule",
   "/coach/sessions",
   "/coach/settings",
+  "/ops",
 ]);
 
 describe("server-action cache invalidation", () => {
@@ -62,7 +62,7 @@ describe("server-action cache invalidation", () => {
       "coach-session-bookings.ts",
     ]) {
       const source = readFileSync(resolve(actionsDirectory, file), "utf8");
-      expect(source, file).toContain('revalidatePath("/admin/attendance")');
+      expect(source, file).toContain('revalidatePath("/admin/schedule")');
     }
   });
 });

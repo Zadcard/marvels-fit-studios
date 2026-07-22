@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Phone, Search, TriangleAlert, UserRoundX, X } from "lucide-react";
+import { ArrowRight, MessageCircle, Phone, Search, TriangleAlert, UserRoundX, X } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { formatPhoneNumber } from "@/lib/phone-format";
@@ -13,19 +13,20 @@ const stages = ["New", "Trial booked", "Trial done", "Won", "Lost"] as const;
 type Stage = (typeof stages)[number];
 
 const STAGE_COLOR: Record<Stage, string> = {
-  New: "#c4c4c4",
-  "Trial booked": "#ff4f54",
+  New: "#38bdf8",
+  "Trial booked": "#a855f7",
   "Trial done": "#f59e0b",
   Won: "#25d366",
   Lost: "#ef4444",
 };
 const STAGE_PILL_BG: Record<Stage, string> = {
-  New: "rgba(196,196,196,.12)",
-  "Trial booked": "rgba(230,36,41,.12)",
+  New: "rgba(56,189,248,.12)",
+  "Trial booked": "rgba(168,85,247,.12)",
   "Trial done": "rgba(245,158,11,.12)",
   Won: "rgba(37,211,102,.12)",
   Lost: "rgba(239,68,68,.12)",
 };
+
 const STAGE_SECTION_BG: Partial<Record<Stage, string>> = {
   Won: "rgba(37,211,102,.07)",
   Lost: "rgba(239,68,68,.07)",
@@ -78,14 +79,31 @@ interface Props {
 
 export function AdminLeadsTableView({ leads, pending, onAdd, onProgress, onDelete, onMarkLost }: Props) {
   const [stageFilter, setStageFilter] = useState<Stage | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("stage");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
+  // KPI Calculations
+  const totalLeads = leads.length;
+  const wonCount = leads.filter((l) => l.stage === "Won").length;
+  const newCount = leads.filter((l) => l.stage === "New").length;
+  const needsActionCount = leads.filter((l) => l.stage === "New" || Boolean(l.injury)).length;
+  const conversionRate = totalLeads > 0 ? Math.round((wonCount / totalLeads) * 100) : 0;
+
+  const cleanPhone = (phone: string) => (phone || "").replace(/\D/g, "");
+
   // filter
-  const filtered = useMemo(
-    () => leads.filter((l) => !stageFilter || l.stage === stageFilter),
-    [leads, stageFilter],
-  );
+  const filtered = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    return leads.filter((l) => {
+      const matchesStage = !stageFilter || l.stage === stageFilter;
+      const matchesQuery =
+        !q ||
+        [l.name, l.phone, l.source, l.wants, l.note, l.assigned]
+          .some((val) => val?.toLowerCase().includes(q));
+      return matchesStage && matchesQuery;
+    });
+  }, [leads, stageFilter, searchQuery]);
 
   // sort
   const rows = useMemo(
@@ -113,6 +131,30 @@ export function AdminLeadsTableView({ leads, pending, onAdd, onProgress, onDelet
 
   return (
     <div className={s.wrap}>
+      {/* ── KPI Overview Header ── */}
+      <div className={s.kpiGrid}>
+        <div className={s.kpiTile}>
+          <span className={s.kpiLabel}>Total Leads</span>
+          <span className={s.kpiVal}>{totalLeads}</span>
+          <span className={s.kpiSub}>Active pipeline</span>
+        </div>
+        <div className={s.kpiTile}>
+          <span className={s.kpiLabel}>Needs Action</span>
+          <span className={s.kpiVal} style={{ color: "#ff4f54" }}>{needsActionCount}</span>
+          <span className={s.kpiSub}>New or flagged leads</span>
+        </div>
+        <div className={s.kpiTile}>
+          <span className={s.kpiLabel}>Conversion Rate</span>
+          <span className={s.kpiVal} style={{ color: "#25d366" }}>{conversionRate}%</span>
+          <span className={s.kpiSub}>{wonCount} converted to clients</span>
+        </div>
+        <div className={s.kpiTile}>
+          <span className={s.kpiLabel}>New Leads</span>
+          <span className={s.kpiVal} style={{ color: "#3b82f6" }}>{newCount}</span>
+          <span className={s.kpiSub}>Awaiting first contact</span>
+        </div>
+      </div>
+
       {/* ── top row ── */}
       <div className={s.topRow}>
         {/* stage strip */}
@@ -123,7 +165,7 @@ export function AdminLeadsTableView({ leads, pending, onAdd, onProgress, onDelet
             return (
               <button
                 key={stage}
-                className={s.stripBtn}
+                className={`${s.stripBtn} ${active ? s.stripBtnActive : ""}`}
                 style={{ background: active ? STAGE_PILL_BG[stage] : (STAGE_SECTION_BG[stage] ?? "transparent") }}
                 onClick={() => toggleStage(stage)}
                 type="button"
@@ -140,11 +182,23 @@ export function AdminLeadsTableView({ leads, pending, onAdd, onProgress, onDelet
           })}
         </div>
 
-        {/* add */}
-        <button className={s.addBtn} onClick={onAdd} type="button">+ Add lead</button>
+        {/* Right Tools (Search, Add Lead) */}
+        <div className={s.rightTools}>
+          <div className={s.search}>
+            <span className={s.searchIcon}><Search size={14} /></span>
+            <input
+              className={s.searchInput}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search leads, phone, goal…"
+            />
+          </div>
+
+          <button className={s.addBtn} onClick={onAdd} type="button">+ Add lead</button>
+        </div>
       </div>
 
-      {/* ── table ── */}
+      {/* ── Table View ── */}
       <div className={s.tableScroll}>
         <div className={s.table}>
           {/* head */}
@@ -160,7 +214,7 @@ export function AdminLeadsTableView({ leads, pending, onAdd, onProgress, onDelet
             <button className={s.sortBtn} onClick={() => toggleSort("stage")} type="button">
               Stage{sortLabel("stage")}
             </button>
-            <span className={s.colLabel}>Next step</span>
+            <span className={s.colLabel}>Category</span>
             <span className={`${s.colLabel} ${s.actionLabel}`}>Action</span>
             <span />
           </div>
@@ -170,22 +224,16 @@ export function AdminLeadsTableView({ leads, pending, onAdd, onProgress, onDelet
             <div className={s.empty}>
               <Search size={30} />
               <h2>No leads found</h2>
-              <p>Change the stage filter or add a new lead.</p>
+              <p>Change the search query or stage filter, or add a new lead.</p>
             </div>
           )}
 
           {/* rows */}
           {rows.map((lead) => {
             const stageColor = STAGE_COLOR[lead.stage];
-            const hasToday = /today/i.test(lead.assigned ?? "");
-            const nextStep = lead.assigned || NEXT_STEP_DEFAULT[lead.stage];
             const showLostReason = lead.stage === "Lost" && Boolean(lead.lostReason?.trim());
-            const nextStepTone = hasToday
-              ? s.nextStepUrgent
-              : lead.stage === "New"
-                ? s.nextStepNew
-                : "";
             const action = ACTIONS[lead.stage];
+            const waNum = cleanPhone(lead.phone);
 
             return (
               <div
@@ -200,19 +248,36 @@ export function AdminLeadsTableView({ leads, pending, onAdd, onProgress, onDelet
                 <div className={s.leadCell}>
                   <span
                     className={s.avatar}
-                    style={{ background: TONE_GRAD[lead.tone] ?? TONE_GRAD.red }}
+                    style={{ background: "linear-gradient(135deg, #e62429, #ff4f54)" }}
                   >
+
                     {lead.initials}
                   </span>
                   <div className={s.minCol}>
                     <div className={s.name}>{lead.name}</div>
-                    <div className={`${s.note} ${showLostReason ? s.lostReason : ""}`}>
-                      {showLostReason ? `Lost · ${lead.lostReason}` : (lead.note || "—")}
-                    </div>
+                    {showLostReason ? (
+                      <div className={`${s.note} ${s.lostReason}`}>Lost · {lead.lostReason}</div>
+                    ) : (
+                      <>
+                        {lead.note && lead.note !== "No message submitted." && (
+                          <div className={s.note} title={lead.note}>{lead.note}</div>
+                        )}
+                        {lead.preferredAvailability && (
+                          <div className={s.prefDays} title={`Preferred availability: ${lead.preferredAvailability}`}>
+                            📅 {lead.preferredAvailability}
+                          </div>
+                        )}
+                        {!lead.preferredAvailability && (!lead.note || lead.note === "No message submitted.") && (
+                          <div className={s.note}>—</div>
+                        )}
+                      </>
+                    )}
                   </div>
+
                   {lead.injury && (
-                    <span className={s.warnIcon} title={lead.injury}>
-                      <TriangleAlert size={13} />
+                    <span className={s.injuryPill} title={lead.injury}>
+                      <TriangleAlert size={12} aria-hidden="true" />
+                      <span>{lead.injury}</span>
                     </span>
                   )}
                 </div>
@@ -223,11 +288,22 @@ export function AdminLeadsTableView({ leads, pending, onAdd, onProgress, onDelet
                 </div>
 
                 {/* phone */}
-                <div className={s.pad}>
+                <div className={`${s.pad} ${s.phoneCell}`}>
                   <span className={s.phone}>
                     <span className={s.phoneIcon}><Phone size={12} aria-hidden="true" /></span>
                     {formatPhoneNumber(lead.phone)}
                   </span>
+                  {waNum && (
+                    <a
+                      href={`https://wa.me/${waNum}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className={s.waBtn}
+                      title="Send WhatsApp message"
+                    >
+                      <MessageCircle size={13} aria-hidden="true" />
+                    </a>
+                  )}
                 </div>
 
                 {/* stage pill */}
@@ -240,15 +316,11 @@ export function AdminLeadsTableView({ leads, pending, onAdd, onProgress, onDelet
                   </span>
                 </div>
 
-                {/* next step */}
-                {lead.stage === "Lost" ? (
-                  <div className={`${s.pad} ${s.nextStepCell}`} aria-hidden="true" />
-                ) : (
-                  <div className={`${s.pad} ${s.nextStepCell}`} title={nextStep}>
-                    <span className={`${s.nextStepDot} ${nextStepTone}`} aria-hidden="true" />
-                    <span className={`${s.nextStep} ${nextStepTone}`}>{nextStep}</span>
-                  </div>
-                )}
+                {/* category */}
+                <div className={`${s.pad} ${s.categoryCell}`}>
+                  <span className={s.categoryTag}>{lead.wants}</span>
+                </div>
+
 
                 {/* action */}
                 <div className={s.actionPad}>
@@ -269,7 +341,7 @@ export function AdminLeadsTableView({ leads, pending, onAdd, onProgress, onDelet
                 <div className={s.rowTools}>
                   {lead.stage !== "Won" && lead.stage !== "Lost" ? (
                     <button
-                      className={s.delBtn}
+                      className={s.lostBtn}
                       aria-label={`Mark ${lead.name} as lost`}
                       title={`Mark ${lead.name} as lost`}
                       disabled={pending}
@@ -279,6 +351,7 @@ export function AdminLeadsTableView({ leads, pending, onAdd, onProgress, onDelet
                       <UserRoundX size={14} aria-hidden="true" />
                     </button>
                   ) : null}
+
                   <button
                     className={s.delBtn}
                     aria-label={`Delete ${lead.name}`}

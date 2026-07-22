@@ -6,19 +6,19 @@ import { Dialog } from "radix-ui";
 import {
   ArrowDownAZ,
   ArrowUpAZ,
+  CalendarCheck,
   ChevronLeft,
   ChevronRight,
-  KeyRound,
   MessageCircle,
   Pencil,
   Plus,
+  ReceiptText,
   Search,
   TriangleAlert,
   Trash2,
   X,
 } from "lucide-react";
 
-import { issueAccountPasswordResetLink } from "@/app/actions/account-security";
 import { deleteAdminClient, saveAdminClient } from "@/app/actions/admin-clients";
 import type { AdminClientInitialOption, AdminClientRecord } from "@/lib/dashboard/admin-dashboard-data";
 import {
@@ -37,10 +37,8 @@ import {
   FormErrorBanner,
   FormField,
 } from "@/components/ui/entity-form";
-import {
-  PasswordResetLinkDialog,
-  type PasswordResetLink,
-} from "./password-reset-link-dialog";
+import { ClientAttendanceHistory } from "./client-attendance-history";
+import { ClientReceiptHistory } from "./client-receipt-history";
 import { useDashboardToast } from "./dashboard-toast-provider";
 import styles from "./admin-clients-workspace.module.css";
 
@@ -113,8 +111,6 @@ function statusStyle(status: string) {
   return styles.statusInactive;
 }
 
-import { ClientReceiptHistory } from "./client-receipt-history";
-
 export function AdminClientsWorkspace({
   records,
   sortOrder,
@@ -131,14 +127,13 @@ export function AdminClientsWorkspace({
   const [isPending, startTransition] = useTransition();
   const [segment, setSegment] = useState<(typeof clientSegments)[number]>("All");
   const [detailId, setDetailId] = useState<string | null>(null);
+  const [historyTab, setHistoryTab] = useState<"receipts" | "attendance">("receipts");
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteText, setDeleteText] = useState("");
   const [form, setForm] = useState<ClientForm>(emptyForm);
   const [error, setError] = useState("");
-  const [resetLink, setResetLink] = useState<PasswordResetLink | null>(null);
-  const [resetError, setResetError] = useState("");
 
   const filtered = useMemo(() => {
     return records.filter((record) => {
@@ -267,26 +262,7 @@ export function AdminClientsWorkspace({
     });
   }
 
-  function issueResetLink(record: AdminClientRecord) {
-    setResetError("");
-    startTransition(async () => {
-      try {
-        const result = await issueAccountPasswordResetLink({
-          profileId: record.id,
-          profileType: "client",
-        });
-        setDetailId(null);
-        setResetLink({
-          accountName: record.fullName,
-          accountType: "client",
-          expiresAt: result.expiresAt,
-          url: new URL(result.path, window.location.origin).toString(),
-        });
-      } catch (caught) {
-        setResetError(caught instanceof Error ? caught.message : "Could not issue a reset link.");
-      }
-    });
-  }
+
 
   return (
     <div className={styles.page} aria-busy={isPending}>
@@ -389,7 +365,22 @@ export function AdminClientsWorkspace({
                   </div>
 
                   {/* PHONE */}
-                  <span className={styles.phoneText}>{formatPhoneNumber(record.phone)}</span>
+                  <span className={styles.phoneText}>
+                    <span>{formatPhoneNumber(record.phone)}</span>
+                    {record.phone && (
+                      <a
+                        href={`https://wa.me/${record.phone.replace(/\D/g, "")}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className={styles.waBtn}
+                        title="Send WhatsApp message"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <MessageCircle size={13} aria-hidden="true" />
+                      </a>
+                    )}
+                  </span>
+
 
                   {/* ACTIONS */}
                   <span className={styles.rowActions}>
@@ -487,28 +478,6 @@ export function AdminClientsWorkspace({
                   </dl>
                 </section>
 
-                <ClientReceiptHistory
-                  clientName={detail.fullName}
-                  receipts={detail.receipts.map((r) => ({
-                    receiptNumber: r.receiptNumber,
-                    clientId: detail.id,
-                    clientName: detail.fullName,
-                    clientPhone: detail.phone,
-                    amount: Number(r.amountLabel.replace(/[^0-9.]/g, "")) || 0,
-                    currency: "EGP",
-                    paymentMethod: r.method,
-                    paymentDate: r.dateLabel,
-                    planName: detail.membership,
-                    planType: detail.membership,
-                    billingCycle: "Monthly",
-                    durationMonths: 1,
-                    sessionsIncluded: detail.sessionsTotal || 12,
-                    coachName: detail.assignedCoach,
-                    groupName: detail.primaryGroup,
-                    paymentStatus: "PAID",
-                  }))}
-                />
-
                 <section className={styles.dossierSection}>
                   <h3>
                     Injury &amp; restrictions
@@ -521,16 +490,60 @@ export function AdminClientsWorkspace({
                   </dl>
                 </section>
 
-                <section className={styles.dossierSection}>
-                  <h3>Next sessions</h3>
-                  {detail.nextSessions.length ? (
-                    <ol>{detail.nextSessions.slice(0, 3).map((session) => <li key={session}>{session}</li>)}</ol>
-                  ) : (
-                    <p>{detail.nextSession}</p>
-                  )}
-                </section>
+                <div className={styles.dossierTabs} role="tablist">
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={historyTab === "receipts"}
+                    className={styles.dossierTab}
+                    data-active={historyTab === "receipts" || undefined}
+                    onClick={() => setHistoryTab("receipts")}
+                  >
+                    <ReceiptText size={14} /> Receipts History ({detail.receipts.length})
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={historyTab === "attendance"}
+                    className={styles.dossierTab}
+                    data-active={historyTab === "attendance" || undefined}
+                    onClick={() => setHistoryTab("attendance")}
+                  >
+                    <CalendarCheck size={14} /> Attendance History ({detail.attendanceHistory.length})
+                  </button>
+                </div>
 
-                {resetError ? <p className={styles.error} role="alert">{resetError}</p> : null}
+                {historyTab === "receipts" ? (
+                  <ClientReceiptHistory
+                    clientName={detail.fullName}
+                    receipts={detail.receipts.map((r) => ({
+                      receiptNumber: r.receiptNumber,
+                      clientId: detail.id,
+                      clientName: detail.fullName,
+                      clientPhone: detail.phone,
+                      amount: Number(r.amountLabel.replace(/[^0-9.]/g, "")) || 0,
+                      currency: "EGP",
+                      paymentMethod: r.method,
+                      paymentDate: r.dateLabel,
+                      planName: detail.membership,
+                      planType: detail.membership,
+                      billingCycle: "Monthly",
+                      durationMonths: 1,
+                      sessionsIncluded: detail.sessionsTotal || 12,
+                      coachName: detail.assignedCoach,
+                      groupName: detail.primaryGroup,
+                      paymentStatus: "PAID",
+                    }))}
+                  />
+                ) : (
+                  <ClientAttendanceHistory
+                    clientName={detail.fullName}
+                    history={detail.attendanceHistory}
+                  />
+                )}
+
+
+
 
                 <div className={styles.drawerActions}>
                   {buildWhatsAppHref(detail.phone) ? (
@@ -538,9 +551,6 @@ export function AdminClientsWorkspace({
                       <MessageCircle size={16} /> Message
                     </a>
                   ) : null}
-                  <button type="button" className={styles.newBtn} style={{ background: "#161616", border: "1px solid #333" }} disabled={isPending} onClick={() => issueResetLink(detail)}>
-                    <KeyRound size={16} /> Reset access
-                  </button>
                   <button type="button" className={styles.newBtn} onClick={() => { setDetailId(null); openEdit(detail); }}>
                     <Pencil size={16} /> Edit member
                   </button>
@@ -639,7 +649,6 @@ export function AdminClientsWorkspace({
         onConfirm={confirmDelete}
         closeLabel="Close delete confirmation"
       />
-      <PasswordResetLinkDialog resetLink={resetLink} onClose={() => setResetLink(null)} />
     </div>
   );
 }

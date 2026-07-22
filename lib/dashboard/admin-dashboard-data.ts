@@ -13,6 +13,16 @@ export type AdminClientMembership =
   | "Hybrid";
 export type AdminPaymentStatus = "Paid" | "Unpaid" | "Due soon";
 
+export type AdminClientAttendanceRecord = {
+  id: string;
+  status: "ATTENDED" | "LATE" | "MISSED" | "EXCUSED" | "BOOKED" | "WAITLIST" | "NO_SHOW" | "CANCELED";
+  sessionTitle: string;
+  sessionType: string;
+  coachName: string;
+  dateLabel: string;
+  timeLabel: string;
+};
+
 export type AdminClientRecord = {
   id: string;
   fullName: string;
@@ -48,6 +58,7 @@ export type AdminClientRecord = {
     method: string;
     href: string;
   }>;
+  attendanceHistory: AdminClientAttendanceRecord[];
   progressNote: string;
 };
 

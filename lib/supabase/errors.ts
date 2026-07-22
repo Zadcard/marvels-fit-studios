@@ -29,6 +29,33 @@ export function throwIfSupabaseError(
   }
 }
 
+function formatErrorForLog(error: unknown): Record<string, unknown> | string {
+  if (error instanceof Error) {
+    const errObj = error as unknown as Record<string, unknown>;
+    return {
+      name: error.name,
+      message: error.message,
+      code: errObj.code,
+      details: errObj.details,
+      hint: errObj.hint,
+      stack: error.stack,
+      cause: error.cause ? formatErrorForLog(error.cause) : undefined,
+    };
+  }
+  if (typeof error === "object" && error !== null) {
+    const errObj = error as Record<string, unknown>;
+    return {
+      message: String(errObj.message ?? errObj.msg ?? error),
+      code: errObj.code,
+      details: errObj.details,
+      hint: errObj.hint,
+      ...errObj,
+    };
+  }
+  return String(error);
+}
+
+
 export async function withSupabaseFallback<T>(
   operation: () => Promise<T>,
   _legacyFallback: T,
@@ -37,7 +64,11 @@ export async function withSupabaseFallback<T>(
   try {
     return await operation();
   } catch (error) {
-    console.error("[withSupabaseFallback] database operation unavailable:", error);
+    console.error(
+      "[withSupabaseFallback] database operation unavailable:",
+      formatErrorForLog(error),
+    );
     throw new OperationalDataUnavailableError({ cause: error });
   }
 }
+

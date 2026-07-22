@@ -2800,7 +2800,9 @@ export type Database = {
       BookingStatus:
         | "BOOKED"
         | "ATTENDED"
+        | "LATE"
         | "MISSED"
+        | "EXCUSED"
         | "CANCELED"
         | "WAITLIST"
         | "NO_SHOW"
@@ -3002,7 +3004,9 @@ export const Constants = {
       BookingStatus: [
         "BOOKED",
         "ATTENDED",
+        "LATE",
         "MISSED",
+        "EXCUSED",
         "CANCELED",
         "WAITLIST",
         "NO_SHOW",

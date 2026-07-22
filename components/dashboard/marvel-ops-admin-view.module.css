@@ -21,11 +21,62 @@
 .choiceChips button,.groupChoices button{min-height:34px;padding:0 12px;border:1px solid #3a3a3a;border-radius:999px;background:#171717;color:#8f8f8f;font:.58rem var(--font-ops-mono);cursor:pointer}
 .choiceChips button[data-active],.groupChoices button[data-active]{border-color:#e62429;background:#2d1011;color:#fff}
 .choiceChips button:focus-visible,.groupChoices button:focus-visible{outline:2px solid #ff4f54;outline-offset:2px}
-.groupChoices{display:grid;gap:7px}
-.groupChoices button{display:flex;align-items:center;justify-content:space-between;width:100%;min-height:42px;border-radius:10px;text-align:left}
-.groupChoices small{color:#25d366;font:.48rem var(--font-ops-mono);letter-spacing:.08em;text-transform:uppercase}
+.groupChoices { display: grid; gap: 8px; }
+.groupChoices button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid #3a3a3a;
+  border-radius: 12px;
+  background: #171717;
+  color: #fff;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.groupChoices button:hover { border-color: #555; }
+.groupChoices button[data-active] {
+  border-color: #e62429;
+  background: rgba(230, 36, 41, 0.14);
+  box-shadow: 0 0 12px rgba(230, 36, 41, 0.18);
+}
+
 .modal footer .primary{display:inline-flex;align-items:center;justify-content:center;gap:7px;flex:2;background:linear-gradient(135deg,#e62429,#ff4f54)}
 .spinner{animation:leadSpin .8s linear infinite}
 @keyframes leadSpin{to{transform:rotate(360deg)}}
+.daysGrid {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding-top: 4px;
+}
+.dayChip {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid #3a3a3a;
+  background: #171717;
+  color: #a8a8a8;
+  font-family: var(--font-ops-mono);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.dayChip:hover {
+  color: #fff;
+  border-color: #555;
+}
+.dayChip[data-active] {
+  background: rgba(59, 130, 246, 0.18);
+  border-color: rgba(59, 130, 246, 0.6);
+  color: #60a5fa;
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.2);
+}
 @media(prefers-reduced-motion:reduce){.spinner{animation:none}}
+
 .deleteConfirmActions{display:flex;justify-content:flex-end;gap:8px;margin-top:20px}.deleteConfirmActions button{display:inline-flex;align-items:center;gap:6px}

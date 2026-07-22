@@ -10,18 +10,22 @@ export const cancelSessionBookingSchema = z.object({
   clientId: z.string().trim().min(1, "Client is required."),
 });
 
+const attendanceStatuses = [
+  "BOOKED",
+  "ATTENDED",
+  "LATE",
+  "MISSED",
+  "EXCUSED",
+  "WAITLIST",
+  "CANCELED",
+  "NO_SHOW",
+  "RESCHEDULED",
+] as const;
+
 export const updateSessionAttendanceSchema = z.object({
   trainingSessionId: z.string().trim().min(1, "Session id is required."),
   clientId: z.string().trim().min(1, "Client is required."),
-  status: z.enum([
-    "BOOKED",
-    "ATTENDED",
-    "MISSED",
-    "WAITLIST",
-    "CANCELED",
-    "NO_SHOW",
-    "RESCHEDULED",
-  ]),
+  status: z.enum(attendanceStatuses),
 });
 
 export const bulkUpdateSessionAttendanceSchema = z.object({
@@ -29,15 +33,7 @@ export const bulkUpdateSessionAttendanceSchema = z.object({
   clientIds: z
     .array(z.string().trim().min(1, "Client is required."))
     .min(1, "Select at least one client."),
-  status: z.enum([
-    "BOOKED",
-    "ATTENDED",
-    "MISSED",
-    "WAITLIST",
-    "CANCELED",
-    "NO_SHOW",
-    "RESCHEDULED",
-  ]),
+  status: z.enum(attendanceStatuses),
 });
 
 export type CreateSessionBookingInput = z.infer<

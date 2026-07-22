@@ -336,7 +336,27 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
+.waBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: rgba(37, 211, 102, 0.14);
+  border: 1px solid rgba(37, 211, 102, 0.3);
+  color: #25d366;
+  text-decoration: none;
+  font-size: .68rem;
+  transition: transform .12s, background .12s;
+  flex-shrink: 0;
+}
+.waBtn:hover { transform: scale(1.1); background: rgba(37, 211, 102, 0.28); color: #fff; }
+
 
 /* ── Row Actions ──────────────────────────────────────── */
 .rowActions {
@@ -644,3 +664,39 @@
   border-color: #ff4f54;
   color: #fff;
 }
+
+/* ── Dossier Tabs ─────────────────────────────────────── */
+.dossierTabs {
+  display: flex;
+  gap: 6px;
+  margin-top: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--ops-line, #2a2a2a);
+}
+
+.dossierTab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 11px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ops-muted, #8f8f8f);
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+
+.dossierTab:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.dossierTab[data-active="true"] {
+  border-color: rgba(230, 36, 41, 0.4);
+  background: rgba(230, 36, 41, 0.12);
+  color: #ff4f54;
+}
+

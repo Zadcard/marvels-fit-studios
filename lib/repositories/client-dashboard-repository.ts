@@ -530,7 +530,7 @@ export class ClientDashboardRepository {
       if (upcomingBookings[0]) {
         recentActivity.push({
           id: "client-activity-booking",
-          title: "Next session confirmed",
+          title: "Next session scheduled",
           description: `${upcomingBookings[0].title} is booked with ${upcomingBookings[0].coachName}.`,
           timeLabel: formatDate(upcomingBookings[0].startsAt),
           tone: "warning",

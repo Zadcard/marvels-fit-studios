@@ -477,7 +477,7 @@ describe('Attendance Service', () => {
         expect(mockTx.sessionBooking.count).toHaveBeenCalledWith({
           where: {
             clientId: 'client-456',
-            status: BookingStatus.ATTENDED,
+            status: { in: [BookingStatus.ATTENDED, BookingStatus.LATE] },
             trainingSession: {
               status: {
                 not: TrainingSessionStatus.CANCELED,

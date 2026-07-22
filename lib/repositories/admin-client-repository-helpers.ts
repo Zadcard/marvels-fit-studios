@@ -40,6 +40,11 @@ const currencyFormatter = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 0,
 });
 
+const timeFormatter = new Intl.DateTimeFormat("en-US", {
+  hour: "numeric",
+  minute: "2-digit",
+});
+
 export type AdminClientListFilters = {
   search: string;
   initial: string | null;
@@ -47,6 +52,8 @@ export type AdminClientListFilters = {
 };
 
 type AdminClientBookingRecord = {
+  id: string;
+  status: "ATTENDED" | "LATE" | "MISSED" | "EXCUSED" | "BOOKED" | "WAITLIST" | "NO_SHOW" | "CANCELED";
   trainingSession: {
     startsAt: Date;
     title: string;
@@ -339,6 +346,15 @@ export function mapAdminClientRecord(client: AdminClientListRecord): AdminClient
       dateLabel: formatDate(receipt.occurredAt),
       method: paymentMethodLabel(receipt.method),
       href: `/api/receipts/${receipt.id}`,
+    })),
+    attendanceHistory: (client.bookings ?? []).map((booking) => ({
+      id: booking.id,
+      status: booking.status,
+      sessionTitle: booking.trainingSession.title,
+      sessionType: booking.trainingSession.type === "PRIVATE" ? "Private" : "Group",
+      coachName: booking.trainingSession.coach.fullName,
+      dateLabel: formatDate(booking.trainingSession.startsAt),
+      timeLabel: timeFormatter.format(booking.trainingSession.startsAt),
     })),
     progressNote: `Membership profile: ${titleCase(membership)}`,
   };

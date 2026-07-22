@@ -13,10 +13,15 @@ import {
 } from "@/lib/validators/recurring-session";
 
 function revalidateRecurringViews() {
+  revalidatePath("/admin");
   revalidatePath("/admin/categories");
   revalidatePath("/admin/schedule");
+  revalidatePath("/ops");
+  revalidatePath("/coach");
   revalidatePath("/coach/schedule");
+  revalidatePath("/coach/sessions");
 }
+
 
 export async function saveRecurringSessionTemplate(
   input: RecurringSessionTemplateInput & { templateId?: string | null },

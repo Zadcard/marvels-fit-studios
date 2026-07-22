@@ -1,7 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { UserRole } from "@/lib/supabase/domain";
+import { LeadStatus, UserRole } from "@/lib/supabase/domain";
+import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 import { requireRole } from "@/lib/auth/session";
 import {
@@ -15,13 +16,44 @@ import {
 
 function revalidateAttendanceViews() {
   revalidatePath("/admin");
-  revalidatePath("/admin/attendance");
   revalidatePath("/admin/clients");
+  revalidatePath("/admin/join-requests");
+  revalidatePath("/admin/leads");
   revalidatePath("/admin/schedule");
+  revalidatePath("/ops");
   revalidatePath("/coach");
   revalidatePath("/coach/clients");
   revalidatePath("/coach/sessions");
   revalidatePath("/coach/schedule");
+}
+
+async function syncLeadTrialDoneOnAttended(clientIds: string[]) {
+  if (!clientIds.length) return;
+  try {
+    const supabase = getSupabaseServerClient();
+    await supabase
+      .from("Lead")
+      .update({ status: LeadStatus.TRIAL_DONE })
+      .in("id", clientIds)
+      .eq("status", LeadStatus.CONTACTED);
+
+    const { data: clients } = await supabase
+      .from("Client")
+      .select("phone")
+      .in("id", clientIds);
+
+    const phones = (clients || []).map((c) => c.phone).filter((p): p is string => Boolean(p));
+
+    if (phones.length) {
+      await supabase
+        .from("Lead")
+        .update({ status: LeadStatus.TRIAL_DONE })
+        .in("phone", phones)
+        .eq("status", LeadStatus.CONTACTED);
+    }
+  } catch (err) {
+    console.error("[syncLeadTrialDoneOnAttended] Error syncing trial done status:", err);
+  }
 }
 
 export async function markAttendance(
@@ -30,7 +62,9 @@ export async function markAttendance(
   status:
     | "BOOKED"
     | "ATTENDED"
+    | "LATE"
     | "MISSED"
+    | "EXCUSED"
     | "WAITLIST"
     | "CANCELED"
     | "NO_SHOW"
@@ -49,6 +83,11 @@ export async function markAttendance(
   }
 
   await updateSessionAttendance(parsed.data);
+
+  if (status === "ATTENDED" || status === "LATE") {
+    await syncLeadTrialDoneOnAttended([clientId]);
+  }
+
   revalidateAttendanceViews();
 }
 
@@ -58,7 +97,9 @@ export async function markAllAttendance(
   status:
     | "BOOKED"
     | "ATTENDED"
+    | "LATE"
     | "MISSED"
+    | "EXCUSED"
     | "WAITLIST"
     | "CANCELED"
     | "NO_SHOW"
@@ -76,5 +117,10 @@ export async function markAllAttendance(
   }
 
   await bulkUpdateSessionAttendance(parsed.data);
+
+  if (status === "ATTENDED" || status === "LATE") {
+    await syncLeadTrialDoneOnAttended(clientIds);
+  }
+
   revalidateAttendanceViews();
 }

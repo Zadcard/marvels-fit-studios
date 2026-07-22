@@ -33,12 +33,19 @@ type SaveAdminSessionInput = {
 
 function revalidateSessionViews() {
   revalidatePath("/admin");
-  revalidatePath("/admin/attendance");
+  revalidatePath("/admin/categories");
+  revalidatePath("/admin/clients");
+  revalidatePath("/admin/join-requests");
+  revalidatePath("/admin/leads");
   revalidatePath("/admin/schedule");
+  revalidatePath("/ops");
   revalidatePath("/coach");
+  revalidatePath("/coach/categories");
+  revalidatePath("/coach/clients");
   revalidatePath("/coach/sessions");
   revalidatePath("/coach/schedule");
 }
+
 
 export async function saveAdminSession(input: SaveAdminSessionInput) {
   const user = await requireRole(UserRole.ADMIN);

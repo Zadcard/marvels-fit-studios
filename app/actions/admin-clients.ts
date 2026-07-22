@@ -144,6 +144,7 @@ export async function saveAdminClient(input: SaveAdminClientInput) {
   revalidatePath("/admin/categories");
   revalidatePath("/admin/subscriptions");
   revalidatePath("/admin/schedule");
+  revalidatePath("/ops");
   revalidatePath("/coach/clients");
   revalidatePath("/coach/sessions");
 }
@@ -157,9 +158,6 @@ export async function deleteAdminClient(input: DeleteAdminClientInput) {
 
   const supabase = getSupabaseServerClient();
 
-  // Capture storage paths before the RPC deletes the File rows that
-  // reference them, so the underlying objects can be removed too. The
-  // bucket has no cascade from a Postgres-side row delete.
   const { data: clientFiles, error: filesError } = await supabase
     .from("File")
     .select("path")
@@ -188,6 +186,8 @@ export async function deleteAdminClient(input: DeleteAdminClientInput) {
   revalidatePath("/admin/categories");
   revalidatePath("/admin/subscriptions");
   revalidatePath("/admin/schedule");
+  revalidatePath("/ops");
   revalidatePath("/coach/clients");
   revalidatePath("/coach/sessions");
 }
+

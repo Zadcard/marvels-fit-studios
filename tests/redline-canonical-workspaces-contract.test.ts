@@ -8,19 +8,16 @@ const read = (path: string) => readFileSync(resolve(root, path), "utf8");
 describe("Marvel Ops canonical workspaces", () => {
   it("keeps only the designed admin routes in the active navigation", () => {
     const navigation = read("lib/navigation/dashboard-nav.ts");
-    for (const label of ["Today", "Attendance", "Schedule", "Leads & Trials", "Clients", "Programs", "Coaches", "Subscriptions"]) {
+    for (const label of ["Overview", "Schedule", "Leads", "Clients", "Programs", "Coaches", "Subscriptions"]) {
       expect(navigation).toContain(`label: "${label}"`);
     }
   });
 
-  it("keeps attendance interactions aligned with persisted booking states", () => {
-    const workspace = read("components/dashboard/admin-attendance-workspace.tsx");
-    expect(workspace).toContain("Mark all in");
-    expect(workspace).toContain("markAttendance");
-    expect(workspace).toContain('nextStatus === "Booked"');
-    expect(workspace).toContain("stopPropagation");
-    expect(workspace).not.toContain('status: "Late"');
-    expect(workspace).not.toContain("Send summary to coach");
+  it("keeps attendance interactions consolidated inside the schedule workspace", () => {
+    const workspace = read("components/dashboard/admin-schedule-workspace.tsx");
+    expect(workspace).toContain("Session Attendance Roster");
+    expect(workspace).toContain("handleMarkAttendance");
+    expect(workspace).toContain("handleMarkAllAttended");
   });
 
   it("keeps full client management and cash-out in the operations design", () => {

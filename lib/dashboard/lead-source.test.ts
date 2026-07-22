@@ -8,8 +8,9 @@ describe("normalizeLeadSource", () => {
     ["Instagram bio", "Instagram"],
     ["phone-call", "Phone"],
     ["walk-in", "Walk-in"],
-    ["Facebook Messenger", "Facebook Messenger"],
-    ["messenger dm", "Facebook Messenger"],
+    ["Facebook Messenger", "Messenger"],
+    ["messenger dm", "Messenger"],
+
   ] as const)("maps %s to %s", (input, expected) => {
     expect(normalizeLeadSource(input)).toBe(expected);
   });

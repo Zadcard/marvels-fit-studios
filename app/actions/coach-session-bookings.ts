@@ -37,7 +37,6 @@ function revalidateCoachBookingViews() {
   revalidatePath("/coach/sessions");
   revalidatePath("/coach/schedule");
   revalidatePath("/admin");
-  revalidatePath("/admin/attendance");
   revalidatePath("/admin/clients");
   revalidatePath("/admin/schedule");
 }
@@ -86,7 +85,7 @@ export async function removeCoachClientFromSession(
 export async function markCoachSessionAttendance(
   trainingSessionId: string,
   clientId: string,
-  status: "BOOKED" | "ATTENDED" | "MISSED" | "NO_SHOW",
+  status: "BOOKED" | "ATTENDED" | "LATE" | "MISSED" | "EXCUSED" | "NO_SHOW",
 ) {
   const user = await requireRole(UserRole.COACH);
   const parsed = updateSessionAttendanceSchema.safeParse({

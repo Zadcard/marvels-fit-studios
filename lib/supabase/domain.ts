@@ -19,7 +19,9 @@ export const BookingStatus = enumValues(
   [
     "BOOKED",
     "ATTENDED",
+    "LATE",
     "MISSED",
+    "EXCUSED",
     "CANCELED",
     "WAITLIST",
     "NO_SHOW",

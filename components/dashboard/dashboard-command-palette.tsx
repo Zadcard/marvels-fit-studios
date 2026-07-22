@@ -53,7 +53,7 @@ export function DashboardCommandPalette({
   const groups = useMemo<CommandGroup[]>(() => {
     const actions: PaletteCommandItem[] = role === "admin"
       ? [
-          { label: "Mark attendance", detail: "Jump to the live session", kind: "Action", href: "/admin/attendance", icon: CheckCircle2, tone: "green" },
+          { label: "Mark attendance", detail: "Jump to the live session", kind: "Action", href: "/admin/schedule", icon: CheckCircle2, tone: "green" },
           { label: "New member", kind: "Action", href: "/admin/clients?new=1", icon: UserRoundPlus, tone: "red" },
           { label: "Add lead", kind: "Action", href: "/admin/leads?new=1", icon: Flag, tone: "violet" },
         ]

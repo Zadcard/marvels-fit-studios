@@ -40,29 +40,21 @@ const timeFormatter = new Intl.DateTimeFormat("en-US", {
 
 function mapScheduleStatus(input: {
   status: TrainingSessionStatus;
-  bookingsCount: number;
-  capacity: number | null;
+  startsAt: Date;
+  endsAt: Date;
 }) {
-  if (input.status === TrainingSessionStatus.COMPLETED) {
+  const now = Date.now();
+  if (
+    input.status === TrainingSessionStatus.COMPLETED ||
+    now >= input.endsAt.getTime()
+  ) {
     return "Completed" as const;
   }
-
-  if (
-    input.capacity !== null &&
-    input.capacity > 0 &&
-    input.bookingsCount >= input.capacity
-  ) {
-    return "Waitlist" as const;
+  if (now >= input.startsAt.getTime() && now < input.endsAt.getTime()) {
+    return "Live" as const;
   }
 
-  if (
-    input.status === TrainingSessionStatus.DRAFT ||
-    input.status === TrainingSessionStatus.CANCELED
-  ) {
-    return "Attention" as const;
-  }
-
-  return "Confirmed" as const;
+  return "Upcoming" as const;
 }
 
 function getTimeRange(startsAt: Date, endsAt: Date) {
@@ -122,8 +114,8 @@ export class AdminScheduleRepository {
           id, title, description, type, status, startsAt, endsAt,
           coachId, groupId, sourceTemplateId, isTemplateException,
           coach:Coach(fullName),
-          group:Group(name, category:TrainingCategory(name), clients:Client(id)),
-          bookings:SessionBooking(id, status, client:Client(id, fullName, status, injuryStatus)),
+          group:Group(name, category:TrainingCategory(name), clients:Client(id, fullName, phone, status, injuryStatus)),
+          bookings:SessionBooking(id, status, client:Client(id, fullName, phone, status, injuryStatus)),
           changes:ScheduleChangeLog(id, changeType, createdAt)
         `,
           )
@@ -151,25 +143,56 @@ export class AdminScheduleRepository {
           const startsAt = new Date(session.startsAt);
           const endsAt = new Date(session.endsAt);
           const activeBookings = session.bookings.filter((booking) =>
-            ["BOOKED", "ATTENDED", "WAITLIST"].includes(booking.status),
+            ["BOOKED", "ATTENDED", "LATE", "MISSED", "EXCUSED", "NO_SHOW", "WAITLIST"].includes(booking.status),
           );
-          const bookingsCount = activeBookings.length;
+          const capacityBookings = activeBookings.filter((booking) =>
+            ["BOOKED", "ATTENDED", "LATE", "WAITLIST"].includes(booking.status),
+          );
+          const bookingsCount = capacityBookings.length;
           const waitlistCount = activeBookings.filter(
             (booking) => booking.status === "WAITLIST",
           ).length;
-          const injuryAlertCount = activeBookings.filter(
-            (booking) =>
-              booking.client &&
-              injuryStatusHasAlert(booking.client.injuryStatus),
-          ).length;
-          const trialCount = activeBookings.filter(
-            (booking) => booking.client?.status === "TRIAL",
-          ).length;
           const scheduleStatus: AdminScheduleSessionStatus = mapScheduleStatus({
             status: session.status,
-            bookingsCount,
-            capacity: null,
+            startsAt,
+            endsAt,
           });
+
+          const bookingByClientId = new Map(
+            activeBookings.flatMap((booking) =>
+              booking.client ? [[booking.client.id, booking] as const] : [],
+            ),
+          );
+          const rosterClients = [
+            ...activeBookings.flatMap((booking) =>
+              booking.client
+                ? [{
+                    id: booking.client.id,
+                    fullName: booking.client.fullName,
+                    phone: booking.client.phone ?? null,
+                    isTrial: booking.client.status === "TRIAL",
+                    injuryStatus: booking.client.injuryStatus ?? null,
+                    hasInjuryAlert: injuryStatusHasAlert(booking.client.injuryStatus),
+                    status: booking.status as AdminScheduleSessionRecord["bookedClients"][number]["status"],
+                  }]
+                : [],
+            ),
+            ...(session.group?.clients ?? []).flatMap((client) =>
+              bookingByClientId.has(client.id)
+                ? []
+                : [{
+                    id: client.id,
+                    fullName: client.fullName,
+                    phone: client.phone ?? null,
+                    isTrial: client.status === "TRIAL",
+                    injuryStatus: client.injuryStatus ?? null,
+                    hasInjuryAlert: injuryStatusHasAlert(client.injuryStatus),
+                    status: "BOOKED" as const,
+                  }],
+            ),
+          ].sort((left, right) => left.fullName.localeCompare(right.fullName));
+          const injuryAlertCount = rosterClients.filter((client) => client.hasInjuryAlert).length;
+          const trialCount = rosterClients.filter((client) => client.isTrial).length;
 
           return {
             id: session.id,
@@ -191,7 +214,7 @@ export class AdminScheduleRepository {
             trainingCategory: session.group?.category?.name ?? null,
             injuryAlertCount,
             trialCount,
-            rosterCount: session.group?.clients.length ?? 0,
+            rosterCount: rosterClients.length,
             bookedCount: bookingsCount,
             waitlistCount,
             attendanceNote:
@@ -203,25 +226,16 @@ export class AdminScheduleRepository {
               (session.type === TrainingSessionType.PRIVATE
                 ? "Private coaching session."
                 : "Group training session."),
-            highlight:
-              scheduleStatus === "Waitlist"
-                ? "Members are waiting for this session"
-                : scheduleStatus === "Attention"
-                  ? "Needs review before it runs"
-                  : "Manual session",
+            highlight: waitlistCount > 0
+              ? "Members are waiting for this session"
+              : session.status === TrainingSessionStatus.DRAFT || session.status === TrainingSessionStatus.CANCELED
+                ? "Needs review before it runs"
+                : "Manual session",
             startsAt: startsAt.toISOString(),
             endsAt: endsAt.toISOString(),
             sourceTemplateId: session.sourceTemplateId,
             isTemplateException: session.isTemplateException,
-            bookedClients: activeBookings.flatMap((booking) =>
-              booking.client
-                ? [{
-                    id: booking.client.id,
-                    fullName: booking.client.fullName,
-                    status: booking.status as "BOOKED" | "ATTENDED" | "MISSED" | "WAITLIST",
-                  }]
-                : [],
-            ),
+            bookedClients: rosterClients,
             recentChanges: [...session.changes]
               .sort((left, right) => right.createdAt.localeCompare(left.createdAt))
               .slice(0, 3)
@@ -235,13 +249,13 @@ export class AdminScheduleRepository {
 
         const recordsThisWeek = records;
         const waitlistCount = recordsThisWeek.filter(
-          (record) => record.status === "Waitlist",
+          (record) => record.waitlistCount > 0,
         ).length;
         const privateCount = recordsThisWeek.filter(
           (record) => record.sessionType === "Private",
         ).length;
-        const confirmedCount = recordsThisWeek.filter(
-          (record) => record.status === "Confirmed",
+        const scheduledCount = recordsThisWeek.filter(
+          (record) => record.status === "Upcoming" || record.status === "Live",
         ).length;
         const stats: AdminScheduleStat[] = [
           {
@@ -258,7 +272,7 @@ export class AdminScheduleRepository {
             id: "coach-coverage",
             label: "Coach coverage",
             value: `${coaches.length}`,
-            change: `${confirmedCount} confirmed ${confirmedCount === 1 ? "session" : "sessions"}`,
+            change: `${scheduledCount} upcoming or live ${scheduledCount === 1 ? "session" : "sessions"}`,
             detail: "Available coaches connected to the week view.",
             note: "Roster live",
             icon: "target",
@@ -267,7 +281,9 @@ export class AdminScheduleRepository {
           {
             id: "attention",
             label: "Needs attention",
-            value: `${recordsThisWeek.filter((record) => record.status === "Attention").length}`,
+            value: `${recordsThisWeek.filter((record) =>
+              record.rawStatus === "DRAFT" || record.rawStatus === "CANCELED",
+            ).length}`,
             change: `${waitlistCount} at capacity`,
             detail:
               "Draft, canceled, or overloaded sessions in the planning window.",

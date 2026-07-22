@@ -46,7 +46,10 @@ function revalidateLeadWorkflow() {
   revalidatePath("/admin/join-requests");
   revalidatePath("/admin/leads");
   revalidatePath("/admin/clients");
+  revalidatePath("/admin/schedule");
+  revalidatePath("/ops");
 }
+
 
 export async function createAdminLead(input: {
   fullName: string;
@@ -64,6 +67,7 @@ export async function createAdminLead(input: {
   if (!fullName || !phone) throw new Error("Name and phone are required.");
 
   const categoryId = input.categoryId.trim();
+  if (!categoryId) throw new Error("Category selection is required.");
   const supabase = getSupabaseServerClient();
   const { data: category, error: categoryError } = await supabase
     .from("TrainingCategory")
@@ -72,6 +76,7 @@ export async function createAdminLead(input: {
     .maybeSingle();
   if (categoryError) throw categoryError;
   if (!category?.isActive) throw new Error("Choose an active interested category.");
+
 
   const { error } = await supabase.from("Lead").insert({
     fullName,
