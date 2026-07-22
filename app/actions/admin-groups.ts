@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { requireCategoryWriteAccess } from "@/lib/auth/category-access";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { GroupType, TrainingSessionType } from "@/lib/supabase/domain";
+import { nullableRpcString } from "@/lib/supabase/rpc-arguments";
 import { databaseTextIdSchema } from "@/lib/validators/database-id";
 import { recurringSessionSlotSchema } from "@/lib/validators/recurring-session";
 import { z } from "zod";
@@ -129,7 +130,7 @@ export async function saveAdminGroup(input: SaveAdminGroupInput) {
 
   if (series) {
     const { error: seriesError } = await supabase.rpc("sync_recurring_session_template", {
-      p_template_id: series.templateId ?? "",
+      p_template_id: nullableRpcString(series.templateId),
       p_title: name,
       p_description: "",
       p_type: type === GroupType.PRIVATE ? TrainingSessionType.PRIVATE : TrainingSessionType.GROUP,
@@ -137,10 +138,9 @@ export async function saveAdminGroup(input: SaveAdminGroupInput) {
       p_group_id: groupId as string,
       p_duration_minutes: series.durationMinutes,
       p_starts_on: series.startsOn,
-      p_ends_on: series.endsOn || "",
+      p_ends_on: nullableRpcString(series.endsOn),
       p_slots: series.slots,
       p_created_by_id: access.userId,
-      p_through_date: "",
     });
     if (seriesError) {
       if (seriesError.code === "23P01") {

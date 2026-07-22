@@ -13,6 +13,7 @@ const clientActions = read("app/actions/admin-clients.ts");
 const leadActions = read("app/actions/admin-leads.ts");
 const paymentActions = read("app/actions/admin-payments.ts");
 const groupActions = read("app/actions/admin-groups.ts");
+const recurringActions = read("app/actions/admin-recurring-sessions.ts");
 const todayWorkspace = read("components/dashboard/marvel-ops-today.tsx");
 const programsWorkspace = read("components/dashboard/admin-training-categories-workspace.tsx");
 const entityForm = read("components/ui/entity-form.tsx");
@@ -41,6 +42,16 @@ describe("linked programs and studio income contract", () => {
   it("accepts the database text IDs used by existing group members", () => {
     expect(groupActions).toContain("z.array(databaseTextIdSchema)");
     expect(groupActions).not.toContain("z.array(z.string().uuid())");
+  });
+
+  it("never sends empty strings to optional recurring-series date or UUID arguments", () => {
+    for (const source of [groupActions, recurringActions]) {
+      expect(source).toContain("nullableRpcString");
+      expect(source).not.toContain('p_through_date: ""');
+    }
+    expect(groupActions).not.toContain('p_ends_on: series.endsOn || ""');
+    expect(recurringActions).not.toContain('p_ends_on: value.endsOn || ""');
+    expect(recurringActions).not.toContain('p_template_id: templateId ?? ""');
   });
 
   it("feeds user-facing selectors only active programs and active groups", () => {

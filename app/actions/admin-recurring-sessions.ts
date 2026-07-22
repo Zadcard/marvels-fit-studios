@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth/session";
 import { UserRole } from "@/lib/supabase/domain";
+import { nullableRpcString } from "@/lib/supabase/rpc-arguments";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import {
   generateRecurringSessionsSchema,
@@ -30,7 +31,7 @@ export async function saveRecurringSessionTemplate(
     : null;
 
   const { data, error } = await getSupabaseServerClient().rpc("sync_recurring_session_template", {
-    p_template_id: templateId ?? "",
+    p_template_id: nullableRpcString(templateId),
     p_title: value.title,
     p_description: value.description || "",
     p_type: value.type,
@@ -38,10 +39,9 @@ export async function saveRecurringSessionTemplate(
     p_group_id: value.groupId || "",
     p_duration_minutes: value.durationMinutes,
     p_starts_on: value.startsOn,
-    p_ends_on: value.endsOn || "",
+    p_ends_on: nullableRpcString(value.endsOn),
     p_slots: value.slots,
     p_created_by_id: user.id,
-    p_through_date: "",
   });
   if (error) {
     if (error.code === "23P01") {
