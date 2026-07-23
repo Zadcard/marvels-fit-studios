@@ -14,7 +14,14 @@ describe("admin groups series integration", () => {
     expect(actions).toMatch(/if \(series\)/);
   });
 
-  it("keeps every group mutation behind category-scoped write access", () => {
-    expect(actions.match(/requireCategoryWriteAccess/g)?.length).toBeGreaterThanOrEqual(5);
+  it("keeps every group mutation behind category- or group-scoped write access", () => {
+    // requireGroupWriteAccess additionally allows a group's assigned coach
+    // to edit it (never its schedule) without requiring category supervision.
+    const guardCalls = actions.match(/requireCategoryWriteAccess|requireGroupWriteAccess/g)?.length ?? 0;
+    expect(guardCalls).toBeGreaterThanOrEqual(5);
+  });
+
+  it("never lets a plain group-owner coach touch the recurring schedule", () => {
+    expect(actions).toMatch(/if \(series && !access\.canEditTimes\)/);
   });
 });

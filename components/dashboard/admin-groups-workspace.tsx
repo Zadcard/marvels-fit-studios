@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useTransition, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarClock, Pencil, Plus, Trash2, Users, UsersRound } from "lucide-react";
+import { CalendarClock, Pencil, Plus, Users, UsersRound } from "lucide-react";
 
 import {
   deleteAdminGroup,
@@ -28,6 +28,10 @@ type Props = {
   clientOptions: AdminGroupClientOption[];
   categoryOptions: AdminGroupCategoryOption[];
   embeddedCategoryId?: string;
+  // "owner" is the scoped view a coach gets for groups they're assigned to
+  // coach: everything is editable except the recurring schedule (times),
+  // and there's no create/delete -- those stay admin/supervisor actions.
+  mode?: "full" | "owner";
 };
 
 type GroupForm = {
@@ -94,7 +98,10 @@ export function AdminGroupsWorkspace({
   clientOptions,
   categoryOptions,
   embeddedCategoryId,
+  mode = "full",
 }: Props) {
+  const canEditTimes = mode !== "owner";
+  const canCreateOrDelete = mode !== "owner";
   const router = useRouter();
   const { showToast } = useDashboardToast();
   const [isPending, startTransition] = useTransition();
@@ -124,6 +131,7 @@ export function AdminGroupsWorkspace({
   }, [records, categoryFilter, activeFilter, sortKey]);
 
   const managingGroup = records.find((record) => record.id === membersId) ?? null;
+  const editingGroup = records.find((record) => record.id === editingId) ?? null;
 
   const assignableClients = clientOptions.filter(
     (client) => client.groupId !== membersId,
@@ -173,7 +181,7 @@ export function AdminGroupsWorkspace({
           isActive: form.isActive,
           notes: form.notes,
           clientIds: form.clientIds,
-          series: form.hasSchedule
+          series: canEditTimes && form.hasSchedule
             ? {
                 templateId: form.templateId,
                 durationMinutes: Number(form.durationMinutes) || 60,
@@ -271,9 +279,11 @@ export function AdminGroupsWorkspace({
           </div>
         </div>
 
-        <button type="button" className="mv-btn mv-btn-primary" onClick={openCreate}>
-          <Plus size={16} /> New group
-        </button>
+        {canCreateOrDelete ? (
+          <button type="button" className="mv-btn mv-btn-primary" onClick={openCreate}>
+            <Plus size={16} /> New group
+          </button>
+        ) : null}
       </div>
 
       {/* ── Group Cards Grid ── */}
@@ -339,10 +349,16 @@ export function AdminGroupsWorkspace({
         <div className={styles.empty}>
           <UsersRound size={32} />
           <h2>No groups yet</h2>
-          <p>Create a recurring group series and assign a coach and training category.</p>
-          <button type="button" className="mv-btn mv-btn-primary" onClick={openCreate}>
-            + New group
-          </button>
+          <p>
+            {canCreateOrDelete
+              ? "Create a recurring group series and assign a coach and training category."
+              : "No groups are assigned to you yet."}
+          </p>
+          {canCreateOrDelete ? (
+            <button type="button" className="mv-btn mv-btn-primary" onClick={openCreate}>
+              + New group
+            </button>
+          ) : null}
         </div>
       )}
 
@@ -449,17 +465,27 @@ export function AdminGroupsWorkspace({
               />
               Group is active
             </label>
-            <label className={styles.check}>
-              <input
-                type="checkbox"
-                checked={form.hasSchedule}
-                onChange={(event) => setForm((value) => ({ ...value, hasSchedule: event.target.checked }))}
-              />
-              This group meets on a recurring schedule
-            </label>
+            {canEditTimes ? (
+              <label className={styles.check}>
+                <input
+                  type="checkbox"
+                  checked={form.hasSchedule}
+                  onChange={(event) => setForm((value) => ({ ...value, hasSchedule: event.target.checked }))}
+                />
+                This group meets on a recurring schedule
+              </label>
+            ) : null}
           </div>
 
-          {form.hasSchedule ? (
+          {!canEditTimes ? (
+            <div className={styles.readOnlySchedule} style={{ gridColumn: "1 / -1" }}>
+              <span>Schedule</span>
+              <p>{editingGroup?.scheduleSummary || "Sessions to be determined"}</p>
+              <small>Only a supervisor or admin can change when this group meets.</small>
+            </div>
+          ) : null}
+
+          {canEditTimes && form.hasSchedule ? (
             <div style={{ gridColumn: "1 / -1", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
               <FormField label="Duration minutes">
                 <input
@@ -505,7 +531,7 @@ export function AdminGroupsWorkspace({
 
           <FormActions
             onCancel={() => setEditorOpen(false)}
-            onDelete={editingId ? () => { setDeleteText(""); setDeleteOpen(true); } : undefined}
+            onDelete={editingId && canCreateOrDelete ? () => { setDeleteText(""); setDeleteOpen(true); } : undefined}
             deleteLabel="Delete group"
             submitLabel="Save group"
             pendingLabel="Saving…"

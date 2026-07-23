@@ -273,6 +273,32 @@
   color: #ffffff;
 }
 
+.readOnlySchedule {
+  display: grid;
+  gap: 6px;
+  padding: 14px;
+  border: 1px solid var(--ops-line, #262626);
+  border-radius: 12px;
+  background: var(--ops-surface-2, #141414);
+}
+.readOnlySchedule > span {
+  color: var(--ops-muted, #8f8f8f);
+  font-family: var(--font-ops-mono, monospace);
+  font-size: 0.52rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.readOnlySchedule > p {
+  margin: 0;
+  color: #fff;
+  font-family: var(--font-ops-body, sans-serif);
+  font-size: 0.82rem;
+}
+.readOnlySchedule > small {
+  color: var(--ops-muted, #8f8f8f);
+  font-size: 0.68rem;
+}
+
 .clientPicker {
   margin: 0;
   padding: 14px;

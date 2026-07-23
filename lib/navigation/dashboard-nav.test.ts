@@ -28,6 +28,7 @@ describe("dashboard navigation", () => {
     expect(getDashboardRouteMeta("/admin/settings", "admin").title).toBe("Settings");
     expect(getDashboardRouteMeta("/coach/schedule", "coach").title).toBe("Schedule");
     expect(getDashboardRouteMeta("/coach/clients", "coach").title).toBe("Members");
+    expect(getDashboardRouteMeta("/coach/groups", "coach").title).toBe("My Groups");
     expect(getDashboardRouteMeta("/coach/categories", "coach").title).toBe("Programs");
     expect(getDashboardRouteMeta("/coach/alerts", "coach").title).toBe("Alerts");
   });

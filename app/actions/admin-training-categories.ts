@@ -7,6 +7,7 @@ import { requireCategoryWriteAccess } from "@/lib/auth/category-access";
 import { slugifyTrainingCategory } from "@/lib/dashboard/training-category";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { UserRole } from "@/lib/supabase/domain";
+import { databaseTextIdSchema } from "@/lib/validators/database-id";
 import {
   deleteTrainingCategorySchema,
   saveTrainingCategorySchema,
@@ -66,7 +67,7 @@ export async function setTrainingCategorySupervisors(categoryId: string, coachId
   const parsedCategoryId = saveTrainingCategorySchema.shape.categoryId.safeParse(categoryId);
   if (!parsedCategoryId.success || !parsedCategoryId.data) throw new Error("Invalid category.");
   const parsedCoachIds = coachIds.map((coachId) => {
-    const parsed = saveTrainingCategorySchema.shape.categoryId.safeParse(coachId);
+    const parsed = databaseTextIdSchema.safeParse(coachId);
     if (!parsed.success || !parsed.data) throw new Error("Invalid supervisor.");
     return parsed.data;
   });

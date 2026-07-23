@@ -95,12 +95,14 @@ export class CoachSessionRepository {
     return withSupabaseFallback(async () => {
       const { data, error } = await getSupabaseServerClient()
         .from("TrainingSession")
-        .select("id,title,description,type,status,startsAt,coach:Coach!inner(userId),notes:SessionNote(content,createdAt),bookings:SessionBooking(status,bookedAt,client:Client(id,fullName,injuryStatus,injuryNotes,restrictions))")
+        .select("id,title,description,type,status,startsAt,endsAt,coach:Coach!inner(userId),notes:SessionNote(content,createdAt),bookings:SessionBooking(status,bookedAt,client:Client(id,fullName,injuryStatus,injuryNotes,restrictions))")
         .eq("coach.userId", userId).neq("status", "CANCELED").order("startsAt");
       if (error) throw error;
+      const now = new Date();
       const sessions = data.map((session) => ({
         ...session,
         startsAt: new Date(session.startsAt),
+        endsAt: new Date(session.endsAt),
         notes: session.notes.sort((a,b) => b.createdAt.localeCompare(a.createdAt)).slice(0,1),
         bookings: session.bookings
           .filter((booking) => ["BOOKED","ATTENDED","MISSED","WAITLIST"].includes(booking.status))
@@ -134,6 +136,8 @@ export class CoachSessionRepository {
           : `${bookings.length} booked`;
 
       const noteValue = session.notes[0]?.content ?? "";
+      const minutes = Math.max(0, Math.round((session.endsAt.getTime() - session.startsAt.getTime()) / 60_000));
+      const bookedCount = bookings.filter((booking) => booking.status !== "Missed").length;
 
       return {
         id: session.id,
@@ -146,7 +150,13 @@ export class CoachSessionRepository {
         }),
         dayLabel: getDayLabel(session.startsAt),
         timeLabel: timeFormatter.format(session.startsAt),
+        durationLabel: `${minutes || 60} min`,
+        isLive:
+          session.startsAt.getTime() <= now.getTime() &&
+          session.endsAt.getTime() > now.getTime() &&
+          session.status !== "COMPLETED",
         rosterLabel,
+        bookedCount,
         focus:
           session.description ??
           (session.type === "PRIVATE"

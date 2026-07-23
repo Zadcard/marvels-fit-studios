@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
-import { requireCategoryWriteAccess } from "@/lib/auth/category-access";
+import { requireCategoryWriteAccess, requireGroupWriteAccess } from "@/lib/auth/category-access";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { GroupType, TrainingSessionType } from "@/lib/supabase/domain";
 import { nullableRpcString } from "@/lib/supabase/rpc-arguments";
@@ -108,13 +108,26 @@ export async function saveAdminGroup(input: SaveAdminGroupInput) {
     throw new Error("Choose a training category.");
   }
 
+  let access;
   if (input.groupId) {
     const existingCategoryId = await getGroupCategoryId(input.groupId);
-    await requireCategoryWriteAccess(existingCategoryId);
+    const groupAccess = await requireGroupWriteAccess(input.groupId);
+    if (categoryId !== existingCategoryId) {
+      if (!groupAccess.canEditTimes) {
+        throw new Error("Only a supervisor or admin can move a group to a different program.");
+      }
+      access = { ...(await requireCategoryWriteAccess(categoryId)), canEditTimes: true };
+    } else {
+      access = groupAccess;
+    }
+  } else {
+    access = { ...(await requireCategoryWriteAccess(categoryId)), canEditTimes: true };
   }
-  const access = await requireCategoryWriteAccess(categoryId);
 
   const series = input.series ? saveAdminGroupSeriesSchema.parse(input.series) : null;
+  if (series && !access.canEditTimes) {
+    throw new Error("Only a supervisor or admin can change a group's recurring schedule.");
+  }
   const clientIds = input.clientIds
     ? z.array(databaseTextIdSchema).max(500).parse([...new Set(input.clientIds)])
     : null;
@@ -193,7 +206,7 @@ export async function setAdminGroupMembership(input: GroupMembershipInput) {
   if (!groupId || !clientId) {
     throw new Error("Group and client are required.");
   }
-  await requireCategoryWriteAccess(await getGroupCategoryId(groupId));
+  await requireGroupWriteAccess(groupId);
 
   const { error } = await getSupabaseServerClient().rpc(
     "set_admin_group_membership",
