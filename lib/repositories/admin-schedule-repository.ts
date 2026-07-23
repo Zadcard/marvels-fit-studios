@@ -93,8 +93,15 @@ export type AdminScheduleClientOption = {
   fullName: string;
 };
 
+export type AdminScheduleAccessScope = {
+  // Restrict visible sessions to this coach's own bookings plus anything in
+  // `categoryIds`. Leaving this unset (the admin path) skips filtering.
+  coachId: string;
+  categoryIds: string[];
+};
+
 export class AdminScheduleRepository {
-  async getSchedule(input?: { weekStart?: string }): Promise<{
+  async getSchedule(input?: { weekStart?: string; scope?: AdminScheduleAccessScope }): Promise<{
     stats: AdminScheduleStat[];
     records: AdminScheduleSessionRecord[];
     coachOptions: AdminSessionCoachOption[];
@@ -105,6 +112,7 @@ export class AdminScheduleRepository {
       async () => {
         const supabase = getSupabaseServerClient();
         const weekStart = input?.weekStart ?? getStudioDateKey();
+        const scope = input?.scope;
         const scheduleWindow = getStudioDayRange(weekStart);
         const scheduleWindowEnd = getStudioDayRange(addStudioDays(weekStart, 7));
         const sessionsPromise = supabase
@@ -114,7 +122,7 @@ export class AdminScheduleRepository {
           id, title, description, type, status, startsAt, endsAt,
           coachId, groupId, sourceTemplateId, isTemplateException,
           coach:Coach(fullName),
-          group:Group(name, category:TrainingCategory(name), clients:Client(id, fullName, phone, status, injuryStatus)),
+          group:Group(name, categoryId, category:TrainingCategory(name), clients:Client(id, fullName, phone, status, injuryStatus)),
           bookings:SessionBooking(id, status, client:Client(id, fullName, phone, status, injuryStatus)),
           changes:ScheduleChangeLog(id, changeType, createdAt)
         `,
@@ -136,7 +144,13 @@ export class AdminScheduleRepository {
         if (groupsResult.error) throw groupsResult.error;
         if (clientsResult.error) throw clientsResult.error;
 
-        const sessions = sessionsResult.data;
+        const sessions = scope
+          ? sessionsResult.data.filter(
+              (session) =>
+                session.coachId === scope.coachId ||
+                (session.group?.categoryId && scope.categoryIds.includes(session.group.categoryId)),
+            )
+          : sessionsResult.data;
         const coaches = coachesResult.data;
         const groups = groupsResult.data;
         const records = sessions.map((session) => {
