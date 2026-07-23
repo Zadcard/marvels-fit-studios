@@ -1,1 +1,5 @@
-export { default, metadata } from "../join-requests/page";
+import { redirect } from "next/navigation";
+
+export default function AdminLeadsPage() {
+  redirect("/admin/clients?segment=leads");
+}

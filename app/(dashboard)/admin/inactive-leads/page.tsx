@@ -1,18 +1,5 @@
-import { AdminInactiveLeadsWorkspace } from "@/components/dashboard/admin-inactive-leads-workspace";
-import { adminLeadRepository } from "@/lib/repositories/admin-lead-repository";
+import { redirect } from "next/navigation";
 
-export const metadata = { title: "Inactive Leads" };
-
-export default async function AdminInactiveLeadsPage() {
-  const { records, totalCount, lostCount, convertedCount } =
-    await adminLeadRepository.listInactive();
-
-  return (
-    <AdminInactiveLeadsWorkspace
-      records={records}
-      totalCount={totalCount}
-      lostCount={lostCount}
-      convertedCount={convertedCount}
-    />
-  );
+export default function AdminInactiveLeadsPage() {
+  redirect("/admin/clients?segment=inactive");
 }

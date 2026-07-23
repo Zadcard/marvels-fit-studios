@@ -102,6 +102,118 @@
   font-weight: 700;
 }
 
+/* Executive Metrics & Interactive Category Cards */
+.metricsBar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.metricCard {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px 18px;
+  background: rgba(20, 20, 20, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.15s ease;
+  text-align: left;
+  position: relative;
+}
+
+.metricCard:hover {
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-2px);
+  background: rgba(30, 30, 30, 0.95);
+}
+
+.metricCard[data-active] {
+  border-color: rgba(230, 36, 41, 0.6);
+  background: rgba(230, 36, 41, 0.12);
+  box-shadow: 0 6px 20px rgba(230, 36, 41, 0.22);
+}
+
+.metricLabel {
+  font-family: var(--font-ops-mono);
+  font-size: 0.66rem;
+  font-weight: 700;
+  color: #8f8f8f;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.metricValue {
+  font-family: var(--font-ops-display);
+  font-size: 1.55rem;
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1.1;
+}
+
+.metricSubtext {
+  font-family: var(--font-ops-body);
+  font-size: 0.68rem;
+  color: #a3a3a3;
+  margin-top: 2px;
+}
+
+/* Prominent WhatsApp Outreach Button */
+.whatsappActionBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: rgba(37, 211, 102, 0.14);
+  border: 1px solid rgba(37, 211, 102, 0.45);
+  color: #25d366;
+  font-family: var(--font-ops-body);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.whatsappActionBtn:hover {
+  background: #25d366;
+  color: #0a0a0a;
+  box-shadow: 0 4px 12px rgba(37, 211, 102, 0.35);
+}
+
+/* Lapsed & Contextual Pills */
+.lapsedPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-family: var(--font-ops-body);
+  font-size: 0.66rem;
+  font-weight: 700;
+}
+
+.lapsedTrialPill {
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  color: #f59e0b;
+}
+
+.lapsedClientPill {
+  background: rgba(139, 92, 246, 0.15);
+  border: 1px solid rgba(139, 92, 246, 0.35);
+  color: #a78bfa;
+}
+
 /* New Client Button */
 .newBtn {
   min-height: 38px;
@@ -149,6 +261,201 @@
   color: #fff;
 }
 
+/* ── Secondary Lead Button ────────────────────────────── */
+.newLeadBtn {
+  min-height: 38px;
+  padding: 0 16px;
+  border-radius: 10px;
+  border: 1px solid rgba(59, 130, 246, 0.45);
+  cursor: pointer;
+  font-family: var(--font-ops-body);
+  font-size: .7rem;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: #3b82f6;
+  background: rgba(59, 130, 246, 0.12);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+.newLeadBtn:hover {
+  background: #3b82f6;
+  color: #fff;
+  border-color: #3b82f6;
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.35);
+}
+
+/* ── Card Grid Layout System ──────────────────────────── */
+.cardsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 12px;
+}
+
+.memberCard {
+  background: rgba(20, 20, 20, 0.95);
+  border-radius: 14px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: all 0.15s ease;
+  position: relative;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+}
+
+.memberCard[data-card-type="active-member"] {
+  border: 1.5px solid rgba(37, 211, 102, 0.55);
+}
+.memberCard[data-card-type="active-member"]:hover {
+  border-color: #25d366;
+  box-shadow: 0 6px 20px rgba(37, 211, 102, 0.2);
+  transform: translateY(-2px);
+}
+
+.memberCard[data-card-type="inactive-member"] {
+  border: 1.5px solid rgba(140, 140, 140, 0.35);
+}
+.memberCard[data-card-type="inactive-member"]:hover {
+  border-color: rgba(180, 180, 180, 0.6);
+  box-shadow: 0 6px 20px rgba(180, 180, 180, 0.15);
+  transform: translateY(-2px);
+}
+
+.memberCard[data-card-type="active-lead"] {
+  border: 1.5px solid rgba(59, 130, 246, 0.55);
+}
+.memberCard[data-card-type="active-lead"]:hover {
+  border-color: #3b82f6;
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.2);
+  transform: translateY(-2px);
+}
+
+.memberCard[data-card-type="lost-lead"] {
+  border: 1.5px solid rgba(230, 36, 41, 0.55);
+}
+.memberCard[data-card-type="lost-lead"]:hover {
+  border-color: #ff4f54;
+  box-shadow: 0 6px 20px rgba(230, 36, 41, 0.2);
+  transform: translateY(-2px);
+}
+
+.memberCardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.memberCardMeta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.memberCardNameGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.memberCardTitle {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #ffffff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.25;
+}
+
+.memberCardPhone {
+  font-family: var(--font-ops-mono);
+  font-size: 0.72rem;
+  color: #8f8f8f;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.memberCardBadges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.memberCardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.memberCardInfoRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.76rem;
+  gap: 8px;
+}
+
+.memberCardLabel {
+  color: #8f8f8f;
+  font-family: var(--font-ops-mono);
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.memberCardValue {
+  color: #e0e0e0;
+  font-weight: 600;
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.memberCardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  margin-top: auto;
+}
+
+.viewDetailsBtn {
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+  font-family: var(--font-ops-body);
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.12s ease;
+}
+
+.viewDetailsBtn:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
 /* ── Table Container ──────────────────────────────────── */
 .roster {
   overflow: hidden;
@@ -165,7 +472,7 @@
 .rosterHead,
 .rosterRow {
   display: grid;
-  grid-template-columns: 1.6fr 1.1fr 85px 1.2fr 105px 140px 68px;
+  grid-template-columns: 1.6fr 1fr 85px 1.1fr 105px 175px 76px;
   gap: 12px;
   align-items: center;
   border-bottom: 1px solid var(--ops-line);
@@ -181,14 +488,17 @@
   letter-spacing: .14em;
   text-transform: uppercase;
 }
+.rosterHead > span:last-child {
+  text-align: right;
+}
 
 .rosterRow {
-  min-height: 62px;
-  padding-block: 10px;
-  transition: background 0.12s;
+  min-height: 76px;
+  padding-block: 14px;
+  transition: background 0.12s ease;
 }
 .rosterRow:hover {
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(255, 255, 255, 0.025);
 }
 .rosterRow[data-subdued] {
   opacity: .6;
@@ -198,7 +508,7 @@
 .clientCell {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   border: 0;
   background: transparent;
   color: #fff;
@@ -209,8 +519,8 @@
 }
 
 .avatar {
-  width: 34px;
-  height: 34px;
+  width: 38px;
+  height: 38px;
   flex: 0 0 auto;
   display: grid;
   place-items: center;
@@ -218,8 +528,9 @@
   background: linear-gradient(135deg, #e62429, #ff4f54);
   color: #fff;
   font-family: var(--font-ops-display);
-  font-size: .65rem;
+  font-size: .72rem;
   font-weight: 700;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
 
 .nameCol {
@@ -227,28 +538,61 @@
   flex-direction: column;
   justify-content: center;
   min-width: 0;
-  gap: 2px;
+  gap: 5px;
 }
+
 .clientName {
   overflow: hidden;
-  font-size: .84rem;
+  font-size: .88rem;
   font-weight: 700;
   text-overflow: ellipsis;
   white-space: nowrap;
   color: #fff;
+  line-height: 1.25;
+}
+
+/* Group Chip Badge */
+.groupChipRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+
+.groupChip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.05);
+  color: #d4d4d4;
+  font-family: var(--font-ops-mono);
+  font-size: 0.62rem;
+  font-weight: 600;
   line-height: 1.2;
 }
+
 .injuryBadge {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
+  margin-top: 4px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  background: rgba(245, 158, 11, 0.12);
   color: #f59e0b;
   font-family: var(--font-ops-mono);
-  font-size: .54rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  line-height: 1.2;
+  font-size: 0.64rem;
+  font-weight: 600;
+  line-height: 1.35;
+  width: max-content;
+  max-width: 95%;
+  box-sizing: border-box;
+  word-break: break-word;
+  white-space: normal;
 }
 
 /* ── Category & Type Cells ────────────────────────────── */
@@ -332,30 +676,35 @@
 .phoneText {
   color: #8f8f8f;
   font-family: var(--font-ops-mono);
-  font-size: .62rem;
+  font-size: .68rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 .waBtn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 22px;
-  height: 22px;
-  border-radius: 6px;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
   background: rgba(37, 211, 102, 0.14);
-  border: 1px solid rgba(37, 211, 102, 0.3);
+  border: 1px solid rgba(37, 211, 102, 0.4);
   color: #25d366;
   text-decoration: none;
-  font-size: .68rem;
-  transition: transform .12s, background .12s;
+  transition: all 0.12s ease;
   flex-shrink: 0;
 }
-.waBtn:hover { transform: scale(1.1); background: rgba(37, 211, 102, 0.28); color: #fff; }
+.waBtn:hover {
+  transform: scale(1.08);
+  background: #25d366;
+  border-color: #25d366;
+  color: #0a0a0a;
+  box-shadow: 0 4px 12px rgba(37, 211, 102, 0.35);
+}
 
 
 /* ── Row Actions ──────────────────────────────────────── */
@@ -678,10 +1027,10 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 7px 11px;
-  border: 1px solid transparent;
+  padding: 7px 12px;
+  border: 1px solid var(--ops-line, #2a2a2a);
   border-radius: 8px;
-  background: transparent;
+  background: var(--ops-surface-2, #141414);
   color: var(--ops-muted, #8f8f8f);
   font-size: 0.72rem;
   font-weight: 700;
@@ -691,13 +1040,14 @@
 
 .dossierTab:hover {
   color: #ffffff;
-  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .dossierTab[data-active="true"] {
-  border-color: rgba(230, 36, 41, 0.4);
-  background: rgba(230, 36, 41, 0.12);
-  color: #ff4f54;
+  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
 }
 
 /* ── Group chips (roster row + drawer) ───────────────────── */

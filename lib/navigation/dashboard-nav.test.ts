@@ -12,10 +12,7 @@ describe("dashboard navigation", () => {
     expect(getDashboardSidebarNav("admin").map((item) => item.label)).toEqual([
       "Overview",
       "Schedule",
-      "Leads",
-      "Lapsed Trials",
-      "Inactive Leads",
-      "Clients",
+      "Members",
       "Programs",
       "Coaches",
       "Subscriptions",
@@ -30,7 +27,7 @@ describe("dashboard navigation", () => {
     expect(getDashboardRouteMeta("/admin/notifications", "admin").title).toBe("Alerts");
     expect(getDashboardRouteMeta("/admin/settings", "admin").title).toBe("Settings");
     expect(getDashboardRouteMeta("/coach/schedule", "coach").title).toBe("Schedule");
-    expect(getDashboardRouteMeta("/coach/clients", "coach").title).toBe("Clients");
+    expect(getDashboardRouteMeta("/coach/clients", "coach").title).toBe("Members");
     expect(getDashboardRouteMeta("/coach/categories", "coach").title).toBe("Programs");
     expect(getDashboardRouteMeta("/coach/alerts", "coach").title).toBe("Alerts");
   });

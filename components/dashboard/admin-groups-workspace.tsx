@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useTransition, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { Pencil, Plus, Trash2, Users, UsersRound } from "lucide-react";
+import { CalendarClock, Pencil, Plus, Trash2, Users, UsersRound } from "lucide-react";
 
 import {
   deleteAdminGroup,
@@ -19,7 +19,7 @@ import { useDashboardToast } from "./dashboard-toast-provider";
 import { SeriesSlotsEditor } from "./series-slots-editor";
 import type { RecurringSessionTemplateSlot } from "@/lib/dashboard/recurring-session-template";
 import { getStudioDateKey } from "@/lib/time/studio-time";
-import { ConfirmDeleteDialog, EntityDialog } from "@/components/ui/entity-form";
+import { ConfirmDeleteDialog, EntityDialog, EntityForm, FormActions, FormErrorBanner, FormField } from "@/components/ui/entity-form";
 import styles from "./admin-groups-workspace.module.css";
 
 type Props = {
@@ -99,9 +99,7 @@ export function AdminGroupsWorkspace({
   const { showToast } = useDashboardToast();
   const [isPending, startTransition] = useTransition();
   const [categoryFilter, setCategoryFilter] = useState(embeddedCategoryId ?? "All");
-  const [activeFilter, setActiveFilter] = useState<"All" | "Active" | "Inactive">(
-    "All",
-  );
+  const [activeFilter, setActiveFilter] = useState<"All" | "Active" | "Inactive">("All");
   const [sortKey, setSortKey] = useState<"name" | "coach" | "members">("name");
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -115,10 +113,8 @@ export function AdminGroupsWorkspace({
   const filtered = useMemo(() => {
     const matches = records.filter(
       (record) =>
-        (categoryFilter === "All" ||
-          record.categoryId === categoryFilter) &&
-        (activeFilter === "All" ||
-          (activeFilter === "Active" ? record.isActive : !record.isActive)),
+        (categoryFilter === "All" || record.categoryId === categoryFilter) &&
+        (activeFilter === "All" || (activeFilter === "Active" ? record.isActive : !record.isActive)),
     );
     return [...matches].sort((a, b) => {
       if (sortKey === "coach") return a.coachName.localeCompare(b.coachName);
@@ -128,9 +124,9 @@ export function AdminGroupsWorkspace({
   }, [records, categoryFilter, activeFilter, sortKey]);
 
   const managingGroup = records.find((record) => record.id === membersId) ?? null;
-  const editingGroup = records.find((record) => record.id === editingId) ?? null;
+
   const assignableClients = clientOptions.filter(
-    (client) => !managingGroup?.members.some((member) => member.id === client.id),
+    (client) => client.groupId !== membersId,
   );
 
   function openCreate() {
@@ -180,7 +176,7 @@ export function AdminGroupsWorkspace({
           series: form.hasSchedule
             ? {
                 templateId: form.templateId,
-                durationMinutes: Number(form.durationMinutes),
+                durationMinutes: Number(form.durationMinutes) || 60,
                 startsOn: form.startsOn,
                 endsOn: form.endsOn || undefined,
                 slots: form.slots,
@@ -191,31 +187,28 @@ export function AdminGroupsWorkspace({
         showToast(editingId ? "Group updated." : "Group created.");
         router.refresh();
       } catch (caught) {
-        const description = caught instanceof Error ? caught.message : "Could not save the group.";
-        setError(description);
-        showToast(description, "warning");
+        const message = caught instanceof Error ? caught.message : "Could not save the group.";
+        setError(message);
+        showToast(message, "warning");
       }
     });
   }
 
   function confirmDelete() {
-    if (!editingGroup) return;
+    if (!editingId) return;
     setError("");
     startTransition(async () => {
       try {
-        await deleteAdminGroup({
-          groupId: editingGroup.id,
-          confirmationText: deleteText,
-        });
+        await deleteAdminGroup({ groupId: editingId, confirmationText: deleteText });
         setDeleteOpen(false);
         setEditorOpen(false);
         setDeleteText("");
         showToast("Group deleted.");
         router.refresh();
       } catch (caught) {
-        const description = caught instanceof Error ? caught.message : "Could not delete the group.";
-        setError(description);
-        showToast(description, "warning");
+        const message = caught instanceof Error ? caught.message : "Could not delete the group.";
+        setError(message);
+        showToast(message, "warning");
       }
     });
   }
@@ -226,94 +219,116 @@ export function AdminGroupsWorkspace({
     startTransition(async () => {
       try {
         await setAdminGroupMembership({ groupId: membersId, clientId, action });
-        setAddClientId("");
-        showToast(action === "add" ? "Member added." : "Member removed.");
+        if (action === "add") setAddClientId("");
+        showToast(action === "add" ? "Member added to group." : "Member removed from group.");
         router.refresh();
       } catch (caught) {
-        const description = caught instanceof Error ? caught.message : "Could not update members.";
-        setError(description);
-        showToast(description, "warning");
+        const message = caught instanceof Error ? caught.message : "Could not update membership.";
+        setError(message);
+        showToast(message, "warning");
       }
     });
   }
 
   return (
     <div className={styles.page} aria-busy={isPending}>
-      <header className={styles.header}>
-        <button type="button" className="mv-btn mv-btn-primary" onClick={openCreate}>
-          <Plus size={17} /> New group
-        </button>
-      </header>
-
+      {/* ── Toolbar: All controls & + New Group on the exact same row ── */}
       <div className={styles.toolbar}>
         <div className={styles.filters}>
-          {!embeddedCategoryId ? <label>
-            Training
-            <select value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)}>
-              <option value="All">All categories</option>
-              {categoryOptions.map((option) => <option key={option.id} value={option.id}>{option.name}</option>)}
-            </select>
-          </label> : null}
-          <label>
-            Sort by
+          {!embeddedCategoryId ? (
+            <div className={styles.filterField}>
+              <span>Training</span>
+              <select value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)}>
+                <option value="All">All categories</option>
+                {categoryOptions.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : null}
+
+          <div className={styles.filterField}>
+            <span>Sort by</span>
             <select value={sortKey} onChange={(event) => setSortKey(event.target.value as typeof sortKey)}>
               <option value="name">Name</option>
               <option value="coach">Coach</option>
               <option value="members">Members</option>
             </select>
-          </label>
-          <label>
-            Status
+          </div>
+
+          <div className={styles.filterField}>
+            <span>Status</span>
             <select
               value={activeFilter}
-              onChange={(event) =>
-                setActiveFilter(event.target.value as typeof activeFilter)
-              }
+              onChange={(event) => setActiveFilter(event.target.value as typeof activeFilter)}
             >
               {["All", "Active", "Inactive"].map((option) => (
                 <option key={option}>{option}</option>
               ))}
             </select>
-          </label>
+          </div>
         </div>
+
+        <button type="button" className="mv-btn mv-btn-primary" onClick={openCreate}>
+          <Plus size={16} /> New group
+        </button>
       </div>
 
+      {/* ── Group Cards Grid ── */}
       {filtered.length ? (
         <div className={styles.grid}>
           {filtered.map((record) => {
             return (
               <article className={styles.card} key={record.id}>
-                <div className={styles.cardTop}>
-                  <div>
+                <div className={styles.cardHeader}>
+                  <div className={styles.cardTitleGroup}>
                     <h2>{record.name}</h2>
-                    <div className={styles.days}>{record.scheduleSummary}</div>
+                    <span className={styles.typeBadge}>{record.groupType} Series</span>
                   </div>
-                  <span className={styles.statusPill} data-active={record.isActive || undefined}>
+                  <span
+                    className={`${styles.statusPill} ${
+                      record.isActive ? styles.statusActive : styles.statusInactive
+                    }`}
+                  >
                     {record.isActive ? "Active" : "Inactive"}
                   </span>
                 </div>
 
-                <dl className={styles.statRow}>
-                  {!embeddedCategoryId ? <div><dt>Program</dt><dd>{record.categoryName}</dd></div> : null}
-                  <div><dt>Type</dt><dd>{record.groupType}</dd></div>
-                </dl>
+                {/* Schedule Chip */}
+                <div className={styles.schedulePill}>
+                  <CalendarClock size={14} />
+                  <span>{record.scheduleSummary || "No recurring sessions set"}</span>
+                </div>
 
+                {/* Coach & Members */}
                 <div className={styles.coachLine}>
                   <span className={styles.avatar} style={{ background: gradientFor(record.coachName) }}>
                     {coachInitials(record.coachName)}
                   </span>
-                  <div>
+                  <div className={styles.coachInfo}>
                     <div className={styles.coachName}>{record.coachName}</div>
-                    <div className={styles.memberCount}>{record.memberCount ? `${record.memberCount} ${record.memberCount === 1 ? "member" : "members"}` : "Members to be determined"}</div>
+                    <div className={styles.memberCount}>
+                      👥 {record.memberCount ? `${record.memberCount} ${record.memberCount === 1 ? "member" : "members"}` : "No members enrolled"}
+                    </div>
                   </div>
                 </div>
 
+                {/* Action Bar */}
                 <div className={styles.cardActions}>
                   <button type="button" onClick={() => openEdit(record)}>
-                    <Pencil size={15} /> Edit
+                    <Pencil size={14} /> Edit Group
                   </button>
-                  <button type="button" onClick={() => { setMembersId(record.id); setAddClientId(""); setError(""); }}>
-                    <Users size={15} /> Members ({record.memberCount})
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMembersId(record.id);
+                      setAddClientId("");
+                      setError("");
+                    }}
+                  >
+                    <Users size={14} /> Roster &amp; Slots ({record.memberCount})
                   </button>
                 </div>
               </article>
@@ -322,130 +337,249 @@ export function AdminGroupsWorkspace({
         </div>
       ) : (
         <div className={styles.empty}>
-          <UsersRound size={30} />
+          <UsersRound size={32} />
           <h2>No groups yet</h2>
-          <p>Create a recurring group and assign a coach and training category.</p>
+          <p>Create a recurring group series and assign a coach and training category.</p>
           <button type="button" className="mv-btn mv-btn-primary" onClick={openCreate}>
-            New group
+            + New group
           </button>
         </div>
       )}
 
-      {/* Editor */}
-      <EntityDialog open={editorOpen} onOpenChange={setEditorOpen} title={editingId ? "Edit group" : "New group"} description="Set the coach, program, members, recurring schedule, and status." closeLabel="Close group editor">
-            <form className={styles.form} onSubmit={submitGroup}>
-              <label className={styles.full}>
-                Group name
-                <input required value={form.name} onChange={(event) => setForm((value) => ({ ...value, name: event.target.value }))} />
-              </label>
-              <label>
-                Type
-                <select value={form.groupType} onChange={(event) => setForm((value) => ({ ...value, groupType: event.target.value as GroupForm["groupType"] }))}>
-                  {["Group", "Private"].map((option) => <option key={option}>{option}</option>)}
-                </select>
-              </label>
-              <label>
-                Program
-                <select required disabled={Boolean(embeddedCategoryId)} value={form.categoryId} onChange={(event) => setForm((value) => ({ ...value, categoryId: event.target.value, coachId: "" }))}>
-                  <option value="">Select a category</option>
-                  {categoryOptions.filter((option) => option.isActive || option.id === form.categoryId).map((option) => <option key={option.id} value={option.id}>{option.name}{option.isActive ? "" : " (archived)"}</option>)}
-                </select>
-              </label>
-              <label>
-                Coach
-                <select required value={form.coachId} onChange={(event) => setForm((value) => ({ ...value, coachId: event.target.value }))}>
-                  <option value="">Select a coach</option>
-                  {coachOptions.filter((coach) => coach.qualifiedCategoryIds.includes(form.categoryId)).map((coach) => <option key={coach.id} value={coach.id}>{coach.fullName}</option>)}
-                </select>
-              </label>
-              <fieldset className={`${styles.full} ${styles.clientPicker}`}>
-                <legend>Clients in this group</legend>
-                <p>Select clients now or update membership later. Clients can belong to more than one group.</p>
-                <div>
-                  {clientOptions.length ? clientOptions.map((client) => {
-                    const checked = form.clientIds.includes(client.id);
-                    return <label key={client.id}>
-                      <input type="checkbox" checked={checked} onChange={() => setForm((value) => ({
-                        ...value,
-                        clientIds: checked
-                          ? value.clientIds.filter((id) => id !== client.id)
-                          : [...value.clientIds, client.id],
-                      }))} />
+      {/* ── Group Editor Modal aligned with Client Edit Modal ── */}
+      <EntityDialog
+        open={editorOpen}
+        onOpenChange={setEditorOpen}
+        title={editingId ? "Edit group" : "New group"}
+        description="Configure coach assignment, training category, recurring schedule, and roster."
+        closeLabel="Close group editor"
+      >
+        <EntityForm onSubmit={submitGroup}>
+          <FormField label="Group name" required full>
+            <input
+              required
+              value={form.name}
+              onChange={(event) => setForm((value) => ({ ...value, name: event.target.value }))}
+              placeholder="e.g. Burning Class, Ladies Morning"
+            />
+          </FormField>
+
+          <FormField label="Type">
+            <select
+              value={form.groupType}
+              onChange={(event) => setForm((value) => ({ ...value, groupType: event.target.value as GroupForm["groupType"] }))}
+            >
+              {["Group", "Private"].map((option) => (
+                <option key={option}>{option}</option>
+              ))}
+            </select>
+          </FormField>
+
+          <FormField label="Program category">
+            <select
+              required
+              disabled={Boolean(embeddedCategoryId)}
+              value={form.categoryId}
+              onChange={(event) => setForm((value) => ({ ...value, categoryId: event.target.value, coachId: "" }))}
+            >
+              <option value="">Select a category</option>
+              {categoryOptions
+                .filter((option) => option.isActive || option.id === form.categoryId)
+                .map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.name}
+                    {option.isActive ? "" : " (archived)"}
+                  </option>
+                ))}
+            </select>
+          </FormField>
+
+          <FormField label="Assigned Coach" full>
+            <select
+              required
+              value={form.coachId}
+              onChange={(event) => setForm((value) => ({ ...value, coachId: event.target.value }))}
+            >
+              <option value="">Select a coach</option>
+              {coachOptions.map((coach) => (
+                <option key={coach.id} value={coach.id}>
+                  {coach.fullName}
+                </option>
+              ))}
+            </select>
+          </FormField>
+
+          <fieldset className={`${styles.clientPicker}`} style={{ gridColumn: "1 / -1" }}>
+            <legend>Enrolled Clients</legend>
+            <p>Select clients now or update roster later. Clients can belong to more than one group.</p>
+            <div>
+              {clientOptions.length ? (
+                clientOptions.map((client) => {
+                  const checked = form.clientIds.includes(client.id);
+                  return (
+                    <label key={client.id}>
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() =>
+                          setForm((value) => ({
+                            ...value,
+                            clientIds: checked
+                              ? value.clientIds.filter((id) => id !== client.id)
+                              : [...value.clientIds, client.id],
+                          }))
+                        }
+                      />
                       <span>{client.fullName}</span>
-                    </label>;
-                  }) : <p>No clients are available.</p>}
-                </div>
-              </fieldset>
-              <label className={`${styles.full} ${styles.checkbox}`}>
-                <input type="checkbox" checked={form.isActive} onChange={(event) => setForm((value) => ({ ...value, isActive: event.target.checked }))} />
-                Group is active
-              </label>
-              <label className={`${styles.full} ${styles.checkbox}`}>
+                    </label>
+                  );
+                })
+              ) : (
+                <p>No clients available.</p>
+              )}
+            </div>
+          </fieldset>
+
+          <div style={{ gridColumn: "1 / -1", display: "grid", gap: "10px" }}>
+            <label className={styles.check}>
+              <input
+                type="checkbox"
+                checked={form.isActive}
+                onChange={(event) => setForm((value) => ({ ...value, isActive: event.target.checked }))}
+              />
+              Group is active
+            </label>
+            <label className={styles.check}>
+              <input
+                type="checkbox"
+                checked={form.hasSchedule}
+                onChange={(event) => setForm((value) => ({ ...value, hasSchedule: event.target.checked }))}
+              />
+              This group meets on a recurring schedule
+            </label>
+          </div>
+
+          {form.hasSchedule ? (
+            <div style={{ gridColumn: "1 / -1", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+              <FormField label="Duration minutes">
                 <input
-                  type="checkbox"
-                  checked={form.hasSchedule}
-                  onChange={(event) => setForm((value) => ({ ...value, hasSchedule: event.target.checked }))}
+                  type="number"
+                  min="15"
+                  max="480"
+                  required
+                  value={form.durationMinutes}
+                  onChange={(event) => setForm((value) => ({ ...value, durationMinutes: event.target.value }))}
                 />
-                This group meets on a recurring schedule
-              </label>
-              {form.hasSchedule ? (
-                <div className={styles.full}>
-                  <label>Duration minutes<input type="number" min="15" max="480" required value={form.durationMinutes} onChange={(event) => setForm((value) => ({ ...value, durationMinutes: event.target.value }))} /></label>
-                  <label>Starts on<input type="date" required value={form.startsOn} onChange={(event) => setForm((value) => ({ ...value, startsOn: event.target.value }))} /></label>
-                  <label>Ends on<input type="date" value={form.endsOn} onChange={(event) => setForm((value) => ({ ...value, endsOn: event.target.value }))} /></label>
-                  <span>Repeats on</span>
-                  <SeriesSlotsEditor slots={form.slots} onChange={(slots) => setForm((value) => ({ ...value, slots }))} />
-                </div>
-              ) : null}
-              <label className={styles.full}>
-                Notes
-                <input value={form.notes} onChange={(event) => setForm((value) => ({ ...value, notes: event.target.value }))} placeholder="Anything the team should know about this group" />
-              </label>
-              {error ? <p className={styles.error} role="alert">{error}</p> : null}
-              <div className={styles.formActions}>
-                {editingId ? (
-                  <button type="button" className={styles.deleteButton} onClick={() => { setDeleteText(""); setDeleteOpen(true); }}>
-                    <Trash2 size={16} /> Delete
-                  </button>
-                ) : <span />}
-                <span />
-                <button type="button" className="mv-btn mv-btn-secondary" onClick={() => setEditorOpen(false)}>Cancel</button>
-                <button type="submit" className="mv-btn mv-btn-primary" disabled={isPending}>{isPending ? "Saving…" : "Save group"}</button>
+              </FormField>
+              <FormField label="Starts on">
+                <input
+                  type="date"
+                  required
+                  value={form.startsOn}
+                  onChange={(event) => setForm((value) => ({ ...value, startsOn: event.target.value }))}
+                />
+              </FormField>
+              <FormField label="Ends on" full>
+                <input
+                  type="date"
+                  value={form.endsOn}
+                  onChange={(event) => setForm((value) => ({ ...value, endsOn: event.target.value }))}
+                />
+              </FormField>
+              <div style={{ gridColumn: "1 / -1" }}>
+                <span style={{ fontSize: "0.72rem", color: "#8f8f8f", fontWeight: 700 }}>RECURRING WEEKLY SLOTS</span>
+                <SeriesSlotsEditor slots={form.slots} onChange={(slots) => setForm((value) => ({ ...value, slots }))} />
               </div>
-            </form>
+            </div>
+          ) : null}
+
+          <FormField label="Notes" full>
+            <input
+              value={form.notes}
+              onChange={(event) => setForm((value) => ({ ...value, notes: event.target.value }))}
+              placeholder="Internal operational notes"
+            />
+          </FormField>
+
+          {error ? <FormErrorBanner>{error}</FormErrorBanner> : null}
+
+          <FormActions
+            onCancel={() => setEditorOpen(false)}
+            onDelete={editingId ? () => { setDeleteText(""); setDeleteOpen(true); } : undefined}
+            deleteLabel="Delete group"
+            submitLabel="Save group"
+            pendingLabel="Saving…"
+            pending={isPending}
+          />
+        </EntityForm>
       </EntityDialog>
 
-      {/* Members */}
-      <EntityDialog open={!!managingGroup} onOpenChange={(open) => !open && setMembersId(null)} title={`${managingGroup?.name ?? "Group"} members`} description="Add or remove clients in this group." closeLabel="Close group members" size="small">
-            {managingGroup ? (
-              <>
-                <div className={styles.memberList}>
-                  {managingGroup.members.length ? managingGroup.members.map((member) => (
-                    <div className={styles.memberRow} key={member.id}>
-                      <span>{member.fullName}</span>
-                      <button type="button" onClick={() => changeMembership(member.id, "remove")} disabled={isPending}>Remove</button>
-                    </div>
-                  )) : <p>No members in this group yet.</p>}
-                </div>
-                <div className={styles.addRow}>
-                  <label className="sr-only" htmlFor="add-member">Add member</label>
-                  <select id="add-member" value={addClientId} onChange={(event) => setAddClientId(event.target.value)}>
-                    <option value="">Add a client…</option>
-                    {assignableClients.map((client) => (
-                      <option key={client.id} value={client.id}>
-                        {client.fullName}
-                      </option>
-                    ))}
-                  </select>
-                  <button type="button" className="mv-btn mv-btn-primary" disabled={!addClientId || isPending} onClick={() => changeMembership(addClientId, "add")}>Add</button>
-                </div>
-                {error ? <p className={styles.error} role="alert">{error}</p> : null}
-              </>
-            ) : null}
+      {/* Roster & Members Manager Modal */}
+      <EntityDialog
+        open={!!managingGroup}
+        onOpenChange={(open) => !open && setMembersId(null)}
+        title={`${managingGroup?.name ?? "Group"} roster & members`}
+        description="Add or remove clients in this group series."
+        closeLabel="Close roster manager"
+        size="small"
+      >
+        {managingGroup ? (
+          <>
+            <div className={styles.memberList}>
+              {managingGroup.members.length ? (
+                managingGroup.members.map((member) => (
+                  <div className={styles.memberRow} key={member.id}>
+                    <span>{member.fullName}</span>
+                    <button
+                      type="button"
+                      onClick={() => changeMembership(member.id, "remove")}
+                      disabled={isPending}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))
+              ) : (
+                <p style={{ color: "#8f8f8f", fontSize: "0.78rem" }}>No members enrolled in this group yet.</p>
+              )}
+            </div>
+            <div className={styles.addRow}>
+              <select value={addClientId} onChange={(event) => setAddClientId(event.target.value)}>
+                <option value="">Add a client to roster…</option>
+                {assignableClients.map((client) => (
+                  <option key={client.id} value={client.id}>
+                    {client.fullName}
+                    {client.groupId ? " (currently in another group)" : ""}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                className="mv-btn mv-btn-primary"
+                disabled={!addClientId || isPending}
+                onClick={() => changeMembership(addClientId, "add")}
+              >
+                Add
+              </button>
+            </div>
+            {error ? <FormErrorBanner>{error}</FormErrorBanner> : null}
+          </>
+        ) : null}
       </EntityDialog>
 
-      {/* Delete confirm */}
-      <ConfirmDeleteDialog open={deleteOpen} onOpenChange={setDeleteOpen} title="Delete this group?" description="Members are unassigned but not deleted. Type Delete to confirm." confirmationValue={deleteText} onConfirmationChange={setDeleteText} error={error} pending={isPending} onConfirm={confirmDelete} closeLabel="Close group deletion" />
+      {/* Delete Group Confirmation Modal */}
+      <ConfirmDeleteDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title="Delete this group?"
+        description="Members will be unassigned from this group. Type Delete to confirm."
+        confirmationValue={deleteText}
+        onConfirmationChange={setDeleteText}
+        error={error}
+        pending={isPending}
+        onConfirm={confirmDelete}
+        closeLabel="Close group deletion"
+      />
     </div>
   );
 }

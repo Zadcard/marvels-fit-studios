@@ -57,7 +57,6 @@ type Props = {
 
 type ClientForm = {
   fullName: string;
-  email: string;
   phone: string;
   status: AdminClientRecord["status"];
   trialOutcome: AdminClientRecord["trialOutcome"];
@@ -73,9 +72,8 @@ type ClientForm = {
 
 const emptyForm: ClientForm = {
   fullName: "",
-  email: "",
   phone: "",
-  status: "Pending",
+  status: "Active",
   trialOutcome: "Not recorded",
   paymentStatus: "Unpaid",
   paymentAmount: "",
@@ -87,7 +85,14 @@ const emptyForm: ClientForm = {
   restrictions: "",
 };
 
-const clientSegments = ["All", "Active", "Trial", "Paused", "Inactive", "Injuries"] as const;
+const clientSegments = [
+  "Active Members",
+  "Inactive Members",
+  "Active Leads",
+  "Lost Leads",
+  "All Members",
+  "Injuries",
+] as const;
 
 function initials(name: string) {
   return name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
@@ -106,8 +111,8 @@ function clientType(record: AdminClientRecord) {
 
 function statusStyle(status: string) {
   if (["Active", "Paid"].includes(status)) return styles.statusActive;
-  if (["Paused"].includes(status)) return styles.statusPaused;
-  if (["Trial", "Pending", "Expiring", "Due soon"].includes(status)) return styles.statusTrial;
+  if (["Paused", "Lapsed Client"].includes(status)) return styles.statusPaused;
+  if (["Trial", "Pending", "Lapsed Trial", "Expiring", "Due soon"].includes(status)) return styles.statusTrial;
   return styles.statusInactive;
 }
 
@@ -125,7 +130,18 @@ export function AdminClientsWorkspace({
   const searchParams = useSearchParams();
   const { showToast } = useDashboardToast();
   const [isPending, startTransition] = useTransition();
-  const [segment, setSegment] = useState<(typeof clientSegments)[number]>("All");
+
+  const initialSegmentParam = searchParams.get("segment");
+  const initialSegment = useMemo(() => {
+    if (initialSegmentParam === "inactive-members") return "Inactive Members";
+    if (initialSegmentParam === "active-leads") return "Active Leads";
+    if (initialSegmentParam === "lost-leads") return "Lost Leads";
+    if (initialSegmentParam === "all") return "All Members";
+    if (initialSegmentParam === "injuries") return "Injuries";
+    return "Active Members";
+  }, [initialSegmentParam]);
+
+  const [segment, setSegment] = useState<(typeof clientSegments)[number]>(initialSegment);
   const [detailId, setDetailId] = useState<string | null>(null);
   const [historyTab, setHistoryTab] = useState<"receipts" | "attendance">("receipts");
   const [editorOpen, setEditorOpen] = useState(false);
@@ -140,17 +156,32 @@ export function AdminClientsWorkspace({
     [groupOptions, form.categoryId],
   );
 
+  const counts = useMemo(() => {
+    return {
+      all: records.length,
+      activeMembers: records.filter((r) => r.status === "Active" || r.subscriptionStatus === "Active").length,
+      inactiveMembers: records.filter((r) => (r.status === "Inactive" || r.status === "Paused" || r.subscriptionStatus === "Inactive") && r.status !== "Did not continue" && r.trialOutcome !== "Did not continue").length,
+      activeLeads: records.filter((r) => r.status === "Pending" || r.status === "Trial" || r.trialOutcome === "Follow up later" || r.trialOutcome === "Needs different option" || r.trialOutcome === "No response").length,
+      lostLeads: records.filter((r) => r.status === "Did not continue" || r.trialOutcome === "Did not continue").length,
+      injuries: records.filter((r) => r.hasInjuryAlert || r.injuryStatus !== "None").length,
+    };
+  }, [records]);
+
   const filtered = useMemo(() => {
     return records.filter((record) => {
-      const matchesSegment =
-        segment === "All" ||
-        (segment === "Injuries"
-          ? record.hasInjuryAlert
-          : (segment as string) === "Expiring"
-            ? record.subscriptionStatus === "Expiring"
-            : record.status === segment);
-
-      return matchesSegment;
+      if (segment === "All Members") return true;
+      if (segment === "Active Members") return record.status === "Active" || record.subscriptionStatus === "Active";
+      if (segment === "Inactive Members") {
+        return (record.status === "Inactive" || record.status === "Paused" || record.subscriptionStatus === "Inactive") && record.status !== "Did not continue" && record.trialOutcome !== "Did not continue";
+      }
+      if (segment === "Active Leads") {
+        return record.status === "Pending" || record.status === "Trial" || record.trialOutcome === "Follow up later" || record.trialOutcome === "Needs different option" || record.trialOutcome === "No response";
+      }
+      if (segment === "Lost Leads") {
+        return record.status === "Did not continue" || record.trialOutcome === "Did not continue";
+      }
+      if (segment === "Injuries") return record.hasInjuryAlert || record.injuryStatus !== "None";
+      return true;
     });
   }, [records, segment]);
 
@@ -180,18 +211,40 @@ export function AdminClientsWorkspace({
     startTransition(() => router.push(`${pathname}?${params.toString()}`));
   }
 
-  function openCreate() {
+  const [isLeadModal, setIsLeadModal] = useState(false);
+
+  function openCreateMember() {
     setEditingId(null);
-    setForm({ ...emptyForm, categoryId: categoryOptions[0]?.id ?? "" });
+    setIsLeadModal(false);
+    setForm({
+      ...emptyForm,
+      status: "Active",
+      trialOutcome: "Subscribed",
+      categoryId: categoryOptions[0]?.id ?? "",
+    });
+    setError("");
+    setEditorOpen(true);
+  }
+
+  function openCreateLead() {
+    setEditingId(null);
+    setIsLeadModal(true);
+    setForm({
+      ...emptyForm,
+      status: "Pending",
+      trialOutcome: "Follow up later",
+      categoryId: categoryOptions[0]?.id ?? "",
+    });
     setError("");
     setEditorOpen(true);
   }
 
   function openEdit(record: AdminClientRecord) {
     setEditingId(record.id);
+    const isLeadRecord = record.status === "Pending" || record.status === "Trial" || record.trialOutcome !== "Subscribed";
+    setIsLeadModal(isLeadRecord);
     setForm({
       fullName: record.fullName,
-      email: record.email,
       phone: record.phone,
       status: record.status,
       trialOutcome: record.trialOutcome,
@@ -216,7 +269,6 @@ export function AdminClientsWorkspace({
         await saveAdminClient({
           clientId: editingId ?? undefined,
           fullName: form.fullName,
-          email: form.email || undefined,
           phone: form.phone || undefined,
           status: form.status,
           trialOutcome: form.trialOutcome,
@@ -230,10 +282,10 @@ export function AdminClientsWorkspace({
           restrictions: form.restrictions || undefined,
         });
         setEditorOpen(false);
-        showToast(editingId ? "Member updated." : "Member added.");
+        showToast(editingId ? "Member updated." : "Record created.");
         router.refresh();
       } catch (caught) {
-        const description = caught instanceof Error ? caught.message : "Could not save the member.";
+        const description = caught instanceof Error ? caught.message : "Could not save the record.";
         setError(description);
         showToast(description, "warning");
       }
@@ -257,35 +309,100 @@ export function AdminClientsWorkspace({
         setEditorOpen(false);
         setDetailId(null);
         setDeleteText("");
-        showToast("Member deleted.");
+        showToast("Record deleted.");
         router.refresh();
       } catch (caught) {
-        const description = caught instanceof Error ? caught.message : "Could not delete the member.";
+        const description = caught instanceof Error ? caught.message : "Could not delete the record.";
         setError(description);
         showToast(description, "warning");
       }
     });
   }
 
-
-
   return (
     <div className={styles.page} aria-busy={isPending}>
-      {/* ── Header Row (Filter Chips, + New Client) ── */}
+      {/* ── Level 1 Interactive Segment Cards ── */}
+      <div className={styles.metricsBar} role="region" aria-label="Directory Category Overview">
+        <button
+          type="button"
+          className={styles.metricCard}
+          data-active={segment === "Active Members" || undefined}
+          onClick={() => setSegment("Active Members")}
+        >
+          <span className={styles.metricLabel} style={{ color: segment === "Active Members" ? "#25d366" : undefined }}>
+            🏋️ Active Members
+          </span>
+          <span className={styles.metricValue} style={{ color: "#25d366" }}>{counts.activeMembers}</span>
+          <span className={styles.metricSubtext}>Active subscribers</span>
+        </button>
+
+        <button
+          type="button"
+          className={styles.metricCard}
+          data-active={segment === "Inactive Members" || undefined}
+          onClick={() => setSegment("Inactive Members")}
+          style={{ borderColor: segment !== "Inactive Members" && counts.inactiveMembers > 0 ? "rgba(140, 140, 140, 0.4)" : undefined }}
+        >
+          <span className={styles.metricLabel} style={{ color: "#a0a0a0" }}>
+            🔄 Inactive Members
+          </span>
+          <span className={styles.metricValue} style={{ color: "#a0a0a0" }}>{counts.inactiveMembers}</span>
+          <span className={styles.metricSubtext}>Expired &amp; paused</span>
+        </button>
+
+        <button
+          type="button"
+          className={styles.metricCard}
+          data-active={segment === "Active Leads" || undefined}
+          onClick={() => setSegment("Active Leads")}
+        >
+          <span className={styles.metricLabel} style={{ color: segment === "Active Leads" ? "#3b82f6" : undefined }}>
+            📥 Active Leads
+          </span>
+          <span className={styles.metricValue} style={{ color: "#3b82f6" }}>{counts.activeLeads}</span>
+          <span className={styles.metricSubtext}>Trial inquiries</span>
+        </button>
+
+        <button
+          type="button"
+          className={styles.metricCard}
+          data-active={segment === "Lost Leads" || undefined}
+          onClick={() => setSegment("Lost Leads")}
+          style={{ borderColor: segment !== "Lost Leads" && counts.lostLeads > 0 ? "rgba(230, 36, 41, 0.4)" : undefined }}
+        >
+          <span className={styles.metricLabel} style={{ color: "#ff4f54" }}>
+            ❌ Lost Leads
+          </span>
+          <span className={styles.metricValue} style={{ color: "#ff4f54" }}>{counts.lostLeads}</span>
+          <span className={styles.metricSubtext}>Did not continue</span>
+        </button>
+
+        <button
+          type="button"
+          className={styles.metricCard}
+          data-active={segment === "All Members" || undefined}
+          onClick={() => setSegment("All Members")}
+        >
+          <span className={styles.metricLabel}>
+            👥 All Members
+          </span>
+          <span className={styles.metricValue}>{counts.all}</span>
+          <span className={styles.metricSubtext}>Full directory</span>
+        </button>
+      </div>
+
+      {/* ── Header Row (Filter Controls, Dual Action Buttons) ── */}
       <header className={styles.header}>
         <div className={styles.headerControls}>
-          {/* Segment Filter Chips */}
-          <div className={styles.segments} aria-label="Filter members by status segment">
-            {clientSegments.map((option) => (
-              <button
-                key={option}
-                type="button"
-                data-active={segment === option || undefined}
-                onClick={() => setSegment(option)}
-              >
-                {option}
-              </button>
-            ))}
+          {/* Filter Pills */}
+          <div className={styles.segments} aria-label="Filter directory contacts">
+            <button
+              type="button"
+              data-active={segment === "Injuries" || undefined}
+              onClick={() => setSegment(segment === "Injuries" ? "All Members" : "Injuries")}
+            >
+              ⚠️ Injuries ({counts.injuries})
+            </button>
           </div>
 
           {/* Sort toggle */}
@@ -300,124 +417,128 @@ export function AdminClientsWorkspace({
             Name
           </button>
 
-          {/* New Client Button */}
-          <button type="button" className={styles.newBtn} onClick={openCreate}>
-            <Plus size={16} /> New client
+          {/* Explicit Dual Creation Actions */}
+          <button type="button" className={styles.newLeadBtn} onClick={openCreateLead}>
+            <Plus size={16} /> New Lead
+          </button>
+          <button type="button" className={styles.newBtn} onClick={openCreateMember}>
+            <Plus size={16} /> New Member
           </button>
         </div>
       </header>
 
-      {/* ── Main Table ── */}
-      <section className={styles.roster}>
+      {/* ── Main Card Grid Directory ── */}
+      <section>
         {paginated.items.length ? (
-          <div className={styles.rosterTable}>
-            <div className={styles.rosterHead}>
-              <span>Client</span>
-              <span>Category</span>
-              <span>Type</span>
-              <span>Coach</span>
-              <span>Status</span>
-              <span>Phone</span>
-              <span />
-            </div>
-
+          <div className={styles.cardsGrid}>
             {paginated.items.map((record) => {
               const type = clientType(record);
+              const cardType = (() => {
+                if (record.status === "Active" || record.subscriptionStatus === "Active") return "active-member";
+                if (record.status === "Did not continue" || record.trialOutcome === "Did not continue") return "lost-lead";
+                if (record.status === "Pending" || record.status === "Trial" || record.trialOutcome === "Follow up later" || record.trialOutcome === "Needs different option" || record.trialOutcome === "No response") return "active-lead";
+                return "inactive-member";
+              })();
+
+              const isLeadCard = cardType === "active-lead" || cardType === "lost-lead";
               const injuryText = record.injuryNotes?.trim() || (record.injuryStatus !== "None" ? record.injuryStatus : "");
 
               return (
                 <article
-                  className={styles.rosterRow}
-                  data-subdued={record.subscriptionStatus === "Inactive" || undefined}
                   key={record.id}
+                  className={styles.memberCard}
+                  data-card-type={cardType}
                 >
-                  {/* CLIENT */}
-                  <button
-                    type="button"
-                    className={styles.clientCell}
-                    onClick={() => setDetailId(record.id)}
-                    aria-label={`Open ${record.fullName}`}
-                  >
-                    <span className={styles.avatar}>{initials(record.fullName)}</span>
-                    <span className={styles.nameCol}>
-                      <span className={styles.clientName}>{record.fullName}</span>
-                      {record.groups.length ? (
-                        <span className={styles.groupChipRow}>
-                          {record.groups.slice(0, 2).map((group) => (
-                            <span key={group.id} className={styles.groupChip}>{group.name}</span>
-                          ))}
-                          {record.groups.length > 2 ? (
-                            <span className={styles.groupChip}>+{record.groups.length - 2}</span>
+                  {/* Card Header: Avatar, Title, Phone, WhatsApp */}
+                  <div className={styles.memberCardHeader}>
+                    <div className={styles.memberCardMeta}>
+                      <span className={styles.avatar}>{initials(record.fullName)}</span>
+                      <div className={styles.memberCardNameGroup}>
+                        <span className={styles.memberCardTitle}>{record.fullName}</span>
+                        <span className={styles.memberCardPhone}>
+                          <span>{formatPhoneNumber(record.phone)}</span>
+                          {record.phone ? (
+                            <a
+                              href={buildWhatsAppHref(record.phone) ?? "#"}
+                              target="_blank"
+                              rel="noreferrer"
+                              className={styles.waBtn}
+                              title={`Send WhatsApp message to ${record.fullName}`}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <MessageCircle size={14} aria-hidden="true" />
+                            </a>
                           ) : null}
                         </span>
-                      ) : null}
-                      {record.hasInjuryAlert || injuryText ? (
-                        <span className={styles.injuryBadge}>
-                          <TriangleAlert size={12} /> {injuryText || record.injuryStatus}
-                        </span>
-                      ) : null}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card Badges Row */}
+                  <div className={styles.memberCardBadges}>
+                    <span className={`${styles.statusPill} ${statusStyle(record.status)}`}>
+                      {isLeadCard ? record.trialOutcome : record.status}
                     </span>
-                  </button>
-
-                  {/* CATEGORY */}
-                  <span className={styles.categoryText}>{record.trainingCategory}</span>
-
-                  {/* TYPE */}
-                  <div>
                     <span className={`${styles.typeBadge} ${type === "PRIVATE" ? styles.typeBadgePrivate : ""}`}>
                       {type}
                     </span>
+                    {record.groups.length ? (
+                      <span className={styles.groupChipRow}>
+                        {record.groups.slice(0, 2).map((group) => (
+                          <span key={group.id} className={styles.groupChip}>{group.name}</span>
+                        ))}
+                      </span>
+                    ) : null}
                   </div>
 
-                  {/* COACH */}
-                  <span className={styles.coachText}>{record.assignedCoach}</span>
+                  {/* Essential Tailored Card Information Body */}
+                  <div className={styles.memberCardBody}>
+                    <div className={styles.memberCardInfoRow}>
+                      <span className={styles.memberCardLabel}>Category</span>
+                      <span className={styles.memberCardValue}>{record.trainingCategory}</span>
+                    </div>
+                    <div className={styles.memberCardInfoRow}>
+                      <span className={styles.memberCardLabel}>Coach</span>
+                      <span className={styles.memberCardValue}>{record.assignedCoach}</span>
+                    </div>
 
-                  {/* STATUS */}
-                  <div>
-                    <span className={`${styles.statusPill} ${statusStyle(record.status)}`}>
-                      {record.status}
+                    {record.hasInjuryAlert || injuryText ? (
+                      <span className={styles.injuryBadge}>
+                        <TriangleAlert size={12} /> {injuryText || record.injuryStatus}
+                      </span>
+                    ) : null}
+                  </div>
+
+                  {/* Card Footer Actions */}
+                  <div className={styles.memberCardFooter}>
+                    <button
+                      type="button"
+                      className={styles.viewDetailsBtn}
+                      onClick={() => setDetailId(record.id)}
+                    >
+                      View Details
+                    </button>
+                    <span className={styles.rowActions}>
+                      <button
+                        type="button"
+                        className={styles.editRow}
+                        onClick={() => openEdit(record)}
+                        aria-label={`Edit ${record.fullName}`}
+                        title="Edit record"
+                      >
+                        <Pencil size={14} />
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.deleteRow}
+                        onClick={() => openDelete(record)}
+                        aria-label={`Delete ${record.fullName}`}
+                        title="Delete record"
+                      >
+                        <Trash2 size={14} />
+                      </button>
                     </span>
                   </div>
-
-                  {/* PHONE */}
-                  <span className={styles.phoneText}>
-                    <span>{formatPhoneNumber(record.phone)}</span>
-                    {record.phone && (
-                      <a
-                        href={`https://wa.me/${record.phone.replace(/\D/g, "")}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className={styles.waBtn}
-                        title="Send WhatsApp message"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <MessageCircle size={13} aria-hidden="true" />
-                      </a>
-                    )}
-                  </span>
-
-
-                  {/* ACTIONS */}
-                  <span className={styles.rowActions}>
-                    <button
-                      type="button"
-                      className={styles.editRow}
-                      onClick={() => openEdit(record)}
-                      aria-label={`Edit ${record.fullName}`}
-                      title="Edit member"
-                    >
-                      <Pencil size={14} />
-                    </button>
-                    <button
-                      type="button"
-                      className={styles.deleteRow}
-                      onClick={() => openDelete(record)}
-                      aria-label={`Delete ${record.fullName}`}
-                      title="Delete member"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </span>
                 </article>
               );
             })}
@@ -425,9 +546,12 @@ export function AdminClientsWorkspace({
         ) : (
           <div className={styles.empty}>
             <Search size={30} />
-            <h2>No clients found</h2>
-            <p>Change the filters or search term to find a client.</p>
-            <button className={styles.newBtn} onClick={openCreate}>Add client</button>
+            <h2>No contacts found</h2>
+            <p>Change the filters or search term to find a member or lead.</p>
+            <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
+              <button className={styles.newLeadBtn} onClick={openCreateLead}>+ Add Lead</button>
+              <button className={styles.newBtn} onClick={openCreateMember}>+ Add Member</button>
+            </div>
           </div>
         )}
 
@@ -587,75 +711,94 @@ export function AdminClientsWorkspace({
         </Dialog.Portal>
       </Dialog.Root>
 
-      {/* ── Edit / Create Modal ── */}
+      {/* ── Edit / Create Modal (Tailored for Lead vs Member) ── */}
       <EntityDialog
         open={editorOpen}
         onOpenChange={setEditorOpen}
-        title={editingId ? "Edit member" : "Add a new member"}
-        description="Update the roster record and account state."
+        title={isLeadModal ? (editingId ? "Edit Lead" : "Add a New Lead") : (editingId ? "Edit Member" : "Add a New Member")}
+        description={isLeadModal ? "Manage lead inquiries, trial session outcome, and follow-up notes." : "Update studio member details, category, and group assignment."}
         closeLabel="Close editor"
       >
         <EntityForm onSubmit={submitClient}>
           <FormField label="Full name" required full>
             <input required value={form.fullName} onChange={(event) => setForm((value) => ({ ...value, fullName: event.target.value }))} />
           </FormField>
-          <FormField label="Email">
-            <input type="email" value={form.email} onChange={(event) => setForm((value) => ({ ...value, email: event.target.value }))} />
-          </FormField>
-          <FormField label="Phone">
+          <FormField label="Phone" full={isLeadModal}>
             <input type="tel" placeholder="+20 100 000 0000" value={form.phone} onChange={(event) => setForm((value) => ({ ...value, phone: event.target.value }))} />
           </FormField>
-          <FormField label="Status">
-            <select value={form.status} onChange={(event) => setForm((value) => ({ ...value, status: event.target.value as ClientForm["status"] }))}>
-              <option value="Active">Active</option>
-              <option value="Trial">Trial</option>
-              <option value="Paused">Paused</option>
-              <option value="Inactive">Inactive</option>
-              <option value="Pending">Pending</option>
-            </select>
-          </FormField>
-          <FormField label="Trial outcome">
-            <select value={form.trialOutcome} onChange={(event) => setForm((value) => ({ ...value, trialOutcome: event.target.value as ClientForm["trialOutcome"] }))}>{trialOutcomeLabels.map((item) => <option key={item}>{item}</option>)}</select>
-          </FormField>
-          <FormField label="Payment">
-            <select value={form.paymentStatus} onChange={(event) => setForm((value) => ({ ...value, paymentStatus: event.target.value as ClientForm["paymentStatus"] }))}>
-              <option value="Paid">Paid</option>
-              <option value="Unpaid">Unpaid</option>
-              <option value="Due soon">Due soon</option>
-            </select>
-          </FormField>
-          <FormField label="Amount">
-            <input inputMode="decimal" value={form.paymentAmount} onChange={(event) => setForm((value) => ({ ...value, paymentAmount: event.target.value }))} />
-          </FormField>
-          <FormField label="Training category">
-            <select required value={form.categoryId} onChange={(event) => setForm((value) => ({ ...value, categoryId: event.target.value, groupId: "" }))}>
-              <option value="" disabled>Choose a category</option>
-              {categoryOptions.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
-            </select>
-          </FormField>
-          <FormField label="Group">
-            <select value={form.groupId} onChange={(event) => setForm((value) => ({ ...value, groupId: event.target.value }))}>
-              <option value="">No group</option>
-              {groupsInFormCategory.map((group) => <option key={group.id} value={group.id}>{group.name}</option>)}
-            </select>
-          </FormField>
-          <FormField label="Sport (optional)">
-            <input value={form.sport} onChange={(event) => setForm((value) => ({ ...value, sport: event.target.value }))} placeholder="e.g. Football" />
-          </FormField>
-          <FormField label="Injury status">
-            <select value={form.injuryStatus} onChange={(event) => setForm((value) => ({ ...value, injuryStatus: event.target.value as ClientForm["injuryStatus"] }))}>{injuryStatusLabels.map((item) => <option key={item}>{item}</option>)}</select>
-          </FormField>
-          <FormField label="Injury notes" full>
-            <input value={form.injuryNotes} onChange={(event) => setForm((value) => ({ ...value, injuryNotes: event.target.value }))} placeholder="Current or previous injury the coach must know about" />
-          </FormField>
-          <FormField label="Exercise restrictions" full>
-            <input value={form.restrictions} onChange={(event) => setForm((value) => ({ ...value, restrictions: event.target.value }))} placeholder="Movements or loads to avoid" />
-          </FormField>
+
+          {isLeadModal ? (
+            <>
+              <FormField label="Lead / Trial status">
+                <select
+                  value={form.trialOutcome}
+                  onChange={(event) => setForm((value) => ({ ...value, trialOutcome: event.target.value as ClientForm["trialOutcome"] }))}
+                >
+                  {trialOutcomeLabels.map((item) => (
+                    <option key={item}>{item}</option>
+                  ))}
+                </select>
+              </FormField>
+              <FormField label="Category interest" required>
+                <select
+                  required
+                  value={form.categoryId}
+                  onChange={(event) => setForm((value) => ({ ...value, categoryId: event.target.value }))}
+                >
+                  <option value="" disabled>Choose a category</option>
+                  {categoryOptions.map((category) => (
+                    <option key={category.id} value={category.id}>{category.name}</option>
+                  ))}
+                </select>
+              </FormField>
+              <FormField label="Notes &amp; inquiry details" full>
+                <input
+                  value={form.injuryNotes}
+                  onChange={(event) => setForm((value) => ({ ...value, injuryNotes: event.target.value }))}
+                  placeholder="Trial preferences, referral source, or health notes"
+                />
+              </FormField>
+            </>
+          ) : (
+            <>
+              <FormField label="Membership status">
+                <select value={form.status} onChange={(event) => setForm((value) => ({ ...value, status: event.target.value as ClientForm["status"] }))}>
+                  <option value="Active">Active</option>
+                  <option value="Paused">Paused</option>
+                  <option value="Inactive">Inactive</option>
+                </select>
+              </FormField>
+              <FormField label="Training category" required>
+                <select required value={form.categoryId} onChange={(event) => setForm((value) => ({ ...value, categoryId: event.target.value, groupId: "" }))}>
+                  <option value="" disabled>Choose a category</option>
+                  {categoryOptions.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
+                </select>
+              </FormField>
+              <FormField label="Group">
+                <select value={form.groupId} onChange={(event) => setForm((value) => ({ ...value, groupId: event.target.value }))}>
+                  <option value="">No group</option>
+                  {groupsInFormCategory.map((group) => <option key={group.id} value={group.id}>{group.name}</option>)}
+                </select>
+              </FormField>
+              <FormField label="Injury &amp; health notes" full>
+                <input
+                  value={form.injuryNotes}
+                  onChange={(event) => setForm((value) => ({
+                    ...value,
+                    injuryNotes: event.target.value,
+                    injuryStatus: event.target.value.trim() ? "Current injury" : "None"
+                  }))}
+                  placeholder="Current or previous injury details for coaches"
+                />
+              </FormField>
+            </>
+          )}
+
           {error ? <FormErrorBanner>{error}</FormErrorBanner> : null}
           <FormActions
             onCancel={() => setEditorOpen(false)}
             onDelete={editingId ? () => { setDeleteText(""); setDeleteOpen(true); } : undefined}
-            submitLabel="Save member"
+            submitLabel={isLeadModal ? "Save lead" : "Save member"}
             pendingLabel="Saving…"
             pending={isPending}
           />

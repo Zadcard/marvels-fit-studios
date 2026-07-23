@@ -30,11 +30,12 @@ export function throwIfSupabaseError(
 }
 
 function formatErrorForLog(error: unknown): Record<string, unknown> | string {
+  if (!error) return "Unknown error (null/undefined)";
   if (error instanceof Error) {
     const errObj = error as unknown as Record<string, unknown>;
     return {
       name: error.name,
-      message: error.message,
+      message: error.message || String(error),
       code: errObj.code,
       details: errObj.details,
       hint: errObj.hint,
@@ -42,10 +43,12 @@ function formatErrorForLog(error: unknown): Record<string, unknown> | string {
       cause: error.cause ? formatErrorForLog(error.cause) : undefined,
     };
   }
-  if (typeof error === "object" && error !== null) {
+  if (typeof error === "object") {
     const errObj = error as Record<string, unknown>;
+    const rawMessage = errObj.message ?? errObj.msg ?? errObj.details ?? errObj.hint;
+    const message = rawMessage ? String(rawMessage) : JSON.stringify(error);
     return {
-      message: String(errObj.message ?? errObj.msg ?? error),
+      message: message === "{}" ? Object.prototype.toString.call(error) : message,
       code: errObj.code,
       details: errObj.details,
       hint: errObj.hint,

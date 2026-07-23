@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useTransition, type FormEvent } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Archive, ChevronRight, FolderTree, Pencil, Plus, ShieldUser, Trash2 } from "lucide-react";
+import { Archive, ArrowLeft, ChevronRight, FolderTree, Pencil, Plus, ShieldUser, Trash2, UsersRound } from "lucide-react";
 
 import {
   deleteTrainingCategory,
@@ -58,16 +58,20 @@ export function AdminTrainingCategoriesWorkspace({
     () => records.filter((record) => status === "All" || (status === "Active" ? record.isActive : !record.isActive)),
     [records, status],
   );
-  const requestedCategoryId = searchParams.get("category");
-  const selected = visible.find((record) => record.id === requestedCategoryId)
-    ?? records.find((record) => record.id === requestedCategoryId)
-    ?? visible[0]
-    ?? records[0]
-    ?? null;
 
-  function selectCategory(categoryId: string) {
+  const requestedCategoryId = searchParams.get("category");
+  const selectedCategory = useMemo(() => {
+    if (!requestedCategoryId) return null;
+    return records.find((record) => record.id === requestedCategoryId) ?? null;
+  }, [records, requestedCategoryId]);
+
+  function selectCategory(categoryId: string | null) {
     const next = new URLSearchParams(searchParams.toString());
-    next.set("category", categoryId);
+    if (categoryId) {
+      next.set("category", categoryId);
+    } else {
+      next.delete("category");
+    }
     router.replace(`${pathname}?${next.toString()}`, { scroll: false });
   }
 
@@ -124,6 +128,7 @@ export function AdminTrainingCategoriesWorkspace({
         setDeleting(null);
         setConfirmation("");
         showToast("Program deleted.");
+        selectCategory(null);
         router.refresh();
       } catch (caught) {
         const message = caught instanceof Error ? caught.message : "Could not delete the category.";
@@ -155,64 +160,390 @@ export function AdminTrainingCategoriesWorkspace({
     });
   }
 
-  const selectedGroups = selected ? groupRecords.filter((group) => group.categoryId === selected.id) : [];
-  const selectedCategoryOptions = selected ? categoryOptions.filter((category) => category.id === selected.id) : [];
+  // Calculate metrics for overall studio
+  const totalCategoriesCount = records.length;
+  const totalGroupsCount = groupRecords.length;
+  const totalMembersCount = groupRecords.reduce((sum, group) => sum + group.memberCount, 0);
+  const totalSupervisorsCount = useMemo(() => {
+    const supervisorSet = new Set<string>();
+    records.forEach((record) => {
+      record.supervisors.forEach((s) => supervisorSet.add(s.id));
+    });
+    return supervisorSet.size;
+  }, [records]);
 
-  return <div className={styles.page} aria-busy={pending}>
-    <header className={styles.header}>
-      <div><span>Studio structure</span><h1>Programs</h1><p>Choose a program to manage its groups, coaches, members, and recurring sessions.</p></div>
-      {mode === "admin" ? <button type="button" className="mv-btn mv-btn-primary" onClick={openCreate}><Plus size={16} /> New program</button> : null}
-    </header>
+  const selectedCategoryGroups = useMemo(() => {
+    if (!selectedCategory) return [];
+    return groupRecords.filter((group) => group.categoryId === selectedCategory.id);
+  }, [groupRecords, selectedCategory]);
 
-    <div className={styles.filters}>
-      {(["All", "Active", "Archived"] as const).map((item) => <button type="button" key={item} data-active={status === item || undefined} onClick={() => setStatus(item)}>{item}</button>)}
-    </div>
+  const selectedCategoryOptions = useMemo(() => {
+    if (!selectedCategory) return [];
+    return categoryOptions.filter((category) => category.id === selectedCategory.id);
+  }, [categoryOptions, selectedCategory]);
 
-    {visible.length ? <div className={styles.hub}>
-      <aside className={styles.categoryRail} aria-label="Training programs">
-        {visible.map((record) => <article className={styles.railCard} data-selected={selected?.id === record.id || undefined} key={record.id}>
-          <button type="button" className={styles.categorySelect} onClick={() => selectCategory(record.id)}>
-            <span className={styles.icon}><FolderTree size={18} /></span>
-            <span><strong>{record.name}</strong><small>{record.groups.length} {record.groups.length === 1 ? "group" : "groups"}</small></span>
-            <ChevronRight size={17} />
-          </button>
-        </article>)}
-      </aside>
+  return (
+    <div className={styles.page} aria-busy={pending}>
+      {/* ── LEVEL 2: SELECTED PROGRAM DRILL-DOWN ── */}
+      {selectedCategory ? (
+        <>
+          {/* Breadcrumb Navigation Bar */}
+          <nav className={styles.breadcrumbNav} aria-label="Program navigation">
+            <button
+              type="button"
+              className={styles.backBtn}
+              onClick={() => selectCategory(null)}
+            >
+              <ArrowLeft size={16} /> Back to Programs
+            </button>
+            <div className={styles.breadcrumbTrail}>
+              <span>Programs</span>
+              <ChevronRight size={14} />
+              <strong>{selectedCategory.name}</strong>
+            </div>
+          </nav>
 
-      {selected ? <section className={styles.detail}>
-        <header className={styles.detailHeader}>
-          <div><span className={styles.icon}><FolderTree size={20} /></span><div><h2>{selected.name}</h2><p>{selected.isActive ? "Active program" : "Archived program"}</p></div></div>
-          <div className={styles.detailActions}>
-            <button type="button" onClick={() => openEdit(selected)}><Pencil size={14} /> Edit</button>
-            {mode === "admin" ? <>
-              <button type="button" onClick={() => openSupervisors(selected)}><ShieldUser size={14} /> Supervisors</button>
-              <button type="button" onClick={() => toggleActive(selected)}><Archive size={14} /> {selected.isActive ? "Archive" : "Activate"}</button>
-              <button type="button" className={styles.danger} disabled={selected.groups.length > 0 || selected.coaches.length > 0 || selected.supervisors.length > 0} title={selected.groups.length || selected.coaches.length || selected.supervisors.length ? "Referenced categories must be archived" : "Delete category"} onClick={() => { setDeleting(selected); setConfirmation(""); setError(""); }}><Trash2 size={14} /> Delete</button>
-            </> : null}
+          {/* Selected Category Header Banner */}
+          <header className={styles.categoryDetailBanner}>
+            <div className={styles.categoryBannerLeft}>
+              <div>
+                <h2>{selectedCategory.name}</h2>
+                <div className={styles.supervisorList}>
+                  <span
+                    className={`${styles.statusTag} ${
+                      selectedCategory.isActive ? styles.statusActive : styles.statusArchived
+                    }`}
+                  >
+                    {selectedCategory.isActive ? "Active Program" : "Archived Program"}
+                  </span>
+                  {selectedCategory.supervisors.length > 0 ? (
+                    selectedCategory.supervisors.map((sup) => (
+                      <span key={sup.id} className={styles.supervisorChip}>
+                        <ShieldUser size={12} /> {sup.name}
+                      </span>
+                    ))
+                  ) : (
+                    <span className={styles.supervisorChip} style={{ opacity: 0.6 }}>
+                      No Supervisors Assigned
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className={styles.bannerActions}>
+              <button
+                type="button"
+                className="mv-btn mv-btn-secondary"
+                onClick={() => openEdit(selectedCategory)}
+              >
+                <Pencil size={14} /> Edit Name
+              </button>
+              {mode === "admin" ? (
+                <>
+                  <button
+                    type="button"
+                    className="mv-btn mv-btn-secondary"
+                    onClick={() => openSupervisors(selectedCategory)}
+                  >
+                    <ShieldUser size={14} /> Supervisors ({selectedCategory.supervisors.length})
+                  </button>
+                  <button
+                    type="button"
+                    className="mv-btn mv-btn-secondary"
+                    onClick={() => toggleActive(selectedCategory)}
+                  >
+                    <Archive size={14} /> {selectedCategory.isActive ? "Archive" : "Activate"}
+                  </button>
+                  <button
+                    type="button"
+                    className="mv-btn mv-btn-secondary"
+                    style={{ color: "#ef4444", borderColor: "rgba(239,68,68,0.4)" }}
+                    disabled={selectedCategory.groups.length > 0 || selectedCategory.coaches.length > 0 || selectedCategory.supervisors.length > 0}
+                    onClick={() => {
+                      setDeleting(selectedCategory);
+                      setConfirmation("");
+                      setError("");
+                    }}
+                  >
+                    <Trash2 size={14} /> Delete
+                  </button>
+                </>
+              ) : null}
+            </div>
+          </header>
+
+          {/* Groups & Sessions Workspace inside this Category */}
+          <AdminGroupsWorkspace
+            key={selectedCategory.id}
+            records={selectedCategoryGroups}
+            coachOptions={coachOptions}
+            clientOptions={clientOptions}
+            categoryOptions={selectedCategoryOptions}
+            embeddedCategoryId={selectedCategory.id}
+          />
+        </>
+      ) : (
+        /* ── LEVEL 1: ALL CATEGORIES CARDS GRID ── */
+        <>
+          {/* Top Header */}
+          <header className={styles.header}>
+            <div className={styles.headerTitle}>
+              <h1>Programs &amp; Specializations</h1>
+              <p>Explore program categories, active group series, supervisor oversight, and client rosters.</p>
+            </div>
+
+            {/* Metrics Bar */}
+            <div className={styles.statsRow}>
+              <div className={styles.statPill}>
+                <span>Categories</span>
+                <strong>{totalCategoriesCount}</strong>
+              </div>
+              <div className={styles.statDivider} />
+              <div className={styles.statPill}>
+                <span>Active Groups</span>
+                <strong>{totalGroupsCount}</strong>
+              </div>
+              <div className={styles.statDivider} />
+              <div className={styles.statPill}>
+                <span>Total Members</span>
+                <strong>{totalMembersCount}</strong>
+              </div>
+              <div className={styles.statDivider} />
+              <div className={styles.statPill}>
+                <span>Supervisors</span>
+                <strong>{totalSupervisorsCount}</strong>
+              </div>
+            </div>
+          </header>
+
+          {/* Toolbar & Filter Options */}
+          <div className={styles.toolbar}>
+            <div className={styles.filters}>
+              {(["All", "Active", "Archived"] as const).map((item) => (
+                <button
+                  type="button"
+                  key={item}
+                  data-active={status === item || undefined}
+                  onClick={() => setStatus(item)}
+                >
+                  {item}
+                </button>
+              ))}
+            </div>
+
+            {mode === "admin" ? (
+              <button type="button" className="mv-btn mv-btn-primary" onClick={openCreate}>
+                <Plus size={16} /> New program
+              </button>
+            ) : null}
           </div>
-        </header>
 
-        <p className={styles.programMeta}>{selectedGroups.length} {selectedGroups.length === 1 ? "group" : "groups"} · {selectedGroups.reduce((sum, group) => sum + group.memberCount, 0)} members · {selected.coaches.length} qualified coaches</p>
-        <section className={styles.peopleStrip}><h3>Supervisors</h3><p>{selected.supervisors.length ? selected.supervisors.map((supervisor) => supervisor.name).join(" · ") : "No supervisors assigned"}</p></section>
+          {/* Category Cards Grid */}
+          {visible.length ? (
+            <div className={styles.categoryGrid}>
+              {visible.map((category) => {
+                const categoryGroups = groupRecords.filter((g) => g.categoryId === category.id);
+                const categoryMembers = categoryGroups.reduce((sum, g) => sum + g.memberCount, 0);
 
-        <AdminGroupsWorkspace
-          key={selected.id}
-          records={selectedGroups}
-          coachOptions={coachOptions}
-          clientOptions={clientOptions}
-          categoryOptions={selectedCategoryOptions}
-          embeddedCategoryId={selected.id}
-        />
-      </section> : null}
-    </div> : <div className={styles.empty}><FolderTree size={30} /><h2>No programs found</h2><p>{mode === "admin" ? "Create a program or change the status filter." : "You are not supervising a program yet."}</p></div>}
+                return (
+                  <article
+                    key={category.id}
+                    className={styles.categoryCard}
+                    onClick={() => selectCategory(category.id)}
+                  >
+                    <div className={styles.categoryCardHeader}>
+                      <div className={styles.categoryTitleGroup}>
+                        <h3>{category.name}</h3>
+                        <span
+                          className={`${styles.statusTag} ${
+                            category.isActive ? styles.statusActive : styles.statusArchived
+                          }`}
+                        >
+                          {category.isActive ? "Active" : "Archived"}
+                        </span>
+                      </div>
+                    </div>
 
-    <EntityDialog open={editing !== null} onOpenChange={(open) => !open && !pending && setEditing(null)} title={editing === "new" ? "New program" : "Edit program"} description="Programs organize the studio's active groups." closeLabel="Close program editor" size="small"><EntityForm onSubmit={submit}><FormField label="Program name" required full><input autoFocus required maxLength={80} value={name} onChange={(event) => setName(event.target.value)} placeholder="e.g. Burning Class" /></FormField>{mode === "admin" ? <label className={styles.check}><input type="checkbox" checked={isActive} onChange={(event) => setIsActive(event.target.checked)} /> Program is active</label> : null}{error ? <FormErrorBanner>{error}</FormErrorBanner> : null}<FormActions onCancel={() => setEditing(null)} submitLabel="Save program" pendingLabel="Saving…" pending={pending} /></EntityForm></EntityDialog>
+                    {/* Stats Breakdown */}
+                    <div className={styles.categoryCardStats}>
+                      <div className={styles.cardStatItem}>
+                        <span>Active Groups</span>
+                        <strong>{categoryGroups.length}</strong>
+                      </div>
+                      <div className={styles.cardStatItem}>
+                        <span>Enrolled Members</span>
+                        <strong>{categoryMembers}</strong>
+                      </div>
+                    </div>
 
-    <EntityDialog open={supervisorCategory !== null} onOpenChange={(open) => !open && !pending && setSupervisorCategory(null)} title={`${supervisorCategory?.name ?? "Program"} supervisors`} description="Supervisors can read and write groups, clients, coaches, and schedules in this program." closeLabel="Close supervisor editor" size="small">
-      <div className={styles.supervisorPicker}>{coachOptions.map((coach) => { const checked = supervisorIds.includes(coach.id); return <label key={coach.id}><input type="checkbox" checked={checked} onChange={() => setSupervisorIds((current) => checked ? current.filter((id) => id !== coach.id) : [...current, coach.id])} /><span>{coach.fullName}</span></label>; })}</div>
-      {error ? <FormErrorBanner>{error}</FormErrorBanner> : null}<div className={styles.dialogActions}><button type="button" className="mv-btn mv-btn-secondary" onClick={() => setSupervisorCategory(null)} disabled={pending}>Cancel</button><button type="button" className="mv-btn mv-btn-primary" onClick={saveSupervisors} disabled={pending}>{pending ? "Saving…" : "Save supervisors"}</button></div>
-    </EntityDialog>
+                    {/* Supervisors Info */}
+                    <div className={styles.supervisorPreview}>
+                      <ShieldUser size={14} />
+                      {category.supervisors.length > 0 ? (
+                        <span>
+                          Supervisors:{" "}
+                          <strong style={{ color: "#ffffff" }}>
+                            {category.supervisors.map((s) => s.name).join(", ")}
+                          </strong>
+                        </span>
+                      ) : (
+                        <span style={{ opacity: 0.6 }}>No Supervisors Assigned</span>
+                      )}
+                    </div>
 
-    <ConfirmDeleteDialog open={deleting !== null} onOpenChange={(open) => !open && !pending && setDeleting(null)} title={`Delete ${deleting?.name ?? "this program"}?`} description="This is only allowed when no group, coach qualification, or supervisor references the program." confirmationValue={confirmation} onConfirmationChange={setConfirmation} error={error} pending={pending} onConfirm={confirmDelete} closeLabel="Close program deletion" />
-  </div>;
+                    {/* Card Footer Actions */}
+                    <div className={styles.categoryCardFooter}>
+                      <button
+                        type="button"
+                        className={styles.viewGroupsBtn}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          selectCategory(category.id);
+                        }}
+                      >
+                        <UsersRound size={14} /> View Groups ({categoryGroups.length}) <ChevronRight size={14} />
+                      </button>
+
+                      <div className={styles.cardSubActions} onClick={(e) => e.stopPropagation()}>
+                        <button
+                          type="button"
+                          title="Edit Category"
+                          onClick={() => openEdit(category)}
+                        >
+                          <Pencil size={14} />
+                        </button>
+                        {mode === "admin" ? (
+                          <button
+                            type="button"
+                            title="Manage Supervisors"
+                            onClick={() => openSupervisors(category)}
+                          >
+                            <ShieldUser size={14} />
+                          </button>
+                        ) : null}
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          ) : (
+            <div className={styles.empty}>
+              <FolderTree size={32} />
+              <h2>No program categories found</h2>
+              <p>
+                {mode === "admin"
+                  ? "Create a new program category or change the status filter."
+                  : "You are not supervising a program category yet."}
+              </p>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Edit / Create Program Dialog */}
+      <EntityDialog
+        open={editing !== null}
+        onOpenChange={(open) => !open && !pending && setEditing(null)}
+        title={editing === "new" ? "New program" : "Edit program"}
+        description="Programs organize active groups and training categories."
+        closeLabel="Close program editor"
+        size="small"
+      >
+        <EntityForm onSubmit={submit}>
+          <FormField label="Program name" required full>
+            <input
+              autoFocus
+              required
+              maxLength={80}
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              placeholder="e.g. Calisthenics, Football, Muscle Gain"
+            />
+          </FormField>
+          {mode === "admin" ? (
+            <label className={styles.check}>
+              <input
+                type="checkbox"
+                checked={isActive}
+                onChange={(event) => setIsActive(event.target.checked)}
+              />{" "}
+              Program is active
+            </label>
+          ) : null}
+          {error ? <FormErrorBanner>{error}</FormErrorBanner> : null}
+          <FormActions
+            onCancel={() => setEditing(null)}
+            submitLabel="Save program"
+            pendingLabel="Saving…"
+            pending={pending}
+          />
+        </EntityForm>
+      </EntityDialog>
+
+      {/* Supervisor Manager Dialog */}
+      <EntityDialog
+        open={supervisorCategory !== null}
+        onOpenChange={(open) => !open && !pending && setSupervisorCategory(null)}
+        title={`${supervisorCategory?.name ?? "Program"} supervisors`}
+        description="Supervisors gain management access over groups, rosters, and recurring schedules in this program."
+        closeLabel="Close supervisor editor"
+        size="small"
+      >
+        <div className={styles.supervisorPicker}>
+          {coachOptions.map((coach) => {
+            const checked = supervisorIds.includes(coach.id);
+            return (
+              <label key={coach.id}>
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  onChange={() =>
+                    setSupervisorIds((current) =>
+                      checked ? current.filter((id) => id !== coach.id) : [...current, coach.id]
+                    )
+                  }
+                />
+                <span>{coach.fullName}</span>
+              </label>
+            );
+          })}
+        </div>
+        {error ? <FormErrorBanner>{error}</FormErrorBanner> : null}
+        <div className={styles.dialogActions}>
+          <button
+            type="button"
+            className="mv-btn mv-btn-secondary"
+            onClick={() => setSupervisorCategory(null)}
+            disabled={pending}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            className="mv-btn mv-btn-primary"
+            onClick={saveSupervisors}
+            disabled={pending}
+          >
+            {pending ? "Saving…" : "Save supervisors"}
+          </button>
+        </div>
+      </EntityDialog>
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDeleteDialog
+        open={deleting !== null}
+        onOpenChange={(open) => !open && !pending && setDeleting(null)}
+        title={`Delete ${deleting?.name ?? "this program"}?`}
+        description="This is only allowed when no group, coach qualification, or supervisor references the program."
+        confirmationValue={confirmation}
+        onConfirmationChange={setConfirmation}
+        error={error}
+        pending={pending}
+        onConfirm={confirmDelete}
+        closeLabel="Close program deletion"
+      />
+    </div>
+  );
 }
