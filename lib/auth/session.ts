@@ -55,3 +55,13 @@ export async function requireRole(role: UserRole) {
 
   return user;
 }
+
+export async function requireAnyRole(...roles: UserRole[]) {
+  const user = await requireUser();
+
+  if (!roles.includes(user.role)) {
+    throw new UnauthorizedError();
+  }
+
+  return user;
+}

@@ -381,7 +381,7 @@ export class ClientDashboardRepository {
             endsAt, location, description,
             coach:Coach(fullName, phone, user:User(email)))),
         files:File(id, name, note, createdAt, expiresAt, deletedAt),
-        workoutNotes:WorkoutNote(id, content, date, updatedAt, isPrivate, authorId)
+        workoutNotes:ClientCoachNote(id, content, date, updatedAt, isPrivate, authorId)
       `,
       )
       .eq("userId", userId)

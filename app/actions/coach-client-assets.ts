@@ -51,7 +51,7 @@ export async function savePrivateClientNote(input: {
 
   if (input.noteId) {
     const { data: note, error } = await supabase
-      .from("WorkoutNote")
+      .from("ClientCoachNote")
       .select("id, authorId, clientId")
       .eq("id", input.noteId)
       .maybeSingle();
@@ -66,7 +66,7 @@ export async function savePrivateClientNote(input: {
     }
 
     const { error: updateError } = await supabase
-      .from("WorkoutNote")
+      .from("ClientCoachNote")
       .update({
         content,
         isPrivate: true,
@@ -76,7 +76,7 @@ export async function savePrivateClientNote(input: {
       .eq("id", note.id);
     if (updateError) throw updateError;
   } else {
-    const { error } = await supabase.from("WorkoutNote").insert({
+    const { error } = await supabase.from("ClientCoachNote").insert({
       clientId,
       content,
       isPrivate: true,
@@ -143,52 +143,17 @@ export async function uploadCoachFile(formData: FormData) {
     path,
     mimeType: file.type,
     size: file.size,
-    note: note || null,
-    expiresAt: expiresAt.toISOString(),
     uploadedById: coach.id,
     clientId: scope === "client" ? targetId : null,
     groupId: scope === "group" ? targetId : null,
+    note: note || null,
+    expiresAt: expiresAt.toISOString(),
   });
+
   if (error) {
-    const { error: cleanupError } = await supabase.storage
-      .from(COACH_FILES_BUCKET)
-      .remove([path]);
-    if (cleanupError) {
-      console.error(
-        "[coach-files] failed to remove an orphaned upload:",
-        cleanupError
-      );
-    }
+    await supabase.storage.from(COACH_FILES_BUCKET).remove([path]);
     throw error;
   }
-
-  revalidateClientAssetViews();
-}
-
-export async function cleanupExpiredCoachFiles() {
-  await requireRole(UserRole.ADMIN);
-  const supabase = getSupabaseServerClient();
-  const now = new Date().toISOString();
-  const { data: expiredFiles, error: findError } = await supabase
-    .from("File")
-    .select("id,path")
-    .lte("expiresAt", now);
-  if (findError) throw findError;
-
-  if (expiredFiles.length === 0) {
-    return;
-  }
-
-  const { error: storageError } = await supabase.storage
-    .from(COACH_FILES_BUCKET)
-    .remove(expiredFiles.map((file) => file.path));
-  if (storageError) throw storageError;
-
-  const { error } = await supabase
-    .from("File")
-    .delete()
-    .in("id", expiredFiles.map((file) => file.id));
-  if (error) throw error;
 
   revalidateClientAssetViews();
 }

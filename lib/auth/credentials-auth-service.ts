@@ -1,4 +1,4 @@
-import type { UserRole } from "@/lib/supabase/domain";
+import { UserRole } from "@/lib/supabase/domain";
 
 import { parseCredentials } from "@/lib/auth/credentials";
 import type { PasswordVerifier } from "@/lib/auth/password-verifier";
@@ -17,6 +17,11 @@ export type AuthenticatedUser = {
 
 function toAuthenticatedUser(user: PersistedAuthUser): AuthenticatedUser | null {
   if (!user.email) {
+    return null;
+  }
+
+  // Clients are managed by staff and do not log into the application directly
+  if (user.role === UserRole.CLIENT) {
     return null;
   }
 
@@ -46,6 +51,11 @@ export class CredentialsAuthService {
     const user = await this.userRepository.findByEmail(email);
 
     if (!user?.password) {
+      return null;
+    }
+
+    // Explicitly reject interactive client login attempts
+    if (user.role === UserRole.CLIENT) {
       return null;
     }
 

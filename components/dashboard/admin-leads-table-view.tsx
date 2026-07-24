@@ -31,24 +31,7 @@ const STAGE_SECTION_BG: Partial<Record<Stage, string>> = {
   Won: "rgba(37,211,102,.07)",
   Lost: "rgba(239,68,68,.07)",
 };
-const NEXT_STEP_DEFAULT: Record<Stage, string> = {
-  New: "Needs first contact",
-  "Trial booked": "Awaiting trial",
-  "Trial done": "Awaiting decision",
-  Won: "Subscribed",
-  Lost: "Chose elsewhere",
-};
 
-// ─── avatar gradient by tone ──────────────────────────────────────────────────
-
-const TONE_GRAD: Record<string, string> = {
-  red: "linear-gradient(135deg,#e62429,#ff4f54)",
-  green: "linear-gradient(135deg,#25d366,#14b8a6)",
-  violet: "linear-gradient(135deg,#8b5cf6,#ec4899)",
-  blue: "linear-gradient(135deg,#3b82f6,#8b5cf6)",
-  amber: "linear-gradient(135deg,#f59e0b,#ff6b35)",
-  teal: "linear-gradient(135deg,#14b8a6,#3b82f6)",
-};
 
 // ─── sort helpers ─────────────────────────────────────────────────────────────
 

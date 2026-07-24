@@ -14,59 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      Account: {
-        Row: {
-          access_token: string | null
-          expires_at: number | null
-          id: string
-          id_token: string | null
-          provider: string
-          providerAccountId: string
-          refresh_token: string | null
-          scope: string | null
-          session_state: string | null
-          token_type: string | null
-          type: string
-          userId: string
-        }
-        Insert: {
-          access_token?: string | null
-          expires_at?: number | null
-          id?: string
-          id_token?: string | null
-          provider: string
-          providerAccountId: string
-          refresh_token?: string | null
-          scope?: string | null
-          session_state?: string | null
-          token_type?: string | null
-          type: string
-          userId: string
-        }
-        Update: {
-          access_token?: string | null
-          expires_at?: number | null
-          id?: string
-          id_token?: string | null
-          provider?: string
-          providerAccountId?: string
-          refresh_token?: string | null
-          scope?: string | null
-          session_state?: string | null
-          token_type?: string | null
-          type?: string
-          userId?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "Account_userId_fkey"
-            columns: ["userId"]
-            isOneToOne: false
-            referencedRelation: "User"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       AuthThrottle: {
         Row: {
           blockedUntil: string | null
@@ -322,206 +269,50 @@ export type Database = {
           },
         ]
       }
-      ClientAssessment: {
+      ClientCoachNote: {
         Row: {
-          assessedAt: string
-          assessorId: string
-          baselineSummary: string | null
+          authorId: string | null
           clientId: string
-          consentAcknowledgedAt: string | null
+          content: string
           createdAt: string
-          experienceLevel: string
+          date: string
           id: string
-          injuriesLimitations: string | null
-          medicalNotes: string | null
-          primaryGoal: string
-          secondaryGoals: string | null
-          status: Database["public"]["Enums"]["AssessmentStatus"]
+          isPrivate: boolean
           updatedAt: string
         }
         Insert: {
-          assessedAt?: string
-          assessorId: string
-          baselineSummary?: string | null
+          authorId?: string | null
           clientId: string
-          consentAcknowledgedAt?: string | null
+          content: string
           createdAt?: string
-          experienceLevel: string
+          date?: string
           id?: string
-          injuriesLimitations?: string | null
-          medicalNotes?: string | null
-          primaryGoal: string
-          secondaryGoals?: string | null
-          status?: Database["public"]["Enums"]["AssessmentStatus"]
+          isPrivate?: boolean
           updatedAt?: string
         }
         Update: {
-          assessedAt?: string
-          assessorId?: string
-          baselineSummary?: string | null
+          authorId?: string | null
           clientId?: string
-          consentAcknowledgedAt?: string | null
+          content?: string
           createdAt?: string
-          experienceLevel?: string
+          date?: string
           id?: string
-          injuriesLimitations?: string | null
-          medicalNotes?: string | null
-          primaryGoal?: string
-          secondaryGoals?: string | null
-          status?: Database["public"]["Enums"]["AssessmentStatus"]
+          isPrivate?: boolean
           updatedAt?: string
         }
         Relationships: [
           {
-            foreignKeyName: "ClientAssessment_assessorId_fkey"
-            columns: ["assessorId"]
+            foreignKeyName: "ClientCoachNote_authorId_fkey"
+            columns: ["authorId"]
             isOneToOne: false
             referencedRelation: "User"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "ClientAssessment_clientId_fkey"
+            foreignKeyName: "ClientCoachNote_clientId_fkey"
             columns: ["clientId"]
             isOneToOne: false
             referencedRelation: "Client"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      ClientCheckIn: {
-        Row: {
-          clientId: string
-          coachResponse: string | null
-          createdAt: string
-          energyLevel: number
-          id: string
-          memberNote: string | null
-          painDetails: string | null
-          painPresent: boolean
-          respondedAt: string | null
-          respondedById: string | null
-          sleepQuality: number
-          sorenessLevel: number
-          stressLevel: number
-          submittedAt: string
-          updatedAt: string
-        }
-        Insert: {
-          clientId: string
-          coachResponse?: string | null
-          createdAt?: string
-          energyLevel: number
-          id?: string
-          memberNote?: string | null
-          painDetails?: string | null
-          painPresent?: boolean
-          respondedAt?: string | null
-          respondedById?: string | null
-          sleepQuality: number
-          sorenessLevel: number
-          stressLevel: number
-          submittedAt?: string
-          updatedAt?: string
-        }
-        Update: {
-          clientId?: string
-          coachResponse?: string | null
-          createdAt?: string
-          energyLevel?: number
-          id?: string
-          memberNote?: string | null
-          painDetails?: string | null
-          painPresent?: boolean
-          respondedAt?: string | null
-          respondedById?: string | null
-          sleepQuality?: number
-          sorenessLevel?: number
-          stressLevel?: number
-          submittedAt?: string
-          updatedAt?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "ClientCheckIn_clientId_fkey"
-            columns: ["clientId"]
-            isOneToOne: false
-            referencedRelation: "Client"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "ClientCheckIn_respondedById_fkey"
-            columns: ["respondedById"]
-            isOneToOne: false
-            referencedRelation: "User"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      ClientGoal: {
-        Row: {
-          achievedAt: string | null
-          baselineValue: number | null
-          clientId: string
-          createdAt: string
-          createdById: string
-          currentValue: number | null
-          description: string | null
-          id: string
-          metricType: string | null
-          status: Database["public"]["Enums"]["GoalStatus"]
-          targetDate: string | null
-          targetValue: number | null
-          title: string
-          unit: string | null
-          updatedAt: string
-        }
-        Insert: {
-          achievedAt?: string | null
-          baselineValue?: number | null
-          clientId: string
-          createdAt?: string
-          createdById: string
-          currentValue?: number | null
-          description?: string | null
-          id?: string
-          metricType?: string | null
-          status?: Database["public"]["Enums"]["GoalStatus"]
-          targetDate?: string | null
-          targetValue?: number | null
-          title: string
-          unit?: string | null
-          updatedAt?: string
-        }
-        Update: {
-          achievedAt?: string | null
-          baselineValue?: number | null
-          clientId?: string
-          createdAt?: string
-          createdById?: string
-          currentValue?: number | null
-          description?: string | null
-          id?: string
-          metricType?: string | null
-          status?: Database["public"]["Enums"]["GoalStatus"]
-          targetDate?: string | null
-          targetValue?: number | null
-          title?: string
-          unit?: string | null
-          updatedAt?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "ClientGoal_clientId_fkey"
-            columns: ["clientId"]
-            isOneToOne: false
-            referencedRelation: "Client"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "ClientGoal_createdById_fkey"
-            columns: ["createdById"]
-            isOneToOne: false
-            referencedRelation: "User"
             referencedColumns: ["id"]
           },
         ]
@@ -876,7 +667,6 @@ export type Database = {
             | null
           lostReason: string | null
           message: string | null
-          passwordHash: string | null
           phone: string
           preferredAvailability: string | null
           source: string
@@ -896,7 +686,6 @@ export type Database = {
             | null
           lostReason?: string | null
           message?: string | null
-          passwordHash?: string | null
           phone: string
           preferredAvailability?: string | null
           source?: string
@@ -916,7 +705,6 @@ export type Database = {
             | null
           lostReason?: string | null
           message?: string | null
-          passwordHash?: string | null
           phone?: string
           preferredAvailability?: string | null
           source?: string
@@ -1093,95 +881,6 @@ export type Database = {
           },
         ]
       }
-      ProgramWorkout: {
-        Row: {
-          createdAt: string
-          dayOrder: number
-          id: string
-          notes: string | null
-          programId: string
-          title: string
-          updatedAt: string
-        }
-        Insert: {
-          createdAt?: string
-          dayOrder: number
-          id?: string
-          notes?: string | null
-          programId: string
-          title: string
-          updatedAt?: string
-        }
-        Update: {
-          createdAt?: string
-          dayOrder?: number
-          id?: string
-          notes?: string | null
-          programId?: string
-          title?: string
-          updatedAt?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "ProgramWorkout_programId_fkey"
-            columns: ["programId"]
-            isOneToOne: false
-            referencedRelation: "TrainingProgram"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      ProgressMetric: {
-        Row: {
-          clientId: string
-          createdAt: string
-          id: string
-          measuredAt: string
-          metricType: string
-          note: string | null
-          recordedById: string
-          unit: string
-          value: number
-        }
-        Insert: {
-          clientId: string
-          createdAt?: string
-          id?: string
-          measuredAt?: string
-          metricType: string
-          note?: string | null
-          recordedById: string
-          unit: string
-          value: number
-        }
-        Update: {
-          clientId?: string
-          createdAt?: string
-          id?: string
-          measuredAt?: string
-          metricType?: string
-          note?: string | null
-          recordedById?: string
-          unit?: string
-          value?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "ProgressMetric_clientId_fkey"
-            columns: ["clientId"]
-            isOneToOne: false
-            referencedRelation: "Client"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "ProgressMetric_recordedById_fkey"
-            columns: ["recordedById"]
-            isOneToOne: false
-            referencedRelation: "User"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       RateLimitBucket: {
         Row: {
           blockedUntil: string | null
@@ -1301,7 +1000,6 @@ export type Database = {
           groupId: string | null
           id: string
           lastGeneratedThrough: string | null
-          location: string | null
           startsOn: string
           status: Database["public"]["Enums"]["TrainingSessionStatus"]
           timezone: string
@@ -1320,7 +1018,6 @@ export type Database = {
           groupId?: string | null
           id?: string
           lastGeneratedThrough?: string | null
-          location?: string | null
           startsOn: string
           status?: Database["public"]["Enums"]["TrainingSessionStatus"]
           timezone?: string
@@ -1339,7 +1036,6 @@ export type Database = {
           groupId?: string | null
           id?: string
           lastGeneratedThrough?: string | null
-          location?: string | null
           startsOn?: string
           status?: Database["public"]["Enums"]["TrainingSessionStatus"]
           timezone?: string
@@ -1588,35 +1284,6 @@ export type Database = {
           },
         ]
       }
-      Session: {
-        Row: {
-          expires: string
-          id: string
-          sessionToken: string
-          userId: string
-        }
-        Insert: {
-          expires: string
-          id?: string
-          sessionToken: string
-          userId: string
-        }
-        Update: {
-          expires?: string
-          id?: string
-          sessionToken?: string
-          userId?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "Session_userId_fkey"
-            columns: ["userId"]
-            isOneToOne: false
-            referencedRelation: "User"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       SessionBooking: {
         Row: {
           attendedAt: string | null
@@ -1667,48 +1334,6 @@ export type Database = {
             columns: ["trainingSessionId"]
             isOneToOne: false
             referencedRelation: "TrainingSession"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      SessionCompensation: {
-        Row: {
-          approvedById: string
-          clientId: string
-          createdAt: string
-          id: string
-          reason: string
-          sessions: number
-        }
-        Insert: {
-          approvedById: string
-          clientId: string
-          createdAt?: string
-          id?: string
-          reason: string
-          sessions?: number
-        }
-        Update: {
-          approvedById?: string
-          clientId?: string
-          createdAt?: string
-          id?: string
-          reason?: string
-          sessions?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "SessionCompensation_approvedById_fkey"
-            columns: ["approvedById"]
-            isOneToOne: false
-            referencedRelation: "User"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "SessionCompensation_clientId_fkey"
-            columns: ["clientId"]
-            isOneToOne: false
-            referencedRelation: "Client"
             referencedColumns: ["id"]
           },
         ]
@@ -1991,60 +1616,6 @@ export type Database = {
         }
         Relationships: []
       }
-      TrainingProgram: {
-        Row: {
-          clientId: string
-          coachId: string
-          createdAt: string
-          endsAt: string | null
-          goalSummary: string | null
-          id: string
-          name: string
-          startsAt: string
-          status: Database["public"]["Enums"]["ProgramStatus"]
-          updatedAt: string
-        }
-        Insert: {
-          clientId: string
-          coachId: string
-          createdAt?: string
-          endsAt?: string | null
-          goalSummary?: string | null
-          id?: string
-          name: string
-          startsAt: string
-          status?: Database["public"]["Enums"]["ProgramStatus"]
-          updatedAt?: string
-        }
-        Update: {
-          clientId?: string
-          coachId?: string
-          createdAt?: string
-          endsAt?: string | null
-          goalSummary?: string | null
-          id?: string
-          name?: string
-          startsAt?: string
-          status?: Database["public"]["Enums"]["ProgramStatus"]
-          updatedAt?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "TrainingProgram_clientId_fkey"
-            columns: ["clientId"]
-            isOneToOne: false
-            referencedRelation: "Client"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "TrainingProgram_coachId_fkey"
-            columns: ["coachId"]
-            isOneToOne: false
-            referencedRelation: "Coach"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       TrainingSession: {
         Row: {
           coachId: string
@@ -2142,306 +1713,37 @@ export type Database = {
         Row: {
           createdAt: string
           email: string | null
-          emailVerified: string | null
           id: string
-          image: string | null
           lastLoginAt: string | null
           mustChangePassword: boolean
           name: string | null
           password: string | null
-          passwordResetExpires: string | null
-          passwordResetToken: string | null
           role: Database["public"]["Enums"]["UserRole"]
           updatedAt: string
         }
         Insert: {
           createdAt?: string
           email?: string | null
-          emailVerified?: string | null
           id?: string
-          image?: string | null
           lastLoginAt?: string | null
           mustChangePassword?: boolean
           name?: string | null
           password?: string | null
-          passwordResetExpires?: string | null
-          passwordResetToken?: string | null
           role?: Database["public"]["Enums"]["UserRole"]
           updatedAt?: string
         }
         Update: {
           createdAt?: string
           email?: string | null
-          emailVerified?: string | null
           id?: string
-          image?: string | null
           lastLoginAt?: string | null
           mustChangePassword?: boolean
           name?: string | null
           password?: string | null
-          passwordResetExpires?: string | null
-          passwordResetToken?: string | null
           role?: Database["public"]["Enums"]["UserRole"]
           updatedAt?: string
         }
         Relationships: []
-      }
-      VerificationToken: {
-        Row: {
-          expires: string
-          identifier: string
-          token: string
-        }
-        Insert: {
-          expires: string
-          identifier: string
-          token: string
-        }
-        Update: {
-          expires?: string
-          identifier?: string
-          token?: string
-        }
-        Relationships: []
-      }
-      WorkoutExercise: {
-        Row: {
-          createdAt: string
-          exerciseId: string
-          id: string
-          loadUnit: string | null
-          notes: string | null
-          orderIndex: number
-          reps: string
-          restSeconds: number | null
-          sets: number
-          targetLoad: number | null
-          tempo: string | null
-          updatedAt: string
-          workoutId: string
-        }
-        Insert: {
-          createdAt?: string
-          exerciseId: string
-          id?: string
-          loadUnit?: string | null
-          notes?: string | null
-          orderIndex: number
-          reps: string
-          restSeconds?: number | null
-          sets?: number
-          targetLoad?: number | null
-          tempo?: string | null
-          updatedAt?: string
-          workoutId: string
-        }
-        Update: {
-          createdAt?: string
-          exerciseId?: string
-          id?: string
-          loadUnit?: string | null
-          notes?: string | null
-          orderIndex?: number
-          reps?: string
-          restSeconds?: number | null
-          sets?: number
-          targetLoad?: number | null
-          tempo?: string | null
-          updatedAt?: string
-          workoutId?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "WorkoutExercise_exerciseId_fkey"
-            columns: ["exerciseId"]
-            isOneToOne: false
-            referencedRelation: "Exercise"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "WorkoutExercise_workoutId_fkey"
-            columns: ["workoutId"]
-            isOneToOne: false
-            referencedRelation: "ProgramWorkout"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      WorkoutLog: {
-        Row: {
-          clientId: string
-          createdAt: string
-          durationMinutes: number | null
-          id: string
-          notes: string | null
-          performedAt: string
-          programWorkoutId: string | null
-          recordedById: string
-          sessionRpe: number | null
-          trainingSessionId: string | null
-          updatedAt: string
-        }
-        Insert: {
-          clientId: string
-          createdAt?: string
-          durationMinutes?: number | null
-          id?: string
-          notes?: string | null
-          performedAt?: string
-          programWorkoutId?: string | null
-          recordedById: string
-          sessionRpe?: number | null
-          trainingSessionId?: string | null
-          updatedAt?: string
-        }
-        Update: {
-          clientId?: string
-          createdAt?: string
-          durationMinutes?: number | null
-          id?: string
-          notes?: string | null
-          performedAt?: string
-          programWorkoutId?: string | null
-          recordedById?: string
-          sessionRpe?: number | null
-          trainingSessionId?: string | null
-          updatedAt?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "WorkoutLog_clientId_fkey"
-            columns: ["clientId"]
-            isOneToOne: false
-            referencedRelation: "Client"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "WorkoutLog_programWorkoutId_fkey"
-            columns: ["programWorkoutId"]
-            isOneToOne: false
-            referencedRelation: "ProgramWorkout"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "WorkoutLog_recordedById_fkey"
-            columns: ["recordedById"]
-            isOneToOne: false
-            referencedRelation: "User"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "WorkoutLog_trainingSessionId_fkey"
-            columns: ["trainingSessionId"]
-            isOneToOne: false
-            referencedRelation: "TrainingSession"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      WorkoutNote: {
-        Row: {
-          authorId: string | null
-          clientId: string
-          content: string
-          createdAt: string
-          date: string
-          id: string
-          isPrivate: boolean
-          updatedAt: string
-        }
-        Insert: {
-          authorId?: string | null
-          clientId: string
-          content: string
-          createdAt?: string
-          date?: string
-          id?: string
-          isPrivate?: boolean
-          updatedAt?: string
-        }
-        Update: {
-          authorId?: string | null
-          clientId?: string
-          content?: string
-          createdAt?: string
-          date?: string
-          id?: string
-          isPrivate?: boolean
-          updatedAt?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "WorkoutNote_authorId_fkey"
-            columns: ["authorId"]
-            isOneToOne: false
-            referencedRelation: "User"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "WorkoutNote_clientId_fkey"
-            columns: ["clientId"]
-            isOneToOne: false
-            referencedRelation: "Client"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      WorkoutSetLog: {
-        Row: {
-          completed: boolean
-          createdAt: string
-          exerciseId: string
-          id: string
-          load: number | null
-          loadUnit: string | null
-          notes: string | null
-          reps: number | null
-          rpe: number | null
-          setNumber: number
-          workoutLogId: string
-        }
-        Insert: {
-          completed?: boolean
-          createdAt?: string
-          exerciseId: string
-          id?: string
-          load?: number | null
-          loadUnit?: string | null
-          notes?: string | null
-          reps?: number | null
-          rpe?: number | null
-          setNumber: number
-          workoutLogId: string
-        }
-        Update: {
-          completed?: boolean
-          createdAt?: string
-          exerciseId?: string
-          id?: string
-          load?: number | null
-          loadUnit?: string | null
-          notes?: string | null
-          reps?: number | null
-          rpe?: number | null
-          setNumber?: number
-          workoutLogId?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "WorkoutSetLog_exerciseId_fkey"
-            columns: ["exerciseId"]
-            isOneToOne: false
-            referencedRelation: "Exercise"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "WorkoutSetLog_workoutLogId_fkey"
-            columns: ["workoutLogId"]
-            isOneToOne: false
-            referencedRelation: "WorkoutLog"
-            referencedColumns: ["id"]
-          },
-        ]
       }
     }
     Views: {
@@ -2634,23 +1936,6 @@ export type Database = {
         }
         Returns: string
       }
-      record_workout_performance: {
-        Args: {
-          p_client_id: string
-          p_duration_minutes: number
-          p_exercise_id: string
-          p_load: number
-          p_load_unit: string
-          p_notes: string
-          p_program_workout_id: string
-          p_recorded_by_id: string
-          p_reps: number
-          p_rpe: number
-          p_session_rpe: number
-          p_set_number: number
-        }
-        Returns: string
-      }
       register_client: {
         Args: {
           p_email: string
@@ -2710,19 +1995,6 @@ export type Database = {
           p_user_id: string
         }
         Returns: undefined
-      }
-      save_training_program: {
-        Args: {
-          p_client_id: string
-          p_coach_id: string
-          p_ends_at: string
-          p_goal_summary: string
-          p_name: string
-          p_program_id: string
-          p_starts_at: string
-          p_status: Database["public"]["Enums"]["ProgramStatus"]
-        }
-        Returns: string
       }
       set_admin_group_membership: {
         Args: { p_action: string; p_client_id: string; p_group_id: string }
@@ -2826,7 +2098,6 @@ export type Database = {
         | "REHAB"
         | "ATHLETIC_PERFORMANCE"
         | "GENERAL_FITNESS"
-      GoalStatus: "ACTIVE" | "ACHIEVED" | "PAUSED" | "CANCELED"
       GroupType: "GROUP" | "PRIVATE"
       InjuryStatus: "NONE" | "CURRENT" | "PREVIOUS" | "REHAB"
       LeadStatus: "NEW" | "CONTACTED" | "CONVERTED" | "CLOSED" | "TRIAL_DONE"
@@ -2843,7 +2114,6 @@ export type Database = {
         | "GENERAL_FITNESS"
       NotificationKind: "SESSION_REMINDER" | "RENEWAL_REMINDER" | "SYSTEM"
       NotificationStatus: "SENT" | "READ" | "FAILED"
-      ProgramStatus: "DRAFT" | "ACTIVE" | "COMPLETED" | "ARCHIVED"
       StudioExpenseCategory:
         | "SUPPLIES"
         | "MAINTENANCE"
@@ -3033,7 +2303,6 @@ export const Constants = {
         "ATHLETIC_PERFORMANCE",
         "GENERAL_FITNESS",
       ],
-      GoalStatus: ["ACTIVE", "ACHIEVED", "PAUSED", "CANCELED"],
       GroupType: ["GROUP", "PRIVATE"],
       InjuryStatus: ["NONE", "CURRENT", "PREVIOUS", "REHAB"],
       LeadStatus: ["NEW", "CONTACTED", "CONVERTED", "CLOSED", "TRIAL_DONE"],
@@ -3051,7 +2320,6 @@ export const Constants = {
       ],
       NotificationKind: ["SESSION_REMINDER", "RENEWAL_REMINDER", "SYSTEM"],
       NotificationStatus: ["SENT", "READ", "FAILED"],
-      ProgramStatus: ["DRAFT", "ACTIVE", "COMPLETED", "ARCHIVED"],
       StudioExpenseCategory: [
         "SUPPLIES",
         "MAINTENANCE",

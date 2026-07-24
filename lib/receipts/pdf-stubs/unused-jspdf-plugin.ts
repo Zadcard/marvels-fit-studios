@@ -4,4 +4,5 @@
 // broken transitive core-js chain in this environment, so instead of
 // installing them we alias their specifiers to this empty stub via
 // next.config.ts's turbopack.resolveAlias. Never actually invoked.
-export default {};
+const unusedJspdfPluginStub = {};
+export default unusedJspdfPluginStub;

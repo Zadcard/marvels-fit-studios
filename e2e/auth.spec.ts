@@ -7,7 +7,7 @@ test.describe('Landing Page', () => {
   });
 });
 
-test.describe('Login', () => {
+test.describe('Login UI', () => {
   test('should show login form', async ({ page }) => {
     await page.goto('/login');
     await expect(page.getByLabel('Email address')).toBeVisible();
@@ -15,7 +15,7 @@ test.describe('Login', () => {
   });
 });
 
-test.describe('Authentication', () => {
+test.describe('Authentication & Route Protection', () => {
   test('should reject invalid credentials', async ({ page }) => {
     test.setTimeout(60_000);
     await page.goto('/login');
@@ -25,10 +25,28 @@ test.describe('Authentication', () => {
     await expect(page.getByText(/invalid/i)).toBeVisible({ timeout: 45_000 });
   });
 
-  for (const route of ['/admin', '/coach', '/client']) {
+  for (const route of ['/admin', '/coach', '/ops']) {
     test(`redirects anonymous visitors away from ${route}`, async ({ page }) => {
       await page.goto(route);
       await expect(page).toHaveURL(/\/login/);
     });
   }
+
+  test('should log in successfully as Lead Admin', async ({ page }) => {
+    test.setTimeout(60_000);
+    await page.goto('/login');
+    await page.getByLabel('Email address').fill('admin1@marvelsfit.com');
+    await page.getByLabel('Password', { exact: true }).fill('Password123!');
+    await page.getByRole('button', { name: /sign in/i }).click();
+    await expect(page).toHaveURL(/\/admin/, { timeout: 45_000 });
+  });
+
+  test('should log in successfully as Coach', async ({ page }) => {
+    test.setTimeout(60_000);
+    await page.goto('/login');
+    await page.getByLabel('Email address').fill('coach.ahmed@marvelsfit.com');
+    await page.getByLabel('Password', { exact: true }).fill('Password123!');
+    await page.getByRole('button', { name: /sign in/i }).click();
+    await expect(page).toHaveURL(/\/coach/, { timeout: 45_000 });
+  });
 });

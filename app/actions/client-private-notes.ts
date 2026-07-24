@@ -1,15 +1,15 @@
 "use server";
 
 import { UserRole } from "@/lib/supabase/domain";
-
-import { requireRole } from "@/lib/auth/session";
+import { requireAnyRole } from "@/lib/auth/session";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 export async function saveClientPrivateNote(input: {
+  clientId: string;
   noteId?: string | null;
   content: string;
 }) {
-  const user = await requireRole(UserRole.CLIENT);
+  const user = await requireAnyRole(UserRole.COACH, UserRole.ADMIN);
   const supabase = getSupabaseServerClient();
   const content = input.content.trim();
 
@@ -17,25 +17,12 @@ export async function saveClientPrivateNote(input: {
     throw new Error("Note cannot be empty.");
   }
 
-  const { data: client, error: clientError } = await supabase
-    .from("Client")
-    .select("id")
-    .eq("userId", user.id)
-    .maybeSingle();
-  if (clientError) throw clientError;
-
-  if (!client) {
-    throw new Error("Client profile not found.");
-  }
-
   if (input.noteId) {
     const { data: note, error: noteError } = await supabase
-      .from("WorkoutNote")
+      .from("ClientCoachNote")
       .select("id")
       .eq("id", input.noteId)
-      .eq("clientId", client.id)
-      .eq("authorId", user.id)
-      .eq("isPrivate", true)
+      .eq("clientId", input.clientId)
       .maybeSingle();
     if (noteError) throw noteError;
 
@@ -44,7 +31,7 @@ export async function saveClientPrivateNote(input: {
     }
 
     const { error } = await supabase
-      .from("WorkoutNote")
+      .from("ClientCoachNote")
       .update({
         content,
         date: new Date().toISOString(),
@@ -55,14 +42,13 @@ export async function saveClientPrivateNote(input: {
     if (error) throw error;
   } else {
     const { error } = await supabase
-      .from("WorkoutNote")
+      .from("ClientCoachNote")
       .insert({
-        clientId: client.id,
+        clientId: input.clientId,
         content,
         isPrivate: true,
         authorId: user.id,
       });
     if (error) throw error;
   }
-
 }

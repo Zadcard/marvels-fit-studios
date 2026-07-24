@@ -22,7 +22,6 @@ import {
 import { deleteAdminClient, saveAdminClient } from "@/app/actions/admin-clients";
 import type { AdminClientInitialOption, AdminClientRecord } from "@/lib/dashboard/admin-dashboard-data";
 import {
-  injuryStatusLabels,
   trialOutcomeLabels,
 } from "@/lib/dashboard/client-domain-labels";
 import type { TrainingCategoryOption } from "@/lib/dashboard/training-category";
@@ -85,14 +84,15 @@ const emptyForm: ClientForm = {
   restrictions: "",
 };
 
-const clientSegments = [
-  "Active Members",
-  "Inactive Members",
-  "Active Leads",
-  "Lost Leads",
-  "All Members",
-  "Injuries",
-] as const;
+
+
+export type ClientSegment =
+  | "Active Members"
+  | "Inactive Members"
+  | "Active Leads"
+  | "Lost Leads"
+  | "All Members"
+  | "Injuries";
 
 function initials(name: string) {
   return name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
@@ -131,6 +131,7 @@ export function AdminClientsWorkspace({
   const { showToast } = useDashboardToast();
   const [isPending, startTransition] = useTransition();
 
+  const searchValue = searchParams.get("q") ?? "";
   const initialSegmentParam = searchParams.get("segment");
   const initialSegment = useMemo(() => {
     if (initialSegmentParam === "inactive-members") return "Inactive Members";
@@ -141,7 +142,7 @@ export function AdminClientsWorkspace({
     return "Active Members";
   }, [initialSegmentParam]);
 
-  const [segment, setSegment] = useState<(typeof clientSegments)[number]>(initialSegment);
+  const [segment, setSegment] = useState<ClientSegment>(initialSegment);
   const [detailId, setDetailId] = useState<string | null>(null);
   const [historyTab, setHistoryTab] = useState<"receipts" | "attendance">("receipts");
   const [editorOpen, setEditorOpen] = useState(false);
@@ -391,9 +392,25 @@ export function AdminClientsWorkspace({
         </button>
       </div>
 
-      {/* ── Header Row (Filter Controls, Dual Action Buttons) ── */}
+      {/* ── Header Row (Page Title, Search, Filter Controls, Dual Action Buttons) ── */}
       <header className={styles.header}>
+        <div className={styles.headerTitleGroup}>
+          <h1>Members Directory</h1>
+          <p>Manage studio members, active leads, subscriptions, and attendance roster.</p>
+        </div>
+
         <div className={styles.headerControls}>
+          {/* Search Box */}
+          <div className={styles.search}>
+            <Search size={16} />
+            <input
+              type="search"
+              placeholder="Search members by name or phone..."
+              defaultValue={searchValue}
+              onChange={(e) => setQuery("q", e.target.value.trim() || undefined)}
+            />
+          </div>
+
           {/* Filter Pills */}
           <div className={styles.segments} aria-label="Filter directory contacts">
             <button

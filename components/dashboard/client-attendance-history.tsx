@@ -1,6 +1,6 @@
 "use client";
 
-import { Calendar, CalendarCheck, Check, Clock, FileText, UserCheck, X } from "lucide-react";
+import { Calendar, CalendarCheck, Check, Clock, FileText, X } from "lucide-react";
 import type { AdminClientAttendanceRecord } from "@/lib/dashboard/admin-dashboard-data";
 import styles from "./client-attendance-history.module.css";
 

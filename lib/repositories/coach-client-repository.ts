@@ -166,7 +166,7 @@ export class SupabaseCoachClientRepository implements CoachClientRepository {
           bookings:SessionBooking(status, updatedAt,
             trainingSession:TrainingSession(title, type, status, startsAt, location,
               coach:Coach(userId))),
-          workoutNotes:WorkoutNote(id, content, date, updatedAt, isPrivate,
+          workoutNotes:ClientCoachNote(id, content, date, updatedAt, isPrivate,
             author:User(id, name, email, role)),
           files:File(id, name, note, expiresAt, createdAt, deletedAt, uploadedById)
         `,
